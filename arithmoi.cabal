@@ -1,0 +1,50 @@
+name                : arithmoi
+version             : 0.1.0
+cabal-version       : >= 1.6
+author              : Daniel Fischer
+copyright           : (c) 2011 Daniel Fischer
+license             : MIT
+license-file        : LICENCE
+maintainer          : Daniel Fischer <daniel.is.fischer@googlemail.com>
+build-type          : Simple
+stability           : Provisional
+bug-reports         : mailto: daniel.is.fischer@googlemail.com
+
+synopsis            : Efficient basic number-theoretic functions.
+                      Primes (generating and testing, factorisation),
+                      powers, integer logarithms.
+description         : A library of basic functionality needed for
+                      number-theoretic calculations. The aim of this library
+                      is to provide efficient implementations of the functions.
+
+                      Primes and related things (totients, factorisation),
+                      powers (integer roots and tests, modular exponentiation),
+                      integer logarithms.
+
+                      Note: Requires GHC >= 6.12 with the integer-gmp package
+                      for efficiency. I intend to make it portable, but that's
+                      not very high on my priority list (feature requests would
+                      up its priority).
+
+category            : Math, Algorithms, Number Theory
+
+tested-with         : GHC == 6.12.1, GHC == 6.12.3, GHC == 7.0.1
+
+extra-source-files  : Changes, TODO
+
+library
+    build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.4, ghc-prim,
+                          integer-gmp
+    exposed-modules     : Math.NumberTheory.Logarithms
+                          Math.NumberTheory.Moduli
+                          Math.NumberTheory.GCD
+                          Math.NumberTheory.GCD.LowLevel
+                          Math.NumberTheory.Powers.Squares
+                          Math.NumberTheory.Power.Cubes
+                          Math.NumberTheory.Powers.Fourth
+    other-modules       : Math.NumberTheory.Utils
+                          Math.NumberTheory.Logarithms.Internal
+                          Math.NumberTheory.Powers.Integer
+    extensions          : BangPatterns
+    ghc-options         : -O2 -Wall
+    ghc-prof-options    : -O2
