@@ -8,7 +8,8 @@ license-file        : LICENCE
 maintainer          : Daniel Fischer <daniel.is.fischer@googlemail.com>
 build-type          : Simple
 stability           : Provisional
-bug-reports         : mailto: daniel.is.fischer@googlemail.com
+homepage            : https://bitbucket.org/dafis/arithmoi
+bug-reports         : https://bitbucket.org/dafis/arithmoi/issues
 
 synopsis            : Efficient basic number-theoretic functions.
                       Primes (generating and testing, factorisation),
@@ -47,4 +48,8 @@ library
                           Math.NumberTheory.Powers.Integer
     extensions          : BangPatterns
     ghc-options         : -O2 -Wall
-    ghc-prof-options    : -O2
+    ghc-prof-options    : -O2 -auto
+
+source-repository head
+  type:     mercurial
+  location: https://bitbucket.org/dafis/arithmoi
