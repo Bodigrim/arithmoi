@@ -6,7 +6,7 @@ module Math.NumberTheory.Utils
     , shiftToOddCount#
     , bitCountWord
     , bitCountInt
-    , bitCoundWord#
+    , bitCountWord#
     ) where
 
 #include "MachDeps.h"
@@ -135,9 +135,9 @@ bitCountArr =
               case writeInt8Array# mba 0# 0# s1 of
                 s2 ->
                   let loop idx st
-                        | idx <# 256#   = case indexInt8Array# mba (idx `andInt#` (idx -# 1#)) of
-                                            c -> case writeInt8Array# mba idx (c +# 1#) of
-                                                  nx -> loop (idx +# 1#) nx
+                        | idx <# 256#   = case readInt8Array# mba (idx `andInt#` (idx -# 1#)) st of
+                                            (# s', c #) -> case writeInt8Array# mba idx (c +# 1#) s' of
+                                                            nx -> loop (idx +# 1#) nx
                         | otherwise     = st
                   in case loop 1# s2 of
                       s3 -> case unsafeFreezeByteArray# mba s3 of

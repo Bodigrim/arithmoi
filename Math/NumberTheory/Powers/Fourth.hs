@@ -104,8 +104,8 @@ isFourthPower' n = isPossibleFourthPower n && r2*r2 == n
 isPossibleFourthPower :: Integral a => a -> Bool
 isPossibleFourthPower n =
         biSqRes256 `unsafeAt` (fromIntegral n .&. 255)
-      && biSqRes425 `unsafeAt` (fromIntegral (n `quot` 425))
-      && biSqRes377 `unsafeAt` (fromIntegral (n `quot` 377))
+      && biSqRes425 `unsafeAt` (fromIntegral (n `rem` 425))
+      && biSqRes377 `unsafeAt` (fromIntegral (n `rem` 377))
 
 {-# SPECIALISE newton4 :: Integer -> Integer -> Integer #-}
 newton4 :: Integral a => a -> a -> a
@@ -133,9 +133,9 @@ approxBiSqrt = fromInteger . appBiSqrt . fromIntegral
 -- Find a fairly good approximation to the fourth root.
 -- About 48 bits should be correct for large Integers.
 appBiSqrt :: Integer -> Integer
-appBiSqrt (S# i#) = S# (double2Int# (sqrtDouble# (int2Double# i#)))
+appBiSqrt (S# i#) = S# (double2Int# (sqrtDouble# (sqrtDouble# (int2Double# i#))))
 appBiSqrt n@(J# s# _)
-    | s# <# THRESH# = floor (sqrt $ fromInteger n :: Double)
+    | s# <# THRESH# = floor (sqrt . sqrt $ fromInteger n :: Double)
     | otherwise = case integerLog2# n of
                     l# -> case uncheckedIShiftRA# l# 2# -# 47# of
                             h# -> case shiftRInteger n (4# *# h#) of
