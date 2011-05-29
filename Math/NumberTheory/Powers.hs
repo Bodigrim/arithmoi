@@ -39,4 +39,5 @@ module Math.NumberTheory.Powers
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Powers.Fourth
+import Math.NumberTheory.Powers.General
 import Math.NumberTheory.Moduli

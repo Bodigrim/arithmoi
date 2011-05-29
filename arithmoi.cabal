@@ -29,20 +29,24 @@ description         : A library of basic functionality needed for
 
 category            : Math, Algorithms, Number Theory
 
-tested-with         : GHC == 6.12.1, GHC == 6.12.3, GHC == 7.0.1
+tested-with         : GHC == 7.0.2, GHC == 7.0.3
 
 extra-source-files  : Changes, TODO
 
 library
     build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.4, ghc-prim,
-                          integer-gmp
+                          integer-gmp, containers >= 0.3 && < 0.5
     exposed-modules     : Math.NumberTheory.Logarithms
+                          Math.NumberTheory.Powers
                           Math.NumberTheory.Moduli
+                          Math.NumberTheory.Lucas
                           Math.NumberTheory.GCD
                           Math.NumberTheory.GCD.LowLevel
                           Math.NumberTheory.Powers.Squares
-                          Math.NumberTheory.Power.Cubes
+                          Math.NumberTheory.Powers.Cubes
                           Math.NumberTheory.Powers.Fourth
+                          Math.NumberTheory.Powers.General
+                          Math.NumberTheory.Primes.Testing.Probabilistic
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Logarithms.Internal
                           Math.NumberTheory.Powers.Integer

@@ -26,9 +26,9 @@ import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
-import Data.Array.Unboxed
-import Data.Array.ST
-import Data.Array.Base (unsafeAt, unsafeWrite)
+-- import Data.Array.Unboxed
+-- import Data.Array.ST
+-- import Data.Array.Base (unsafeAt, unsafeWrite)
 
 import Data.Bits
 import Data.Word
@@ -118,8 +118,8 @@ exactRoot k n
                           | otherwise -> Nothing
 
     where
+      k' :: Int
       k' = fromIntegral k
-      a  = approxKthRoot (fromIntegral k) n
       r  = integerRoot k' n
       c2 = P2.isPossibleSquare n
       c3 = P3.isPossibleCube n
@@ -163,7 +163,7 @@ highestPower n
   | abs n <= 1  = (n,3)
   | n < 0       = case integerHighPower (toInteger $ negate n) of
                     (r,e) -> case shiftToOddCount e of
-                               (k, o) -> (negate $ fromInteger (r^(2^k)), o)
+                               (k, o) -> (negate $ fromInteger (r^(2^k :: Int)), o)
   | otherwise   = case integerHighPower (toInteger n) of
                     (r,e) -> (fromInteger r, e)
 
@@ -210,7 +210,7 @@ approxKthRoot k = fromInteger . appKthRoot k . fromIntegral
 -- here, k > 4 and n > 31
 appKthRoot :: Int -> Integer -> Integer
 appKthRoot (I# k#) (S# n#) = S# (double2Int# (int2Double# n# **## (1.0## /## int2Double# k#)))
-appKthRoot k@(I# k#) n@(J# s# _) =
+appKthRoot k@(I# k#) n@(J# _ _) =
     case integerLog2# n of
       l# -> case l# `quotInt#` k# of
               0# -> 1
@@ -218,9 +218,10 @@ appKthRoot k@(I# k#) n@(J# s# _) =
               2# -> 5
               3# -> 11
               h# | h# <# 500# ->
-                   floor (scaleFloat (I# (h# -# 1#)) (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k)))
+                   floor (scaleFloat (I# (h# -# 1#))
+                          (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
                  | otherwise ->
-                   floor (scaleFloat 400 (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k)))
+                   floor (scaleFloat 400 (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
                           `shiftLInteger` (h# -# 401#)
 
 -- assumption: argument is > 1
@@ -264,6 +265,7 @@ smallOddPrimes = 3:5:primes'
     isPrime n = go primes'
       where
         go (p:ps) = (p*p > n) || (n `rem` p /= 0 && go ps)
+        go []     = True
 
 -- n large, has no prime divisors < spBound
 finishPower :: Int -> [(Integer, Int)] -> Integer -> (Integer, Int)
@@ -308,6 +310,7 @@ badPower mx n
         | otherwise = case exactRoot k m of
                         Just r -> go (e*k) (b `quot` k) r (k:ks)
                         Nothing -> go e b m ks
+      go e _ m []   = (m,e)
 
 divisorsTo :: Int -> Int -> [Int]
 divisorsTo mx n = case shiftToOddCount n of
@@ -318,14 +321,19 @@ divisorsTo mx n = case shiftToOddCount n of
     unP :: Int -> Int -> (Int,Int)
     unP p m = goP 0 m
       where
+        goP :: Int -> Int -> (Int,Int)
         goP !i j = case m `quotRem` p of
                      (q,r) | r == 0 -> goP (i+1) q
                            | otherwise -> (0,j)
+    iops :: [Int]
     iops = 3:5:prs
+    prs :: [Int]
     prs = 7:filter prm (scanl (+) 11 $ cycle [2,4,2,4,6,2,6,4])
+    prm :: Int -> Bool
     prm k = td prs
       where
         td (p:ps) = (p*p > k) || (k `rem` p /= 0 && td ps)
+        td []     = True
     go !st m (p:ps)
       | m == 1  = reverse $ Set.toAscList st
       | m < p*p = reverse . Set.toAscList $ Set.union st (mset m st)
@@ -333,3 +341,4 @@ divisorsTo mx n = case shiftToOddCount n of
         case unP p m of
           (0,_) -> go st m ps
           (k,r) -> go (Set.unions (st:take k (iterate (mset p) st))) r ps
+    go st m [] = go st m [m+1]
