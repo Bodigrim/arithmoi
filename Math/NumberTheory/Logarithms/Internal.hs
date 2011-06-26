@@ -66,7 +66,7 @@ integerLogBase# b m = case step b of
 -- | Calculate the integer base 2 logarithm of an 'Integer'.
 --   The calculation is much more efficient than for the general case.
 --
---  The argument must be strictly positive, that condition is /not/ checked.
+--   The argument must be strictly positive, that condition is /not/ checked.
 integerLog2# :: Integer -> Int#
 integerLog2# (S# i) = wordLog2# (int2Word# i)
 integerLog2# (J# s ba) = check (s -# 1#)
@@ -76,7 +76,7 @@ integerLog2# (J# s ba) = check (s -# 1#)
                 w   -> wordLog2# w +# (uncheckedIShiftL# i WSHIFT#)
 
 -- | This function calculates the integer base 2 logarithm of a 'Word#'.
--- wordLog2# 0## = -1#
+--   @'wordLog2#' 0## = -1#@.
 {-# INLINE wordLog2# #-}
 wordLog2# :: Word# -> Int#
 wordLog2# w =

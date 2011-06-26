@@ -129,13 +129,13 @@ exactRoot k n
                   || (toInteger k > toInteger (maxBound :: Int))  -- 2^k doesn't fit in Integer
                   || (I# (integerLog2# (toInteger n)) < fromIntegral k) -- n < 2^k
 
--- | @'isKthPower' k n@ checks whether @nq is a @k@-th power.
+-- | @'isKthPower' k n@ checks whether @n@ is a @k@-th power.
 isKthPower :: (Integral a, Integral b) => b -> a -> Bool
 isKthPower k n = case exactRoot k n of
                    Just _ -> True
                    Nothing -> False
 
--- | @'isPerfectPower' n@ checks whether @n == r^k@ for some @k > 0@.
+-- | @'isPerfectPower' n@ checks whether @n == r^k@ for some @k > 1@.
 isPerfectPower :: Integral a => a -> Bool
 isPerfectPower n
   | n == 0 || n == 1    = True

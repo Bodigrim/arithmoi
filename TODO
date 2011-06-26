@@ -1,3 +1,4 @@
 - Atkin sieve
 - General number field sieve
 - Portability
+- Check whether bit twiddling can be as fast as the lookup table for leading and trailing zeros

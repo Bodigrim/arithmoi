@@ -46,6 +46,7 @@ library
                           Math.NumberTheory.Powers.Cubes
                           Math.NumberTheory.Powers.Fourth
                           Math.NumberTheory.Powers.General
+                          Math.NumberTheory.Primes.Heap
                           Math.NumberTheory.Primes.Testing.Probabilistic
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Logarithms.Internal

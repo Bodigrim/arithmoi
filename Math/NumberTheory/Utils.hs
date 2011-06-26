@@ -1,3 +1,13 @@
+-- |
+-- Module:      Math.NumberTheory.Utils
+-- Copyright:   (c) 2011 Daniel Fischer
+-- Licence:     MIT
+-- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
+-- Stability:   Provisional
+-- Portability: Non-portable (GHC extensions)
+--
+--
+-- Some utilities for bit twiddling.
 {-# LANGUAGE CPP, MagicHash, UnboxedTuples, BangPatterns #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Utils
@@ -19,22 +29,24 @@ import GHC.Integer.GMP.Internals
 
 import Data.Bits
 
--- import Data.Array.Unboxed
--- import Data.Array.ST
--- import Data.Array.Base (unsafeAt, unsafeWrite)
---
---
---
--- trailZeros :: UArray Int Int
--- trailZeros = runST $ do
---   arr <- newArray (0,255) 0
---   unsafeWrite arr 0 8
---   let fill step val idx
---         | idx < 256     = unsafeWrite arr idx val >> fill step val (idx+step)
---         | step < 256    = fill (2*step) (val+1) step
---         | otherwise     = return arr
---   fill 4 1 2
+#if WORD_SIZE_IN_BITS == 64
+#define m5 0x5555555555555555
+#define m3 0x3333333333333333
+#define mf 0x0F0F0F0F0F0F0F0F
+#define m1 0x0101010101010101
+#define sd 56
+#else
+#define m5 0x55555555
+#define m3 0x33333333
+#define mf 0x0F0F0F0F
+#define m1 0x01010101
+#define sd 24
+#endif
 
+
+-- | Remove factors of @2@ and count them. If
+--   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
+--   Precondition: argument strictly positive (not checked).
 {-# RULES
 "shiftToOddCount/Int"       shiftToOddCount = shiftOCInt
 "shiftToOddCount/Word"      shiftToOddCount = shiftOCWord
@@ -44,15 +56,20 @@ shiftToOddCount :: (Integral a, Bits a) => a -> (Int, a)
 shiftToOddCount n = case shiftOCInteger (fromIntegral n) of
                       (z, o) -> (z, fromInteger o)
 
+-- | Specialised version for @'Word'@.
+--   Precondition: argument strictly positive (not checked).
 shiftOCWord :: Word -> (Int, Word)
 shiftOCWord (W# w#) = case shiftToOddCount# 0# w# of
                         (# z# , u# #) -> (I# z#, W# u#)
 
+-- | Specialised version for @'Int'@.
+--   Precondition: argument strictly positive (not checked).
 shiftOCInt :: Int -> (Int, Int)
 shiftOCInt (I# i#) = case shiftToOddCount# 0# (int2Word# i#) of
                         (# z#, u# #) -> (I# z#, I# (word2Int# u#))
 
--- Precondition: argument strictly positive
+-- | Specialised version for @'Integer'@.
+--   Precondition: argument strictly positive (not checked).
 shiftOCInteger :: Integer -> (Int, Integer)
 shiftOCInteger n@(S# i#) =
     case shiftToOddCount# 0# (int2Word# i#) of
@@ -70,8 +87,8 @@ shiftOCInteger n@(J# _ ba#) = case count 0# 0# of
                     (# z#, _ #) -> z#
 
 
--- Shift argument right until the result is odd
--- Precondition: argument strictly positive
+-- | Shift argument right until the result is odd.
+--   Precondition: argument not @0@, not checked.
 shiftToOdd# :: Word# -> Word#
 shiftToOdd# w# =
     case zeroCountArr of
@@ -80,7 +97,8 @@ shiftToOdd# w# =
           8# -> shiftToOdd# (w# `uncheckedShiftRL#` 8#)
           k# -> w# `uncheckedShiftRL#` k#
 
--- like shiftToOdd#, but count the number of places to shift too
+-- | Like @'shiftToOdd#'@, but count the number of places to shift too.
+--   First argument is number of places already shifted.
 shiftToOddCount# :: Int# -> Word# -> (# Int#, Word# #)
 shiftToOddCount# z# w# =
     case zeroCountArr of
@@ -89,25 +107,26 @@ shiftToOddCount# z# w# =
           8# -> shiftToOddCount# (z# +# 8#) (w# `uncheckedShiftRL#` 8#)
           k# -> (# z# +# k#, w# `uncheckedShiftRL#` k# #)
 
+-- | Number of 1-bits in a @'Word#'@.
 bitCountWord# :: Word# -> Int#
-bitCountWord# w# =
-    case bitCountArr of
-      BA arr# ->
-        let go c# 0##   = c#
-            go c# x#    = go (c# +# indexInt8Array# arr# (word2Int# (x# `and#` 255##)))
-                                (x# `uncheckedShiftRL#` 8#)
-        in go 0# w#
+bitCountWord# w# = case bitCountWord (W# w#) of
+                     I# i# -> i#
 
+-- | Number of 1-bits in a @'Word'@.
 bitCountWord :: Word -> Int
-bitCountWord (W# w#) = I# (bitCountWord# w#)
+bitCountWord w = case w - (shiftR w 1 .&. m5) of
+                   !w1 -> case (w1 .&. m3) + (shiftR w1 2 .&. m3) of
+                            !w2 -> case (w2 + shiftR w2 4) .&. mf of
+                                     !w3 -> fromIntegral (shiftR (w3 * m1) sd)
 
+-- | Number of 1-bits in an @'Int'@.
 bitCountInt :: Int -> Int
-bitCountInt (I# i#) = I# (bitCountWord# (int2Word# i#))
+bitCountInt = bitCountWord . fromIntegral
 
--- datatype for the lookup tables
+-- | Datatype for the lookup table.
 data BA = BA ByteArray#
 
--- Number of trailing zero bits in a byte
+-- | Number of trailing zero bits in a byte.
 zeroCountArr :: BA
 zeroCountArr =
     let mkArr s =
@@ -125,27 +144,3 @@ zeroCountArr =
                                 (# _, ba #) -> ba
     in case mkArr realWorld# of
         b -> BA b
-
--- Number of 1 bits in a byte
-bitCountArr :: BA
-bitCountArr =
-    let mkArr s =
-          case newByteArray# 256# s of
-            (# s1, mba #) ->
-              case writeInt8Array# mba 0# 0# s1 of
-                s2 ->
-                  let loop idx st
-                        | idx <# 256#   = case readInt8Array# mba (idx `andInt#` (idx -# 1#)) st of
-                                            (# s', c #) -> case writeInt8Array# mba idx (c +# 1#) s' of
-                                                            nx -> loop (idx +# 1#) nx
-                        | otherwise     = st
-                  in case loop 1# s2 of
-                      s3 -> case unsafeFreezeByteArray# mba s3 of
-                              (# _, ba #) -> ba
-    in case mkArr realWorld# of
-        b -> BA b
-
--- Utility
-
-andInt# :: Int# -> Int# -> Int#
-andInt# i j = word2Int# (int2Word# i `and#` int2Word# j)

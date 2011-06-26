@@ -115,7 +115,7 @@ isCube' !n = isPossibleCube n
 
 -- | Test whether a nonnegative number is possibly a cube.
 --   Only about 0.08% of all numbers pass this test.
---   The precondition @n >= 0q is /not/ checked.
+--   The precondition @n >= 0@ is /not/ checked.
 {-# SPECIALISE isPossibleCube :: Int -> Bool,
                                  Integer -> Bool,
                                  Word -> Bool
