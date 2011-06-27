@@ -17,7 +17,7 @@
 --
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops.
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP, BangPatterns #-}
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
@@ -27,11 +27,11 @@ module Math.NumberTheory.GCD
 import Data.Bits
 import Data.Word
 import Data.Int
-import Data.Array.Unboxed
-import Data.Array.ST
-import Data.Array.Base (unsafeAt, unsafeWrite)
 
 import Math.NumberTheory.GCD.LowLevel (gcdInt, gcdWord, coprimeInt, coprimeWord)
+import Math.NumberTheory.Utils
+
+#include "MachDeps.h"
 
 {-# RULES
 "binaryGCD/Int"     binaryGCD = gcdInt
@@ -39,21 +39,28 @@ import Math.NumberTheory.GCD.LowLevel (gcdInt, gcdWord, coprimeInt, coprimeWord)
 "binaryGCD/Int8"    forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int8
 "binaryGCD/Int16"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int16
 "binaryGCD/Int32"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int32
-"binaryGCD/Word8"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Word8
-"binaryGCD/Word16"  forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Word16
-"binaryGCD/Word32"  forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Word32
+"binaryGCD/Word8"   forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word8
+"binaryGCD/Word16"  forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word16
+"binaryGCD/Word32"  forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word32
   #-}
-{-# SPECIALISE binaryGCD :: Integer -> Integer -> Integer,
-                            Word64 -> Word64 -> Word64,
+#if WORD_SIZE_IN_BITS == 64
+{-# RULES
+"binaryGCD/Int64"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int64
+"binaryGCD/Word64"  forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word64
+  #-}
+#else
+{-# SPECIALISE binaryGCD :: Word64 -> Word64 -> Word64,
                             Int64 -> Int64 -> Int64 #-}
+#endif
+{-# SPECIALISE binaryGCD :: Integer -> Integer -> Integer #-}
 -- | Calculate the greatest common divisor using the binary gcd algorithm.
 --   Depending on type and hardware, that can be considerably faster than
---   'Prelude.gcd'.
+--   @'Prelude.gcd'@ but it may also be significantly slower.
 --
---   It is likely to be faster for 'Int', 'Word' and the @IntN@ and @WordN@ types for
---   @N <= 32@ since those get rewritten to the low-level functions using primops.
+--   There are specialised functions for @'Int'@ and @'Word'@ and rewrite rules
+--   for those and @IntN@ and @WordN@, @N <= WORD_SIZE_IN_BITS@, to use the
+--   specialised variants. These types are worth benchmarking, others probably not.
 --
---   'Int64' and 'Word64' performance should be bearable.
 --   It is very slow for 'Integer' (and probably every type except the abovementioned),
 --   I recommend not using it for those.
 --
@@ -62,9 +69,9 @@ binaryGCD :: (Integral a, Bits a) => a -> a -> a
 binaryGCD a 0 = abs a
 binaryGCD 0 b = abs b
 binaryGCD a b =
-    case shiftToOddCount 0 a of
+    case shiftToOddCount a of
       (!za, !oa) ->
-        case shiftToOddCount 0 b of
+        case shiftToOddCount b of
           (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
 
 {-# SPECIALISE extendedGCD :: Int -> Int -> (Int, Int, Int),
@@ -109,9 +116,16 @@ extendedGCD a b = (d, u, v)
 "coprime/Word16"    forall a b. coprime a (b :: Word16) = coprimeWord (fromIntegral a) (fromIntegral b)
 "coprime/Word32"    forall a b. coprime a (b :: Word32) = coprimeWord (fromIntegral a) (fromIntegral b)
   #-}
-{-# SPECIALISE coprime :: Integer -> Integer -> Bool,
-                          Int64 -> Int64 -> Bool,
-                          Word64 -> Word64 -> Bool#-}
+#if WORD_SIZE_IN_BITS == 64
+{-# RULES
+"coprime/Int64"     forall a b. coprime a (b :: Int64) = coprimeInt (fromIntegral a) (fromIntegral b)
+"coprime/Word64"    forall a b. coprime a (b :: Word64) = coprimeWord (fromIntegral a) (fromIntegral b)
+  #-}
+#else
+{-# SPECIALISE coprime :: Word64 -> Word64 -> Bool,
+                          Int64 -> Int64 -> Bool #-}
+#endif
+{-# SPECIALISE coprime :: Integer -> Integer -> Bool #-}
 -- | Test whether two numbers are coprime using an abbreviated binary gcd algorithm.
 --   A little bit faster than checking @binaryGCD a b == 1@ if one of the arguments
 --   is even, much faster if both are even.
@@ -132,10 +146,12 @@ coprime a b =
 -- Auxiliaries
 
 -- gcd of two odd numbers
-{-# SPECIALISE gcdOdd :: Integer -> Integer -> Integer,
-                         Int64 -> Int64 -> Int64,
+{-# SPECIALISE gcdOdd :: Integer -> Integer -> Integer #-}
+#if WORD_SIZE_IN_BITS < 64
+{-# SPECIALISE gcdOdd :: Int64 -> Int64 -> Int64,
                          Word64 -> Word64 -> Word64
   #-}
+#endif
 {-# INLINE gcdOdd #-}
 gcdOdd :: (Integral a, Bits a) => a -> a -> a
 gcdOdd a b
@@ -144,10 +160,12 @@ gcdOdd a b
   | a > b               = oddGCD a b
   | otherwise           = a
 
-{-# SPECIALISE oddGCD :: Int -> Int -> Int,
-                         Word -> Word -> Word,
-                         Integer -> Integer -> Integer
+{-# SPECIALISE oddGCD :: Integer -> Integer -> Integer #-}
+#if WORD_SIZE_IN_BITS < 64
+{-# SPECIALISE oddGCD :: Int64 -> Int64 -> Int64,
+                         Word64 -> Word64 -> Word64
   #-}
+#endif
 oddGCD :: (Integral a, Bits a) => a -> a -> a
 oddGCD a b =
     case shiftToOdd (a-b) of
@@ -155,40 +173,3 @@ oddGCD a b =
       c | c < b     -> oddGCD b c
         | c > b     -> oddGCD c b
         | otherwise -> c
-
-{-# SPECIALISE shiftToOdd :: Int64 -> Int64,
-                             Word64 -> Word64,
-                             Integer -> Integer
-  #-}
-shiftToOdd :: (Integral a, Bits a) => a -> a
-shiftToOdd n =
-    case zeros n of
-      8 -> shiftToOdd (n `shiftR` 8)
-      k -> n `shiftR` k
-
-{-# SPECIALISE shiftToOddCount :: Int -> Word64 -> (Int, Word64),
-                                  Int -> Int64 -> (Int, Int64),
-                                  Int -> Integer -> (Int, Integer)
-  #-}
-shiftToOddCount :: (Integral a, Bits a) => Int -> a -> (Int, a)
-shiftToOddCount z n =
-    case zeros n of
-      8 -> shiftToOddCount (z+8) (n `shiftR` 8)
-      k -> (z+k, n `shiftR` k)
-
-{-# SPECIALISE zeros :: Int64 -> Int,
-                        Word64 -> Int,
-                        Integer -> Int
-  #-}
-zeros :: Integral a => a -> Int
-zeros n = trailingZerosArr `unsafeAt` (fromIntegral n .&. 255)
-
-trailingZerosArr :: UArray Int Int
-trailingZerosArr = runSTUArray $ do
-    arr <- newArray (0,255) 0
-    unsafeWrite arr 0 8
-    let fill step z idx
-          | idx < 256   = unsafeWrite arr idx z >> fill step z (idx+step)
-          | step < 256  = fill (2*step) (z+1) step
-          | otherwise   = return arr
-    fill 4 1 2

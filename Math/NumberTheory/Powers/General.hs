@@ -26,10 +26,6 @@ import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
--- import Data.Array.Unboxed
--- import Data.Array.ST
--- import Data.Array.Base (unsafeAt, unsafeWrite)
-
 import Data.Bits
 import Data.Word
 import Data.List (foldl')
@@ -163,9 +159,13 @@ highestPower n
   | abs n <= 1  = (n,3)
   | n < 0       = case integerHighPower (toInteger $ negate n) of
                     (r,e) -> case shiftToOddCount e of
-                               (k, o) -> (negate $ fromInteger (r^(2^k :: Int)), o)
+                               (k, o) -> (negate $ fromInteger (sqr k r), o)
   | otherwise   = case integerHighPower (toInteger n) of
                     (r,e) -> (fromInteger r, e)
+    where
+      sqr :: Int -> Integer -> Integer
+      sqr 0 m = m
+      sqr k m = sqr (k-1) (m*m)
 
 -- | @'largePFPower' bd n@ produces the pair @(b,k)@ with the largest
 --   exponent @k@ such that @n == b^k@, where @bd > 1@ (it is expected

@@ -72,11 +72,10 @@ push !c !p !w = go
     go _ = H c p w E E
 #else
 push c p w (H hc hp hw l r)
-    | c < hc    = {-# SCC "pushTop" #-} H c p w (push hc hp hw r) l
-    | otherwise = {-# SCC "pushBubble" #-} H hc hp hw (push c p w r) l
+    | c < hc    = H c p w (push hc hp hw r) l
+    | otherwise = H hc hp hw (push c p w r) l
 push c p w E = H c p w E E
 #endif
---{-# INLINE push #-}
 
 -- bubble down increased top to regain heap invariant
 {-# SPECIALISE bubble :: Hipp Int -> Hipp Int #-}
@@ -112,7 +111,6 @@ bubble h@(H c p w (H lc lp lw _ _) _)
     | otherwise = H lc lp lw (H c p w E E) E
 #endif
 bubble h = h
---{-# INLINE bubble #-}
 
 -- join two heaps and composite-data, GHC 7 doesn't do well on the old bubble.
 #if __GLASGOW_HASKELL__ >= 700
@@ -150,7 +148,7 @@ mkHipp !c !p !w = go
 {-# SPECIALISE inc :: Hipp Integer -> Hipp Integer #-}
 inc :: Integral a => Hipp a -> Hipp a
 inc (H c p i l r)
-        = {-# SCC "bubble" #-} bubble (H (c+p*step i) p (nextIndex i) l r)
+        = bubble (H (c+p*step i) p (nextIndex i) l r)
 inc h   = h
 
 -- while top of heap equals composite, increase and re-heap
@@ -159,7 +157,7 @@ inc h   = h
 {-# SPECIALISE adjust :: Integer -> Hipp Integer -> Hipp Integer #-}
 adjust :: Integral a => a -> Hipp a -> Hipp a
 adjust cm h@(H v _ _ _ _)
-    | {-# SCC "adjust" #-} cm == v   = adjust cm (inc h)
+    | cm == v   = adjust cm (inc h)
 adjust _ h      = h
 
 -- build a heap from a sorted list of Del's
@@ -201,10 +199,10 @@ simpleSieve _ _ _ = []
 {-# SPECIALISE feederSieve :: [Del Integer] -> Hipp Integer -> Hipp Integer -> Integer -> Int -> [Del Integer] #-}
 feederSieve :: Integral a => [Del a] -> Hipp a -> Hipp a -> a -> Int -> [Del a]
 feederSieve dls@((D s p u):ds) sh@(H sc _ _ _ _) lh@(H lc _ _ _ _) cd i
-    | cd == sc  = {-# SCC "scfS" #-} feederSieve dls (adjust cd (inc sh)) (adjust cd lh) cd' j
-    | cd == lc  = {-# SCC "lcfS" #-} feederSieve dls sh (adjust cd (inc lh)) cd' j
-    | cd == s   = {-# SCC "sqfS" #-} feederSieve ds sh (push (s + p*step u) p (nextIndex u) lh) cd' j
-    | otherwise = {-# SCC "prfS" #-} D (cd*cd) cd i : feederSieve dls sh lh cd' j
+    | cd == sc  = feederSieve dls (adjust cd (inc sh)) (adjust cd lh) cd' j
+    | cd == lc  = feederSieve dls sh (adjust cd (inc lh)) cd' j
+    | cd == s   = feederSieve ds sh (push (s + p*step u) p (nextIndex u) lh) cd' j
+    | otherwise = D (cd*cd) cd i : feederSieve dls sh lh cd' j
       where
         !cd' = cd + step i
         !j   = nextIndex i
@@ -217,7 +215,7 @@ feederSieve _ _ _ _ _ = []
 {-# SPECIALISE feeder :: Word -> Int -> [Del Word] #-}
 {-# SPECIALISE feeder :: Integer -> Int -> [Del Integer] #-}
 feeder :: Integral a => a -> Int -> [Del a]
-feeder p i = {-# SCC "feederSieve" #-} feederSieve lrg sh lh p i
+feeder p i = feederSieve lrg sh lh p i
       where
         (sml,D s lp w : lrg) = splitAt SH_SIZE (D q p i : {-# SCC "simple" #-} simpleSieve (H q p i E E) (p+step i) (nextIndex i))
         sh = buildH sml
@@ -231,10 +229,10 @@ feeder p i = {-# SCC "feederSieve" #-} feederSieve lrg sh lh p i
 {-# SPECIALISE primeSieve :: [Del Integer] -> Hipp Integer -> Hipp Integer -> Integer -> Int -> [Integer] #-}
 primeSieve :: Integral a => [Del a] -> Hipp a -> Hipp a -> a -> Int -> [a]
 primeSieve dls@((D s p u):ds) sh@(H sc _ _ _ _) lh@(H lc _ _ _ _) cd i
-    | cd == sc  = primeSieve dls ({-# SCC "scpS1" #-} adjust cd (inc sh)) ({-# SCC "scpS2" #-} adjust cd lh) cd' j
-    | cd == lc  = primeSieve dls sh ({-# SCC "lcpS" #-} adjust cd (inc lh)) cd' j
-    | cd == s   = primeSieve ds sh ({-# SCC "sqpS" #-} push (s + p*step u) p (nextIndex u) lh) cd' j
-    | otherwise = cd : {-# SCC "prpS" #-} primeSieve dls sh lh cd' j
+    | cd == sc  = primeSieve dls (adjust cd (inc sh)) (adjust cd lh) cd' j
+    | cd == lc  = primeSieve dls sh (adjust cd (inc lh)) cd' j
+    | cd == s   = primeSieve ds sh (push (s + p*step u) p (nextIndex u) lh) cd' j
+    | otherwise = cd : primeSieve dls sh lh cd' j
       where
         !cd' = cd + step i
         !j   = nextIndex i
@@ -272,7 +270,7 @@ sieveFrom from
     | fromIntegral from < (32768 :: Integer)
         = dropWhile (< from) (foldr ((:) . fromIntegral) (sieve sp si) wheelPrimes)
     | otherwise
-        = {-# SCC "primeSieve" #-} primeSieve dls sh lh start (nextIndex i0)
+        = primeSieve dls sh lh start (nextIndex i0)
       where
         -- trick the compiler into not CAFing feeder 17 0
         sp  | odd from  = 17
@@ -285,11 +283,11 @@ sieveFrom from
         before      = 30030*q + fromIntegral (remainders `unsafeAt` i0)
         -- first candidate
         start       = before + step i0
-        (sml, lrg)  = splitAt SH_SIZE ({-# SCC "feeder" #-} feeder sp si)
-        sh          = {-# SCC "sHeap" #-} foldl' pushD E [findMulIx p | D _ p _ <- sml]
-        (!lh, dls)   = {-# SCC "munch" #-} munch E lrg
-        pushD h (c, p, i) = {-# SCC "pushD" #-} push c p i h
-        findMulIx p = {-# SCC "findMulIx" #-} ((p*mp), p, (nextIndex ip))
+        (sml, lrg)  = splitAt SH_SIZE (feeder sp si)
+        sh          = foldl' pushD E [findMulIx p | D _ p _ <- sml]
+        (!lh, dls)   = munch E lrg
+        pushD h (c, p, i) = push c p i h
+        findMulIx p = ((p*mp), p, (nextIndex ip))
           where
             fpq         = before `quot` p
             (qq, qr)    = (fpq-17) `quotRem` 30030
@@ -308,7 +306,7 @@ sieveFrom from
 {-# SPECIALISE sieve :: Word -> Int -> [Word] #-}
 {-# SPECIALISE sieve :: Integer -> Int -> [Integer] #-}
 sieve :: Integral a => a -> Int -> [a]
-sieve p i = {-# SCC "primeSieve" #-} primeSieve lrg sh lh p i
+sieve p i = primeSieve lrg sh lh p i
       where
         (sml,D s lp j : lrg) = splitAt SH_SIZE (feeder p i)
         sh = buildH sml
@@ -346,7 +344,7 @@ findIx r
 
 -- array of numbers coprime to all wheel primes in wheel range
 remainders :: UArray Int Int
-remainders = {-# SCC "remainders" #-} runSTUArray $ do
+remainders = runSTUArray $ do
     sar <- newArray (0,30029) True :: ST s (STUArray s Int Bool)
     let n2 30030 = return ()
         n2 i = unsafeWrite sar i False >> n2 (i+2)
@@ -380,7 +378,7 @@ remainders = {-# SCC "remainders" #-} runSTUArray $ do
 
 -- distance from one coprime remainder to the next
 steps :: UArray Int Int
-steps = {-# SCC "steps" #-} runSTUArray $ do
+steps = runSTUArray $ do
     sar <- newArray_ (0,5759) :: ST s (STUArray s Int Int)
     let loop 5759 p = do
             unsafeWrite sar 5759 (30047-p)

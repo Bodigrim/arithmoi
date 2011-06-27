@@ -63,9 +63,9 @@ gcdWord# :: Word# -> Word# -> Word#
 gcdWord# a# 0## = a#
 gcdWord# 0## b# = b#
 gcdWord# a# b#  =
-    case shiftToOddCount# 0# a# of
+    case shiftToOddCount# a# of
       (# za#, oa# #) ->
-        case shiftToOddCount# 0# b# of
+        case shiftToOddCount# b# of
           (# zb#, ob# #) -> gcdWordOdd# oa# ob# `uncheckedShiftL#` (if za# <# zb# then za# else zb#)
 
 -- | Test whether two 'Word#'s are coprime.
