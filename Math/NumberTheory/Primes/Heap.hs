@@ -62,7 +62,7 @@ push :: Integral a => a -> a -> Int -> Hipp a -> Hipp a
 -- GHC 7 does not like the old code, so it gets a new implementation.
 -- That is faster than what it does with the old code, but still slower
 -- than what GHC 6 did with it. :(
-#if __GLASGOW_HASKELL__ >= 800
+#if __GLASGOW_HASKELL__ >= 700
 push !c !p !w = go
   where
     less = (< c)
@@ -84,7 +84,7 @@ push c p w E = H c p w E E
 bubble :: Integral a => Hipp a -> Hipp a
 -- Again, GHC 6 fared better, so new code for GHC 7, still
 -- not as good as GHC 6 was.
-#if __GLASGOW_HASKELL__ >= 800
+#if __GLASGOW_HASKELL__ >= 700
 bubble h@(H c p w l r) =
     case r of
         E -> case l of
@@ -113,7 +113,7 @@ bubble h@(H c p w (H lc lp lw _ _) _)
 bubble h = h
 
 -- join two heaps and composite-data, GHC 7 doesn't do well on the old bubble.
-#if __GLASGOW_HASKELL__ >= 800
+#if __GLASGOW_HASKELL__ >= 700
 {-# SPECIALISE
     mkHipp :: Int -> Int -> Int -> Hipp Int -> Hipp Int -> Hipp Int,
               Integer -> Integer -> Int -> Hipp Integer -> Hipp Integer -> Hipp Integer,
@@ -148,7 +148,7 @@ mkHipp !c !p !w = go
 {-# SPECIALISE inc :: Hipp Integer -> Hipp Integer #-}
 inc :: Integral a => Hipp a -> Hipp a
 inc (H c p i l r)
-        = bubble (H (c+p*step i) p (nextIndex i) l r)
+  = {-# SCC "incBubble" #-} bubble (H (c+p*step i) p (nextIndex i) l r)
 inc h   = h
 
 -- while top of heap equals composite, increase and re-heap
@@ -181,16 +181,16 @@ buildH (D s p w : tl) = H s p w l r
 {-# SPECIALISE simpleSieve :: Hipp Integer -> Integer -> Int -> [Del Integer] #-}
 simpleSieve :: Integral a => Hipp a -> a -> Int -> [Del a]
 simpleSieve h@(H nc _ _ _ _) cd !i
-    | cd < nc   = D s cd i : simpleSieve (push s cd i h) (cd + step i) (nextIndex i)
+  | cd < nc   = D s cd i : simpleSieve ({-# SCC "simplePush" #-} push s cd i h) (cd + step i) (nextIndex i)
     | otherwise = simpleSieve (adjust cd h) (cd + step i) (nextIndex i)
       where
         s = cd*cd
-simpleSieve _ _ _ = []
+simpleSieve _ _ _ = []  -- would violate an invariant
 
 -- Feeder sieve, produces composites at the rate of the progress of the main sieve,
 -- hence primes at about the square root of it, thus needs about fourth root heap
 -- space. The two-step feeding makes the feeder produce faster and hence the main
--- sieve (since we have only one O(n^0.25) heap and not two.
+-- sieve (since we have only one O(n^0.5) heap and not two.
 -- Using two heaps, one small for multiples of small primes which change often
 -- and one for multiples of larger primes which are less frequently updated
 -- speeds things up.
@@ -206,7 +206,7 @@ feederSieve dls@((D s p u):ds) sh@(H sc _ _ _ _) lh@(H lc _ _ _ _) cd i
       where
         !cd' = cd + step i
         !j   = nextIndex i
-feederSieve _ _ _ _ _ = []
+feederSieve _ _ _ _ _ = []  -- invariant violated
 
 -- Build the feeder sieve, arguments are
 -- first prime whose multiples have to be eliminated
@@ -229,14 +229,14 @@ feeder p i = feederSieve lrg sh lh p i
 {-# SPECIALISE primeSieve :: [Del Integer] -> Hipp Integer -> Hipp Integer -> Integer -> Int -> [Integer] #-}
 primeSieve :: Integral a => [Del a] -> Hipp a -> Hipp a -> a -> Int -> [a]
 primeSieve dls@((D s p u):ds) sh@(H sc _ _ _ _) lh@(H lc _ _ _ _) cd i
-    | cd == sc  = primeSieve dls (adjust cd (inc sh)) (adjust cd lh) cd' j
+    | cd == sc  = primeSieve dls ({-# SCC "adjSmall" #-} adjust cd (inc sh)) ({-# SCC "adjLarge" #-}adjust cd lh) cd' j
     | cd == lc  = primeSieve dls sh (adjust cd (inc lh)) cd' j
     | cd == s   = primeSieve ds sh (push (s + p*step u) p (nextIndex u) lh) cd' j
     | otherwise = cd : primeSieve dls sh lh cd' j
       where
         !cd' = cd + step i
         !j   = nextIndex i
-primeSieve _ _ _ _ _ = []
+primeSieve _ _ _ _ _ = []   -- invariant violated
 
 -- | A list of primes. The sieve does not handle overflow, hence for
 --   bounded types, garbage occurs near @'maxBound'@. If primes that
@@ -282,10 +282,10 @@ sieveFrom from
         -- last number coprime to all wheel primes < from
         before      = 30030*q + fromIntegral (remainders `unsafeAt` i0)
         -- first candidate
-        start       = before + step i0
+        !start       = before + step i0
         (sml, lrg)  = splitAt SH_SIZE (feeder sp si)
-        sh          = foldl' pushD E [findMulIx p | D _ p _ <- sml]
-        (!lh, dls)   = munch E lrg
+        !sh          = foldl' pushD E [findMulIx p | D _ p _ <- sml]
+        (lh, dls)   = {-# SCC "munch" #-} munch E lrg
         pushD h (c, p, i) = push c p i h
         findMulIx p = ((p*mp), p, (nextIndex ip))
           where
@@ -297,7 +297,7 @@ sieveFrom from
             | before < s    = (h,dels)
             | otherwise     = munch h' ds
               where
-                (c, pr, i)    = findMulIx p
+                !(!c, pr, i)    = findMulIx p
                 h'          = push c pr i h
         munch h [] = (h,[])
 
@@ -309,7 +309,7 @@ sieve :: Integral a => a -> Int -> [a]
 sieve p i = primeSieve lrg sh lh p i
       where
         (sml,D s lp j : lrg) = splitAt SH_SIZE (feeder p i)
-        sh = buildH sml
+        !sh = buildH sml
         lh = H s lp j E E
 
 -- next step index, we have 5760 numbers coprime to all wheel
