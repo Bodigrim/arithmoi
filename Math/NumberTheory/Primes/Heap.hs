@@ -18,7 +18,7 @@
 -- occurs before overflow), so this is included as a safety net (and a
 -- reference to check the correctness of the bit sieve).
 --
-{-# LANGUAGE BangPatterns, CPP #-}
+{-# LANGUAGE BangPatterns, CPP, MonoLocalBinds #-}
 {-# OPTIONS_GHC -O2 -funbox-strict-fields #-}
 #if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fno-float-in -fno-spec-constr -fno-full-laziness #-}
@@ -43,7 +43,7 @@ import Data.Word
 data Del a = D !a !a {-# UNPACK #-} !Int
 
 step :: Integral a => Int -> a
-{-# INLINE step #-}
+-- {-# INLINE step #-}
 step i = fromIntegral (steps `unsafeAt` i)
 
 -- Priority queue as baby heap
@@ -62,7 +62,7 @@ push :: Integral a => a -> a -> Int -> Hipp a -> Hipp a
 -- GHC 7 does not like the old code, so it gets a new implementation.
 -- That is faster than what it does with the old code, but still slower
 -- than what GHC 6 did with it. :(
-#if __GLASGOW_HASKELL__ >= 700
+#if __GLASGOW_HASKELL__ >= 800
 push !c !p !w = go
   where
     less = (< c)
@@ -84,7 +84,7 @@ push c p w E = H c p w E E
 bubble :: Integral a => Hipp a -> Hipp a
 -- Again, GHC 6 fared better, so new code for GHC 7, still
 -- not as good as GHC 6 was.
-#if __GLASGOW_HASKELL__ >= 700
+#if __GLASGOW_HASKELL__ >= 800
 bubble h@(H c p w l r) =
     case r of
         E -> case l of
@@ -113,7 +113,7 @@ bubble h@(H c p w (H lc lp lw _ _) _)
 bubble h = h
 
 -- join two heaps and composite-data, GHC 7 doesn't do well on the old bubble.
-#if __GLASGOW_HASKELL__ >= 700
+#if __GLASGOW_HASKELL__ >= 800
 {-# SPECIALISE
     mkHipp :: Int -> Int -> Int -> Hipp Int -> Hipp Int -> Hipp Int,
               Integer -> Integer -> Int -> Hipp Integer -> Hipp Integer -> Hipp Integer,
@@ -139,7 +139,7 @@ mkHipp !c !p !w = go
                 | less rc -> H rc rp rw l (go rl rr)
                 | otherwise -> H c p w l r
             _ -> error "Heap invariant violated, left smaller than right!"
-{-# INLINE mkHipp #-}
+-- {-# INLINE mkHipp #-}
 #endif
 
 -- increase the top of the heap and re-heap

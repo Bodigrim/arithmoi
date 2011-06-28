@@ -11,6 +11,11 @@
 {-# LANGUAGE CPP, BangPatterns #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
     ( primes
+    , sieveFrom
+    , PrimeSieve(..)
+    , primeList
+    , primeSieve
+    , nthPrime
     ) where
 
 #include "MachDeps.h"
@@ -25,6 +30,7 @@ import Data.Word
 
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils
+import Math.NumberTheory.Primes.Counting.Approximate
 
 -- Sieve in 128K chunks.
 -- Large enough to get something done per chunk
@@ -51,13 +57,31 @@ sieveWords = sieveBytes `quot` SIZEOF_HSWORD
 type CacheWord = Word
 #define RMASK 63
 #define WSHFT 6
+#define TOPB 32
+#define TOPM 0xFFFFFFFF
 #else
 type CacheWord = Word64
 #define RMASK 31
 #define WSHFT 5
+#define TOPB 16
+#define TOPM 0xFFFF
 #endif
 
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
+
+primeSieve :: Integer -> PrimeSieve
+primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
+
+primeList :: PrimeSieve -> [Integer]
+primeList (PS 0 bs) = 2:3:5:[fromIntegral (toPrim i) | let (lo,hi) = bounds bs
+                                                     , i <- [lo .. hi]
+                                                     , unsafeAt bs i
+                                                     ]
+primeList (PS vO bs) = [vO + fromIntegral (toPrim i)
+                            | let (lo,hi) = bounds bs
+                            , i <- [lo .. hi]
+                            , unsafeAt bs i
+                            ]
 
 primes :: [Integer]
 primes = 2:3:5:concat [[vO + fromIntegral (toPrim i) | i <- [0 .. li], unsafeAt bs i]
@@ -220,7 +244,7 @@ growCache offset plim old = do
 
 -- Danger: relies on start and end being the first resp. last
 -- index in a Word
--- Do not use except in growCache
+-- Do not use except in growCache and psieveFrom
 {-# INLINE countFromTo #-}
 countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
 countFromTo start end ba = do
@@ -233,6 +257,132 @@ countFromTo start end ba = do
             w <- unsafeRead wa i
             count (acc + bitCountWord w) (i+1)
     count 0 sb
+
+-- sieve from n
+
+sieveFrom :: Integer -> [Integer]
+sieveFrom n
+    | n < 100000    = dropWhile (< n) primes
+    | otherwise     = case psieveFrom n of
+                        ps -> dropWhile (< n) (ps >>= primeList)
+
+psieveFrom :: Integer -> [PrimeSieve]
+psieveFrom n
+  | n < 8     = psieveList
+  | otherwise = makeSieves plim sqlim bitOff valOff cache
+    where
+      k0 = (n-7) `quot` 30
+      valOff = 30*k0
+      bitOff = 8*k0
+      start = valOff+7
+      ssr = integerSquareRoot (start-1) + 1
+      end1 = start - 6 + fromIntegral sieveRange
+      plim0 = integerSquareRoot end1
+      plim = plim0 + 4801 - (plim0 `rem` 4800)
+      sqlim = plim*plim
+      cache = runSTUArray $ do
+          sieve <- sieveTo plim
+          (lo,hi) <- getBounds sieve
+          pct <- countFromTo lo hi sieve
+          new <- unsafeNewArray_ (0,2*pct-1) ::  ST s (STUArray s Int CacheWord)
+          let fill j indx
+                | hi < indx = return new
+                | otherwise = do
+                  p <- unsafeRead sieve indx
+                  if p
+                    then do
+                      let !i = indx .&. 7
+                          !moff = i `shiftL` 3
+                          k :: Integer
+                          k = fromIntegral (indx `shiftR` 3)
+                          p = 30*k+fromIntegral (rho i)
+                          q0 = (start-1) `quot` p
+                          (b0,r0) = idxPr q0
+                          (b1,r1) | r0 == 7 = (b0+1,0)
+                                  | otherwise = (b0,r0+1)
+                          strt0 = ((k*(30*fromIntegral b1 + fromIntegral (rho r1))
+                                        + fromIntegral b1 * fromIntegral (rho i)
+                                        + fromIntegral (mu (moff + r1))) `shiftL` 3)
+                                            + fromIntegral (nu (moff + r1))
+                          strt1 = ((k*(30*k + fromIntegral (2*rho i))
+                                      + fromIntegral (byte i)) `shiftL` 3)
+                                          + fromIntegral (idx i)
+                          (strt2,r2)
+                              | p < ssr   = (strt0 - bitOff,r1)
+                              | otherwise = (strt1 - bitOff, i)
+                          !strt = fromIntegral strt2 .&. 0xFFFFF
+                          !skip = fromIntegral (strt2 `shiftR` 20)
+                          !ixes = fromIntegral indx `shiftL` 23 + strt `shiftL` 3 + fromIntegral r2
+                      unsafeWrite new j skip
+                      unsafeWrite new (j+1) ixes
+                      fill (j+2) (indx+1)
+                    else fill j (indx+1)
+          fill 0 0
+
+-- prime counting
+
+nthPrime :: Integer -> Integer
+nthPrime 1      = 2
+nthPrime 2      = 3
+nthPrime 3      = 5
+nthPrime 4      = 7
+nthPrime 5      = 11
+nthPrime 6      = 13
+nthPrime n
+  | n < 1       = error "nthPrime: negative argument"
+  | n < 200000  = let bd0 = nthPrimeApprox n
+                      bnd = bd0 + bd0 `quot` 32 + 37
+                      !sv = primeSieve bnd
+                  in countToNth (n-3) [sv]
+  | otherwise   = countToNth (n-3) (psieveList)
+
+countToNth :: Integer -> [PrimeSieve] -> Integer
+countToNth !n ps = runST (countDown n ps)
+
+countDown :: Integer -> [PrimeSieve] -> ST s Integer
+countDown !n (ps@(PS v0 bs) : more)
+  | n > 278734 || (v0 /= 0 && n > 253000) = do
+    ct <- countAll ps
+    countDown (n - fromIntegral ct) more
+  | otherwise = do
+    stu <- unsafeThaw bs
+    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
+    let go !k i
+          | i == sieveWords  = countDown k more
+          | otherwise   = do
+            w <- unsafeRead wa i
+            let !bc = fromIntegral $ bitCountWord w
+            if bc < k
+                then go (k-bc) (i+1)
+                else let !j = fromIntegral (bc - k)
+                         !px = top w j (fromIntegral bc)
+                     in return (v0 + toPrim (px+(i `shiftL` WSHFT)))
+    go n 0
+countDown _ [] = error "Prime stream ended prematurely"
+
+countAll :: PrimeSieve -> ST s Int
+countAll (PS _ bs) = do
+    stu <- unsafeThaw bs
+    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
+    let go !ct i
+            | i == sieveWords = return ct
+            | otherwise = do
+                w <- unsafeRead wa i
+                go (ct + bitCountWord w) (i+1)
+    go 0 0
+
+top :: Word -> Int -> Int -> Int
+top w j bc = go 0 TOPB TOPM bn w
+    where
+      !bn = bc-j
+      go !bs a msk !ix 0 = error "Too few bits set"
+      go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
+      go bs a msk ix wd =
+        case bitCountWord (wd .&. msk) of
+          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `shiftR` a)
+             | otherwise ->
+               let !na = a `quot` 2
+               in go bs na (msk `shiftR` na) ix wd
 
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
@@ -298,3 +448,35 @@ idx i = unsafeAt startIdx i
 
 startIdx :: UArray Int Int
 startIdx = listArray (0,7) [4,7,4,4,7,4,7,7]
+
+{-# INLINE mu #-}
+mu :: Int -> Int
+mu i = unsafeAt mArr i
+
+{-# INLINE nu #-}
+nu :: Int -> Int
+nu i = unsafeAt nArr i
+
+mArr :: UArray Int Int
+mArr = listArray (0,63)
+        [ 1,  2,  2,  3,  4,  5,  6,  7
+        , 2,  3,  4,  6,  6,  8, 10, 11
+        , 2,  4,  5,  7,  8,  9, 12, 13
+        , 3,  6,  7,  9, 10, 12, 16, 17
+        , 4,  6,  8, 10, 11, 14, 18, 19
+        , 5,  8,  9, 12, 14, 17, 22, 23
+        , 6, 10, 12, 16, 18, 22, 27, 29
+        , 7, 11, 13, 17, 19, 23, 29, 31
+        ]
+
+nArr :: UArray Int Int
+nArr = listArray (0,63)
+        [ 4, 3, 7, 6, 2, 1, 5, 0
+        , 3, 7, 5, 0, 6, 2, 4, 1
+        , 7, 5, 4, 1, 0, 6, 3, 2
+        , 6, 0, 1, 4, 5, 7, 2, 3
+        , 2, 6, 0, 5, 7, 3, 1, 4
+        , 1, 2, 6, 7, 3, 4, 0, 5
+        , 5, 4, 3, 2, 1, 0, 7, 6
+        , 0, 1, 2, 3, 4, 5, 6, 7
+        ]
