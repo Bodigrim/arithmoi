@@ -16,6 +16,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , primeList
     , primeSieve
     , nthPrime
+    , factorSieve
     ) where
 
 #include "MachDeps.h"
@@ -69,8 +70,23 @@ type CacheWord = Word64
 
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
 
+data FactorSieve = FS {-# UNPACK #-} !Int {-# UNPACK #-} !(UArray Int Int)
+
+data TotientSieve = TS {-# UNPACK #-} !Int {-# UNPACK #-} !(UArray Int Int)
+
+data CarmichaelSieve = CS {-# UNPACK #-} !Int {-# UNPACK #-} !(UArray Int Int)
+
 primeSieve :: Integer -> PrimeSieve
 primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
+
+factorSieve :: Integer -> FactorSieve
+factorSieve bound
+  | fromIntegral (maxBound :: Int) < bound  = error "factorSieve: would overflow"
+  | bound < 2   = error "factorSieve: bound must be at least 2"
+  | bound < 7   = FS bnd (array (0,0) [(0,0)])
+  | otherwise   = FS bnd (spfSieve bnd)
+    where
+      bnd = fromInteger bound
 
 primeList :: PrimeSieve -> [Integer]
 primeList (PS 0 bs) = 2:3:5:[fromIntegral (toPrim i) | let (lo,hi) = bounds bs
@@ -203,6 +219,40 @@ sieveTo bound = arr
                             tick stp off i (start k i))
                 sift (ix+1)
         sift 0
+
+spfSieve :: Int -> UArray Int Int
+spfSieve bound = runSTUArray $ do
+  let (octs,lidx) = idxPr bound
+      !mxidx = 8*octs+lidx
+      mxval = 30*octs + rho lidx
+      !mxsve = integerSquareRoot mxval
+      (kr,r) = idxPr mxsve
+      !svbd = 8*kr+r
+  ar <- unsafeNewArray_ (0,mxidx) :: ST s (STUArray s Int Int)
+  let fill i
+        | mxidx < i = return ()
+        | otherwise = do
+          unsafeWrite ar i i
+          fill (i+1)
+      start k i = 8*(k*(30*k+2*rho i) + byte i) + idx i
+      tick p stp off j ix
+        | mxidx < ix    = return ()
+        | otherwise = do
+          s <- unsafeRead ar ix
+          when (s == ix) (unsafeWrite ar ix p)
+          tick p stp off ((j+1) .&. 7) (ix + stp*delta j + tau (off+j))
+      sift ix
+        | svbd < ix = return ar
+        | otherwise = do
+          p <- unsafeRead ar ix
+          when (p == ix)  (do let i = ix .&. 7
+                                  k = ix `shiftR` 3
+                                  !off = i `shiftL` 3
+                                  !stp = ix - i
+                              tick ix stp off i (start k i))
+          sift (ix+1)
+  fill 0
+  sift 0
 
 growCache :: Integer -> Integer -> UArray Int CacheWord -> ST s (STUArray s Int CacheWord)
 growCache offset plim old = do
@@ -387,19 +437,25 @@ top w j bc = go 0 TOPB TOPM bn w
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
 
+{-# SPECIALISE idxPr :: Integer -> (Int,Int),
+                        Int -> (Int,Int)
+  #-}
 {-# INLINE idxPr #-}
-idxPr :: Integer -> (Int,Int)
-idxPr n0 = (fromInteger bytes0, rm3)
+idxPr :: Integral a => a -> (Int,Int)
+idxPr n0 = (fromIntegral bytes0, rm3)
   where
-    n = if (fromInteger n0 .&. 1 == (1 :: Int))
+    n = if (fromIntegral n0 .&. 1 == (1 :: Int))
             then n0 else (n0-1)
     (bytes0,rm0) = (n-7) `quotRem` 30
-    rm1 = fromInteger rm0
+    rm1 = fromIntegral rm0
     rm2 = rm1 `quot` 3
     rm3 = min 7 (if rm2 > 5 then rm2-1 else rm2)
 
+{-# SPECIALISE toPrim :: Int -> Integer,
+                         Int -> Int
+    #-}
 {-# INLINE toPrim #-}
-toPrim :: Int -> Integer
+toPrim :: Integral a => Int -> a
 toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
   where
     i = ix .&. 7
