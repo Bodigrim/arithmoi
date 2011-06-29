@@ -18,6 +18,7 @@ module Math.NumberTheory.Utils
     , bitCountWord
     , bitCountInt
     , bitCountWord#
+    , uncheckedShiftR
     ) where
 
 #include "MachDeps.h"
@@ -44,6 +45,8 @@ import Data.Bits
 #define sd 24
 #endif
 
+uncheckedShiftR :: Word -> Int -> Word
+uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 
 -- | Remove factors of @2@ and count them. If
 --   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.

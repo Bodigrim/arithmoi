@@ -8,7 +8,7 @@
 --
 -- Sieve
 --
-{-# LANGUAGE CPP, BangPatterns #-}
+{-# LANGUAGE CPP, BangPatterns, ScopedTypeVariables #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
     ( primes
     , sieveFrom
@@ -17,6 +17,8 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , primeSieve
     , nthPrime
     , factorSieve
+    , totientSieve
+    , carmichaelSieve
     ) where
 
 #include "MachDeps.h"
@@ -32,6 +34,7 @@ import Data.Word
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Primes.Counting.Approximate
+-- import Math.NumberTheory.Primes.Sieve.Types
 
 -- Sieve in 128K chunks.
 -- Large enough to get something done per chunk
@@ -84,9 +87,28 @@ factorSieve bound
   | fromIntegral (maxBound :: Int) < bound  = error "factorSieve: would overflow"
   | bound < 2   = error "factorSieve: bound must be at least 2"
   | bound < 7   = FS bnd (array (0,0) [(0,0)])
-  | otherwise   = FS bnd (spfSieve bnd)
+  | otherwise   = FS bnd (runSTUArray (spfSieve bnd))
     where
       bnd = fromInteger bound
+
+totientSieve :: Integer -> TotientSieve
+totientSieve bound
+  | fromIntegral (maxBound :: Int) < bound  = error "totientSieve: would overflow"
+  | bound < 2   = error "totientSieve: bound must be at least 2"
+  | bound < 7   = TS bnd (array (0,0) [(0,0)])
+  | otherwise   = TS bnd (totSieve bnd)
+    where
+      bnd = fromInteger bound
+
+carmichaelSieve :: Integer -> CarmichaelSieve
+carmichaelSieve bound
+  | fromIntegral (maxBound :: Int) < bound  = error "carmichaelSieve: would overflow"
+  | bound < 2   = error "carmichaelSieve: bound must be at least 2"
+  | bound < 7   = CS bnd (array (0,0) [(0,0)])
+  | otherwise   = CS bnd (carSieve bnd)
+    where
+      bnd = fromInteger bound
+
 
 primeList :: PrimeSieve -> [Integer]
 primeList (PS 0 bs) = 2:3:5:[fromIntegral (toPrim i) | let (lo,hi) = bounds bs
@@ -158,7 +180,7 @@ makeSieves plim sqlim bitOff valOff cache
 
 slice :: STUArray s Int Word -> ST s (STUArray s Int Bool)
 slice cache = do
-    (0,hi) <- getBounds cache
+    hi <- snd `fmap` getBounds cache
     sieve <- newArray (0,lastIndex) True
     let treat pr
           | hi < pr     = return sieve
@@ -193,7 +215,7 @@ slice cache = do
 sieveTo :: Integer -> ST s (STUArray s Int Bool)
 sieveTo bound = arr
   where
-    (!bytes,!lidx) = idxPr bound
+    (bytes,lidx) = idxPr bound
     !mxidx = 8*bytes+lidx
     mxval = 30*fromIntegral bytes + fromIntegral (rho lidx)
     !mxsve = integerSquareRoot mxval
@@ -220,8 +242,8 @@ sieveTo bound = arr
                 sift (ix+1)
         sift 0
 
-spfSieve :: Int -> UArray Int Int
-spfSieve bound = runSTUArray $ do
+spfSieve :: forall s. Int -> ST s (STUArray s Int Int)
+spfSieve bound = do
   let (octs,lidx) = idxPr bound
       !mxidx = 8*octs+lidx
       mxval = 30*octs + rho lidx
@@ -254,9 +276,51 @@ spfSieve bound = runSTUArray $ do
   fill 0
   sift 0
 
+totSieve :: Int -> UArray Int Int
+totSieve bound = runSTUArray $ do
+    ar <- spfSieve bound
+    (_,lst) <- getBounds ar
+    let tot ix
+          | lst < ix    = return ar
+          | otherwise   = do
+            spf <- unsafeRead ar ix
+            if spf == ix
+                then unsafeWrite ar ix (toPrim ix - 1)
+                else do let !p = toPrim spf
+                            !n = toPrim ix
+                            (tp,m) = unFact p (n `quot` p)
+                        case m of
+                          1 -> unsafeWrite ar ix tp
+                          _ -> do
+                            tm <- unsafeRead ar (toIdx m)
+                            unsafeWrite ar ix (tp*tm)
+            tot (ix+1)
+    tot 0
+
+carSieve :: Int -> UArray Int Int
+carSieve bound = runSTUArray $ do
+    ar <- spfSieve bound
+    (_,lst) <- getBounds ar
+    let car ix
+          | lst < ix    = return ar
+          | otherwise   = do
+            spf <- unsafeRead ar ix
+            if spf == ix
+                then unsafeWrite ar ix (toPrim ix - 1)
+                else do let !p = toPrim spf
+                            !n = toPrim ix
+                            (tp,m) = unFact p (n `quot` p)
+                        case m of
+                          1 -> unsafeWrite ar ix tp
+                          _ -> do
+                            tm <- unsafeRead ar (toIdx m)
+                            unsafeWrite ar ix (lcm tp tm)
+            car (ix+1)
+    car 0
+
 growCache :: Integer -> Integer -> UArray Int CacheWord -> ST s (STUArray s Int CacheWord)
 growCache offset plim old = do
-    let (0,num) = bounds old
+    let (_,num) = bounds old
         (bt,ix) = idxPr plim
         !start  = 8*bt+ix+1
         !nlim   = plim+4800
@@ -386,6 +450,8 @@ nthPrime n
                   in countToNth (n-3) [sv]
   | otherwise   = countToNth (n-3) (psieveList)
 
+-- find the n-th set bit in a list of PrimeSieves,
+-- aka find the (n+3)-rd prime
 countToNth :: Integer -> [PrimeSieve] -> Integer
 countToNth !n ps = runST (countDown n ps)
 
@@ -410,6 +476,7 @@ countDown !n (ps@(PS v0 bs) : more)
     go n 0
 countDown _ [] = error "Prime stream ended prematurely"
 
+-- count all set bits in a chunk, do it wordwise for speed.
 countAll :: PrimeSieve -> ST s Int
 countAll (PS _ bs) = do
     stu <- unsafeThaw bs
@@ -421,18 +488,29 @@ countAll (PS _ bs) = do
                 go (ct + bitCountWord w) (i+1)
     go 0 0
 
+-- Find the j-th highest of bc set bits in the Word w.
 top :: Word -> Int -> Int -> Int
 top w j bc = go 0 TOPB TOPM bn w
     where
       !bn = bc-j
-      go !bs a msk !ix 0 = error "Too few bits set"
+      go !bs a !msk !ix 0 = error "Too few bits set"
       go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
       go bs a msk ix wd =
         case bitCountWord (wd .&. msk) of
-          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `shiftR` a)
+          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `uncheckedShiftR` a)
              | otherwise ->
-               let !na = a `quot` 2
-               in go bs na (msk `shiftR` na) ix wd
+               let !na = a `shiftR` 1
+               in go bs na (msk `uncheckedShiftR` na) ix wd
+
+-- Find the p-part of the totient of (p*m) and the cofactor
+-- of the p-power in m.
+{-# INLINE unFact #-}
+unFact :: Int -> Int -> (Int,Int)
+unFact p m = go (p-1) m
+  where
+    go !tt k = case k `quotRem` p of
+                 (q,0) -> go (p*tt) q
+                 _ -> (tt,k)
 
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
@@ -460,6 +538,15 @@ toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
   where
     i = ix .&. 7
     k = ix `shiftR` 3
+
+-- Assumes n >= 7, gcd n 30 == 1
+{-# INLINE toIdx #-}
+toIdx :: Int -> Int
+toIdx n = 8*q+r2
+  where
+    (q,r) = (n-7) `quotRem` 30
+    r1 = r `quot` 3
+    r2 = min 7 (if r1 > 5 then r1-1 else r1)
 
 {-# INLINE rho #-}
 rho :: Int -> Int
