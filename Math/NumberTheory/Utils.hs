@@ -19,6 +19,7 @@ module Math.NumberTheory.Utils
     , bitCountInt
     , bitCountWord#
     , uncheckedShiftR
+    , splitOff
     ) where
 
 #include "MachDeps.h"
@@ -162,3 +163,14 @@ trailZeros# w =
               v2 ->
                 case (v2 `plusWord#` uncheckedShiftRL# v2 4#) `and#` mf## of
                   v3 -> word2Int# (uncheckedShiftRL# (v3 `timesWord#` m1##) sd#)
+
+{-# SPECIALISE splitOff :: Integer -> Integer -> (Int, Integer),
+                           Int -> Int -> (Int, Int)
+  #-}
+{-# INLINABLE splitOff #-}
+splitOff :: Integral a => a -> a -> (Int, a)
+splitOff p n = go 0 n
+  where
+    go !k m = case m `quotRem` p of
+                (q,r) | r == 0 -> go (k+1) q
+                      | otherwise -> (k,m)

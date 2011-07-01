@@ -33,7 +33,7 @@ import qualified Data.Set as Set
 
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
-import Math.NumberTheory.Utils (shiftToOddCount)
+import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import qualified Math.NumberTheory.Powers.Squares as P2
 import qualified Math.NumberTheory.Powers.Cubes as P3
 import qualified Math.NumberTheory.Powers.Fourth as P4
@@ -244,13 +244,6 @@ findHighPower e pws m s (p:ps)
       (0,_) -> findHighPower e pws m s ps
       (k,r) -> findHighPower (gcd k e) ((p,k):pws) r (P2.integerSquareRoot r) ps
 findHighPower e pws m _ [] = finishPower e pws m
-
-splitOff :: Integer -> Integer -> (Int, Integer)
-splitOff p n = go 0 n
-  where
-    go !k m = case m `quotRem` p of
-                (q,r) | r == 0 -> go (k+1) q
-                      | otherwise -> (k,m)
 
 spBEx :: Int
 spBEx = 14
