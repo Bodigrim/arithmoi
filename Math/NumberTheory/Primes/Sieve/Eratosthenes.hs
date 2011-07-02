@@ -127,7 +127,7 @@ psieveList = makeSieves plim sqlim 0 0 cache
                   else fill j (indx+1)
         fill 0 0
 
-makeSieves :: Integer -> Integer -> Integer -> Integer -> UArray Int Word -> [PrimeSieve]
+makeSieves :: Integer -> Integer -> Integer -> Integer -> UArray Int CacheWord -> [PrimeSieve]
 makeSieves plim sqlim bitOff valOff cache
   | valOff' < sqlim =
       let (nc, bs) = runST $ do
@@ -151,7 +151,7 @@ makeSieves plim sqlim bitOff valOff cache
       valOff' = valOff + fromIntegral sieveRange
       bitOff' = bitOff + fromIntegral sieveBits
 
-slice :: STUArray s Int Word -> ST s (STUArray s Int Bool)
+slice :: STUArray s Int CacheWord -> ST s (STUArray s Int Bool)
 slice cache = do
     hi <- snd `fmap` getBounds cache
     sieve <- newArray (0,lastIndex) True
