@@ -14,6 +14,7 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
   , bailliePSW
   , isStrongFermatPP
   , isFermatPP
+  , lucasTest
   ) where
 
 #include "MachDeps.h"
@@ -125,7 +126,7 @@ isFermatPP n b = powerModInteger' b (n-1) n == 1
 
 -- | Primality test after Baillie, Pomerance, Selfridge and Wagstaff.
 --   The Baillie PSW test consists of a strong Fermat probable primality
---   test followed by (strong) Lucas primality test. This implementation
+--   test followed by a (strong) Lucas primality test. This implementation
 --   assumes that the number @n@ to test is odd and larger than @3@.
 --   Even and small numbers have to be handled before. Also, before
 --   applying this test, trial division by small primes should be performed
@@ -148,6 +149,8 @@ bailliePSW :: Integer -> Bool
 bailliePSW n = isStrongFermatPP n 2 && lucasTest n
 
 -- precondition: n odd, > 3 (no small prime factors, typically large)
+-- | The Lucas-Selfridge test, including square-check, but without
+--   the Fermat test. For package-internal use only.
 lucasTest :: Integer -> Bool
 lucasTest n
   | square || d == 0    = False
