@@ -22,12 +22,14 @@ module Math.NumberTheory.Primes.Sieve.Indexing
 import Data.Array.Unboxed
 import Data.Array.Base (unsafeAt)
 import Data.Bits
+import Data.Word
 
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
 
 {-# SPECIALISE idxPr :: Integer -> (Int,Int),
-                        Int -> (Int,Int)
+                        Int -> (Int,Int),
+                        Word -> (Int,Int)
   #-}
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)
@@ -41,7 +43,9 @@ idxPr n0 = (fromIntegral bytes0, rm3)
     rm3 = min 7 (if rm2 > 5 then rm2-1 else rm2)
 
 {-# SPECIALISE toPrim :: Int -> Integer,
-                         Int -> Int
+                         Int -> Int,
+                         Int -> Word,
+                         Int -> Word16
     #-}
 {-# INLINE toPrim #-}
 toPrim :: Integral a => Int -> a
