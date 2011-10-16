@@ -56,8 +56,10 @@ library
                           Math.NumberTheory.Primes.Counting.Impl
                           Math.NumberTheory.Primes.Counting.Approximate
                           Math.NumberTheory.Primes.Factorisation.Montgomery
+                          Math.NumberTheory.Primes.Factorisation.Utils
                           Math.NumberTheory.Primes.Sieve.Eratosthenes
-                          Math.NumberTheory.Primes.Sieve.indexing
+                          Math.NumberTheory.Primes.Sieve.Indexing
+                          Math.NumberTheory.Primes.Sieve.Misc
                           Math.NumberTheory.Primes.Testing.Probabilistic
     extensions          : BangPatterns
     ghc-options         : -O2 -Wall
