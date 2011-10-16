@@ -12,13 +12,23 @@
 #if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fspec-constr-count=6 #-}
 #endif
+{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
     ( primes
     , sieveFrom
+    , psieveFrom
     , PrimeSieve(..)
     , primeList
     , primeSieve
-    , nthPrime
+    , nthPrimeCt
+    , countFromTo
+    , countAll
+    , countToNth
+    , sieveBytes
+    , sieveBits
+    , sieveWords
+    , sieveRange
+    , sieveTo
     ) where
 
 #include "MachDeps.h"
@@ -35,7 +45,6 @@ import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
--- import Math.NumberTheory.Primes.Sieve.Types (PrimeSieve(..))
 
 -- Sieve in 128K chunks.
 -- Large enough to get something done per chunk
@@ -72,13 +81,9 @@ type CacheWord = Word64
 #define TOPM 0xFFFF
 #endif
 
+-- For some reason, defining the type here instead of importing it
+-- produces slightly faster code, so leave it here.
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
---
--- data FactorSieve = FS {-# UNPACK #-} !Int {-# UNPACK #-} !(UArray Int Int)
---
--- data TotientSieve = TS {-# UNPACK #-} !Int {-# UNPACK #-} !(UArray Int Int)
---
--- data CarmichaelSieve = CS {-# UNPACK #-} !Int {-# UNPACK #-} !(UArray Int Int)
 
 primeSieve :: Integer -> PrimeSieve
 primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
@@ -224,7 +229,7 @@ growCache offset plim old = do
         !nlim   = plim+4800
     sieve <- sieveTo nlim
     (_,hi) <- getBounds sieve
-    more <- countFromTo start hi sieve
+    more <- countFromToWd start hi sieve
     new <- unsafeNewArray_ (0,num+2*more) :: ST s (STUArray s Int CacheWord)
     let copy i
           | num < i   = return ()
@@ -257,9 +262,9 @@ growCache offset plim old = do
 -- Danger: relies on start and end being the first resp. last
 -- index in a Word
 -- Do not use except in growCache and psieveFrom
-{-# INLINE countFromTo #-}
-countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
-countFromTo start end ba = do
+{-# INLINE countFromToWd #-}
+countFromToWd :: Int -> Int -> STUArray s Int Bool -> ST s Int
+countFromToWd start end ba = do
     wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
     let !sb = start `shiftR` WSHFT
         !eb = end `shiftR` WSHFT
@@ -270,6 +275,31 @@ countFromTo start end ba = do
             count (acc + bitCountWord w) (i+1)
     count 0 sb
 
+-- count set bits between two indices (inclusive)
+-- start and end must both be valid indices and start <= end
+countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
+countFromTo start end ba = do
+    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
+    let !sb = start `shiftR` WSHFT
+        !si = start .&. RMASK
+        !eb = end `shiftR` WSHFT
+        !ei = end .&. RMASK
+        count !acc i
+            | i == eb = do
+                w <- unsafeRead wa i
+                return (acc + bitCountWord (w `shiftL` (RMASK - ei)))
+            | otherwise = do
+                w <- unsafeRead wa i
+                count (acc + bitCountWord w) (i+1)
+    if sb < eb
+      then do
+          w <- unsafeRead wa sb
+          count (bitCountWord (w `shiftR` si)) (sb+1)
+      else do
+          w <- unsafeRead wa sb
+          let !w1 = w `shiftR` si
+          return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
+
 -- sieve from n
 sieveFrom :: Integer -> [Integer]
 sieveFrom n
@@ -279,7 +309,7 @@ sieveFrom n
 
 psieveFrom :: Integer -> [PrimeSieve]
 psieveFrom n
-  | n < 8     = psieveList
+  | n < 7     = psieveList
   | otherwise = makeSieves plim sqlim bitOff valOff cache
     where
       k0 = (n-7) `quot` 30
@@ -294,7 +324,7 @@ psieveFrom n
       cache = runSTUArray $ do
           sieve <- sieveTo plim
           (lo,hi) <- getBounds sieve
-          pct <- countFromTo lo hi sieve
+          pct <- countFromToWd lo hi sieve
           new <- unsafeNewArray_ (0,2*pct-1) ::  ST s (STUArray s Int CacheWord)
           let fill j indx
                 | hi < indx = return new
@@ -332,15 +362,15 @@ psieveFrom n
 
 -- prime counting
 
-nthPrime :: Integer -> Integer
-nthPrime 1      = 2
-nthPrime 2      = 3
-nthPrime 3      = 5
-nthPrime 4      = 7
-nthPrime 5      = 11
-nthPrime 6      = 13
-nthPrime n
-  | n < 1       = error "nthPrime: negative argument"
+nthPrimeCt :: Integer -> Integer
+nthPrimeCt 1      = 2
+nthPrimeCt 2      = 3
+nthPrimeCt 3      = 5
+nthPrimeCt 4      = 7
+nthPrimeCt 5      = 11
+nthPrimeCt 6      = 13
+nthPrimeCt n
+  | n < 1       = error "nthPrimeCt: negative argument"
   | n < 200000  = let bd0 = nthPrimeApprox n
                       bnd = bd0 + bd0 `quot` 32 + 37
                       !sv = primeSieve bnd
