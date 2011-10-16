@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.1.0
+version             : 0.1.0.0
 cabal-version       : >= 1.6
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
@@ -23,9 +23,8 @@ description         : A library of basic functionality needed for
                       integer logarithms.
 
                       Note: Requires GHC >= 6.12 with the integer-gmp package
-                      for efficiency. I intend to make it portable, but that's
-                      not very high on my priority list (feature requests would
-                      up its priority).
+                      for efficiency. Portability is on the to-do list (with
+                      low priority, however).
 
 category            : Math, Algorithms, Number Theory
 
@@ -35,7 +34,7 @@ extra-source-files  : Changes, TODO
 
 library
     build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.4, ghc-prim,
-                          integer-gmp, containers >= 0.3 && < 0.5
+                          integer-gmp, containers >= 0.3 && < 0.5, random >= 1.0 && < 1.1
     exposed-modules     : Math.NumberTheory.Logarithms
                           Math.NumberTheory.Powers
                           Math.NumberTheory.Moduli
@@ -46,11 +45,20 @@ library
                           Math.NumberTheory.Powers.Cubes
                           Math.NumberTheory.Powers.Fourth
                           Math.NumberTheory.Powers.General
+                          Math.NumberTheory.Primes
+                          Math.NumberTheory.Primes.Sieve
+                          Math.NumberTheory.Primes.Factorisation
+                          Math.NumberTheory.Primes.Counting
                           Math.NumberTheory.Primes.Heap
-                          Math.NumberTheory.Primes.Testing.Probabilistic
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Logarithms.Internal
                           Math.NumberTheory.Powers.Integer
+                          Math.NumberTheory.Primes.Counting.Impl
+                          Math.NumberTheory.Primes.Counting.Approximate
+                          Math.NumberTheory.Primes.Factorisation.Montgomery
+                          Math.NumberTheory.Primes.Sieve.Eratosthenes
+                          Math.NumberTheory.Primes.Sieve.indexing
+                          Math.NumberTheory.Primes.Testing.Probabilistic
     extensions          : BangPatterns
     ghc-options         : -O2 -Wall
     ghc-prof-options    : -O2 -auto
