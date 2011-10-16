@@ -29,7 +29,7 @@ approxPrimeCount = truncate . appi . fromIntegral
 --   @'approxPrimeCount'@, this estimate should err
 --   on the low side (and does for @n < 10^12@).
 nthPrimeApprox :: Integral a => a -> a
-nthPrimeApprox = max 1 . truncate . nthApp . fromIntegral
+nthPrimeApprox = max 1 . truncate . nthApp . fromIntegral . max 3
 
 -- Basically the approximation of the prime count by Li(x),
 -- adjusted to give close but slightly too high estimates
