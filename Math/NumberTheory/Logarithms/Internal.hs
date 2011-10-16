@@ -15,6 +15,14 @@ module Math.NumberTheory.Logarithms.Internal
     , wordLog2#
     ) where
 
+#if __GLASGOW_HASKELL__ >= 702
+
+-- Stuff is already there
+import GHC.Integer.Logarithms
+
+#else
+
+-- We have to define it here
 #include "MachDeps.h"
 
 import GHC.Base
@@ -144,3 +152,4 @@ leadingZeros =
     in case mkArr realWorld# of
         b -> BA b
 
+#endif
