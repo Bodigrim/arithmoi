@@ -13,11 +13,7 @@
 -- larger wheel, thus it is faster (in particular, the speed
 -- penalty for @'Integer'@ is much smaller) and uses less memory.
 -- It is nevertheless very slow compared to a bit sieve.
--- Currently, however, the bit sieve might overflow on 32-bit systems
--- before the memory is exhausted (on 64-bit systems, memory exhaustion
--- occurs before overflow), so this is included as a safety net (and a
--- reference to check the correctness of the bit sieve).
---
+-- This module is mainly intended for comparison and verification.
 {-# LANGUAGE BangPatterns, CPP, MonoLocalBinds #-}
 {-# OPTIONS_GHC -O2 -funbox-strict-fields #-}
 #if __GLASGOW_HASKELL__ >= 700
