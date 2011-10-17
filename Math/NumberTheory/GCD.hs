@@ -30,7 +30,6 @@ module Math.NumberTheory.GCD
 import Data.Bits
 import GHC.Word
 import GHC.Int
-import GHC.Types
 
 import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.Utils
