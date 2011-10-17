@@ -1,11 +1,12 @@
 -- |
--- Module:          Math.NumberTheory.Primes.Sieve.Indexing
+-- Module:      Math.NumberTheory.Primes.Sieve.Indexing
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
+{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Indexing
     ( idxPr
     , toPrim
@@ -22,15 +23,14 @@ module Math.NumberTheory.Primes.Sieve.Indexing
 import Data.Array.Unboxed
 import Data.Array.Base (unsafeAt)
 import Data.Bits
-import Data.Word
 
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
 
-{-# SPECIALISE idxPr :: Integer -> (Int,Int),
-                        Int -> (Int,Int),
-                        Word -> (Int,Int)
-  #-}
+-- {-# SPECIALISE idxPr :: Integer -> (Int,Int),
+--                         Int -> (Int,Int),
+--                         Word -> (Int,Int)
+--   #-}
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)
 idxPr n0 = (fromIntegral bytes0, rm3)
@@ -42,11 +42,11 @@ idxPr n0 = (fromIntegral bytes0, rm3)
     rm2 = rm1 `quot` 3
     rm3 = min 7 (if rm2 > 5 then rm2-1 else rm2)
 
-{-# SPECIALISE toPrim :: Int -> Integer,
-                         Int -> Int,
-                         Int -> Word,
-                         Int -> Word16
-    #-}
+-- {-# SPECIALISE toPrim :: Int -> Integer,
+--                          Int -> Int,
+--                          Int -> Word,
+--                          Int -> Word16
+--     #-}
 {-# INLINE toPrim #-}
 toPrim :: Integral a => Int -> a
 toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
@@ -56,11 +56,11 @@ toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
 
 -- Assumes n >= 7, gcd n 30 == 1
 {-# INLINE toIdx #-}
-toIdx :: Int -> Int
-toIdx n = 8*q+r2
+toIdx :: Integral a => a -> Int
+toIdx n = 8*fromIntegral q+r2
   where
     (q,r) = (n-7) `quotRem` 30
-    r1 = r `quot` 3
+    r1 = fromIntegral r `quot` 3
     r2 = min 7 (if r1 > 5 then r1-1 else r1)
 
 {-# INLINE rho #-}
