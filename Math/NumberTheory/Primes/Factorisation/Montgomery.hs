@@ -73,7 +73,7 @@ factorise n
 factorise' :: Integer -> [(Integer,Int)]
 factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdeadbeef) n
 
--- | @'stepFactorisation'@ is like 'factorise\'', except that it doesn't use a
+-- | @'stepFactorisation'@ is like 'factorise'', except that it doesn't use a
 --   pseudo random generator but steps through the curves in order.
 --   This strategy turns out to be surprisingly fast, on average it doesn't
 --   seem to be slower than the 'StdGen' based variant.
