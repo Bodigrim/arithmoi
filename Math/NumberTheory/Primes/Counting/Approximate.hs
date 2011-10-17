@@ -9,6 +9,7 @@
 -- Approximations to the number of primes below a limit and the
 -- n-th prime.
 --
+{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Counting.Approximate
     ( approxPrimeCount
     , nthPrimeApprox
