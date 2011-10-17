@@ -32,7 +32,6 @@ import GHC.Word (Word(..))
 import Math.NumberTheory.Utils
 
 -- | Greatest common divisor of two 'Int's, calculated with the binary gcd algorithm.
---   In contrast to 'Prelude.gcd', @gcdInt 0 0 = 0@.
 gcdInt :: Int -> Int -> Int
 gcdInt (I# a#) (I# b#) = I# (gcdInt# a# b#)
 
@@ -41,7 +40,6 @@ coprimeInt :: Int -> Int -> Bool
 coprimeInt (I# a#) (I# b#) = coprimeInt# a# b#
 
 -- | Greatest common divisor of two 'Word's, calculated with the binary gcd algorithm.
---   In contrast to 'Prelude.gcd', @gcdWord 0 0 = 0@.
 gcdWord :: Word -> Word -> Word
 gcdWord (W# a#) (W# b#) = W# (gcdWord# a# b#)
 
