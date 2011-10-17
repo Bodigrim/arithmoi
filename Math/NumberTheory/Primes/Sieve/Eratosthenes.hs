@@ -356,11 +356,13 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                           k = fromIntegral (indx `shiftR` 3)
                           p = 30*k+fromIntegral (rho i)
                           q0 = (start-1) `quot` p
-                          (b0,r0) = idxPr q0
+                          (skp0,q1) = q0 `quotRem` fromIntegral sieveRange
+                          (b0,r0) = idxPr (fromIntegral q1 :: Int)
                           (b1,r1) | r0 == 7 = (b0+1,0)
                                   | otherwise = (b0,r0+1)
-                          strt0 = ((k*(30*fromIntegral b1 + fromIntegral (rho r1))
-                                        + fromIntegral b1 * fromIntegral (rho i)
+                          b2 = skp0*fromIntegral sieveBytes + fromIntegral b1
+                          strt0 = ((k*(30*b2 + fromIntegral (rho r1))
+                                        + b2 * fromIntegral (rho i)
                                         + fromIntegral (mu (moff + r1))) `shiftL` 3)
                                             + fromIntegral (nu (moff + r1))
                           strt1 = ((k*(30*k + fromIntegral (2*rho i))
