@@ -1,0 +1,7 @@
+^dist
+^tests/
+~$
+.prof$
+.aux$
+.hp$
+.ps$
