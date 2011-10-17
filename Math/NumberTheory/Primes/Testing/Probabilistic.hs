@@ -8,6 +8,7 @@
 --
 -- Probabilistic primality tests, Miller-Rabin and Baillie-PSW.
 {-# LANGUAGE CPP, MagicHash, BangPatterns #-}
+{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Testing.Probabilistic
   ( isPrime
   , millerRabinV
