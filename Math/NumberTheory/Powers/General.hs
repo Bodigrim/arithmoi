@@ -17,7 +17,7 @@ module Math.NumberTheory.Powers.General
     , isKthPower
     , isPerfectPower
     , highestPower
-    , largePFPower
+--     , largePFPower
     ) where
 
 #include "MachDeps.h"
@@ -31,7 +31,7 @@ import Data.Word
 import Data.List (foldl')
 import qualified Data.Set as Set
 
-import Math.NumberTheory.Logarithms
+-- import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import qualified Math.NumberTheory.Powers.Squares as P2
@@ -41,7 +41,7 @@ import qualified Math.NumberTheory.Powers.Fourth as P4
 -- | Calculate an integer root, @'integerRoot' k n@ computes the (floor of) the @k@-th
 --   root of @n@, where @k@ must be positive.
 --   @r = 'integerRoot' k n@ means @r^k <= n < (r+1)^k@ if that is possible at all.
---   It is impossible if @k@ is even and @n < 0@, since then @r^k >= 0@ for all @r@,
+--   It is impossible if @k@ is even and @n \< 0@, since then @r^k >= 0@ for all @r@,
 --   then, and if @k <= 0@, @'integerRoot'@ raises an error. For @k < 5@, a specialised
 --   version is called which should be more efficient than the general algorithm.
 --   However, it is not guaranteed that the rewrite rules for those fire, so if @k@ is
@@ -167,19 +167,20 @@ highestPower n
       sqr 0 m = m
       sqr k m = sqr (k-1) (m*m)
 
--- | @'largePFPower' bd n@ produces the pair @(b,k)@ with the largest
---   exponent @k@ such that @n == b^k@, where @bd > 1@ (it is expected
---   that @bd@ is much larger, at least @1000@ or so), @n > bd^2@ and @n@
---   has no prime factors @p <= bd@, skipping the trial division phase
---   of @'highestPower'@ when that is a priori known to be superfluous.
---   It is only present to avoid duplication of work in factorisation
---   and primality testing, it is not expected to be generally useful.
---   The assumptions are not checked, if they are not satisfied, wrong
---   results and wasted work may be the consequence.
-largePFPower :: Integer -> Integer -> (Integer, Int)
-largePFPower bd n = rawPower ln n
-  where
-    ln = integerLogBase' (bd+1) n
+-- Not used, at least not yet
+-- -- | @'largePFPower' bd n@ produces the pair @(b,k)@ with the largest
+-- --   exponent @k@ such that @n == b^k@, where @bd > 1@ (it is expected
+-- --   that @bd@ is much larger, at least @1000@ or so), @n > bd^2@ and @n@
+-- --   has no prime factors @p <= bd@, skipping the trial division phase
+-- --   of @'highestPower'@ when that is a priori known to be superfluous.
+-- --   It is only present to avoid duplication of work in factorisation
+-- --   and primality testing, it is not expected to be generally useful.
+-- --   The assumptions are not checked, if they are not satisfied, wrong
+-- --   results and wasted work may be the consequence.
+-- largePFPower :: Integer -> Integer -> (Integer, Int)
+-- largePFPower bd n = rawPower ln n
+--   where
+--     ln = integerLogBase' (bd+1) n
 
 ------------------------------------------------------------------------------------------
 --                                  Auxiliary functions                                 --
