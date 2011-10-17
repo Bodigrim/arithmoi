@@ -1,5 +1,5 @@
 -- |
--- Module:          Math.NumberTheory.Primes.Sieve.Eratosthenes
+-- Module:      Math.NumberTheory.Primes.Sieve.Eratosthenes
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
@@ -18,6 +18,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , sieveFrom
     , psieveFrom
     , PrimeSieve(..)
+    , psieveList
     , primeList
     , primeSieve
     , nthPrimeCt
@@ -81,13 +82,23 @@ type CacheWord = Word64
 #define TOPM 0xFFFF
 #endif
 
--- For some reason, defining the type here instead of importing it
--- produces slightly faster code, so leave it here.
+-- | Compact store of primality flags.
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
 
+-- | Sieve primes up to (and including) a bound.
+--   For small enough bounds, this is more efficient than
+--   using the segmented sieve.
+--
+--   Since arrays are 'Int'-indexed, overflow occurs when the sieve
+--   size comes near @'maxBound' :: 'Int'@, that corresponds to an
+--   upper bound near @15/8*'maxBound'@. On @32@-bit systems, that
+--   is often within memory limits, so don't give bounds larger than
+--   @8*10^9@ there.
 primeSieve :: Integer -> PrimeSieve
 primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
 
+-- | Generate a list of primes for consumption from a
+--   'PrimeSieve'.
 primeList :: PrimeSieve -> [Integer]
 primeList (PS 0 bs) = 2:3:5:[toPrim i | let (lo,hi) = bounds bs
                                       , i <- [lo .. hi]
@@ -99,10 +110,16 @@ primeList (PS vO bs) = [vO + toPrim i
                             , unsafeAt bs i
                             ]
 
+-- | List of primes.
+--   Since the sieve uses unboxed arrays, overflow occurs at some point,
+--   but not before @10^6*'fromIntegral' ('maxBound' :: 'Int')@ (I forgot where exactly).
 primes :: [Integer]
 primes = 2:3:5:concat [[vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
                                 | PS vO bs <- psieveList, let (_,li) = bounds bs]
 
+-- | List of primes in the form of a list of 'PrimeSieve's, more compact than
+--   'primes', thus it may be better to use @'psieveList' >>= 'primeList'@
+--   than keeping the list of primes alive during the entire run.
 psieveList :: [PrimeSieve]
 psieveList = makeSieves plim sqlim 0 0 cache
   where
@@ -112,7 +129,7 @@ psieveList = makeSieves plim sqlim 0 0 cache
         sieve <- sieveTo 4801
         new <- unsafeNewArray_ (0,1287) :: ST s (STUArray s Int CacheWord)
         let fill j indx
-              | 1279 < indx = return new
+              | 1279 < indx = return new    -- index of 4801 = 159*30 + 31 ~> 159*8+7
               | otherwise = do
                 p <- unsafeRead sieve indx
                 if p
@@ -136,10 +153,10 @@ makeSieves :: Integer -> Integer -> Integer -> Integer -> UArray Int CacheWord -
 makeSieves plim sqlim bitOff valOff cache
   | valOff' < sqlim =
       let (nc, bs) = runST $ do
-            cch <- {-# SCC "Thaw" #-} unsafeThaw cache :: ST s (STUArray s Int CacheWord)
+            cch <- unsafeThaw cache :: ST s (STUArray s Int CacheWord)
             bs0 <- slice cch
-            fcch <- {-# SCC "FreezeCache" #-} unsafeFreeze cch
-            fbs0 <- {-# SCC "FreezeSieve" #-} unsafeFreeze bs0
+            fcch <- unsafeFreeze cch
+            fbs0 <- unsafeFreeze bs0
             return (fcch, fbs0)
       in PS valOff bs : makeSieves plim sqlim bitOff' valOff' nc
   | otherwise       =
@@ -173,8 +190,8 @@ slice cache = do
                     !i = fromIntegral (ixw .&. 7)
                     !k = fromIntegral ixw - i
                     !o = i `shiftL` 3
-                    !j = fromIntegral (stj .&. 7)
-                    !s = fromIntegral (stj `shiftR` 3)
+                    !j = fromIntegral stj .&. 7
+                    !s = fromIntegral stj `shiftR` 3
                 (n, u) <- tick k o j s
                 let !skip = fromIntegral n `shiftR` 20
                     !strt = fromIntegral n .&. 0xFFFFF
@@ -300,19 +317,20 @@ countFromTo start end ba = do
           let !w1 = w `shiftR` si
           return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
 
--- sieve from n
+-- | @'sieveFrom' n@ creates the list of primes not less than @n@.
 sieveFrom :: Integer -> [Integer]
-sieveFrom n
-    | n < 100000    = dropWhile (< n) primes
-    | otherwise     = case psieveFrom n of
+sieveFrom n = case psieveFrom n of
                         ps -> dropWhile (< n) (ps >>= primeList)
 
+-- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
+--   at @n@. Due to the organisation of the sieve, the list may contain
+--   a few primes less than @n@.
+--   This form uses less memory than @['Integer']@, hence it may be preferable
+--   to use this if it is to be reused.
 psieveFrom :: Integer -> [PrimeSieve]
-psieveFrom n
-  | n < 7     = psieveList
-  | otherwise = makeSieves plim sqlim bitOff valOff cache
+psieveFrom n = makeSieves plim sqlim bitOff valOff cache
     where
-      k0 = (n-7) `quot` 30
+      k0 = max 0 (n-7) `quot` 30
       valOff = 30*k0
       bitOff = 8*k0
       start = valOff+7
