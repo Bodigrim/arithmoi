@@ -9,15 +9,18 @@
 -- This module exports GCD and coprimality test using the binary gcd algorithm
 -- and GCD with the extended Euclidean algorithm.
 --
--- Unlike the "Prelude", this module uses @gcd 0 0 = 0@.
---
--- Using a lookup table for the number of trailing zeros, the binary gcd algorithm
--- can perform considerably faster than the Euclidean algorithm on average,
--- the performance relations are very hardware-dependent though.
+-- Efficiently counting the number of trailing zeros, the binary gcd algorithm
+-- can perform considerably faster than the Euclidean algorithm on average.
+-- For 'Int', GHC has a rewrite rule to use GMP's fast gcd, depending on
+-- hardware and\/or GMP version, that can be faster or slower than the binary
+-- algorithm (on my 32-bit box, binary is faster, on my 64-bit box, GMP).
+-- For 'Word' and the sized @IntN\/WordN@ types, there is no rewrite rule (yet)
+-- in GHC, and the binary algorithm performs consistently (so far as my tests go)
+-- much better (if this module's rewrite rules fire).
 --
 -- When using this module, always compile with optimisations turned on to
--- benefit from GHC's primops.
-{-# LANGUAGE CPP, BangPatterns #-}
+-- benefit from GHC's primops and the rewrite rules.
+{-# LANGUAGE CPP, BangPatterns, MagicHash #-}
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
@@ -25,10 +28,11 @@ module Math.NumberTheory.GCD
     ) where
 
 import Data.Bits
-import Data.Word
-import Data.Int
+import GHC.Word
+import GHC.Int
+import GHC.Types
 
-import Math.NumberTheory.GCD.LowLevel (gcdInt, gcdWord, coprimeInt, coprimeWord)
+import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.Utils
 
 #include "MachDeps.h"
@@ -36,17 +40,23 @@ import Math.NumberTheory.Utils
 {-# RULES
 "binaryGCD/Int"     binaryGCD = gcdInt
 "binaryGCD/Word"    binaryGCD = gcdWord
-"binaryGCD/Int8"    forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int8
-"binaryGCD/Int16"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int16
-"binaryGCD/Int32"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int32
-"binaryGCD/Word8"   forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word8
-"binaryGCD/Word16"  forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word16
-"binaryGCD/Word32"  forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word32
+"binaryGCD/Int8"    binaryGCD = gi8
+"binaryGCD/Int16"   binaryGCD = gi16
+"binaryGCD/Int32"   binaryGCD = gi32
+"binaryGCD/Word8"   binaryGCD = gw8
+"binaryGCD/Word16"  binaryGCD = gw16
+"binaryGCD/Word32"  binaryGCD = gw32
   #-}
 #if WORD_SIZE_IN_BITS == 64
+gi64 :: Int64 -> Int64 -> Int64
+gi64 (I64# x#) (I64# y#) = I64# (gcdInt# x# y#)
+
+gw64 :: Word64 -> Word64 -> Word64
+gw64 (W64# x#) (W64# y#) = W64# (gcdWord# x# y#)
+
 {-# RULES
-"binaryGCD/Int64"   forall a b. binaryGCD a b = fromIntegral (gcdInt (fromIntegral a) (fromIntegral b)) :: Int64
-"binaryGCD/Word64"  forall a b. binaryGCD a b = fromIntegral (gcdWord (fromIntegral a) (fromIntegral b)) :: Word64
+"binaryGCD/Int64"   binaryGCD = gi64
+"binaryGCD/Word64"  binaryGCD = gw64
   #-}
 #else
 {-# SPECIALISE binaryGCD :: Word64 -> Word64 -> Word64,
@@ -87,6 +97,9 @@ binaryGCD a b =
 -- >   (d, u, v) -> u*a + v*b == d
 -- >
 -- > d == gcd a b
+--
+--   and, for signed types,
+--
 -- >
 -- > abs u < abs b || abs b <= 1
 -- >
@@ -109,17 +122,23 @@ extendedGCD a b = (d, u, v)
 {-# RULES
 "coprime/Int"       coprime = coprimeInt
 "coprime/Word"      coprime = coprimeWord
-"coprime/Int8"      forall a b. coprime a (b :: Int8)  = coprimeInt (fromIntegral a) (fromIntegral b)
-"coprime/Int16"     forall a b. coprime a (b :: Int16) = coprimeInt (fromIntegral a) (fromIntegral b)
-"coprime/Int32"     forall a b. coprime a (b :: Int32) = coprimeInt (fromIntegral a) (fromIntegral b)
-"coprime/Word8"     forall a b. coprime a (b :: Word8)  = coprimeWord (fromIntegral a) (fromIntegral b)
-"coprime/Word16"    forall a b. coprime a (b :: Word16) = coprimeWord (fromIntegral a) (fromIntegral b)
-"coprime/Word32"    forall a b. coprime a (b :: Word32) = coprimeWord (fromIntegral a) (fromIntegral b)
+"coprime/Int8"      coprime = ci8
+"coprime/Int16"     coprime = ci16
+"coprime/Int32"     coprime = ci32
+"coprime/Word8"     coprime = cw8
+"coprime/Word16"    coprime = cw16
+"coprime/Word32"    coprime = cw32
   #-}
 #if WORD_SIZE_IN_BITS == 64
+ci64 :: Int64 -> Int64 -> Bool
+ci64 (I64# x#) (I64# y#) = coprimeInt# x# y#
+
+cw64 :: Word64 -> Word64 -> Bool
+cw64 (W64# x#) (W64# y#) = coprimeWord# x# y#
+
 {-# RULES
-"coprime/Int64"     forall a b. coprime a (b :: Int64) = coprimeInt (fromIntegral a) (fromIntegral b)
-"coprime/Word64"    forall a b. coprime a (b :: Word64) = coprimeWord (fromIntegral a) (fromIntegral b)
+"coprime/Int64"     coprime = ci64
+"coprime/Word64"    coprime = cw64
   #-}
 #else
 {-# SPECIALISE coprime :: Word64 -> Word64 -> Bool,
@@ -173,3 +192,43 @@ oddGCD a b =
       c | c < b     -> oddGCD b c
         | c > b     -> oddGCD c b
         | otherwise -> c
+
+-------------------------------------------------------------------------------
+--                Blech! Getting the rules to fire isn't easy.               --
+-------------------------------------------------------------------------------
+
+gi8 :: Int8 -> Int8 -> Int8
+gi8 (I8# x#) (I8# y#) = I8# (gcdInt# x# y#)
+
+gi16 :: Int16 -> Int16 -> Int16
+gi16 (I16# x#) (I16# y#) = I16# (gcdInt# x# y#)
+
+gi32 :: Int32 -> Int32 -> Int32
+gi32 (I32# x#) (I32# y#) = I32# (gcdInt# x# y#)
+
+gw8 :: Word8 -> Word8 -> Word8
+gw8 (W8# x#) (W8# y#) = W8# (gcdWord# x# y#)
+
+gw16 :: Word16 -> Word16 -> Word16
+gw16 (W16# x#) (W16# y#) = W16# (gcdWord# x# y#)
+
+gw32 :: Word32 -> Word32 -> Word32
+gw32 (W32# x#) (W32# y#) = W32# (gcdWord# x# y#)
+
+ci8 :: Int8 -> Int8 -> Bool
+ci8 (I8# x#) (I8# y#) = coprimeInt# x# y#
+
+ci16 :: Int16 -> Int16 -> Bool
+ci16 (I16# x#) (I16# y#) = coprimeInt# x# y#
+
+ci32 :: Int32 -> Int32 -> Bool
+ci32 (I32# x#) (I32# y#) = coprimeInt# x# y#
+
+cw8 :: Word8 -> Word8 -> Bool
+cw8 (W8# x#) (W8# y#) = coprimeWord# x# y#
+
+cw16 :: Word16 -> Word16 -> Bool
+cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
+
+cw32 :: Word32 -> Word32 -> Bool
+cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
