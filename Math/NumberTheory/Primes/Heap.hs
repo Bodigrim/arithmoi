@@ -15,7 +15,7 @@
 -- It is nevertheless very slow compared to a bit sieve.
 -- This module is mainly intended for comparison and verification.
 {-# LANGUAGE BangPatterns, CPP, MonoLocalBinds #-}
-{-# OPTIONS_GHC -O2 -funbox-strict-fields #-}
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 #if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fno-float-in -fno-spec-constr -fno-full-laziness #-}
 #endif
