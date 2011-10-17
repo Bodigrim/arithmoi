@@ -164,9 +164,10 @@ trailZeros# w =
                 case (v2 `plusWord#` uncheckedShiftRL# v2 4#) `and#` mf## of
                   v3 -> word2Int# (uncheckedShiftRL# (v3 `timesWord#` m1##) sd#)
 
-{-# SPECIALISE splitOff :: Integer -> Integer -> (Int, Integer),
-                           Int -> Int -> (Int, Int)
-  #-}
+-- {-# SPECIALISE splitOff :: Integer -> Integer -> (Int, Integer),
+--                            Int -> Int -> (Int, Int),
+--                            Word -> Word -> (Int, Word)
+--   #-}
 {-# INLINABLE splitOff #-}
 splitOff :: Integral a => a -> a -> (Int, a)
 splitOff p n = go 0 n
