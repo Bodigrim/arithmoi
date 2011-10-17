@@ -148,7 +148,7 @@ totientSieve bound
     where
       bnd = fromInteger bound
 
--- | @'sieveTotient' ts n@ finds the totient @#960;(n)@, i.e. the number of integers @k@ with
+-- | @'sieveTotient' ts n@ finds the totient @&#960;(n)@, i.e. the number of integers @k@ with
 --   @1 <= k <= n@ and @'gcd' n k == 1@, in other words, the order of the group of units
 --   in @&#8484;/(n)@, using the 'TotientSieve' @ts@.
 --   The strategy is analogous to 'sieveFactor'.
@@ -204,7 +204,7 @@ carmichaelSieve bound
     where
       bnd = fromInteger bound
 
--- | @'sieveCarmichael' cs n@ finds the value of @#955;(n)@ (or @#962;(n)@), the smallest positive
+-- | @'sieveCarmichael' cs n@ finds the value of @&#955;(n)@ (or @&#968;(n)@), the smallest positive
 --   integer @e@ such that for all @a@ with @gcd a n == 1@ the congruence @a^e &#8801; 1 (mod n)@ holds,
 --   in other words, the (smallest) exponent of the group of units in @&#8484;/(n)@.
 --   The strategy is analogous to 'sieveFactor'.
