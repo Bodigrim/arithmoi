@@ -12,8 +12,7 @@ homepage            : https://bitbucket.org/dafis/arithmoi
 bug-reports         : https://bitbucket.org/dafis/arithmoi/issues
 
 synopsis            : Efficient basic number-theoretic functions.
-                      Primes (generating and testing, factorisation),
-                      powers, integer logarithms.
+                      Primes, powers, integer logarithms.
 description         : A library of basic functionality needed for
                       number-theoretic calculations. The aim of this library
                       is to provide efficient implementations of the functions.
@@ -28,7 +27,7 @@ description         : A library of basic functionality needed for
 
 category            : Math, Algorithms, Number Theory
 
-tested-with         : GHC == 7.0.2, GHC == 7.0.3
+tested-with         : GHC == 6.12.3, GHC == 7.0.2, GHC == 7.0.3, GHC == 7.2.1
 
 extra-source-files  : Changes, TODO
 
