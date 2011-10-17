@@ -142,14 +142,24 @@ bitCountWord# w# = case bitCountWord (W# w#) of
 
 -- | Number of 1-bits in a @'Word'@.
 bitCountWord :: Word -> Int
+#if __GLASGOW_HASKELL__ >= 703
+bitCountWord = popCount
+-- should yield a machine instruction
+#else
 bitCountWord w = case w - (shiftR w 1 .&. m5) of
                    !w1 -> case (w1 .&. m3) + (shiftR w1 2 .&. m3) of
                             !w2 -> case (w2 + shiftR w2 4) .&. mf of
                                      !w3 -> fromIntegral (shiftR (w3 * m1) sd)
+#endif
 
 -- | Number of 1-bits in an @'Int'@.
 bitCountInt :: Int -> Int
-bitCountInt = bitCountWord . fromIntegral
+#if __GLASGOW_HASKELL__ >= 703
+bitCountWord = popCount
+-- should yield a machine instruction
+#else
+bitCountInt (I# i#) = bitCountWord (W# (int2Word# i#))
+#endif
 
 -- | Number of trailing zeros in a @'Word#'@, wrong for @0@.
 {-# INLINE trailZeros# #-}
