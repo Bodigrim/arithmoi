@@ -183,18 +183,18 @@ slice cache = do
               then unsafeWrite cache pr (w-1)
               else do
                 ixes <- unsafeRead cache (pr+1)
-                let !stj = ixes .&. 0x7FFFFF
-                    !ixw = ixes `shiftR` 23
-                    !i = fromIntegral (ixw .&. 7)
-                    !k = fromIntegral ixw - i
+                let !stj = fromIntegral ixes .&. 0x7FFFFF   -- position of multiple and index of cofactor
+                    !ixw = fromIntegral (ixes `shiftR` 23)  -- prime data, up to 41 bits
+                    !i = ixw .&. 7
+                    !k = ixw - i        -- On 32-bits, k > 44717396 means overflow is possible in tick
                     !o = i `shiftL` 3
-                    !j = fromIntegral stj .&. 7
-                    !s = fromIntegral stj `shiftR` 3
+                    !j = stj .&. 7          -- index of cofactor
+                    !s = stj `shiftR` 3     -- index of first multiple to tick off
                 (n, u) <- tick k o j s
-                let !skip = fromIntegral n `shiftR` 20
-                    !strt = fromIntegral n .&. 0xFFFFF
+                let !skip = fromIntegral (n `shiftR` 20)
+                    !strt = fromIntegral (n .&. 0xFFFFF)
                 unsafeWrite cache pr skip
-                unsafeWrite cache (pr+1) (ixes - stj + strt `shiftL` 3 + fromIntegral u)
+                unsafeWrite cache (pr+1) ((ixes .&. complement 0x7FFFFF) .|. strt `shiftL` 3 .|. fromIntegral u)
             treat (pr+2)
         tick stp off j ix
           | lastIndex < ix  = return (ix - sieveBits, j)
@@ -242,8 +242,8 @@ growCache offset plim old = do
         (bt,ix) = idxPr plim
         !start  = 8*bt+ix+1
         !nlim   = plim+4800
-    sieve <- sieveTo nlim
-    (_,hi) <- getBounds sieve
+    sieve <- sieveTo nlim       -- Implement SieveFromTo for this, it's pretty wasteful when nlim isn't
+    (_,hi) <- getBounds sieve   -- very small anymore
     more <- countFromToWd start hi sieve
     new <- unsafeNewArray_ (0,num+2*more) :: ST s (STUArray s Int CacheWord)
     let copy i
@@ -267,7 +267,7 @@ growCache offset plim old = do
                     strt1 = strt0 - offset
                     !strt = fromIntegral strt1 .&. 0xFFFFF
                     !skip = fromIntegral (strt1 `shiftR` 20)
-                    !ixes = fromIntegral indx `shiftL` 23 + strt `shiftL` 3 + fromIntegral i
+                    !ixes = fromIntegral indx `shiftL` 23 .|. strt `shiftL` 3 .|. fromIntegral i
                 unsafeWrite new j skip
                 unsafeWrite new (j+1) ixes
                 fill (j+2) (indx+1)
@@ -371,7 +371,7 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                               | otherwise = (strt1 - bitOff, i)
                           !strt = fromIntegral strt2 .&. 0xFFFFF
                           !skip = fromIntegral (strt2 `shiftR` 20)
-                          !ixes = fromIntegral indx `shiftL` 23 + strt `shiftL` 3 + fromIntegral r2
+                          !ixes = fromIntegral indx `shiftL` 23 .|. strt `shiftL` 3 .|. fromIntegral r2
                       unsafeWrite new j skip
                       unsafeWrite new (j+1) ixes
                       fill (j+2) (indx+1)
