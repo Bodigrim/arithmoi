@@ -124,7 +124,7 @@ primes = 2:3:5:concat [[vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
 psieveList :: [PrimeSieve]
 psieveList = makeSieves plim sqlim 0 0 cache
   where
-    plim = 4801     -- prime #647
+    plim = 4801     -- prime #647, 644 of them to use
     sqlim = plim*plim
     cache = runSTUArray $ do
         sieve <- sieveTo 4801
