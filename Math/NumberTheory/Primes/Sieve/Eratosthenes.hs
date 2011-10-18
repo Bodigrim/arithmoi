@@ -111,8 +111,9 @@ primeList (PS vO bs) = [vO + toPrim i
                             ]
 
 -- | List of primes.
---   Since the sieve uses unboxed arrays, overflow occurs at some point,
---   but not before @10^6*'fromIntegral' ('maxBound' :: 'Int')@ (I forgot where exactly).
+--   Since the sieve uses unboxed arrays, overflow occurs at some point.
+--   On 64-bit systems, that point is beyond the memory limits, on
+--   32-bit systems, it is at about @1.7*10^18@.
 primes :: [Integer]
 primes = 2:3:5:concat [[vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
                                 | PS vO bs <- psieveList, let (_,li) = bounds bs]
