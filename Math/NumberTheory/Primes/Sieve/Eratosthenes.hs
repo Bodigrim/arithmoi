@@ -136,12 +136,9 @@ psieveList = makeSieves plim sqlim 0 0 cache
                 if p
                   then do
                     let !i = indx .&. 7
-                        k :: Integer
-                        k = fromIntegral (indx `shiftR` 3)
-                        strt1 = (k*(30*k + fromIntegral (2*rho i))
-                                    + fromIntegral (byte i)) `shiftL` 3
-                                    + fromIntegral (idx i)
-                        !strt = fromIntegral strt1 .&. 0xFFFFF
+                        k = indx `shiftR` 3
+                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` 3 + fromIntegral (idx i)
+                        !strt = fromIntegral (strt1 .&. 0xFFFFF)
                         !skip = fromIntegral (strt1 `shiftR` 20)
                         !ixes = fromIntegral indx `shiftL` 23 + strt `shiftL` 3 + fromIntegral i
                     unsafeWrite new j skip
