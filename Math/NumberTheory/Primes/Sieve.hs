@@ -18,6 +18,7 @@
 module Math.NumberTheory.Primes.Sieve
     ( -- * Limitations
       -- $limits
+
       -- * Sieves and lists
       primes
     , sieveFrom
@@ -41,7 +42,7 @@ import Math.NumberTheory.Primes.Sieve.Eratosthenes
 -- (3) The internal representation of the state
 --
 -- An Eratosthenes type sieve needs to store the primes up to the square root of
--- the currently sieved region, thus requires @/O/(n\/log n)@ space.We store @16@ bytes
+-- the currently sieved region, thus requires @/O/(sqrt n\/log n)@ space.We store @16@ bytes
 -- of information per prime, thus a Gigabyte of memory takes you to about @1.6*10^18@.
 -- The @log@ doesn't change much in that range, so as a first approximation, doubling
 -- the storage increases the sieve range by a factor of four.
