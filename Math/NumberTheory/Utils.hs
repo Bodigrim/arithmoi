@@ -178,7 +178,11 @@ trailZeros# w =
 --                            Int -> Int -> (Int, Int),
 --                            Word -> Word -> (Int, Word)
 --   #-}
+#if __GLASGOW_HASKELL__ >= 700
 {-# INLINABLE splitOff #-}
+#else
+{-# INLINE splitOff #-}
+#endif
 splitOff :: Integral a => a -> a -> (Int, a)
 splitOff p n = go 0 n
   where
