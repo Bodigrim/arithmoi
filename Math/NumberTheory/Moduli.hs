@@ -189,7 +189,7 @@ powerModInteger base ex mdl
       bse' = if base < 0 || mdl' <= base then base `mod` mdl' else base
 
 -- | Specialised worker without input checks. Makes the same assumptions
---   as the general version.
+--   as the general version 'powerMod''.
 powerModInteger' :: Integer -> Integer -> Integer -> Integer
 powerModInteger' base expo md = go e1 w1 1 base
   where
