@@ -1,5 +1,7 @@
-- Prime Certificates
 - Atkin sieve
 - General number field sieve
 - Portability
 - Check whether bit twiddling can be as fast as the lookup table for leading and trailing zeros
+    Using bit twiddling already, faster on my x86_64, not benchmarked on x86 recently,
+    but it used to be only a marginal difference anyway.
+- More Certificates?
