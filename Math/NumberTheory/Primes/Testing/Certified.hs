@@ -21,3 +21,6 @@ isCertifiedPrime :: Integer -> Bool
 isCertifiedPrime n
     | n < 0     = isCertifiedPrime (-n)
     | otherwise = isPrime n && ((n < 10^17) || checkPrimalityProof (certifyBPSW n))
+-- Although it is known that there are no Baillie PSW pseudoprimes below 2^64,
+-- use the verified bound 10^17, I don't know whether Gilchrist's result has been
+-- verified yet.
