@@ -37,6 +37,7 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
   , curveFactorisation
     -- ** Single curve worker
   , montgomeryFactorisation
+  , findParms
   ) where
 
 #include "MachDeps.h"
@@ -147,7 +148,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
     | ptest n   = [(n,1)]
     | otherwise = evalState (fact n digits) seed
       where
-        digits = fromMaybe 6 mbdigs
+        digits = fromMaybe 8 mbdigs
         mult 1 xs = xs
         mult j xs = [(p,j*k) | (p,k) <- xs]
         dbl (u,v) = (mult 2 u, mult 2 v)
