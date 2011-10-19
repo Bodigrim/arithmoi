@@ -26,6 +26,8 @@ module Math.NumberTheory.Primes.Factorisation
     , FactorSieve
     , factorSieve
     , sieveFactor
+      -- *** Trial division
+    , trialDivisionTo
       -- ** Partial factorisation
     , smallFactors
     , stdGenFactorisation
@@ -65,6 +67,7 @@ import Data.Set (Set, singleton)
 
 import Math.NumberTheory.Primes.Factorisation.Utils
 import Math.NumberTheory.Primes.Factorisation.Montgomery
+import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Sieve.Misc
 
 -- $algorithm
