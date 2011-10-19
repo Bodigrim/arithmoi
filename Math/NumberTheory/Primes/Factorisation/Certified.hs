@@ -26,7 +26,6 @@ import Data.Bits
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Testing.Certificates.Internal
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Powers.Squares
 
 -- | @'certifiedFactorisation' n@ produces the prime factorisation
 --   of @n@, proving the primality of the factors, but doesn't report the proofs.
@@ -62,7 +61,7 @@ provenFactorisation bd n
 
 -- | verify that we indeed have a correct primality proof
 test :: [((Integer,Int),PrimalityProof)] -> [((Integer,Int),PrimalityProof)]
-test ((t@(p,_),prf):more)
+test (t@((p,_),prf):more)
     | p == cprime prf && checkPrimalityProof prf    = t : test more
     | otherwise = error (invalid p prf)
 test [] = []
@@ -146,7 +145,7 @@ certiFactorisation primeBound primeTest prng seed mbdigs n
 
 -- | merge two lists of factors, so that the result is strictly increasing (wrt the primes)
 merge :: [((Integer,Int),PrimalityProof)] -> [((Integer,Int),PrimalityProof)] -> [((Integer,Int),PrimalityProof)]
-merge xxs@(x@((p,e),c):xs) yys@(y@((q,d),b):ys)
+merge xxs@(x@((p,e),c):xs) yys@(y@((q,d),_):ys)
     = case compare p q of
         LT -> x : merge xs yys
         EQ -> ((p,e+d),c) : merge xs ys
