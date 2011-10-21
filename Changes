@@ -1,3 +1,6 @@
+0.2.0.1:
+    Fix copy-pasto (only relevant for 7.3.*)
+    Fix imports for ghc >= 7.3
 0.2.0.0:
     Added certificates and certified testing/factorisation
 0.1.0.2:
