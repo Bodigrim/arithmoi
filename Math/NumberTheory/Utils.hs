@@ -155,7 +155,7 @@ bitCountWord w = case w - (shiftR w 1 .&. m5) of
 -- | Number of 1-bits in an @'Int'@.
 bitCountInt :: Int -> Int
 #if __GLASGOW_HASKELL__ >= 703
-bitCountWord = popCount
+bitCountInt = popCount
 -- should yield a machine instruction
 #else
 bitCountInt (I# i#) = bitCountWord (W# (int2Word# i#))
