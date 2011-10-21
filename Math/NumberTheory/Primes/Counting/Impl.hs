@@ -25,7 +25,7 @@ import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Logarithms
 
 import Data.Array.Base
-import Data.Array.ST
+import Data.Array.ST    hiding (unsafeThaw)
 import Control.Monad.ST
 import Data.Bits
 import Data.Int
