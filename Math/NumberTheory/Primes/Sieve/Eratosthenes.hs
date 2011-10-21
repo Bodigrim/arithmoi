@@ -35,9 +35,8 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 #include "MachDeps.h"
 
 import Control.Monad.ST
-import Data.Array.Base (unsafeRead, unsafeWrite, unsafeAt, unsafeNewArray_)
-import Data.Array.ST
-import Data.Array.Unboxed
+import Data.Array.Base
+import Data.Array.ST        hiding (unsafeFreeze, unsafeThaw, castSTUArray)
 import Control.Monad (when)
 import Data.Bits
 import Data.Word
