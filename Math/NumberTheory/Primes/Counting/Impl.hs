@@ -73,11 +73,11 @@ primeCount n
 --   The argument must be strictly positive, and must not exceed @1.5 * 10^17@.
 nthPrime :: Integer -> Integer
 nthPrime n
-    | n < 1     = error "Prime indexing starts at 1"
+    | n < 1         = error "Prime indexing starts at 1"
     | n > 150000000000000000    = error $ "nthPrime: can't handle index " ++ show n
-    | n < 4000  = nthPrimeCt n
-    | ct0 < n   = tooLow n p0 (n-ct0) approxGap
-    | otherwise = tooHigh n p0 (ct0-n) approxGap
+    | n < 200000    = nthPrimeCt n
+    | ct0 < n       = tooLow n p0 (n-ct0) approxGap
+    | otherwise     = tooHigh n p0 (ct0-n) approxGap
       where
         p0 = nthPrimeApprox n
         approxGap = (7 * fromIntegral (integerLog2' p0)) `quot` 10
