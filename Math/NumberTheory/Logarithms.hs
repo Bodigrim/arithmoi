@@ -9,7 +9,7 @@
 -- Integer Logarithms. For efficiency, the internal representation of 'Integer's
 -- from integer-gmp is used.
 --
-{-# LANGUAGE MagicHash, UnboxedTuples #-}
+{-# LANGUAGE MagicHash #-}
 module Math.NumberTheory.Logarithms
     ( -- * Integer logarithms with input checks
       integerLogBase
