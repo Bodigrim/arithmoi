@@ -392,7 +392,7 @@ nthPrimeCt n
                       bnd = bd0 + bd0 `quot` 32 + 37
                       !sv = primeSieve bnd
                   in countToNth (n-3) [sv]
-  | otherwise   = countToNth (n-3) (psieveList)
+  | otherwise   = countToNth (n-3) (psieveFrom (fromIntegral $ fromInteger n .&. (7 :: Int)))
 
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
