@@ -52,9 +52,13 @@ data Certificate
 -- | A proof of compositeness of a positive number. The type is
 --   abstract to ensure the validity of proofs.
 data CompositenessProof
-    = Factors { composite, firstFactor, secondFactor :: !Integer }
-    | StrongFermat { composite, witness :: !Integer }
-    | LucasSelfridge { composite :: !Integer }
+    = Factors { composite :: !Integer           -- ^ The number whose compositeness is proved.
+              , firstFactor
+              , secondFactor :: !Integer }
+    | StrongFermat { composite :: !Integer      -- ^ The number whose compositeness is proved.
+                   , witness :: !Integer }
+    | LucasSelfridge { composite :: !Integer    -- ^ The number whose compositeness is proved.
+                     }
       deriving Show
 
 -- | An argument for compositeness of a number (which must be @> 1@).
@@ -74,12 +78,14 @@ data CompositenessArgument
 -- | A proof of primality of a positive number. The type is
 --   abstract to ensure the validity of proofs.
 data PrimalityProof
-    = Pocklington { cprime :: !Integer
+    = Pocklington { cprime :: !Integer          -- ^ The number whose primality is proved.
                   , factorisedPart, cofactor :: !Integer
                   , knownFactors :: ![(Integer,Int,Integer,PrimalityProof)]
                   }
-    | TrialDivision { cprime, tdLimit :: !Integer }
-    | Trivial { cprime :: !Integer }
+    | TrialDivision { cprime :: !Integer        -- ^ The number whose primality is proved.
+                    , tdLimit :: !Integer }
+    | Trivial { cprime :: !Integer              -- ^ The number whose primality is proved.
+              }
       deriving Show
 
 -- | An argument for primality of a number (which must be @> 1@).
