@@ -46,11 +46,19 @@ import Math.NumberTheory.Utils
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 
+#define IX_MASK     0xFFFFF
+#define IX_BITS     20
+#define IX_J_MASK   0x7FFFFF
+#define IX_J_BITS   23
+#define J_MASK      7
+#define J_BITS      3
+#define SIEVE_KB    128
+
 -- Sieve in 128K chunks.
 -- Large enough to get something done per chunk
 -- and hopefully small enough to fit in the cache.
 sieveBytes :: Int
-sieveBytes = 128*1024
+sieveBytes = SIEVE_KB*1024
 
 -- Number of bits per chunk.
 sieveBits :: Int
@@ -134,12 +142,12 @@ psieveList = makeSieves plim sqlim 0 0 cache
                 p <- unsafeRead sieve indx
                 if p
                   then do
-                    let !i = indx .&. 7
-                        k = indx `shiftR` 3
-                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` 3 + fromIntegral (idx i)
-                        !strt = fromIntegral (strt1 .&. 0xFFFFF)
-                        !skip = fromIntegral (strt1 `shiftR` 20)
-                        !ixes = fromIntegral indx `shiftL` 23 + strt `shiftL` 3 + fromIntegral i
+                    let !i = indx .&. J_MASK
+                        k = indx `shiftR` J_BITS
+                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` J_BITS + fromIntegral (idx i)
+                        !strt = fromIntegral (strt1 .&. IX_MASK)
+                        !skip = fromIntegral (strt1 `shiftR` IX_BITS)
+                        !ixes = fromIntegral indx `shiftL` IX_J_BITS + strt `shiftL` J_BITS + fromIntegral i
                     unsafeWrite new j skip
                     unsafeWrite new (j+1) ixes
                     fill (j+2) (indx+1)
@@ -182,25 +190,25 @@ slice cache = do
               then unsafeWrite cache pr (w-1)
               else do
                 ixes <- unsafeRead cache (pr+1)
-                let !stj = fromIntegral ixes .&. 0x7FFFFF   -- position of multiple and index of cofactor
-                    !ixw = fromIntegral (ixes `shiftR` 23)  -- prime data, up to 41 bits
-                    !i = ixw .&. 7
+                let !stj = fromIntegral ixes .&. IX_J_MASK   -- position of multiple and index of cofactor
+                    !ixw = fromIntegral (ixes `shiftR` IX_J_BITS)  -- prime data, up to 41 bits
+                    !i = ixw .&. J_MASK
                     !k = ixw - i        -- On 32-bits, k > 44717396 means overflow is possible in tick
-                    !o = i `shiftL` 3
-                    !j = stj .&. 7          -- index of cofactor
-                    !s = stj `shiftR` 3     -- index of first multiple to tick off
+                    !o = i `shiftL` J_BITS
+                    !j = stj .&. J_MASK          -- index of cofactor
+                    !s = stj `shiftR` J_BITS     -- index of first multiple to tick off
                 (n, u) <- tick k o j s
-                let !skip = fromIntegral (n `shiftR` 20)
-                    !strt = fromIntegral (n .&. 0xFFFFF)
+                let !skip = fromIntegral (n `shiftR` IX_BITS)
+                    !strt = fromIntegral (n .&. IX_MASK)
                 unsafeWrite cache pr skip
-                unsafeWrite cache (pr+1) ((ixes .&. complement 0x7FFFFF) .|. strt `shiftL` 3 .|. fromIntegral u)
+                unsafeWrite cache (pr+1) ((ixes .&. complement IX_J_MASK) .|. strt `shiftL` J_BITS .|. fromIntegral u)
             treat (pr+2)
         tick stp off j ix
           | lastIndex < ix  = return (ix - sieveBits, j)
           | otherwise       = do
             p <- unsafeRead sieve ix
             when p (unsafeWrite sieve ix False)
-            tick stp off ((j+1) .&. 7) (ix + stp*delta j + tau (off+j))
+            tick stp off ((j+1) .&. J_MASK) (ix + stp*delta j + tau (off+j))
     treat 0
 
 -- | Sieve up to bound in one go.
@@ -222,14 +230,14 @@ sieveTo bound = arr
               | otherwise  = do
                 p <- unsafeRead ar ix
                 when p (unsafeWrite ar ix False)
-                tick stp off ((j+1) .&. 7) (ix + stp*delta j + tau (off+j))
+                tick stp off ((j+1) .&. J_MASK) (ix + stp*delta j + tau (off+j))
             sift ix
               | svbd < ix = return ar
               | otherwise = do
                 p <- unsafeRead ar ix
-                when p  (do let i = ix .&. 7
-                                k = ix `shiftR` 3
-                                !off = i `shiftL` 3
+                when p  (do let i = ix .&. J_MASK
+                                k = ix `shiftR` J_BITS
+                                !off = i `shiftL` J_BITS
                                 !stp = ix - i
                             tick stp off i (start k i))
                 sift (ix+1)
@@ -257,16 +265,16 @@ growCache offset plim old = do
             p <- unsafeRead sieve indx
             if p
               then do
-                let !i = indx .&. 7
+                let !i = indx .&. J_MASK
                     k :: Integer
-                    k = fromIntegral (indx `shiftR` 3)
+                    k = fromIntegral (indx `shiftR` J_BITS)
                     strt0 = ((k*(30*k + fromIntegral (2*rho i))
-                                + fromIntegral (byte i)) `shiftL` 3)
+                                + fromIntegral (byte i)) `shiftL` J_BITS)
                                     + fromIntegral (idx i)
                     strt1 = strt0 - offset
-                    !strt = fromIntegral strt1 .&. 0xFFFFF
-                    !skip = fromIntegral (strt1 `shiftR` 20)
-                    !ixes = fromIntegral indx `shiftL` 23 .|. strt `shiftL` 3 .|. fromIntegral i
+                    !strt = fromIntegral strt1 .&. IX_MASK
+                    !skip = fromIntegral (strt1 `shiftR` IX_BITS)
+                    !ixes = fromIntegral indx `shiftL` IX_J_BITS .|. strt `shiftL` J_BITS .|. fromIntegral i
                 unsafeWrite new j skip
                 unsafeWrite new (j+1) ixes
                 fill (j+2) (indx+1)
@@ -347,10 +355,10 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                   isPr <- unsafeRead sieve indx
                   if isPr
                     then do
-                      let !i = indx .&. 7
-                          !moff = i `shiftL` 3
+                      let !i = indx .&. J_MASK
+                          !moff = i `shiftL` J_BITS
                           k :: Integer
-                          k = fromIntegral (indx `shiftR` 3)
+                          k = fromIntegral (indx `shiftR` J_BITS)
                           p = 30*k+fromIntegral (rho i)
                           q0 = (start-1) `quot` p
                           (skp0,q1) = q0 `quotRem` fromIntegral sieveRange
@@ -360,17 +368,17 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                           b2 = skp0*fromIntegral sieveBytes + fromIntegral b1
                           strt0 = ((k*(30*b2 + fromIntegral (rho r1))
                                         + b2 * fromIntegral (rho i)
-                                        + fromIntegral (mu (moff + r1))) `shiftL` 3)
+                                        + fromIntegral (mu (moff + r1))) `shiftL` J_BITS)
                                             + fromIntegral (nu (moff + r1))
                           strt1 = ((k*(30*k + fromIntegral (2*rho i))
-                                      + fromIntegral (byte i)) `shiftL` 3)
+                                      + fromIntegral (byte i)) `shiftL` J_BITS)
                                           + fromIntegral (idx i)
                           (strt2,r2)
                               | p < ssr   = (strt0 - bitOff,r1)
                               | otherwise = (strt1 - bitOff, i)
-                          !strt = fromIntegral strt2 .&. 0xFFFFF
-                          !skip = fromIntegral (strt2 `shiftR` 20)
-                          !ixes = fromIntegral indx `shiftL` 23 .|. strt `shiftL` 3 .|. fromIntegral r2
+                          !strt = fromIntegral strt2 .&. IX_MASK
+                          !skip = fromIntegral (strt2 `shiftR` IX_BITS)
+                          !ixes = fromIntegral indx `shiftL` IX_J_BITS .|. strt `shiftL` J_BITS .|. fromIntegral r2
                       unsafeWrite new j skip
                       unsafeWrite new (j+1) ixes
                       fill (j+2) (indx+1)
