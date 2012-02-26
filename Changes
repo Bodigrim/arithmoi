@@ -1,3 +1,7 @@
+0.2.0.3:
+    Fix bug in powerMod
+0.2.0.2:
+    Relax bounds on array dependency for 7.4.*
 0.2.0.1:
     Fix copy-pasto (only relevant for 7.3.*)
     Fix imports for ghc >= 7.3
