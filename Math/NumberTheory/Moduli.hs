@@ -166,8 +166,8 @@ powerMod' base expo md = go expo 1 base
   where
     go 1 !a !s  = (a*s) `rem` md
     go e a s
-      | testBit e 0 = go (e `shiftR` 1) a ((s*s) `rem` md)
-      | otherwise   = go (e `shiftR` 1) ((a*s) `rem` md) ((s*s) `rem` md)
+      | testBit e 0 = go (e `shiftR` 1) ((a*s) `rem` md) ((s*s) `rem` md)
+      | otherwise   = go (e `shiftR` 1) a ((s*s) `rem` md)
 
 -- | Specialised version of 'powerMod' for 'Integer' exponents.
 --   Reduces the number of shifts of the exponent since shifting
