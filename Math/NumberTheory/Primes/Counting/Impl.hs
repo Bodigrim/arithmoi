@@ -120,7 +120,7 @@ lowSieve a miss = countToNth (miss+rep) psieves
         rep | o0 < 0    = 0
             | otherwise = sum [1 | i <- [0 .. r2], ba `unsafeAt` i]
               where
-                o0 = a - vO - 7
+                o0 = strt - vO - 9   -- (strt - 2) - v0 - 7
                 r0 = fromInteger o0 `rem` 30
                 r1 = r0 `quot` 3
                 r2 = min 7 (if r1 > 5 then r1-1 else r1)
