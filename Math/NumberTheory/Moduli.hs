@@ -191,7 +191,7 @@ powerModInteger base ex mdl
 -- | Specialised worker without input checks. Makes the same assumptions
 --   as the general version 'powerMod''.
 powerModInteger' :: Integer -> Integer -> Integer -> Integer
-powerModInteger' base expo md = go e1 w1 1 base
+powerModInteger' base expo md = go w1 1 base e1
   where
     w1 = fromInteger expo
     e1 = expo `shiftR` 64
