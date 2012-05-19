@@ -202,55 +202,55 @@ powerModInteger' base expo md = go e1 w1 1 base
   -- thus it is faster to split each Word64 into the constituent 32-bit
   -- Words and process those separately.
   -- The code becomes ugly, unfortunately.
-    go :: Integer -> Word64 -> Integer -> Integer -> Integer
-    go 0 !w !a !s  = end w a s
-    go e w a s = inner1 0 a s
+    go :: Word64 -> Integer -> Integer -> Integer -> Integer
+    go !w !a !s 0  = end a s w
+    go w a s e = inner1 a s 0
       where
         wl :: Word
         !wl = fromIntegral w
         wh :: Word
         !wh = fromIntegral (w `shiftR` 32)
-        inner1 32 !au !sq = inner2 0 au sq
-        inner1 i au sq
-          | testBit wl i = inner1 (i+1) ((au*sq) `rem` md) ((sq*sq) `rem` md)
-          | otherwise    = inner1 (i+1) au ((sq*sq) `rem` md)
-        inner2 32 !au !sq = go (e `shiftR` 64) (fromInteger e) au sq
-        inner2 i au sq
-          | testBit wh i = inner2 (i+1) ((au*sq) `rem` md) ((sq*sq) `rem` md)
-          | otherwise    = inner2 (i+1) au ((sq*sq) `rem` md)
-    end w !a !s
-      | wh == 0   = fin wl a s
-      | otherwise = innerE 0 a s
+        inner1 !au !sq 32 = inner2 au sq 0
+        inner1 au sq i
+          | testBit wl i = inner1 ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
+          | otherwise    = inner1 au ((sq*sq) `rem` md) (i+1)
+        inner2 !au !sq 32 = go (fromInteger e) au sq (e `shiftR` 64)
+        inner2 au sq i
+          | testBit wh i = inner2 ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
+          | otherwise    = inner2 au ((sq*sq) `rem` md) (i+1)
+    end !a !s w
+      | wh == 0   = fin a s wl
+      | otherwise = innerE a s 0
         where
           wl :: Word
           !wl = fromIntegral w
           wh :: Word
           !wh = fromIntegral (w `shiftR` 32)
-          innerE 32 !au !sq = fin wh au sq
-          innerE i au sq
-            | testBit wl i = innerE (i+1) ((au*sq) `rem` md) ((sq*sq) `rem` md)
-            | otherwise    = innerE (i+1) au ((sq*sq) `rem` md)
-    fin :: Word -> Integer -> Integer -> Integer
-    fin 1 !a !s = (a*s) `rem` md
-    fin w a s
-      | testBit w 0 = fin (w `shiftR` 1) ((a*s) `rem` md) ((s*s) `rem` md)
-      | otherwise   = fin (w `shiftR` 1) a ((s*s) `rem` md)
+          innerE !au !sq 32 = fin au sq wh
+          innerE au sq i
+            | testBit wl i = innerE ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
+            | otherwise    = innerE au ((sq*sq) `rem` md) (i+1)
+    fin :: Integer -> Integer -> Word -> Integer
+    fin !a !s 1 = (a*s) `rem` md
+    fin a s w
+      | testBit w 0 = fin ((a*s) `rem` md) ((s*s) `rem` md) (w `shiftR` 1)
+      | otherwise   = fin a ((s*s) `rem` md) (w `shiftR` 1)
 
 #else
   -- WORD_SIZE_IN_BITS == 64, otherwise things wouldn't compile anyway
   -- Shorter code since we need not split each 64-bit word.
-    go :: Integer -> Word -> Integer -> Integer -> Integer
-    go 0 !w !a !s  = end w a s
-    go e w a s = inner 0 a s
+    go :: Word -> Integer -> Integer -> Integer -> Integer
+    go !w !a !s 0  = end a s w
+    go w a s e = inner a s 0
       where
-        inner 64 !au !sq = go (e `shiftR` 64) (fromInteger e) au sq
-        inner i au sq
-          | testBit w i = inner (i+1) ((au*sq) `rem` md) ((sq*sq) `rem` md)
-          | otherwise   = inner (i+1) au ((sq*sq) `rem` md)
-    end 1 !a !s = (a*s) `rem` md
-    end w a s
-      | testBit w 0 = end (w `shiftR` 1) ((a*s) `rem` md) ((s*s) `rem` md)
-      | otherwise   = end (w `shiftR` 1) a ((s*s) `rem` md)
+        inner !au !sq 64 = go (fromInteger e) au sq (e `shiftR` 64)
+        inner au sq i
+          | testBit w i = inner ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
+          | otherwise   = inner au ((sq*sq) `rem` md) (i+1)
+    end !a !s 1 = (a*s) `rem` md
+    end a s w
+      | testBit w 0 = end ((a*s) `rem` md) ((s*s) `rem` md) (w `shiftR` 1)
+      | otherwise   = end a ((s*s) `rem` md) (w `shiftR` 1)
 
 #endif
 
