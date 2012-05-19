@@ -28,7 +28,6 @@ import Data.Bits
 import Data.Array.Unboxed
 import Data.Array.Base (unsafeAt)
 
-import Math.NumberTheory.GCD (extendedGCD)
 import Math.NumberTheory.Utils (shiftToOddCount)
 
 -- | Invert a number relative to a modulus.

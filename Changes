@@ -1,3 +1,6 @@
+0.2.0.6:
+    Performance tweaks for powerModInteger (~10%) and
+    invertMod (~25%).
 0.2.0.5:
     Fix bug in psieveFrom
 0.2.0.4:
