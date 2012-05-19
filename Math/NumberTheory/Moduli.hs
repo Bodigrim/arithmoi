@@ -43,13 +43,26 @@ import Math.NumberTheory.Utils (shiftToOddCount)
 --   If @gcd number modulus > 1@, the result is @Nothing@.
 invertMod :: Integer -> Integer -> Maybe Integer
 invertMod k 0 = if k == 1 || k == (-1) then Just k else Nothing
-invertMod k m = case extendedGCD k' m' of
-                  (1, u, _) -> Just (if u < 0 then m' + u else u)
-                  _         -> Nothing
+invertMod k m = wrap $ go False 1 0 m' k'
   where
     m' = abs m
-    k' | k >= m' || k < 0   = k `mod` m'
-       | otherwise          = k
+    k' | r < 0     = r+m'
+       | otherwise = r
+         where
+           r = k `rem` m'
+    wrap x = case (x*k') `rem` m' of
+               1 -> Just x
+               _ -> Nothing
+    -- Calculate modular inverse of k' modulo m' by continued fraction expansion
+    -- of m'/k', say [a_0,a_1,...,a_s]. Let the convergents be p_j/q_j.
+    -- Starting from j = -2, the arguments of go are
+    -- (p_j/q_j) > m'/k', p_{j+1}, p_j, and n, d with n/d = [a_{j+2},...,a_s].
+    -- Since m'/k' = p_s/q_s, and p_j*q_{j+1} - p_{j+1}*q_j = (-1)^(j+1), we have
+    -- p_{s-1}*k' - q_{s-1}*m' = (-1)^s * gcd m' k', so if the inverse exists,
+    -- it is either p_{s-1} or -p_{s-1}, depending on whether s is even or odd.
+    go !b _ po _ 0 = if b then po else (m'-po)
+    go b !pn po n d = case n `quotRem` d of
+                        (q,r) -> go (not b) (q*pn+po) pn d r
 
 -- | Jacobi symbol of two numbers.
 --   The \"denominator\" must be odd and positive, this condition is checked.
