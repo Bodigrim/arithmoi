@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.3.0.0
+version             : 0.4.0.0
 cabal-version       : >= 1.6
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
@@ -37,6 +37,8 @@ library
                           mtl >= 2.0 && < 2.1
     exposed-modules     : Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
+                          Math.NumberTheory.MoebiusInversion
+                          Math.NumberTheory.MoebiusInversion.Int
                           Math.NumberTheory.Lucas
                           Math.NumberTheory.GCD
                           Math.NumberTheory.GCD.LowLevel
