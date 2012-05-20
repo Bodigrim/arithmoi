@@ -10,7 +10,7 @@
 --
 {-# LANGUAGE CPP, BangPatterns #-}
 #if __GLASGOW_HASKELL__ >= 700
-{-# OPTIONS_GHC -fspec-constr-count=6 #-}
+{-# OPTIONS_GHC -fspec-constr-count=8 #-}
 #endif
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes

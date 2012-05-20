@@ -39,7 +39,7 @@ import Data.Bits
 import Data.Array.Unboxed
 import Data.Array.Base (unsafeAt)
 import Data.Maybe (fromJust)
-import Data.List (foldl', nub)
+import Data.List (nub)
 import Control.Monad (foldM, liftM2)
 
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
@@ -383,7 +383,7 @@ sqM2P n e
         (k,s) = shiftToOddCount n'
         k2 = k `quot` 2
         e2 = e-k
-        solve r 1 = Just 1
+        solve _ 1 = Just 1
         solve 1 _ = Just 1
         solve r p
             | rem4 r == 3   = Nothing  -- otherwise r ≡ 1 (mod 4)
@@ -427,6 +427,7 @@ sqrtModPPList n (2,expo)
     = case sqM2P n expo of
         Just r -> let m = 1 `shiftL` (expo-1)
                   in nub [r, (r+m) `mod` (2*m), (m-r) `mod` (2*m), 2*m-r]
+        _ -> []
 sqrtModPPList n pe@(prime,expo)
     = case sqrtModPP n pe of
         Just 0 -> [0]
@@ -503,6 +504,3 @@ findNonSquare n
             | jacobi' p n == -1 = p
             | otherwise         = search ps
         search _ = error "Should never have happened, prime list exhausted."
-
-modProd :: [Integer] -> Integer -> Integer
-modProd fs md = foldl' (\a b -> (a*b) `mod` md) 1 fs
