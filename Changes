@@ -1,3 +1,5 @@
+0.4.0.1:
+    Fixed Haddock bug
 0.4.0.0:
     Added generalised Moebius inversion, to be continued
 0.3.0.0:
