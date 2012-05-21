@@ -1,3 +1,6 @@
+0.4.0.2:
+    Sped up factor sieves. They need more space now, but the speedup is worth it, IMO.
+    Raised spec-constr limit in MoebiusInversion.Int
 0.4.0.1:
     Fixed Haddock bug
 0.4.0.0:
