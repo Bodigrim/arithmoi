@@ -58,33 +58,50 @@ data CarmichaelSieve = CS {-# UNPACK #-} !Word {-# UNPACK #-} !(UArray Int Word)
 -- | @'factorSieve' n@ creates a store of smallest prime factors of the numbers not exceeding @n@.
 --   If you need to factorise many smallish numbers, this can give a big speedup since it avoids
 --   many superfluous divisions. However, a too large sieve leads to a slowdown due to cache misses.
---   To reduce space usage, only the smallest prime factors of numbers coprime to @30@ are stored,
---   encoded as 'Word16's. The maximal admissible value for @n@ is therefore @2^32 - 1@.
---   Since @&#966;(30) = 8@, the sieve uses only @16@ bytes per @30@ numbers.
+--   The prime factors are stored as 'Word16' for compactness, so @n@ must be
+--   smaller than @2^32@.
 factorSieve :: Integer -> FactorSieve
 factorSieve bound
   | 4294967295 < bound  = error "factorSieve: overflow"
-  | bound < 8   = FS 7 (array (0,0) [(0,0)])
-  | otherwise   = FS bnd (runSTUArray (spfSieve bnd))
+  | bound < 8   = FS 7 (array (0,2) [(0,0),(1,0),(2,0)])
+  | otherwise   = FS bnd fSieve
     where
       bnd = fromInteger bound
+      ibnd = fromInteger ((bound - 3) `quot` 2)
+      svbd = (fromInteger (integerSquareRoot' bound) - 1) `quot` 2
+      fSieve = runSTUArray $ do
+          sieve <- newArray (0,ibnd) 0 :: ST s (STUArray s Int Word16)
+          let sift i
+                  | i < svbd = do
+                      sp <- unsafeRead sieve i
+                      when (sp == 0) (mark (2*i+3) (2*i*(i+3)+3))
+                      sift (i+1)
+                  | otherwise = return sieve
+              mark p j
+                  | j > ibnd    = return ()
+                  | otherwise   = do
+                      sp <- unsafeRead sieve j
+                      when (sp == 0) (unsafeWrite sieve j $ fromIntegral p)
+                      mark p (j+p)
+          sift 0
 
+-- | @'fsBound' sieve@ tells the limit to which the sieve stores the smallest prime factors.
 fsBound :: FactorSieve -> Word
 fsBound (FS b _) = b
 
+-- | @'fsPrimeTest' sieve n@ checks in the sieve whether @n@ is prime. If @n@ is larger
+--   than the sieve can handle, an error is raised.
 fsPrimeTest :: FactorSieve -> Integer -> Bool
 fsPrimeTest fs@(FS bnd sve) n
     | n < 0     = fsPrimeTest fs (-n)
     | n < 2     = False
     | fromInteger n .&. (1 :: Int) == 0 = n == 2
-    | n `rem` 3 == 0    = n == 3
-    | n `rem` 5 == 0    = n == 5
-    | n <= fromIntegral bnd = sve `unsafeAt` (toIdx n) == 0
+    | n <= fromIntegral bnd = sve `unsafeAt` (fromInteger (n `shiftR` 1) - 1) == 0
     | otherwise = error "Out of bounds"
 
 -- | @'sieveFactor' fs n@ finds the prime factorisation of @n@ using the 'FactorSieve' @fs@.
 --   For negative @n@, a factor of @-1@ is included with multiplicity @1@.
---   After stripping any present factors @2, 3@ or @5@, the remaining cofactor @c@ (if larger
+--   After stripping any present factors @2@, the remaining cofactor @c@ (if larger
 --   than @1@) is factorised with @fs@. This is most efficient of course if @c@ does not
 --   exceed the bound with which @fs@ was constructed. If it does, trial division is performed
 --   until either the cofactor falls below the bound or the sieve is exhausted. In the latter
@@ -97,29 +114,28 @@ sieveFactor (FS bnd sve) = check
     check 1 = []
     check n
       | n < 0       = (-1,1) : check (-n)
+      | n <= bound  = go2w (fromIntegral n)     -- avoid expensive Integer ops if possible
+      | fromInteger n .&. (1 :: Int) == 1 = sieveLoop n
       | otherwise   = go2 n
+    go2w n
+        | n .&. 1 == 1 = intLoop ((n-3) `shiftR` 1)
+        | otherwise = case shiftToOddCount n of
+                        (k,m) -> (2,k) : if m == 1 then [] else intLoop ((m-3) `shiftR` 1)
     go2 n = case shiftToOddCount n of
-              (0,_) -> go3 n
-              (k,m) -> (2,k) : if m == 1 then [] else go3 m
-    go3 n = case splitOff 3 n of
-              (0,_) -> go5 n
-              (k,m) -> (3,k) : if m == 1 then [] else go5 m
-    go5 n = case splitOff 5 n of
-              (0,_) -> if n < 49 then [(n,1)] else sieveLoop n
-              (k,m) -> (5,k) : case m of
-                                 1 -> []
-                                 j | j < 49 -> [(j,1)]
-                                   | otherwise -> sieveLoop j
+              (k,m) -> (2,k) : if m == 1 then [] else sieveLoop m
     sieveLoop n
         | bound < n  = tdLoop n (integerSquareRoot' n) 0
-        | otherwise = intLoop (fromIntegral n)
+        | otherwise = intLoop (fromIntegral (n `shiftR` 1)-1)
     intLoop :: Word -> [(Integer,Int)]
-    intLoop n = case unsafeAt sve (toIdx n) of
-                  0 -> [(fromIntegral n,1)]
-                  p -> case splitOff (fromIntegral p) n of
-                         (k,m) -> (fromIntegral p, k) : case m of
-                                                          1 -> []
-                                                          _ -> intLoop m
+    intLoop !n = case unsafeAt sve (fromIntegral n) of
+                  0 -> [(2*fromIntegral n+3,1)]
+                  p -> let p' = fromIntegral p in countLoop p' (n `quot` p' - 1) 1
+    countLoop !p !i !c
+        = case unsafeAt sve (fromIntegral i) of
+            0 | p-3 == 2*i -> [(fromIntegral p,c+1)]
+              | otherwise  -> (fromIntegral p,c) : (2*fromIntegral i+3,1) : []
+            q | fromIntegral q == p -> countLoop p (i `quot` p - 1) (c+1)
+              | otherwise -> (fromIntegral p, c) : intLoop i
     lstIdx = snd (bounds sve)
     tdLoop n sr ix
         | lstIdx < ix   = curve n
@@ -129,7 +145,7 @@ sieveFactor (FS bnd sve) = check
                             (0,_) -> tdLoop n sr (ix+1)
                             (k,m) -> (p,k) : case m of
                                                1 -> []
-                                               j | j <= bound -> intLoop (fromIntegral j)
+                                               j | j <= bound -> intLoop (fromIntegral (j `shiftR` 1) - 1)
                                                  | otherwise -> tdLoop j (integerSquareRoot' j) (ix+1)
           where
             p = toPrim ix
@@ -137,9 +153,8 @@ sieveFactor (FS bnd sve) = check
     curve n = stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n
 
 -- | @'totientSieve' n@ creates a store of the totients of the numbers not exceeding @n@.
---   Like a 'FactorSieve', a 'TotientSieve' only stores values for numbers coprime to @30@
---   to reduce space usage. However, totients are stored as 'Word's, thus the space usage is
---   @2@ or @4@ times as high. The maximal admissible value for @n@ is @'fromIntegral' ('maxBound' :: 'Word')@.
+--   A 'TotientSieve' only stores values for numbers coprime to @30@ to reduce space usage.
+--   The maximal admissible value for @n@ is @'fromIntegral' ('maxBound' :: 'Word')@.
 totientSieve :: Integer -> TotientSieve
 totientSieve bound
   | fromIntegral (maxBound :: Word) < bound  = error "totientSieve: overflow"
@@ -151,7 +166,10 @@ totientSieve bound
 -- | @'sieveTotient' ts n@ finds the totient @&#960;(n)@, i.e. the number of integers @k@ with
 --   @1 <= k <= n@ and @'gcd' n k == 1@, in other words, the order of the group of units
 --   in @&#8484;/(n)@, using the 'TotientSieve' @ts@.
---   The strategy is analogous to 'sieveFactor'.
+--   First, factors of @2, 3@ and @5@ are handled individually, if the remaining
+--   cofactor of @n@ is within the sieve range, its totient is looked up, otherwise
+--   the calculation falls back on factorisation, first by trial division and
+--   if necessary, elliptic curves.
 sieveTotient :: TotientSieve -> Integer -> Integer
 sieveTotient (TS bnd sve) = check
   where
@@ -193,9 +211,8 @@ sieveTotient (TS bnd sve) = check
 
 -- | @'carmichaelSieve' n@ creates a store of values of the Carmichael function
 --   for numbers not exceeding @n@.
---   Like a 'FactorSieve', a 'CarmichaelSieve' only stores values for numbers coprime to @30@
---   to reduce space usage. However, values are stored as 'Word's, thus the space usage is
---   @2@ or @4@ times as high. The maximal admissible value for @n@ is @'fromIntegral' ('maxBound' :: 'Word')@.
+--   Like a 'TotientSieve', a 'CarmichaelSieve' only stores values for numbers coprime to @30@
+--   to reduce space usage. The maximal admissible value for @n@ is @'fromIntegral' ('maxBound' :: 'Word')@.
 carmichaelSieve :: Integer -> CarmichaelSieve
 carmichaelSieve bound
   | fromIntegral (maxBound :: Word) < bound  = error "carmichaelSieve: overflow"
@@ -207,7 +224,7 @@ carmichaelSieve bound
 -- | @'sieveCarmichael' cs n@ finds the value of @&#955;(n)@ (or @&#968;(n)@), the smallest positive
 --   integer @e@ such that for all @a@ with @gcd a n == 1@ the congruence @a^e &#8801; 1 (mod n)@ holds,
 --   in other words, the (smallest) exponent of the group of units in @&#8484;/(n)@.
---   The strategy is analogous to 'sieveFactor'.
+--   The strategy is analogous to 'sieveTotient'.
 sieveCarmichael :: CarmichaelSieve -> Integer -> Integer
 sieveCarmichael (CS bnd sve) = check
   where
@@ -260,10 +277,7 @@ sieveCarmichael (CS bnd sve) = check
     curve tt n = tt `lcm` carmichaelFromCanonical (stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n)
 
 
-{-# SPECIALISE spfSieve :: Word -> ST s (STUArray s Int Word),
-                           Word -> ST s (STUArray s Int Word16)
-  #-}
-spfSieve :: forall s w. (Integral w, MArray (STUArray s) w (ST s)) => Word -> ST s (STUArray s Int w)
+spfSieve :: Word -> ST s (STUArray s Int Word)
 spfSieve bound = do
   let (octs,lidx) = idxPr bound
       !mxidx = 8*octs+lidx
@@ -272,13 +286,13 @@ spfSieve bound = do
       !mxsve = integerSquareRoot' mxval
       (kr,r) = idxPr mxsve
       !svbd = 8*kr+r
-  ar <- newArray (0,mxidx) 0 :: ST s (STUArray s Int w)
+  ar <- newArray (0,mxidx) 0
   let start k i = 8*(k*(30*k+2*rho i) + byte i) + idx i
       tick p stp off j ix
         | mxidx < ix    = return ()
         | otherwise = do
-          s <- (unsafeRead :: STUArray s Int w -> Int -> ST s w) ar ix
-          when (s == 0) ((unsafeWrite :: STUArray s Int w -> Int -> w -> ST s ()) ar ix p)
+          s <- unsafeRead ar ix
+          when (s == 0) (unsafeWrite ar ix p)
           tick p stp off ((j+1) .&. 7) (ix + stp*delta j + tau (off+j))
       sift ix
         | svbd < ix = return ar
