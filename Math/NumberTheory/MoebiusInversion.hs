@@ -28,7 +28,10 @@ totientSum = (+1) . generalInversion (triangle . fromIntegral)
   where
     triangle n = (n*(n-1)) `quot` 2
 
--- | The generalised Moebius inversion implemented here allows an efficient
+-- | @generalInversion g n@ evaluates the generalised Moebius inversion of @g@
+--   at the argument @n@.
+--
+--   The generalised Moebius inversion implemented here allows an efficient
 --   calculation of isolated values of the function @f : N -> Z@ if the function
 --   @g@ defined by
 --
@@ -52,6 +55,7 @@ totientSum = (+1) . generalInversion (triangle . fromIntegral)
 --
 -- >
 -- > f n = number of reduced proper fractions with denominator <= n
+-- >
 -- > g n = number of proper fractions with denominator <= n
 -- >
 --
@@ -65,7 +69,7 @@ totientSum = (+1) . generalInversion (triangle . fromIntegral)
 --   Since the function arguments are used as array indices, the domain of
 --   @f@ is restricted to 'Int'.
 --
---   The value @f n@ is then computed by @generalInversion g n). Note that when
+--   The value @f n@ is then computed by @generalInversion g n@). Note that when
 --   many values of @f@ are needed, there are far more efficient methods, this
 --   method is only appropriate to compute isolated values of @f@.
 generalInversion :: (Int -> Integer) -> Int -> Integer

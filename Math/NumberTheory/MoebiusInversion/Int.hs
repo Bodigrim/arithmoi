@@ -29,7 +29,10 @@ totientSum = (+1) . generalInversion triangle
   where
     triangle n = (n*(n-1)) `quot` 2
 
--- | The generalised Moebius inversion implemented here allows an efficient
+-- | @generalInversion g n@ evaluates the generalised Moebius inversion of @g@
+--   at the argument @n@.
+--
+--   The generalised Moebius inversion implemented here allows an efficient
 --   calculation of isolated values of the function @f : N -> Z@ if the function
 --   @g@ defined by
 --
@@ -67,7 +70,7 @@ totientSum = (+1) . generalInversion triangle
 --   That bears the risk of overflow, however, so be sure to use it only when it's
 --   safe.
 --
---   The value @f n@ is then computed by @generalInversion g n). Note that when
+--   The value @f n@ is then computed by @generalInversion g n@). Note that when
 --   many values of @f@ are needed, there are far more efficient methods, this
 --   method is only appropriate to compute isolated values of @f@.
 generalInversion :: (Int -> Int) -> Int -> Int
