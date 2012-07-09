@@ -27,7 +27,9 @@ import Math.NumberTheory.Powers.Squares
 import Data.Bits
 
 import GHC.Base
-import GHC.Word
+#if __GLASGOW_HASKELL__ < 705
+import GHC.Word     -- Moved to GHC.Types
+#endif
 import GHC.Integer.GMP.Internals
 
 -- | @'isPrime' n@ tests whether @n@ is a prime (negative or positive).

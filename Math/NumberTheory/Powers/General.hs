@@ -27,7 +27,9 @@ import GHC.Integer
 import GHC.Integer.GMP.Internals
 
 import Data.Bits
+#if __GLASGOW_HASKELL__ < 705
 import Data.Word
+#endif
 import Data.List (foldl')
 import qualified Data.Set as Set
 

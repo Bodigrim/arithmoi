@@ -10,7 +10,7 @@
 -- Normally, accessing these via the higher level interface of "Math.NumberTheory.GCD"
 -- should be sufficient.
 --
-{-# LANGUAGE MagicHash, UnboxedTuples #-}
+{-# LANGUAGE CPP, MagicHash, UnboxedTuples #-}
 module Math.NumberTheory.GCD.LowLevel
   ( -- * Specialised GCDs
     gcdInt
@@ -27,7 +27,9 @@ module Math.NumberTheory.GCD.LowLevel
   ) where
 
 import GHC.Base
-import GHC.Word (Word(..))
+#if __GLASGOW_HASKELL__ < 705
+import GHC.Word (Word(..))      -- Moved to GHC.Types
+#endif
 
 import Math.NumberTheory.Utils
 

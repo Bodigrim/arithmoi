@@ -32,7 +32,9 @@ import Data.Array.ST
 import Data.Array.Base (unsafeAt, unsafeWrite)
 
 import Data.Bits
-import Data.Word
+#if __GLASGOW_HASKELL__ < 705
+import Data.Word        -- Moved to GHC.Types
+#endif
 
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 

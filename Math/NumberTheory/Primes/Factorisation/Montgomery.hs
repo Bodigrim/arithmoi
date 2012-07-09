@@ -43,7 +43,9 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 #include "MachDeps.h"
 
 import GHC.Base
-import GHC.Word
+#if __GLASGOW_HASKELL__ < 705
+import GHC.Word     -- Moved to GHC.Types
+#endif
 import Data.Array.Base
 
 import System.Random

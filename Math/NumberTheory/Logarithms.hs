@@ -9,7 +9,7 @@
 -- Integer Logarithms. For efficiency, the internal representation of 'Integer's
 -- from integer-gmp is used.
 --
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE CPP, MagicHash #-}
 module Math.NumberTheory.Logarithms
     ( -- * Integer logarithms with input checks
       integerLogBase
@@ -24,7 +24,9 @@ module Math.NumberTheory.Logarithms
     ) where
 
 import GHC.Base
-import GHC.Word (Word(..))
+#if __GLASGOW_HASKELL__ < 705
+import GHC.Word (Word(..))      -- Moved to GHC.Types
+#endif
 
 import Data.Bits
 import Data.Array.Unboxed
