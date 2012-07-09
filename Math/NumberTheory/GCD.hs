@@ -164,12 +164,6 @@ coprime a b =
 -- Auxiliaries
 
 -- gcd of two odd numbers
-{-# SPECIALISE gcdOdd :: Integer -> Integer -> Integer #-}
-#if WORD_SIZE_IN_BITS < 64
-{-# SPECIALISE gcdOdd :: Int64 -> Int64 -> Int64,
-                         Word64 -> Word64 -> Word64
-  #-}
-#endif
 {-# INLINE gcdOdd #-}
 gcdOdd :: (Integral a, Bits a) => a -> a -> a
 gcdOdd a b
