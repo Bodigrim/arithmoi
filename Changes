@@ -1,3 +1,8 @@
+0.4.0.3:
+    Relaxed dependencies on mtl and containers
+    Fixed warnings from GHC-7.5, Word(..) moved to GHC.Types
+    Removed SPECIALISE pragma from inline function (warning from 7.5, probably
+    pointless anyway)
 0.4.0.2:
     Sped up factor sieves. They need more space now, but the speedup is worth it, IMO.
     Raised spec-constr limit in MoebiusInversion.Int
