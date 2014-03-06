@@ -14,7 +14,7 @@ module Math.NumberTheory.Powers.Integer
     ( integerPower
     ) where
 
-import GHC.Base
+import GHC.Exts.Compat
 
 import Math.NumberTheory.Logarithms.Internal ( wordLog2# )
 

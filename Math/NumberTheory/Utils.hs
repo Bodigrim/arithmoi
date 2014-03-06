@@ -24,11 +24,12 @@ module Math.NumberTheory.Utils
 
 #include "MachDeps.h"
 
-import GHC.Base
+import GHC.Base hiding ((==#))
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word     -- Word and its constructor moved to GHC.Types
 #endif
 
+import GHC.Exts.Compat
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 

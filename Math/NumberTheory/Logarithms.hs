@@ -23,7 +23,7 @@ module Math.NumberTheory.Logarithms
     , wordLog2'
     ) where
 
-import GHC.Base
+import GHC.Exts.Compat
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word (Word(..))      -- Moved to GHC.Types
 #endif

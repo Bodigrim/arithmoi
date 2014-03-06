@@ -20,7 +20,7 @@ module Math.NumberTheory.Powers.Fourth
 
 #include "MachDeps.h"
 
-import GHC.Base
+import GHC.Exts.Compat
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 

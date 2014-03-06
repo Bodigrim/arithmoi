@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.4.0.3
+version             : 0.4.0.4
 cabal-version       : >= 1.6
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
@@ -27,15 +27,14 @@ description         : A library of basic functionality needed for
 
 category            : Math, Algorithms, Number Theory
 
-tested-with         : GHC == 6.12.3, GHC == 7.0.2, GHC == 7.0.4, GHC == 7.2.1, GHC == 7.4.1,
-                      GHC == 7.4.2
+tested-with         : GHC == 7.4.2, GHC==7.6.3, GHC==7.8.1
 
 extra-source-files  : Changes, TODO
 
 library
-    build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.5, ghc-prim,
+    build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.6, ghc-prim,
                           integer-gmp, containers >= 0.3 && < 0.6, random >= 1.0 && < 1.1,
-                          mtl >= 2.0 && < 2.2
+                          mtl >= 2.0 && < 2.2, ghc-prim-compat < 1.1
     exposed-modules     : Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion

@@ -23,7 +23,7 @@ module Math.NumberTheory.Powers.Squares
 
 #include "MachDeps.h"
 
-import GHC.Base
+import GHC.Exts.Compat
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 

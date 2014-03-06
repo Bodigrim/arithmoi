@@ -27,7 +27,7 @@ import Data.Array.ST
 import Data.Bits
 import Data.Word
 
-import GHC.Base
+import GHC.Exts.Compat
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
