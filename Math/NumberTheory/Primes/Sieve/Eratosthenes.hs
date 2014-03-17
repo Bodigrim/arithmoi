@@ -36,7 +36,10 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 import Control.Monad.ST
 import Data.Array.Base
-import Data.Array.ST        hiding (unsafeFreeze, unsafeThaw, castSTUArray)
+import Data.Array.ST
+#if !MIN_VERSION_array(0,5,0)
+                     hiding (unsafeFreeze, unsafeThaw, castSTUArray)
+#endif
 import Control.Monad (when)
 import Data.Bits
 import Data.Word
