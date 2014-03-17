@@ -26,11 +26,8 @@ module Math.NumberTheory.GCD.LowLevel
   , coprimeWord#
   ) where
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
 import GHC.Base
-#endif
+
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word (Word(..))      -- Moved to GHC.Types
 #endif
@@ -75,10 +72,10 @@ gcdWord# a# b#  =
 -- | Test whether two 'Word#'s are coprime.
 coprimeWord# :: Word# -> Word# -> Bool
 coprimeWord# a# b# =
-  (a# `eqWord#` 1## || b# `eqWord#` 1##)
-  || ((((a# `or#` b#) `and#` 1##) `eqWord#` 1##) -- not both even
-      && ((a# `neWord#` 0## && b# `neWord#` 0##) -- neither is zero
-      && gcdWordOdd# (shiftToOdd# a#) (shiftToOdd# b#) `eqWord#` 1##))
+  (isTrue# (a# `eqWord#` 1##) || isTrue# (b# `eqWord#` 1##))
+  || (isTrue# (((a# `or#` b#) `and#` 1##) `eqWord#` 1##) -- not both even
+      && ((isTrue# (a# `neWord#` 0##) && isTrue# (b# `neWord#` 0##)) -- neither is zero
+      && isTrue# (gcdWordOdd# (shiftToOdd# a#) (shiftToOdd# b#) `eqWord#` 1##)))
 
 -- Various auxiliary functions
 
@@ -86,10 +83,10 @@ coprimeWord# a# b# =
 {-# INLINE gcdWordOdd# #-}
 gcdWordOdd# :: Word# -> Word# -> Word#
 gcdWordOdd# a# b#
-  | a# `eqWord#` 1## || b# `eqWord#` 1##  = 1##
-  | a# `eqWord#` b#                       = a#
-  | a# `ltWord#` b#                       = oddGCD# b# a#
-  | otherwise                             = oddGCD# a# b#
+  | isTrue# (a# `eqWord#` 1##) || isTrue# (b# `eqWord#` 1##)    = 1##
+  | isTrue (a# `eqWord#` b#)                                    = a#
+  | isTrue# (a# `ltWord#` b#)                                   = oddGCD# b# a#
+  | otherwise                                                   = oddGCD# a# b#
 
 -- calculate the gcd of two odd numbers using the binary gcd algorithm
 -- Precondition: first argument strictly larger than second (which should be greater than 1)
@@ -97,11 +94,11 @@ oddGCD# :: Word# -> Word# -> Word#
 oddGCD# a# b# =
     case shiftToOdd# (a# `minusWord#` b#) of
       1## -> 1##
-      c#  | c# `ltWord#` b# -> oddGCD# b# c#
-          | c# `gtWord#` b# -> oddGCD# c# b#
-          | otherwise       -> c#
+      c#  | isTrue# (c# `ltWord#` b#)   -> oddGCD# b# c#
+          | isTrue# (c# `gtWord#` b#)   -> oddGCD# c# b#
+          | otherwise                   -> c#
 
 absInt# :: Int# -> Int#
 absInt# i#
-  | i# <# 0#    = negateInt# i#
-  | otherwise   = i#
+  | isTrue# (i# <# 0#)  = negateInt# i#
+  | otherwise           = i#
