@@ -27,15 +27,14 @@ import Data.Array.ST
 import Data.Bits
 import Data.Word
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
 import GHC.Base
-#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
+#if __GLASGOW_HASKELL__ < 707
+import Math.NumberTheory.Utils (isTrue#)
+#endif
 
 -- | Calculate the integer cube root of an integer @n@,
 --   that is the largest integer @r@ such that @r^3 <= n@.
@@ -203,7 +202,7 @@ appCuRt :: Integer -> Integer
 appCuRt (S# i#) = case double2Int# (int2Double# i# **## (1.0## /## 3.0##)) of
                     r# -> S# r#
 appCuRt n@(J# s# _)
-    | s# <# THRESH#  = floor (fromInteger n ** (1.0/3.0) :: Double)
+    | isTrue# (s# <# THRESH#)   = floor (fromInteger n ** (1.0/3.0) :: Double)
     | otherwise = case integerLog2# n of
                     l# -> case (l# `quotInt#` 3#) -# 51# of
                             h# -> case shiftRInteger n (3# *# h#) of
