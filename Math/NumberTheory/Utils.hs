@@ -20,20 +20,18 @@ module Math.NumberTheory.Utils
     , bitCountWord#
     , uncheckedShiftR
     , splitOff
+#if __GLASGOW_HASKELL__ < 707
+    , isTrue#
+#endif
     ) where
 
 #include "MachDeps.h"
 
-import GHC.Base hiding ((==#))
+import GHC.Base
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word     -- Word and its constructor moved to GHC.Types
 #endif
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
-import GHC.Base
-#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -87,7 +85,7 @@ shiftOCInteger :: Integer -> (Int, Integer)
 shiftOCInteger n@(S# i#) =
     case shiftToOddCount# (int2Word# i#) of
       (# z#, w# #)
-        | z# ==# 0# -> (0, n)
+        | isTrue# (z# ==# 0#) -> (0, n)
         | otherwise -> (I# z#, S# (word2Int# w#))
 shiftOCInteger n@(J# _ ba#) = case count 0# 0# of
                                  0#  -> (0, n)
@@ -198,3 +196,9 @@ splitOff p n = go 0 n
     go !k m = case m `quotRem` p of
                 (q,r) | r == 0 -> go (k+1) q
                       | otherwise -> (k,m)
+
+#if __GLASGOW_HASKELL__ < 707
+-- The times they are a-changing. The types of primops too :(
+isTrue# :: Bool -> Bool
+isTrue# = id
+#endif
