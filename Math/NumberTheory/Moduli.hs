@@ -162,37 +162,46 @@ jacOL !j a b
 --   calculates @(base ^ exponent) \`mod\` modulus@ by repeated squaring and reduction.
 --   If @exponent < 0@ and @base@ is invertible modulo @modulus@, @(inverse ^ |exponent|) \`mod\` modulus@
 --   is calculated. This function does some input checking and sanitation before calling the unsafe worker.
-{-# SPECIALISE powerMod :: Integer -> Int -> Integer -> Integer,
-                           Integer -> Word -> Integer -> Integer
-  #-}
 {-# RULES
 "powerMod/Integer" powerMod = powerModInteger
   #-}
+{-# INLINE [1] powerMod #-}
 powerMod :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
-powerMod base expo md
+powerMod = powerModImpl
+
+{-# SPECIALISE powerModImpl :: Integer -> Int -> Integer -> Integer,
+                               Integer -> Word -> Integer -> Integer
+  #-}
+powerModImpl :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
+powerModImpl base expo md
   | md == 0     = base ^ expo
   | md' == 1    = 0
   | expo == 0   = 1
   | bse' == 1   = 1
   | expo < 0    = case invertMod bse' md' of
-                    Just i  -> powerMod' i (negate expo) md'
+                    Just i  -> powerMod'Impl i (negate expo) md'
                     Nothing -> error "Math.NumberTheory.Moduli.powerMod: Base isn't invertible with respect to modulus"
   | bse' == 0   = 0
-  | otherwise   = powerMod' bse' expo md'
+  | otherwise   = powerMod'Impl bse' expo md'
     where
       md' = abs md
       bse' = if base < 0 || md' <= base then base `mod` md' else base
 
 -- | Modular power worker without input checking.
 --   Assumes all arguments strictly positive and modulus greater than 1.
-{-# SPECIALISE powerMod' :: Integer -> Int -> Integer -> Integer,
-                            Integer -> Word -> Integer -> Integer
-  #-}
 {-# RULES
 "powerMod'/Integer" powerMod' = powerModInteger'
   #-}
+{-# INLINE [1] powerMod' #-}
 powerMod' :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
-powerMod' base expo md = go expo 1 base
+powerMod' = powerMod'Impl
+
+
+{-# SPECIALISE powerMod'Impl :: Integer -> Int -> Integer -> Integer,
+                                Integer -> Word -> Integer -> Integer
+  #-}
+powerMod'Impl :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
+powerMod'Impl base expo md = go expo 1 base
   where
     go 1 !a !s  = (a*s) `rem` md
     go e a s
@@ -296,7 +305,7 @@ sqrtModP :: Integer -> Integer -> Maybe Integer
 sqrtModP n 2 = Just (n `mod` 2)
 sqrtModP n prime = case jacobi' n prime of
                      0 -> Just 0
-                     1 -> Just (tonelliShanks (n `mod` prime) prime)
+                     1 -> Just (sqrtModP' (n `mod` prime) prime)
                      _ -> Nothing
 
 -- | @sqrtModPList n prime@ computes the list of all square roots of @n@
@@ -358,16 +367,21 @@ sqrtModPP n (prime,expo) = case sqrtModP n prime of
                              Just r -> Just $ fixup r
                              _      -> Nothing
   where
-    fixup r = case splitOff prime (r*r-n) of
-                (e,q) | expo <= e -> r
-                      | otherwise -> hoist (fromJust $ invertMod (2*r) prime) r (q `mod` prime) (prime^e)
+    fixup r = let diff' = r*r-n
+              in if diff' == 0
+                   then r
+                   else case splitOff prime diff' of
+                          (e,q) | expo <= e -> r
+                                | otherwise -> hoist (fromJust $ invertMod (2*r) prime) r (q `mod` prime) (prime^e)
                       --
     hoist inv root elim pp
+        | diff' == 0    = root'
         | expo <= ex    = root'
         | otherwise     = hoist inv root' (nelim `mod` prime) (prime^ex)
           where
             root' = (root + (inv*(prime-elim))*pp) `mod` (prime*pp)
-            (ex, nelim) = splitOff prime (root'*root' - n)
+            diff' = root'*root' - n
+            (ex, nelim) = splitOff prime diff'
 
 -- dirty, dirty
 sqM2P :: Integer -> Int -> Maybe Integer
