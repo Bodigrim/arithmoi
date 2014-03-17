@@ -8,13 +8,17 @@
 --
 -- Slightly faster power function for Integer base and Int exponent.
 --
-{-# LANGUAGE MagicHash, BangPatterns #-}
+{-# LANGUAGE MagicHash, BangPatterns, CPP #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Powers.Integer
     ( integerPower
     ) where
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 
 import Math.NumberTheory.Logarithms.Internal ( wordLog2# )
 
