@@ -25,7 +25,10 @@ import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Logarithms
 
 import Data.Array.Base
-import Data.Array.ST    hiding (unsafeThaw)
+import Data.Array.ST
+#if !MIN_VERSION_array(0,5,0)
+    hiding (unsafeThaw)
+#endif
 import Control.Monad.ST
 import Data.Bits
 import Data.Int
