@@ -57,11 +57,8 @@ gw64 (W64# x#) (W64# y#) = W64# (gcdWord# x# y#)
 "binaryGCD/Int64"   binaryGCD = gi64
 "binaryGCD/Word64"  binaryGCD = gw64
   #-}
-#else
-{-# SPECIALISE binaryGCD :: Word64 -> Word64 -> Word64,
-                            Int64 -> Int64 -> Int64 #-}
 #endif
-{-# SPECIALISE binaryGCD :: Integer -> Integer -> Integer #-}
+{-# INLINE [1] binaryGCD #-}
 -- | Calculate the greatest common divisor using the binary gcd algorithm.
 --   Depending on type and hardware, that can be considerably faster than
 --   @'Prelude.gcd'@ but it may also be significantly slower.
@@ -75,9 +72,17 @@ gw64 (W64# x#) (W64# y#) = W64# (gcdWord# x# y#)
 --
 --   Relies on twos complement or sign and magnitude representaion for signed types.
 binaryGCD :: (Integral a, Bits a) => a -> a -> a
-binaryGCD a 0 = abs a
-binaryGCD 0 b = abs b
-binaryGCD a b =
+binaryGCD = binaryGCDImpl
+
+#if WORD_SIZE_IN_BITS < 64
+{-# SPECIALISE binaryGCDImpl :: Word64 -> Word64 -> Word64,
+                                Int64 -> Int64 -> Int64 #-}
+#endif
+{-# SPECIALISE binaryGCDImpl :: Integer -> Integer -> Integer #-}
+binaryGCDImpl :: (Integral a, Bits a) => a -> a -> a
+binaryGCDImpl a 0 = abs a
+binaryGCDImpl 0 b = abs b
+binaryGCDImpl a b =
     case shiftToOddCount a of
       (!za, !oa) ->
         case shiftToOddCount b of
@@ -139,11 +144,8 @@ cw64 (W64# x#) (W64# y#) = coprimeWord# x# y#
 "coprime/Int64"     coprime = ci64
 "coprime/Word64"    coprime = cw64
   #-}
-#else
-{-# SPECIALISE coprime :: Word64 -> Word64 -> Bool,
-                          Int64 -> Int64 -> Bool #-}
 #endif
-{-# SPECIALISE coprime :: Integer -> Integer -> Bool #-}
+{-# INLINE [1] coprime #-}
 -- | Test whether two numbers are coprime using an abbreviated binary gcd algorithm.
 --   A little bit faster than checking @binaryGCD a b == 1@ if one of the arguments
 --   is even, much faster if both are even.
@@ -153,7 +155,17 @@ cw64 (W64# x#) (W64# y#) = coprimeWord# x# y#
 --
 --   Relies on twos complement or sign and magnitude representaion for signed types.
 coprime :: (Integral a, Bits a) => a -> a -> Bool
-coprime a b =
+coprime = coprimeImpl
+
+-- Separate implementation to give the rules a chance to fire by not inlining
+-- before phase 1, and yet have a specialisation for the types without rules
+#if WORD_SIZE_IN_BITS < 64
+{-# SPECIALISE coprimeImpl :: Word64 -> Word64 -> Bool,
+                              Int64 -> Int64 -> Bool #-}
+#endif
+{-# SPECIALISE coprimeImpl :: Integer -> Integer -> Bool #-}
+coprimeImpl :: (Integral a, Bits a) => a -> a -> Bool
+coprimeImpl a b =
   (a' == 1 || b' == 1)
   || (a' /= 0 && b' /= 0 && ((a .|. b) .&. 1) == 1
       && gcdOdd (abs (shiftToOdd a')) (abs (shiftToOdd b')) == 1)
