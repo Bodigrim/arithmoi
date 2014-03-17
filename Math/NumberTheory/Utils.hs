@@ -29,7 +29,11 @@ import GHC.Base hiding ((==#))
 import GHC.Word     -- Word and its constructor moved to GHC.Types
 #endif
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -60,6 +64,7 @@ uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 "shiftToOddCount/Word"      shiftToOddCount = shiftOCWord
 "shiftToOddCount/Integer"   shiftToOddCount = shiftOCInteger
   #-}
+{-# INLINE [1] shiftToOddCount #-}
 shiftToOddCount :: (Integral a, Bits a) => a -> (Int, a)
 shiftToOddCount n = case shiftOCInteger (fromIntegral n) of
                       (z, o) -> (z, fromInteger o)
@@ -101,6 +106,7 @@ shiftOCInteger n@(J# _ ba#) = case count 0# 0# of
 "shiftToOdd/Word"      shiftToOdd = shiftOWord
 "shiftToOdd/Integer"   shiftToOdd = shiftOInteger
   #-}
+{-# INLINE [1] shiftToOdd #-}
 shiftToOdd :: (Integral a, Bits a) => a -> a
 shiftToOdd n = fromInteger (shiftOInteger (fromIntegral n))
 
