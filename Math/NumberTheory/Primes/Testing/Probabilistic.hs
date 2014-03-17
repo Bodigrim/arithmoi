@@ -26,11 +26,8 @@ import Math.NumberTheory.Powers.Squares
 
 import Data.Bits
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
 import GHC.Base
-#endif
+
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word     -- Moved to GHC.Types
 #endif
@@ -207,7 +204,7 @@ testLucas n q (J# s# ba#) = test (s# -# 1#)
       | testBit w i = go j# w (i - 1) 1 1 1 q
       | otherwise   = look j# w (i-1)
     go k# w i un un1 vn qn
-      | i < 0       = if k# <# 0#
+      | i < 0       = if isTrue# (k# <# 0#)
                          then (un,vn,qn)
                          else go (k# -# 1#) (W# (indexWordArray# ba# k#)) (WORD_SIZE_IN_BITS - 1) un un1 vn qn
       | testBit w i = go k# w (i-1) u2n1 u2n2 v2n1 q2n1

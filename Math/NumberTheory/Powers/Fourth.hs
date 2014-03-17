@@ -20,11 +20,7 @@ module Math.NumberTheory.Powers.Fourth
 
 #include "MachDeps.h"
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
 import GHC.Base
-#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -38,6 +34,9 @@ import Data.Word
 #endif
 
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
+#if __GLASGOW_HASKELL__ < 707
+import Math.NumberTheory.Utils (isTrue#)
+#endif
 
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
@@ -142,7 +141,7 @@ approxBiSqrt = fromInteger . appBiSqrt . fromIntegral
 appBiSqrt :: Integer -> Integer
 appBiSqrt (S# i#) = S# (double2Int# (sqrtDouble# (sqrtDouble# (int2Double# i#))))
 appBiSqrt n@(J# s# _)
-    | s# <# THRESH# = floor (sqrt . sqrt $ fromInteger n :: Double)
+    | isTrue# (s# <# THRESH#)   = floor (sqrt . sqrt $ fromInteger n :: Double)
     | otherwise = case integerLog2# n of
                     l# -> case uncheckedIShiftRA# l# 2# -# 47# of
                             h# -> case shiftRInteger n (4# *# h#) of

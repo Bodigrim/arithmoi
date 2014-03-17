@@ -22,11 +22,7 @@ module Math.NumberTheory.Powers.General
 
 #include "MachDeps.h"
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
 import GHC.Base
-#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -39,7 +35,12 @@ import qualified Data.Set as Set
 
 -- import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
-import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
+import Math.NumberTheory.Utils  (shiftToOddCount
+                                , splitOff
+#if __GLASGOW_HASKELL__ < 707
+                                , isTrue#
+#endif
+                                )
 import qualified Math.NumberTheory.Powers.Squares as P2
 import qualified Math.NumberTheory.Powers.Cubes as P3
 import qualified Math.NumberTheory.Powers.Fourth as P4
@@ -224,7 +225,7 @@ appKthRoot k@(I# k#) n@(J# _ _) =
               1# -> 3
               2# -> 5
               3# -> 11
-              h# | h# <# 500# ->
+              h# | isTrue# (h# <# 500#) ->
                    floor (scaleFloat (I# (h# -# 1#))
                           (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
                  | otherwise ->
