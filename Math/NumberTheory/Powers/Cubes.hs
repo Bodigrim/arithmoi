@@ -27,7 +27,11 @@ import Data.Array.ST
 import Data.Bits
 import Data.Word
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -58,8 +62,9 @@ integerCubeRoot n
 {-# RULES
 "integerCubeRoot'/Int"  integerCubeRoot' = cubeRootInt'
 "integerCubeRoot'/Word" integerCubeRoot' = cubeRootWord
+"integerCubeRoot'/Igr"  integerCubeRoot' = cubeRootIgr
   #-}
-{-# SPECIALISE integerCubeRoot' :: Integer -> Integer #-}
+{-# INLINE [1] integerCubeRoot' #-}
 integerCubeRoot' :: Integral a => a -> a
 integerCubeRoot' 0 = 0
 integerCubeRoot' n = newton3 n (approxCuRt n)
@@ -163,6 +168,10 @@ cubeRootWord w
         c = r*r*r
         d = 3*r*(r+1)
         e = c+d
+
+cubeRootIgr :: Integer -> Integer
+cubeRootIgr 0 = 0
+cubeRootIgr n = newton3 n (approxCuRt n)
 
 {-# SPECIALISE newton3 :: Int -> Int -> Int #-}
 {-# SPECIALISE newton3 :: Integer -> Integer -> Integer #-}
