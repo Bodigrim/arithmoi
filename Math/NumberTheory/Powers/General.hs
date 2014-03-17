@@ -22,7 +22,11 @@ module Math.NumberTheory.Powers.General
 
 #include "MachDeps.h"
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
