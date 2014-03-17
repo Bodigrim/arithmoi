@@ -23,7 +23,11 @@ module Math.NumberTheory.Powers.Squares
 
 #include "MachDeps.h"
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -58,7 +62,7 @@ integerSquareRoot n
 "integerSquareRoot'/Int"  integerSquareRoot' = isqrtInt'
 "integerSquareRoot'/Word" integerSquareRoot' = isqrtWord
   #-}
-{-# SPECIALISE integerSquareRoot' :: Integer -> Integer #-}
+{-# INLINE [1] integerSquareRoot' #-}
 integerSquareRoot' :: Integral a => a -> a
 integerSquareRoot' = isqrtA
 
