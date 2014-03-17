@@ -26,7 +26,11 @@ module Math.NumberTheory.GCD.LowLevel
   , coprimeWord#
   ) where
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word (Word(..))      -- Moved to GHC.Types
 #endif
