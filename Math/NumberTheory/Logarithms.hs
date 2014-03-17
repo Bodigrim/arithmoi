@@ -23,11 +23,8 @@ module Math.NumberTheory.Logarithms
     , wordLog2'
     ) where
 
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Exts.Compat
-#else
 import GHC.Base
-#endif
+
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word (Word(..))      -- Moved to GHC.Types
 #endif
@@ -69,15 +66,15 @@ integerLog2 n
 --   The argument must be positive, otherwise an error is thrown.
 intLog2 :: Int -> Int
 intLog2 (I# i#)
-  | i# <# 1#    = error "Math.NumberTheory.Logarithms.intLog2: argument must be positive"
-  | otherwise   = I# (wordLog2# (int2Word# i#))
+  | isTrue# (i# <# 1#)  = error "Math.NumberTheory.Logarithms.intLog2: argument must be positive"
+  | otherwise           = I# (wordLog2# (int2Word# i#))
 
 -- | Calculate the integer logarithm of a 'Word' to base 2.
 --   The argument must be positive, otherwise an error is thrown.
 wordLog2 :: Word -> Int
 wordLog2 (W# w#)
-  | w# `eqWord#` 0##    = error "Math.NumberTheory.Logarithms.wordLog2: argument must not be 0."
-  | otherwise           = I# (wordLog2# w#)
+  | isTrue# (w# `eqWord#` 0##)  = error "Math.NumberTheory.Logarithms.wordLog2: argument must not be 0."
+  | otherwise                   = I# (wordLog2# w#)
 
 -- | Same as 'integerLog2', but without checks, saves a little time when
 --   called often for known good input.
