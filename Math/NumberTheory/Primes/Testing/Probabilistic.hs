@@ -26,7 +26,11 @@ import Math.NumberTheory.Powers.Squares
 
 import Data.Bits
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word     -- Moved to GHC.Types
 #endif
