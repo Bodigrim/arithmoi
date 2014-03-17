@@ -35,6 +35,9 @@ import Data.Array.Base (unsafeAt)
 
 import Math.NumberTheory.Logarithms.Internal
 import Math.NumberTheory.Powers.Integer
+#if __GLASGOW_HASKELL__ < 707
+import Math.NumberTheory.Utils  (isTrue#)
+#endif
 
 -- | Calculate the integer logarithm for an arbitrary base.
 --   The base must be greater than 1, the second argument, the number
