@@ -20,7 +20,11 @@ module Math.NumberTheory.Powers.Fourth
 
 #include "MachDeps.h"
 
+#if __GLASGOW_HASKELL__ >= 708
 import GHC.Exts.Compat
+#else
+import GHC.Base
+#endif
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 
@@ -49,8 +53,9 @@ integerFourthRoot n
 {-# RULES
 "integerFourthRoot'/Int"  integerFourthRoot' = biSqrtInt
 "integerFourthRoot'/Word" integerFourthRoot' = biSqrtWord
+"integerFourthRoot'/Igr"  integerFourthRoot' = biSqrtIgr
   #-}
-{-# SPECIALISE integerFourthRoot' :: Integer -> Integer #-}
+{-# INLINE [1] integerFourthRoot' #-}
 integerFourthRoot' :: Integral a => a -> a
 integerFourthRoot' 0 = 0
 integerFourthRoot' n = newton4 n (approxBiSqrt n)
@@ -203,3 +208,6 @@ biSqrtWord n
         r2 = r*r
         r4 = r2*r2
 
+biSqrtIgr :: Integer -> Integer
+biSqrtIgr 0 = 0
+biSqrtIgr n = newton4 n (approxBiSqrt n)
