@@ -17,7 +17,7 @@ module Math.NumberTheory.Powers.General
     , isKthPower
     , isPerfectPower
     , highestPower
---     , largePFPower
+    , largePFPower
     ) where
 
 #include "MachDeps.h"
@@ -33,7 +33,7 @@ import Data.Word
 import Data.List (foldl')
 import qualified Data.Set as Set
 
--- import Math.NumberTheory.Logarithms
+import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 import Math.NumberTheory.Utils  (shiftToOddCount
                                 , splitOff
@@ -174,20 +174,19 @@ highestPower n
       sqr 0 m = m
       sqr k m = sqr (k-1) (m*m)
 
--- Not used, at least not yet
--- -- | @'largePFPower' bd n@ produces the pair @(b,k)@ with the largest
--- --   exponent @k@ such that @n == b^k@, where @bd > 1@ (it is expected
--- --   that @bd@ is much larger, at least @1000@ or so), @n > bd^2@ and @n@
--- --   has no prime factors @p <= bd@, skipping the trial division phase
--- --   of @'highestPower'@ when that is a priori known to be superfluous.
--- --   It is only present to avoid duplication of work in factorisation
--- --   and primality testing, it is not expected to be generally useful.
--- --   The assumptions are not checked, if they are not satisfied, wrong
--- --   results and wasted work may be the consequence.
--- largePFPower :: Integer -> Integer -> (Integer, Int)
--- largePFPower bd n = rawPower ln n
---   where
---     ln = integerLogBase' (bd+1) n
+-- | @'largePFPower' bd n@ produces the pair @(b,k)@ with the largest
+--   exponent @k@ such that @n == b^k@, where @bd > 1@ (it is expected
+--   that @bd@ is much larger, at least @1000@ or so), @n > bd^2@ and @n@
+--   has no prime factors @p <= bd@, skipping the trial division phase
+--   of @'highestPower'@ when that is a priori known to be superfluous.
+--   It is only present to avoid duplication of work in factorisation
+--   and primality testing, it is not expected to be generally useful.
+--   The assumptions are not checked, if they are not satisfied, wrong
+--   results and wasted work may be the consequence.
+largePFPower :: Integer -> Integer -> (Integer, Int)
+largePFPower bd n = rawPower ln n
+  where
+    ln = integerLogBase' (bd+1) n
 
 ------------------------------------------------------------------------------------------
 --                                  Auxiliary functions                                 --
@@ -284,7 +283,10 @@ finishPower e pws n
 
 rawPower :: Int -> Integer -> (Integer, Int)
 rawPower mx n
-  | mx < 2    = (n,1)
+  | mx < 2      = (n,1)
+  | mx == 2     = case P2.exactSquareRoot n of
+                    Just r  -> (r,2)
+                    Nothing -> (n,1)
 rawPower mx n = case P4.exactFourthRoot n of
                   Just r -> case rawPower (mx `quot` 4) r of
                               (m,e) -> (m, 4*e)

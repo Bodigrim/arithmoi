@@ -56,6 +56,8 @@ import Data.Maybe
 
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Logarithms.Internal
+import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
+import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Testing.Probabilistic
@@ -158,6 +160,9 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                   Just bd -> \k -> k <= bd || primeTest k
                   Nothing -> primeTest
         rndR k = state (\gen -> prng k gen)
+        perfPw = case primeBound of
+                   Nothing -> highestPower
+                   Just bd -> largePFPower (integerSquareRoot' bd)
         fact m digs = do let (b1,b2,ct) = findParms digs
                          (pfs,cfs) <- repFact m b1 b2 ct
                          if null cfs
@@ -166,12 +171,19 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                                nfs <- forM cfs $ \(k,j) ->
                                    mult j <$> fact k (if null pfs then digs+4 else digs)
                                return (mergeAll $ pfs:nfs)
-        repFact m b1 b2 count
+        repFact m b1 b2 count = case perfPw m of
+                                  (_,1) -> workFact m b1 b2 count
+                                  (b,e)
+                                    | ptest b -> return ([(b,e)],[])
+                                    | otherwise -> do
+                                      (as,bs) <- workFact b b1 b2 count
+                                      return $ (mult e as, mult e bs)
+        workFact m b1 b2 count
             | count < 0 = return ([],[(m,1)])
             | otherwise = do
                 s <- rndR m
                 case montgomeryFactorisation m b1 b2 s of
-                  Nothing -> repFact m b1 b2 (count-1)
+                  Nothing -> workFact m b1 b2 (count-1)
                   Just d  -> do
                       let !cof = m `quot` d
                       case gcd cof d of
