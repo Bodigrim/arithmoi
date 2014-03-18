@@ -1,3 +1,7 @@
+0.4.0.4:
+    Update for GHC-7.8, the type of some primops changed, they return Int# now
+    instead of Bool.
+    Fixed bugs in modular square roots and factorisation.
 0.4.0.3:
     Relaxed dependencies on mtl and containers
     Fixed warnings from GHC-7.5, Word(..) moved to GHC.Types
