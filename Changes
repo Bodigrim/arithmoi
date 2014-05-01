@@ -1,3 +1,6 @@
+0.4.1.0:
+    Add integerLog10 variants at Bas van Dijk's request and expose
+    Math.NumberTheory.Powers.Integer, with an added integerWordPower.
 0.4.0.4:
     Update for GHC-7.8, the type of some primops changed, they return Int# now
     instead of Bool.
