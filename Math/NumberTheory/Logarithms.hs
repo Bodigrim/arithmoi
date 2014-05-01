@@ -155,8 +155,8 @@ integerLogBase' b n
                       ex = fromInteger ((u * fromIntegral ln) `quot` w)
                   in ex + integerLogBase' b (n `quot` integerPower b ex)
     where
-      lb = integerLog2 b
-      ln = integerLog2 n
+      lb = integerLog2' b
+      ln = integerLog2' n
 
 -- Lookup table for logarithms of 2 <= k <= 32
 -- In each row "x , y", x/y is a good rational approximation of log 2  / log k.
