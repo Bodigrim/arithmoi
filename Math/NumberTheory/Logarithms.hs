@@ -14,11 +14,16 @@ module Math.NumberTheory.Logarithms
     ( -- * Integer logarithms with input checks
       integerLogBase
     , integerLog2
+    , integerLog10
+
     , intLog2
     , wordLog2
+
       -- * Integer logarithms without input checks
     , integerLogBase'
     , integerLog2'
+    , integerLog10'
+
     , intLog2'
     , wordLog2'
     ) where
@@ -93,6 +98,32 @@ intLog2' (I# i#) = I# (wordLog2# (int2Word# i#))
 --   called often for known good input.
 wordLog2' :: Word -> Int
 wordLog2' (W# w#) = I# (wordLog2# w#)
+
+-- | Calculate the integer logarithm of an 'Integer' to base 10.
+--   The argument must be positive, otherwise an error is thrown.
+integerLog10 :: Integer -> Int
+integerLog10 n
+  | n < 0     = error "Math.NumberTheory.Logarithms.integerLog10: argument must be positive"
+  | otherwise = integerLog10' n
+
+-- | Same as 'integerLog10', but without a check for a positive
+-- argument. Saves a little time when called often for known good
+-- imput.
+integerLog10' :: Integer -> Int
+integerLog10' n
+  | n < 10      = 0
+  | ln-lb < lb  = 1 -- overflow safe version of ln < 2*lb, implies n < 10*10
+  | otherwise   =
+      let -- u/v is a good approximation of log 2/log 10
+          u  = 1936274 :: Integer
+          v  = 6432163 :: Integer
+          -- hence ex is a rather good approximation of integerLog10 n
+          -- most of the time, it will already be exact
+          ex = fromInteger ((u * fromIntegral ln) `quot` v)
+      in ex + integerLog10' (n `quot` integerPower 10 ex)
+    where
+      lb = 3 -- integerLog2 10
+      ln = I# (integerLog2# n)
 
 -- | Same as 'integerLogBase', but without checks, saves a little time when
 --   called often for known good input.
