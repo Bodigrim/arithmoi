@@ -103,27 +103,24 @@ wordLog2' (W# w#) = I# (wordLog2# w#)
 --   The argument must be positive, otherwise an error is thrown.
 integerLog10 :: Integer -> Int
 integerLog10 n
-  | n < 0     = error "Math.NumberTheory.Logarithms.integerLog10: argument must be positive"
+  | n < 1     = error "Math.NumberTheory.Logarithms.integerLog10: argument must be positive"
   | otherwise = integerLog10' n
 
 -- | Same as 'integerLog10', but without a check for a positive
--- argument. Saves a little time when called often for known good
--- imput.
+--   argument. Saves a little time when called often for known good
+--   input.
 integerLog10' :: Integer -> Int
 integerLog10' n
   | n < 10      = 0
-  | ln-lb < lb  = 1 -- overflow safe version of ln < 2*lb, implies n < 10*10
-  | otherwise   =
-      let -- u/v is a good approximation of log 2/log 10
-          u  = 1936274 :: Integer
-          v  = 6432163 :: Integer
-          -- hence ex is a rather good approximation of integerLog10 n
-          -- most of the time, it will already be exact
-          ex = fromInteger ((u * fromIntegral ln) `quot` v)
-      in ex + integerLog10' (n `quot` integerPower 10 ex)
+  | n < 100     = 1
+  | otherwise   = ex + integerLog10' (n `quot` integerPower 10 ex)
     where
-      lb = 3 -- integerLog2 10
       ln = I# (integerLog2# n)
+      -- u/v is a good approximation of log 2/log 10
+      u  = 1936274
+      v  = 6432163
+      -- so ex is a good approximation to integerLogBase 10 n
+      ex = fromInteger ((u * fromIntegral ln) `quot` v)
 
 -- | Same as 'integerLogBase', but without checks, saves a little time when
 --   called often for known good input.
