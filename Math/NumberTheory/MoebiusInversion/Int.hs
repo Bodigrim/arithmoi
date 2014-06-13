@@ -8,7 +8,7 @@
 --
 -- Generalised Moebius inversion for 'Int' valued functions.
 --
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
 module Math.NumberTheory.MoebiusInversion.Int
     ( generalInversion
