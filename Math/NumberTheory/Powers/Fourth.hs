@@ -8,7 +8,7 @@
 --
 -- Functions dealing with fourth powers. Efficient calculation of integer fourth
 -- roots and efficient testing for being a square's square.
-{-# LANGUAGE MagicHash, CPP #-}
+{-# LANGUAGE MagicHash, CPP, FlexibleContexts #-}
 module Math.NumberTheory.Powers.Fourth
     ( integerFourthRoot
     , integerFourthRoot'
