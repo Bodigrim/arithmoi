@@ -21,6 +21,7 @@
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops and the rewrite rules.
 {-# LANGUAGE CPP, BangPatterns, MagicHash #-}
+{-# LANGUAGE Trustworthy #-}
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
