@@ -8,7 +8,7 @@
 --
 -- Generalised Moebius inversion
 --
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 module Math.NumberTheory.MoebiusInversion
     ( generalInversion
     , totientSum

@@ -8,7 +8,7 @@
 --
 -- Functions dealing with cubes. Moderately efficient calculation of integer
 -- cube roots and testing for cubeness.
-{-# LANGUAGE MagicHash, BangPatterns, CPP #-}
+{-# LANGUAGE MagicHash, BangPatterns, CPP, FlexibleContexts #-}
 module Math.NumberTheory.Powers.Cubes
     ( integerCubeRoot
     , integerCubeRoot'

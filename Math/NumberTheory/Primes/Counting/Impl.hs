@@ -8,7 +8,7 @@
 --
 -- Number of primes not exceeding @n@, @&#960;(n)@, and @n@-th prime.
 --
-{-# LANGUAGE CPP, BangPatterns #-}
+{-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
 #if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
 #endif

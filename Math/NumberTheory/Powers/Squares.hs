@@ -8,7 +8,7 @@
 --
 -- Functions dealing with squares. Efficient calculation of integer square roots
 -- and efficient testing for squareness.
-{-# LANGUAGE MagicHash, BangPatterns, CPP #-}
+{-# LANGUAGE MagicHash, BangPatterns, CPP, FlexibleContexts #-}
 module Math.NumberTheory.Powers.Squares
     ( -- * Square root calculation
       integerSquareRoot

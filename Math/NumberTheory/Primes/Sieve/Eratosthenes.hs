@@ -8,7 +8,7 @@
 --
 -- Sieve
 --
-{-# LANGUAGE CPP, BangPatterns #-}
+{-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
 #if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
 #endif
