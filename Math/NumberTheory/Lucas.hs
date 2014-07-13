@@ -8,7 +8,6 @@
 --
 -- Efficient calculation of Lucas sequences.
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE Trustworthy #-}
 module Math.NumberTheory.Lucas
   ( fibonacci
   , fibonacciPair
