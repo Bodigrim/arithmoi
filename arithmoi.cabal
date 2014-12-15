@@ -37,7 +37,7 @@ Flag llvm
 
 library
     build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.6, ghc-prim,
-                          integer-gmp, containers >= 0.3 && < 0.6, random >= 1.0 && < 1.1,
+                          integer-gmp, containers >= 0.3 && < 0.6, random >= 1.0 && < 1.2,
                           mtl >= 2.0 && < 2.3
     exposed-modules     : Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
