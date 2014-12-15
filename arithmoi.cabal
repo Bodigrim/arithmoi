@@ -31,9 +31,10 @@ tested-with         : GHC == 7.4.2, GHC==7.6.3, GHC==7.8.3
 
 extra-source-files  : Changes, TODO
 
-Flag llvm
-    Description         : Compile the library with the llvm backend
-    Default             : True
+flag llvm
+    description         : Compile the library with the LLVM backend
+    default             : False
+    manual              : True
 
 library
     build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.6, ghc-prim,
