@@ -1,8 +1,0 @@
-^dist
-^tests/
-^junk/
-~$
-.prof$
-.aux$
-.hp$
-.ps$

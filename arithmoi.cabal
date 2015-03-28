@@ -1,15 +1,15 @@
 name                : arithmoi
-version             : 0.4.1.1
+version             : 0.4.1.2
 cabal-version       : >= 1.6
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
 license             : MIT
 license-file        : LICENCE
-maintainer          : Daniel Fischer <daniel.is.fischer@googlemail.com>
+maintainer          : Carter Schonwald  carter at wellposed dot com
 build-type          : Simple
 stability           : Provisional
-homepage            : https://bitbucket.org/dafis/arithmoi
-bug-reports         : https://bitbucket.org/dafis/arithmoi/issues
+homepage            : https://github.com/cartazio/arithmoi
+bug-reports         : https://github.com/cartazio/arithmoi/issues
 
 synopsis            : Efficient basic number-theoretic functions.
                       Primes, powers, integer logarithms.
@@ -38,7 +38,7 @@ flag llvm
 
 library
     build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.6, ghc-prim,
-                          integer-gmp, containers >= 0.3 && < 0.6, random >= 1.0 && < 1.2,
+                          integer-gmp<1, containers >= 0.3 && < 0.6, random >= 1.0 && < 1.2,
                           mtl >= 2.0 && < 2.3
     exposed-modules     : Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
@@ -81,5 +81,5 @@ library
     ghc-prof-options    : -O2 -auto
 
 source-repository head
-  type:     mercurial
-  location: https://bitbucket.org/dafis/arithmoi
+  type:     git
+  location: https://github.com/cartazio/arithmoi
