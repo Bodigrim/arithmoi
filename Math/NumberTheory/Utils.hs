@@ -87,15 +87,35 @@ shiftOCInteger n@(S# i#) =
       (# z#, w# #)
         | isTrue# (z# ==# 0#) -> (0, n)
         | otherwise -> (I# z#, S# (word2Int# w#))
+#if __GLASGOW_HASKELL__ < 709
 shiftOCInteger n@(J# _ ba#) = case count 0# 0# of
+#else
+shiftOCInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
                                  0#  -> (0, n)
                                  z#  -> (I# z#, n `shiftRInteger` z#)
+shiftOCInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
+#endif
+                                 0#  -> (0, n)
+                                 z#  -> (I# z#, n `shiftRInteger` z#)
+#if __GLASGOW_HASKELL__ < 709
   where
     count a# i# =
           case indexWordArray# ba# i# of
+             0## -> count (a# +# WORD_SIZE_IN_BITS#) (i# +# 1#)
+             w#  -> a# +# trailZeros# w#
+#endif
+
+#if __GLASGOW_HASKELL__ >= 709
+-- | Count trailing zeros in a @'BigNat'@.
+--   Precondition: argument nonzero (not checked, Integer invariant).
+bigNatZeroCount :: BigNat -> Int#
+bigNatZeroCount bn# = count 0# 0#
+  where
+    count a# i# =
+          case indexBigNat# bn# i# of
             0## -> count (a# +# WORD_SIZE_IN_BITS#) (i# +# 1#)
             w#  -> a# +# trailZeros# w#
-
+#endif
 
 -- | Remove factors of @2@. If @n = 2^k*m@ with @m@ odd, the result is @m@.
 --   Precondition: argument not @0@ (not checked).
@@ -122,14 +142,23 @@ shiftOWord (W# w#) = W# (shiftToOdd# w#)
 --   Precondition: argument nonzero (not checked).
 shiftOInteger :: Integer -> Integer
 shiftOInteger (S# i#) = S# (word2Int# (shiftToOdd# (int2Word# i#)))
+#if __GLASGOW_HASKELL__ < 709
 shiftOInteger n@(J# _ ba#) = case count 0# 0# of
+#else
+shiftOInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
                                  0#  -> n
                                  z#  -> n `shiftRInteger` z#
+shiftOInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
+#endif
+                                 0#  -> n
+                                 z#  -> n `shiftRInteger` z#
+#if __GLASGOW_HASKELL__ < 709
   where
     count a# i# =
           case indexWordArray# ba# i# of
             0## -> count (a# +# WORD_SIZE_IN_BITS#) (i# +# 1#)
             w#  -> a# +# trailZeros# w#
+#endif
 
 -- | Shift argument right until the result is odd.
 --   Precondition: argument not @0@, not checked.

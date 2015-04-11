@@ -7,6 +7,7 @@
 -- Portability: Non-portable (GHC extensions)
 --
 -- Certificates for primality or compositeness.
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Testing.Certificates.Internal
     ( Certificate(..)
@@ -29,7 +30,9 @@ module Math.NumberTheory.Primes.Testing.Certificates.Internal
     ) where
 
 import Data.List
+#if __GLASGOW_HASKELL__ < 709
 import Data.Word
+#endif
 import Data.Bits
 import Data.Maybe
 

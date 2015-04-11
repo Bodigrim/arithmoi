@@ -25,7 +25,9 @@ import Data.Array.Base
 import Data.Array.ST
 
 import Data.Bits
+#if __GLASGOW_HASKELL__ < 705
 import Data.Word
+#endif
 
 import GHC.Base
 import GHC.Integer
@@ -201,13 +203,24 @@ approxCuRt n = fromInteger $ appCuRt (fromIntegral n)
 appCuRt :: Integer -> Integer
 appCuRt (S# i#) = case double2Int# (int2Double# i# **## (1.0## /## 3.0##)) of
                     r# -> S# r#
+#if __GLASGOW_HASKELL__ < 709
 appCuRt n@(J# s# _)
     | isTrue# (s# <# THRESH#)   = floor (fromInteger n ** (1.0/3.0) :: Double)
+#else
+appCuRt n@(Jp# bn#)
+    | isTrue# ((sizeofBigNat# bn#) <# THRESH#) =
+          floor (fromInteger n ** (1.0/3.0) :: Double)
+#endif
     | otherwise = case integerLog2# n of
                     l# -> case (l# `quotInt#` 3#) -# 51# of
                             h# -> case shiftRInteger n (3# *# h#) of
                                     m -> case floor (fromInteger m ** (1.0/3.0) :: Double) of
                                            r -> shiftLInteger r h#
+#if __GLASGOW_HASKELL__ >= 709
+-- There's already handling for negative in integerCubeRoot,
+-- but integerCubeRoot' is exported directly too.
+appCuRt _ = error "integerCubeRoot': negative argument"
+#endif
 
 -- not very discriminating, but cheap, so it's an overall gain
 cr512 :: UArray Int Bool

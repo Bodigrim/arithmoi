@@ -42,7 +42,9 @@ import Data.Array.ST
 #endif
 import Control.Monad (when)
 import Data.Bits
+#if __GLASGOW_HASKELL__ < 709
 import Data.Word
+#endif
 
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils

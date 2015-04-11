@@ -195,9 +195,16 @@ testLucas n q (S# i#) = look (WORD_SIZE_IN_BITS - 2)
           v2n1  = ((un1 - (2*q)*un)*vn-qn) `rem` n
           q2n   = (qn*qn) `rem` n
           q2n1  = (qn*qn*q) `rem` n
+#if __GLASGOW_HASKELL__ < 709
 testLucas n q (J# s# ba#) = test (s# -# 1#)
   where
     test j# = case indexWordArray# ba# j# of
+#else
+testLucas n q (Jp# bn#) = test (s# -# 1#)
+  where
+    s# = sizeofBigNat# bn#
+    test j# = case indexBigNat# bn# j# of
+#endif
                 0## -> test (j# -# 1#)
                 w# -> look (j# -# 1#) (W# w#) (WORD_SIZE_IN_BITS - 1)
     look j# w i
@@ -206,7 +213,11 @@ testLucas n q (J# s# ba#) = test (s# -# 1#)
     go k# w i un un1 vn qn
       | i < 0       = if isTrue# (k# <# 0#)
                          then (un,vn,qn)
+#if __GLASGOW_HASKELL__ < 709
                          else go (k# -# 1#) (W# (indexWordArray# ba# k#)) (WORD_SIZE_IN_BITS - 1) un un1 vn qn
+#else
+                         else go (k# -# 1#) (W# (indexBigNat# bn# k#)) (WORD_SIZE_IN_BITS - 1) un un1 vn qn
+#endif
       | testBit w i = go k# w (i-1) u2n1 u2n2 v2n1 q2n1
       | otherwise   = go k# w (i-1) u2n u2n1 v2n q2n
         where
@@ -217,6 +228,10 @@ testLucas n q (J# s# ba#) = test (s# -# 1#)
           v2n1  = ((un1 - (2*q)*un)*vn-qn) `rem` n
           q2n   = (qn*qn) `rem` n
           q2n1  = (qn*qn*q) `rem` n
+#if __GLASGOW_HASKELL__ >= 709
+-- Listed as a precondition of lucasTest
+testLucas _ _ _ = error "lucasTest: negative argument"
+#endif
 
 smallPrimes :: [Integer]
 smallPrimes = 2:3:5:prs

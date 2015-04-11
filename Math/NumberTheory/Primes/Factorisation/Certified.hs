@@ -10,7 +10,7 @@
 --
 -- For large numbers, this will be very slow in general.
 -- Use only if you're paranoid or must be /really/ sure.
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, CPP #-}
 module Math.NumberTheory.Primes.Factorisation.Certified
   ( certifiedFactorisation
   , certificateFactorisation
@@ -19,7 +19,9 @@ module Math.NumberTheory.Primes.Factorisation.Certified
 
 import System.Random
 import Control.Monad.State.Strict
+#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+#endif
 import Data.Maybe
 import Data.Bits
 

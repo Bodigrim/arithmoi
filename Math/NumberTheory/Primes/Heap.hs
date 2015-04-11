@@ -26,7 +26,9 @@ import Data.Array.Base (unsafeAt, unsafeRead, unsafeWrite)
 import Data.Array.ST
 import Control.Monad.ST
 import Data.List (foldl')
+#if __GLASGOW_HASKELL__ < 709
 import Data.Word
+#endif
 
 #ifndef SH_SIZE
 #define SH_SIZE 31

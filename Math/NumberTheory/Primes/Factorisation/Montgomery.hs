@@ -50,7 +50,9 @@ import Data.Array.Base
 
 import System.Random
 import Control.Monad.State.Strict
+#if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+#endif
 import Data.Bits
 import Data.Maybe
 
