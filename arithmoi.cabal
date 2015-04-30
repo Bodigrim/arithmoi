@@ -61,6 +61,7 @@ library
                           Math.NumberTheory.Primes.Testing
                           Math.NumberTheory.Primes.Testing.Certificates
                           Math.NumberTheory.Primes.Heap
+                          Math.NumberTheory.Rationals
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Logarithms.Internal
                           Math.NumberTheory.Primes.Counting.Impl
