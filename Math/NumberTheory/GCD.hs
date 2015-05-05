@@ -20,10 +20,11 @@
 --
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops and the rewrite rules.
-{-# LANGUAGE CPP, BangPatterns, MagicHash #-}
+{-# LANGUAGE CPP, BangPatterns, MagicHash, UnboxedTuples #-}
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
+    , binaryExtendedGCD
     , coprime
     ) where
 
@@ -87,6 +88,77 @@ binaryGCDImpl a b =
       (!za, !oa) ->
         case shiftToOddCount b of
           (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
+
+{-# RULES
+"binaryExtendedGCD/Int"  binaryExtendedGCD = egcdInt
+"binaryExtendedGCD/Word" binaryExtendedGCD = egcdWord
+  #-}
+#if WORD_SIZE_IN_BITS == 64
+egi64 :: Int64 -> Int64 -> (Int64, Int64, Int64)
+egi64 (I64# x#) (I64# y#) = (I64# a#, I64# b#, I64# v#)
+  where
+    (# a#, b#, v# #) = egcdInt# x# y#
+
+egw64 :: Word64 -> Word64 -> (Int64, Int64, Word64)
+egw64 (W64# x#) (W64# y#) = (I64# a#, I64# b#, W64# v#)
+  where
+    (# a#, b#, v# #) = egcdWord# x# y#
+
+{-# RULES
+"binaryExtendedGCD/Int64"   binaryExtendedGCD = egi64
+"binaryExtendedGCD/Word64"  binaryExtendedGCD = egw64
+  #-}
+#endif
+-- | Calculate the greatest common divisor of two numbers and coefficients for the linear combination.
+--   Depending on type and hardware, that can be consiberably faster than
+--   @'extendedGCD'@ but it may also be significantly slower.
+--
+--   There are specialised functions for @'Int'@ and @'Word'@ and rewrite rules
+--   for those and @IntN@ and @WordN@, @N <= WORD_SIZE_IN_BITS@, to use the
+--   specialised variants. These types are worth benchmarking, others probably not.
+--
+--   It is very slow for @'Integer'@ (and probably every type except the abovementioned),
+--   I recommend not using it for those.
+binaryExtendedGCD :: (Integral a, Bits a, Integral c, Bits c) => a -> a -> (c, c, a)
+binaryExtendedGCD = binaryExtendedGCDImpl
+{-# INLINE [1] binaryExtendedGCD #-}
+
+{-# SPECIALISE binaryExtendedGCDImpl :: Integer -> Integer -> (Integer, Integer, Integer) #-}
+binaryExtendedGCDImpl :: (Integral a, Bits a, Integral c, Bits c) => a -> a -> (c, c, a)
+binaryExtendedGCDImpl 0 y = (0, fromIntegral (signum y), abs y)
+binaryExtendedGCDImpl x 0 = (fromIntegral (signum x), 0, abs x)
+binaryExtendedGCDImpl x y = (ra', rb', rv)
+  where
+    ra' = if x < 0 then negate ra else ra
+    rb' = if y < 0 then negate rb else rb
+
+    (!ra, !rb, !rv) = loop x' y' 1 0 0 1
+    (!g, !x', !y') = step1 (abs x) (abs y)
+
+    cx = fromIntegral x'
+    cy = fromIntegral y'
+
+    last_one_bit n = n .&. (- n)
+    {-# INLINE last_one_bit #-}
+
+    step1 !sx !sy = (sg, sx `div` sg, sy `div` sg)
+      where
+        lx = last_one_bit sx
+        ly = last_one_bit sy
+        sg = min lx ly
+
+    step2 w !p !q
+      | testBit w 0                = (w, p, q)
+      | testBit p 0 || testBit q 0 = step2 (w `shiftR` 1) ((p + cy) `shiftR` 1) ((q - cx) `shiftR` 1)
+      | otherwise                  = step2 (w `shiftR` 1) ( p       `shiftR` 1) ( q       `shiftR` 1)
+
+    loop u !v !a !b !c !d
+      | u == 0    = (c, d, g * v)
+      | u' >= v'  = loop (u' - v') v' (a' - c') (b' - d') c' d'
+      | otherwise = loop u' (v' - u') a' b' (c' - a') (d' - b')
+      where
+        (!u', !a', !b') = step2 u a b
+        (!v', !c', !d') = step2 v c d
 
 {-# SPECIALISE extendedGCD :: Int -> Int -> (Int, Int, Int),
                               Word -> Word -> (Word, Word, Word),

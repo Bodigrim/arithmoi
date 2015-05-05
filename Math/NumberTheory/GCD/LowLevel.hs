@@ -24,6 +24,12 @@ module Math.NumberTheory.GCD.LowLevel
     -- ** Coprimality tests for unboxed types
   , coprimeInt#
   , coprimeWord#
+    -- * Specialised extended GCDs
+  , egcdInt
+  , egcdWord
+    -- ** Extended GCDs for unboxed types
+  , egcdInt#
+  , egcdWord#
   ) where
 
 import GHC.Base
@@ -102,3 +108,58 @@ absInt# :: Int# -> Int#
 absInt# i#
   | isTrue# (i# <# 0#)  = negateInt# i#
   | otherwise           = i#
+
+-- | Binary extended GCD for @'Int'@ values.
+egcdInt :: Int -> Int -> (Int, Int, Int)
+egcdInt (I# x#) (I# y#) = (I# a#, I# b#, I# v#)
+  where
+    (# a#, b#, v# #) = egcdInt# x# y#
+
+egcdInt# :: Int# -> Int# -> (# Int#, Int#, Int# #)
+egcdInt# x# y# = (# mulSign# a# x#, mulSign# b# y#, word2Int# v# #)
+  where
+    (# a#, b#, v# #) = egcdWord# (int2Word# (absInt# x#)) (int2Word# (absInt# y#))
+    mulSign# w# i#
+      | isTrue# (i# <# 0#) = negateInt# w#
+      | otherwise          = w#
+
+-- | Binary extended GCD for @'Word'@.
+-- Note that linear coefficients returned by @'egcdWord'@ are signed
+-- @'Int'@ values.
+egcdWord :: Word -> Word -> (Int, Int, Word)
+egcdWord (W# x#) (W# y#) = (I# a#, I# b#, W# v#)
+  where
+    (# a#, b#, v# #) = egcdWord# x# y#
+
+egcdWord# :: Word# -> Word# -> (# Int#, Int#, Word# #)
+egcdWord# 0## y#  = (# 0#, 1#, y# #)
+egcdWord# x#  0## = (# 1#, 0#, x# #)
+egcdWord# x#  y#  = (# ra#, rb#, rv# #)
+  where
+    (# ra#, rb#, rv# #) = loop# x'# y'# 1# 0# 0# 1#
+
+    lx# = x# `and#` (not# x# `plusWord#` 1##)
+    ly# = y# `and#` (not# y# `plusWord#` 1##)
+    g# | isTrue# (lx# `ltWord#` ly#) = lx#
+       | otherwise                   = ly#
+    x'# = x# `quotWord#` g#
+    y'# = y# `quotWord#` g#
+    ix# = word2Int# x'#
+    iy# = word2Int# y'#
+
+    loop# u# v# a# b# c# d#
+      | isTrue# (u# `eqWord#` 0##)  = (# c#, d#, g# `timesWord#` v# #)
+      | otherwise =
+          let (# u'#, a'#, b'# #) = step# u# a# b#
+              (# v'#, c'#, d'# #) = step# v# c# d#
+          in if isTrue# (u'# `geWord#` v'#)
+               then loop# (u'# `minusWord#` v'#) v'# (a'# -# c'#) (b'# -# d'#) c'# d'#
+               else loop# u'# (v'# `minusWord#` u'#) a'# b'# (c'# -# a'#) (d'# -# b'#)
+
+    step# w# p# q#
+      | isTrue# ((w# `and#` 1##) `eqWord#` 1##)
+        = (# w#, p#, q# #)
+      | isTrue# (((p# `orI#` q#) `andI#` 1#) ==# 1#)
+        = step# (w# `uncheckedShiftRL#` 1#) ((p# +# iy#) `uncheckedIShiftRA#` 1#) ((q# -# ix#) `uncheckedIShiftRA#` 1#)
+      | otherwise
+        = step# (w# `uncheckedShiftRL#` 1#) (p# `uncheckedIShiftRA#` 1#) (q# `uncheckedIShiftRA#` 1#)
