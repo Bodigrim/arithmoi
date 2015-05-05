@@ -90,3 +90,10 @@ benchmark criterion
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0
 
+test-suite spec
+  type:                 exitcode-stdio-1.0
+  hs-source-dirs:       test-suite
+  ghc-options:          -Wall
+  main-is:              Spec.hs
+  build-depends:        base, hspec, arithmoi
+
