@@ -111,14 +111,14 @@ absInt# i#
 
 -- | Binary extended GCD for @'Int'@ values.
 egcdInt :: Int -> Int -> (Int, Int, Int)
-egcdInt (I# x#) (I# y#) = (I# a#, I# b#, I# v#)
+egcdInt (I# x#) (I# y#) = (I# d#, I# u#, I# v#)
   where
-    (# a#, b#, v# #) = egcdInt# x# y#
+    (# d#, u#, v# #) = egcdInt# x# y#
 
 egcdInt# :: Int# -> Int# -> (# Int#, Int#, Int# #)
-egcdInt# x# y# = (# mulSign# a# x#, mulSign# b# y#, word2Int# v# #)
+egcdInt# x# y# = (# word2Int# d#, mulSign# u# x#, mulSign# v# y# #)
   where
-    (# a#, b#, v# #) = egcdWord# (int2Word# (absInt# x#)) (int2Word# (absInt# y#))
+    (# d#, u#, v# #) = egcdWord# (int2Word# (absInt# x#)) (int2Word# (absInt# y#))
     mulSign# w# i#
       | isTrue# (i# <# 0#) = negateInt# w#
       | otherwise          = w#
@@ -126,15 +126,15 @@ egcdInt# x# y# = (# mulSign# a# x#, mulSign# b# y#, word2Int# v# #)
 -- | Binary extended GCD for @'Word'@.
 -- Note that linear coefficients returned by @'egcdWord'@ are signed
 -- @'Int'@ values.
-egcdWord :: Word -> Word -> (Int, Int, Word)
-egcdWord (W# x#) (W# y#) = (I# a#, I# b#, W# v#)
+egcdWord :: Word -> Word -> (Word, Int, Int)
+egcdWord (W# x#) (W# y#) = (W# d#, I# u#, I# v#)
   where
-    (# a#, b#, v# #) = egcdWord# x# y#
+    (# d#, u#, v# #) = egcdWord# x# y#
 
-egcdWord# :: Word# -> Word# -> (# Int#, Int#, Word# #)
-egcdWord# 0## y#  = (# 0#, 1#, y# #)
-egcdWord# x#  0## = (# 1#, 0#, x# #)
-egcdWord# x#  y#  = (# ra#, rb#, rv# #)
+egcdWord# :: Word# -> Word# -> (# Word#, Int#, Int# #)
+egcdWord# 0## y#  = (# y#, 0#, 1# #)
+egcdWord# x#  0## = (# x#, 1#, 0# #)
+egcdWord# x#  y#  = (# rv#, ra#, rb# #)
   where
     (# ra#, rb#, rv# #) = loop# x'# y'# 1# 0# 0# 1#
 
