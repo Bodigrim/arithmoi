@@ -90,8 +90,14 @@ binaryGCDImpl a b =
           (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
 
 {-# RULES
-"binaryExtendedGCD/Int"  binaryExtendedGCD = egcdInt
-"binaryExtendedGCD/Word" binaryExtendedGCD = egcdWord
+"binaryExtendedGCD/Int"     binaryExtendedGCD = egcdInt
+"binaryExtendedGCD/Word"    binaryExtendedGCD = egcdWord
+"binaryExtendedGCD/Int8"    binaryExtendedGCD = egi8
+"binaryExtendedGCD/Int16"   binaryExtendedGCD = egi16
+"binaryExtendedGCD/Int32"   binaryExtendedGCD = egi32
+"binaryExtendedGCD/Word8"   binaryExtendedGCD = egw8
+"binaryExtendedGCD/Word16"  binaryExtendedGCD = egw16
+"binaryExtendedGCD/Word32"  binaryExtendedGCD = egw32
   #-}
 #if WORD_SIZE_IN_BITS == 64
 egi64 :: Int64 -> Int64 -> (Int64, Int64, Int64)
@@ -309,3 +315,22 @@ cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
 
 cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
+
+egi8 :: Int8 -> Int8 -> (Int8, Int8, Int8)
+egi8 (I8# x#) (I8# y#) = (I8# a#, I8# b#, I8# v#) where (# a#, b#, v# #) = egcdInt# x# y#
+
+egi16 :: Int16 -> Int16 -> (Int16, Int16, Int16)
+egi16 (I16# x#) (I16# y#) = (I16# a#, I16# b#, I16# v#) where (# a#, b#, v# #) = egcdInt# x# y#
+
+egi32 :: Int32 -> Int32 -> (Int32, Int32, Int32)
+egi32 (I32# x#) (I32# y#) = (I32# a#, I32# b#, I32# v#) where (# a#, b#, v# #) = egcdInt# x# y#
+
+egw8 :: Word8 -> Word8 -> (Int8, Int8, Word8)
+egw8 (W8# x#) (W8# y#) = (I8# a#, I8# b#, W8# v#) where (# a#, b#, v# #) = egcdWord# x# y#
+
+egw16 :: Word16 -> Word16 -> (Int16, Int16, Word16)
+egw16 (W16# x#) (W16# y#) = (I16# a#, I16# b#, W16# v#) where (# a#, b#, v# #) = egcdWord# x# y#
+
+egw32 :: Word32 -> Word32 -> (Int32, Int32, Word32)
+egw32 (W32# x#) (W32# y#) = (I32# a#, I32# b#, W32# v#) where (# a#, b#, v# #) = egcdWord# x# y#
+
