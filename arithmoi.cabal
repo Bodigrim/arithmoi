@@ -1,6 +1,6 @@
 name                : arithmoi
 version             : 0.4.1.2
-cabal-version       : >= 1.6
+cabal-version       : >= 1.8
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
 license             : MIT
@@ -83,3 +83,10 @@ library
 source-repository head
   type:     git
   location: https://github.com/cartazio/arithmoi
+
+benchmark criterion
+  build-depends:    base, arithmoi, criterion == 1.*
+  hs-source-dirs:   benchmark
+  main-is:          Bench.hs
+  type:             exitcode-stdio-1.0
+
