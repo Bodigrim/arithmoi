@@ -5,7 +5,7 @@ import Math.NumberTheory.GCD (extendedGCD, binaryExtendedGCD)
 
 import Data.Word (Word)
 
-egcdBenchWord :: String -> (Word -> Word -> (Int, Int, Word)) -> Benchmark
+egcdBenchWord :: String -> (Word -> Word -> (Word, Int, Int)) -> Benchmark
 egcdBenchWord name f = bench name (nf (f 19234198273) 98176234001)
 
 egcdBenchInt :: String -> (Int -> Int -> (Int, Int, Int)) -> Benchmark
