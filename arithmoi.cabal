@@ -85,7 +85,7 @@ source-repository head
   location: https://github.com/cartazio/arithmoi
 
 benchmark criterion
-  build-depends:    base, arithmoi, criterion == 1.*
+  build-depends:    base, arithmoi, criterion
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0
