@@ -20,10 +20,11 @@
 --
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops and the rewrite rules.
-{-# LANGUAGE CPP, BangPatterns, MagicHash #-}
+{-# LANGUAGE CPP, BangPatterns, MagicHash, UnboxedTuples #-}
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
+    , binaryExtendedGCD
     , coprime
     ) where
 
@@ -87,6 +88,83 @@ binaryGCDImpl a b =
       (!za, !oa) ->
         case shiftToOddCount b of
           (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
+
+{-# RULES
+"binaryExtendedGCD/Int"     binaryExtendedGCD = egcdInt
+"binaryExtendedGCD/Word"    binaryExtendedGCD = egcdWord
+"binaryExtendedGCD/Int8"    binaryExtendedGCD = egi8
+"binaryExtendedGCD/Int16"   binaryExtendedGCD = egi16
+"binaryExtendedGCD/Int32"   binaryExtendedGCD = egi32
+"binaryExtendedGCD/Word8"   binaryExtendedGCD = egw8
+"binaryExtendedGCD/Word16"  binaryExtendedGCD = egw16
+"binaryExtendedGCD/Word32"  binaryExtendedGCD = egw32
+  #-}
+#if WORD_SIZE_IN_BITS == 64
+egi64 :: Int64 -> Int64 -> (Int64, Int64, Int64)
+egi64 (I64# x#) (I64# y#) = (I64# d#, I64# u#, I64# v#)
+  where
+    (# d#, u#, v# #) = egcdInt# x# y#
+
+egw64 :: Word64 -> Word64 -> (Word64, Int64, Int64)
+egw64 (W64# x#) (W64# y#) = (W64# d#, I64# u#, I64# v#)
+  where
+    (# d#, u#, v# #) = egcdWord# x# y#
+
+{-# RULES
+"binaryExtendedGCD/Int64"   binaryExtendedGCD = egi64
+"binaryExtendedGCD/Word64"  binaryExtendedGCD = egw64
+  #-}
+#endif
+-- | Calculate the greatest common divisor of two numbers and coefficients for the linear combination.
+--   Depending on type and hardware, that can be consiberably faster than
+--   @'extendedGCD'@ but it may also be significantly slower.
+--
+--   There are specialised functions for @'Int'@ and @'Word'@ and rewrite rules
+--   for those and @IntN@ and @WordN@, @N <= WORD_SIZE_IN_BITS@, to use the
+--   specialised variants. These types are worth benchmarking, others probably not.
+--
+--   It is very slow for @'Integer'@ (and probably every type except the abovementioned),
+--   I recommend not using it for those.
+binaryExtendedGCD :: (Integral a, Bits a, Integral c, Bits c) => a -> a -> (a, c, c)
+binaryExtendedGCD = binaryExtendedGCDImpl
+{-# INLINE [1] binaryExtendedGCD #-}
+
+{-# SPECIALISE binaryExtendedGCDImpl :: Integer -> Integer -> (Integer, Integer, Integer) #-}
+binaryExtendedGCDImpl :: (Integral a, Bits a, Integral c, Bits c) => a -> a -> (a, c, c)
+binaryExtendedGCDImpl 0 y = (abs y, 0, fromIntegral (signum y))
+binaryExtendedGCDImpl x 0 = (abs x, fromIntegral (signum x), 0)
+binaryExtendedGCDImpl x y = (rv, ra', rb')
+  where
+    ra' = if x < 0 then negate ra else ra
+    rb' = if y < 0 then negate rb else rb
+
+    (!ra, !rb, !rv) = loop x' y' 1 0 0 1
+    (!g, !x', !y') = step1 (abs x) (abs y)
+
+    cx = fromIntegral x'
+    cy = fromIntegral y'
+
+    last_one_bit n = n .&. (- n)
+    {-# INLINE last_one_bit #-}
+
+    step1 !sx !sy = (sg, sx `div` sg, sy `div` sg)
+      where
+        lx = last_one_bit sx
+        ly = last_one_bit sy
+        sg = min lx ly
+
+    step2 w !p !q
+      | testBit w 0                = (w, p, q)
+      | testBit p 0 || testBit q 0 = step2 (w `shiftR` 1) ((p + cy) `shiftR` 1) ((q - cx) `shiftR` 1)
+      | otherwise                  = step2 (w `shiftR` 1) ( p       `shiftR` 1) ( q       `shiftR` 1)
+
+    loop u !v !a !b !c !d
+      | u == 0    = (c, d, g * v)
+      | u' >= v'  = loop (u' - v') v' (a' - c') (b' - d') c' d'
+      | otherwise = loop u' (v' - u') a' b' (c' - a') (d' - b')
+      where
+        (!u', !a', !b') = step2 u a b
+        (!v', !c', !d') = step2 v c d
 
 {-# SPECIALISE extendedGCD :: Int -> Int -> (Int, Int, Int),
                               Word -> Word -> (Word, Word, Word),
@@ -237,3 +315,22 @@ cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
 
 cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
+
+egi8 :: Int8 -> Int8 -> (Int8, Int8, Int8)
+egi8 (I8# x#) (I8# y#) = (I8# d#, I8# u#, I8# v#) where (# d#, u#, v# #) = egcdInt# x# y#
+
+egi16 :: Int16 -> Int16 -> (Int16, Int16, Int16)
+egi16 (I16# x#) (I16# y#) = (I16# d#, I16# u#, I16# v#) where (# d#, u#, v# #) = egcdInt# x# y#
+
+egi32 :: Int32 -> Int32 -> (Int32, Int32, Int32)
+egi32 (I32# x#) (I32# y#) = (I32# d#, I32# u#, I32# v#) where (# d#, u#, v# #) = egcdInt# x# y#
+
+egw8 :: Word8 -> Word8 -> (Word8, Int8, Int8)
+egw8 (W8# x#) (W8# y#) = (W8# d#, I8# u#, I8# v#) where (# d#, u#, v# #) = egcdWord# x# y#
+
+egw16 :: Word16 -> Word16 -> (Word16, Int16, Int16)
+egw16 (W16# x#) (W16# y#) = (W16# d#, I16# u#, I16# v#) where (# d#, u#, v# #) = egcdWord# x# y#
+
+egw32 :: Word32 -> Word32 -> (Word32, Int32, Int32)
+egw32 (W32# x#) (W32# y#) = (W32# d#, I32# u#, I32# v#) where (# d#, u#, v# #) = egcdWord# x# y#
+
