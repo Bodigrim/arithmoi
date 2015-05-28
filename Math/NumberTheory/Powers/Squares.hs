@@ -8,7 +8,7 @@
 --
 -- Functions dealing with squares. Efficient calculation of integer square roots
 -- and efficient testing for squareness.
-{-# LANGUAGE MagicHash, BangPatterns, CPP, FlexibleContexts #-}
+{-# LANGUAGE MagicHash, BangPatterns, PatternGuards, CPP, FlexibleContexts #-}
 module Math.NumberTheory.Powers.Squares
     ( -- * Square root calculation
       integerSquareRoot
@@ -61,8 +61,9 @@ integerSquareRoot n
 --   that is, the largest integer @r@ with @r*r <= n@.
 --   The precondition @n >= 0@ is not checked.
 {-# RULES
-"integerSquareRoot'/Int"  integerSquareRoot' = isqrtInt'
-"integerSquareRoot'/Word" integerSquareRoot' = isqrtWord
+"integerSquareRoot'/Int"     integerSquareRoot' = isqrtInt'
+"integerSquareRoot'/Word"    integerSquareRoot' = isqrtWord
+"integerSquareRoot'/Integer" integerSquareRoot' = isqrtInteger
   #-}
 {-# INLINE [1] integerSquareRoot' #-}
 integerSquareRoot' :: Integral a => a -> a
@@ -106,11 +107,10 @@ integerSquareRootRem' n = (s, n - s * s)
   #-}
 exactSquareRoot :: Integral a => a -> Maybe a
 exactSquareRoot n
-  | n < 0                           = Nothing
-  | isPossibleSquare n && r*r == n  = Just r
-  | otherwise                       = Nothing
-    where
-      r = integerSquareRoot' n
+  | n >= 0
+  , isPossibleSquare n
+  , (r, 0) <- integerSquareRootRem' n = Just r
+  | otherwise                         = Nothing
 
 -- | Test whether the argument is a square.
 --   After a number is found to be positive, first 'isPossibleSquare'
@@ -133,7 +133,10 @@ isSquare n = n >= 0 && isSquare' n
                             Integer -> Bool
   #-}
 isSquare' :: Integral a => a -> Bool
-isSquare' n = isPossibleSquare n && let r = integerSquareRoot' n in r*r == n
+isSquare' n
+    | isPossibleSquare n
+    , (_, 0) <- integerSquareRootRem' n = True
+    | otherwise                         = False
 
 -- | Test whether a non-negative number may be a square.
 --   Non-negativity is not checked, passing negative arguments may
@@ -321,7 +324,7 @@ sr693 = sqRemArray 693
 sr325 :: UArray Int Bool
 sr325 = sqRemArray 325
 
--- Specialisations for Int and Word
+-- Specialisations for Int, Word, and Integer
 
 -- For @n <= 2^64@, the result of
 --
@@ -357,3 +360,6 @@ isqrtWord n
       where
         !r = (fromIntegral :: Int -> Word) . (truncate :: Double -> Int) . sqrt $ fromIntegral n
 
+{-# INLINE isqrtInteger #-}
+isqrtInteger :: Integer -> Integer
+isqrtInteger = fst . karatsubaSqrt
