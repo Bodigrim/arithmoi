@@ -13,6 +13,8 @@ module Math.NumberTheory.Powers.Squares
     ( -- * Square root calculation
       integerSquareRoot
     , integerSquareRoot'
+    , integerSquareRootRem
+    , integerSquareRootRem'
     , exactSquareRoot
       -- * Tests for squares
     , isSquare
@@ -36,6 +38,7 @@ import Data.Bits
 import Data.Word        -- Moved to GHC.Types
 #endif
 
+import Math.NumberTheory.Logarithms (integerLog2)
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 #if __GLASGOW_HASKELL__ < 707
 import Math.NumberTheory.Utils (isTrue#)
@@ -64,6 +67,32 @@ integerSquareRoot n
 {-# INLINE [1] integerSquareRoot' #-}
 integerSquareRoot' :: Integral a => a -> a
 integerSquareRoot' = isqrtA
+
+-- | Calculate the integer square root of a nonnegative number as well as
+--   the difference of that number with the square of that root, that is if
+--   @(s,r) = integerSquareRootRem n@ then @s^2 <= n == s^2+r < (s+1)^2@.
+{-# SPECIALISE integerSquareRootRem ::
+        Int -> (Int, Int),
+        Word -> (Word, Word),
+        Integer -> (Integer, Integer)
+  #-}
+integerSquareRootRem :: Integral a => a -> (a, a)
+integerSquareRootRem n
+  | n < 0       = error "integerSquareRootRem: negative argument"
+  | otherwise   = integerSquareRootRem' n
+
+-- | Calculate the integer square root of a nonnegative number as well as
+--   the difference of that number with the square of that root, that is if
+--   @(s,r) = integerSquareRootRem' n@ then @s^2 <= n == s^2+r < (s+1)^2@.
+--   The precondition @n >= 0@ is not checked.
+{-# RULES
+"integerSquareRootRem'/Integer" integerSquareRootRem' = karatsubaSqrt
+  #-}
+{-# INLINE [1] integerSquareRootRem' #-}
+integerSquareRootRem' :: Integral a => a -> (a, a)
+integerSquareRootRem' n = (s, n - s * s)
+  where
+    s = integerSquareRoot' n
 
 -- | Returns 'Nothing' if the argument is not a square,
 --   @'Just' r@ if @r*r == n@ and @r >= 0@. Avoids the expensive calculation
@@ -200,6 +229,59 @@ appSqrt n@(J# s# _)
                             h# -> case shiftRInteger n (2# *# h#) of
                                     m -> case floor (sqrt $ fromInteger m :: Double) of
                                             r -> shiftLInteger r h#
+
+-- Integer square root with remainder, using the Karatsuba Square Root
+-- algorithm from
+-- Paul Zimmermann. Karatsuba Square Root. [Research Report] RR-3805, 1999,
+-- pp.8. <inria-00072854>
+
+karatsubaSqrt :: Integer -> (Integer, Integer)
+karatsubaSqrt n
+    | lgN < 4096 =
+        let s = isqrtA n in (s, n - s * s)
+    | otherwise =
+        if lgN .&. 2 /= 0 then
+            karatsubaStep k (karatsubaSplit k n)
+        else
+            -- before we split n into 4 part we must ensure that the first part
+            -- is at least 2^k/4, since this doesn't happen here we scale n by
+            -- multiplying it by 4
+            let n' = n `unsafeShiftL` 2
+                (s, r) = karatsubaStep k (karatsubaSplit k n')
+                r' | s .&. 1 == 0 = r
+                   | otherwise = r + double s - 1
+            in  (s `unsafeShiftR` 1, r' `unsafeShiftR` 2)
+  where
+    k = lgN `unsafeShiftR` 2 + 1
+    lgN = integerLog2 n
+
+karatsubaStep :: Int -> (Integer, Integer, Integer, Integer) -> (Integer, Integer)
+karatsubaStep k (a3, a2, a1, a0)
+    | r >= 0 = (s, r)
+    | otherwise = (s - 1, r + double s - 1)
+  where
+    r = cat u a0 - q * q
+    s = s' `unsafeShiftL` k + q
+    (q, u) = cat r' a1 `quotRem` double s'
+    (s', r') = karatsubaSqrt (cat a3 a2)
+    cat x y = x `unsafeShiftL` k .|. y
+    {-# INLINE cat #-}
+
+karatsubaSplit :: Int -> Integer -> (Integer, Integer, Integer, Integer)
+karatsubaSplit k n0 = (a3, a2, a1, a0)
+  where
+    a3 = n3
+    n3 = n2 `unsafeShiftR` k
+    a2 = n2 .&. m
+    n2 = n1 `unsafeShiftR` k
+    a1 = n1 .&. m
+    n1 = n0 `unsafeShiftR` k
+    a0 = n0 .&. m
+    m = 1 `unsafeShiftL` k - 1
+
+double :: Bits a => a -> a
+double x = x `unsafeShiftL` 1
+{-# INLINE double #-}
 
 -- Auxiliaries
 
