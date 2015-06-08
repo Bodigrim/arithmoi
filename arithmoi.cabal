@@ -1,6 +1,6 @@
 name                : arithmoi
 version             : 0.4.1.2
-cabal-version       : >= 1.6
+cabal-version       : >= 1.10
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
 license             : MIT
@@ -37,9 +37,15 @@ flag llvm
     manual              : True
 
 library
-    build-depends       : base >= 4 && < 5, array >= 0.3 && < 0.6, ghc-prim,
-                          integer-gmp, containers >= 0.3 && < 0.6, random >= 1.0 && < 1.2,
-                          mtl >= 2.0 && < 2.3
+    default-language: Haskell2010
+    build-depends       : base >= 4 && < 5
+                          , array >= 0.3 && < 0.6
+                          , ghc-prim
+                          , integer-gmp
+                          , containers >= 0.3 && < 0.6
+                          , random >= 1.0 && < 1.2
+                          , mtl >= 2.0 && < 2.3
+
     exposed-modules     : Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion
@@ -74,7 +80,8 @@ library
                           Math.NumberTheory.Primes.Testing.Probabilistic
                           Math.NumberTheory.Primes.Testing.Certified
                           Math.NumberTheory.Primes.Testing.Certificates.Internal
-    extensions          : BangPatterns
+    other-extensions          : BangPatterns
+
     ghc-options         : -O2 -Wall
     if flag(llvm)
         ghc-options     : -fllvm
@@ -83,3 +90,24 @@ library
 source-repository head
   type:     git
   location: https://github.com/cartazio/arithmoi
+
+
+benchmark criterion
+  build-depends:    base
+                    ,arithmoi
+                    ,criterion
+  hs-source-dirs:   benchmark
+  main-is:          Bench.hs
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+
+test-suite spec
+  type:                 exitcode-stdio-1.0
+  hs-source-dirs:       test-suite
+  ghc-options:          -Wall
+  main-is:              Spec.hs
+  default-language: Haskell2010
+  build-depends:        base
+                        ,hspec
+                        ,arithmoi
+
