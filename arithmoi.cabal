@@ -4,7 +4,7 @@ cabal-version       : >= 1.10
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
 license             : MIT
-license-file        : LICENCE
+license-file        : LICENSE
 maintainer          : Carter Schonwald  carter at wellposed dot com
 build-type          : Simple
 stability           : Provisional
