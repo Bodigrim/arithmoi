@@ -34,9 +34,9 @@ module Math.NumberTheory.Moduli
 
 #include "MachDeps.h"
 
-#if __GLASGOW_HASKELL__ < 709
+-- #if __GLASGOW_HASKELL__ < 709
 import Data.Word
-#endif
+-- #endif
 import Data.Bits
 import Data.Array.Unboxed
 import Data.Array.Base (unsafeAt)
