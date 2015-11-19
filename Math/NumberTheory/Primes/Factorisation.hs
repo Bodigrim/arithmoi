@@ -101,7 +101,7 @@ totient n
 φ = totient
 
 -- | Calculates the Carmichael function for a positive integer, that is,
---   the (smallest) exponent of the group of units in @&8484;/(n)@.
+--   the (smallest) exponent of the group of units in @&#8484;/(n)@.
 carmichael :: Integer -> Integer
 carmichael n
     | n < 1     = error "Carmichael function only defined for positive numbers"
