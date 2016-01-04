@@ -321,13 +321,14 @@ divisorsTo mx n = case shiftToOddCount n of
                           | otherwise -> go (Set.fromDistinctAscList $ takeWhile (<= mx) $ take (k+1) (iterate (*2) 1)) o iops
   where
     mset k st = fst (Set.split (mx+1) (Set.mapMonotonic (*k) st))
+    -- unP p m = (k, m / p ^ k), where k is as large as possible such that p ^ k still divides m
     unP :: Int -> Int -> (Int,Int)
     unP p m = goP 0 m
       where
         goP :: Int -> Int -> (Int,Int)
-        goP !i j = case m `quotRem` p of
+        goP !i j = case j `quotRem` p of
                      (q,r) | r == 0 -> goP (i+1) q
-                           | otherwise -> (0,j)
+                           | otherwise -> (i,j)
     iops :: [Int]
     iops = 3:5:prs
     prs :: [Int]
