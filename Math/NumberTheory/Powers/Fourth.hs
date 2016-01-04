@@ -50,9 +50,9 @@ integerFourthRoot n
 --   that is, the largest integer @r@ with @r^4 <= n@.
 --   The condition is /not/ checked.
 {-# RULES
-"integerFourthRoot'/Int"  integerFourthRoot' = biSqrtInt
-"integerFourthRoot'/Word" integerFourthRoot' = biSqrtWord
-"integerFourthRoot'/Igr"  integerFourthRoot' = biSqrtIgr
+"integerFourthRoot'/Int"     integerFourthRoot' = biSqrtInt
+"integerFourthRoot'/Word"    integerFourthRoot' = biSqrtWord
+"integerFourthRoot'/Integer" integerFourthRoot' = biSqrtIgr
   #-}
 {-# INLINE [1] integerFourthRoot' #-}
 integerFourthRoot' :: Integral a => a -> a
