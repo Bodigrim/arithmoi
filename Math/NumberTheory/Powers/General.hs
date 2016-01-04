@@ -199,7 +199,8 @@ largePFPower bd n = rawPower ln n
 newtonK :: Integral a => a -> a -> a -> a
 newtonK k n a = go (step a)
   where
-    step m = ((k-1)*m + n `quot` (m^(k-1))) `quot` k
+    -- Beware integer overflow in m^(k-1)
+    step m = ((k-1)*m + fromInteger (toInteger n `quot` (toInteger m^(k-1)))) `quot` k
     go m
       | l < m     = go l
       | otherwise = m
