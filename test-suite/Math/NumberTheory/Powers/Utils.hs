@@ -9,6 +9,7 @@
 -- Utils to test Math.NumberTheory.Powers
 --
 
+{-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
@@ -89,12 +90,14 @@ instance Monad m => Serial m Word where
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty
 
+type TestableIntegral wrapper =
+  ( Arbitrary (wrapper Int), Arbitrary (wrapper Word), Arbitrary (wrapper Integer)
+  , Arbitrary (Large (wrapper Int)), Arbitrary (Large (wrapper Word)), Arbitrary (Huge (wrapper Integer))
+  , Show (wrapper Int), Show (wrapper Word), Show (wrapper Integer)
+  , Serial IO (wrapper Int), Serial IO (wrapper Word), Serial IO (wrapper Integer))
+
 testIntegralProperty
-  :: forall wrapper.
-     (Arbitrary (wrapper Int), Arbitrary (wrapper Word), Arbitrary (wrapper Integer))
-  => (Arbitrary (Large (wrapper Int)), Arbitrary (Large (wrapper Word)), Arbitrary (Huge (wrapper Integer)))
-  => (Show (wrapper Int), Show (wrapper Word), Show (wrapper Integer))
-  => (Serial IO (wrapper Int), Serial IO (wrapper Word), Serial IO (wrapper Integer))
+  :: forall wrapper. TestableIntegral wrapper
   => String -> (forall a. (Integral a) => wrapper a -> Bool) -> TestTree
 testIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> Bool)
@@ -109,15 +112,7 @@ testIntegralProperty name f = testGroup name
   ]
 
 testIntegral2Property
-  :: forall wrapper1 wrapper2.
-     (Arbitrary (wrapper1 Int), Arbitrary (wrapper1 Word), Arbitrary (wrapper1 Integer))
-  => (Arbitrary (Large (wrapper1 Int)), Arbitrary (Large (wrapper1 Word)), Arbitrary (Huge (wrapper1 Integer)))
-  => (Show (wrapper1 Int), Show (wrapper1 Word), Show (wrapper1 Integer))
-  => (Serial IO (wrapper1 Int), Serial IO (wrapper1 Word), Serial IO (wrapper1 Integer))
-  => (Arbitrary (wrapper2 Int), Arbitrary (wrapper2 Word), Arbitrary (wrapper2 Integer))
-  => (Arbitrary (Large (wrapper2 Int)), Arbitrary (Large (wrapper2 Word)), Arbitrary (Huge (wrapper2 Integer)))
-  => (Show (wrapper2 Int), Show (wrapper2 Word), Show (wrapper2 Integer))
-  => (Serial IO (wrapper2 Int), Serial IO (wrapper2 Word), Serial IO (wrapper2 Integer))
+  :: forall wrapper1 wrapper2. (TestableIntegral wrapper1, TestableIntegral wrapper2)
   => String -> (forall a1 a2. (Integral a1, Integral a2) => wrapper1 a1 -> wrapper2 a2 -> Bool) -> TestTree
 testIntegral2Property name f = testGroup name
   [ SC.testProperty "smallcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> Bool)
