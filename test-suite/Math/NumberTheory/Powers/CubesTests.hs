@@ -17,7 +17,6 @@ module Math.NumberTheory.Powers.CubesTests
 import Test.Tasty
 import Test.SmallCheck.Series
 
-import Data.Functor.Identity
 import Data.Maybe
 
 import Math.NumberTheory.Powers.Cubes
@@ -27,8 +26,8 @@ import Math.NumberTheory.Powers.Utils
 -- means
 -- (m + 1) ^ 3 > n
 -- but without overflow for bounded types
-integerCubeRootProperty :: Integral a => Identity a -> Bool
-integerCubeRootProperty (Identity n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
+integerCubeRootProperty :: Integral a => AnySign a -> Bool
+integerCubeRootProperty (AnySign n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
   where
     m = integerCubeRoot n
     cond
@@ -41,8 +40,8 @@ integerCubeRoot'Property (NonNegative n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && (m 
   where
     m = integerCubeRoot' n
 
-isCubeProperty :: Integral a => Identity a -> Bool
-isCubeProperty (Identity n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
+isCubeProperty :: Integral a => AnySign a -> Bool
+isCubeProperty (AnySign n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
   where
     t = isCube n
     m = integerCubeRoot n
@@ -53,8 +52,8 @@ isCube'Property (NonNegative n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
     t = isCube' n
     m = integerCubeRoot' n
 
-exactCubeRootProperty :: Integral a => Identity a -> Bool
-exactCubeRootProperty (Identity n) = case exactCubeRoot n of
+exactCubeRootProperty :: Integral a => AnySign a -> Bool
+exactCubeRootProperty (AnySign n) = case exactCubeRoot n of
   Nothing -> not (isCube n)
   Just m  -> isCube n && n == m ^ 3
 

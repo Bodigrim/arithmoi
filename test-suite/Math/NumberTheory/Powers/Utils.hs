@@ -10,6 +10,9 @@
 --
 
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DeriveFoldable             #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -27,14 +30,21 @@ import Test.Tasty
 import Test.Tasty.SmallCheck as SC
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative)
 
-import Test.SmallCheck.Series
+import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate)
 
 import Control.Applicative
-import Data.Functor.Identity
 #if MIN_VERSION_base(4,8,0)
 #else
+import Data.Foldable (Foldable)
+import Data.Traversable (Traversable)
 import Data.Word
 #endif
+
+newtype AnySign a = AnySign { getAnySign :: a }
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
+
+instance (Monad m, Serial m a) => Serial m (AnySign a) where
+  series = AnySign <$> series
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (Positive a) where
   arbitrary = Positive <$> (arbitrary `suchThat` (> 0))
@@ -51,31 +61,6 @@ instance (Num a, Bounded a) => Bounded (Positive a) where
 instance (Num a, Bounded a) => Bounded (NonNegative a) where
   minBound = NonNegative 0
   maxBound = NonNegative (maxBound :: a)
-
-instance Enum a => Enum (Identity a) where
-  toEnum a = Identity $ toEnum a
-  fromEnum (Identity a) = fromEnum a
-
-instance Bounded a => Bounded (Identity a) where
-  minBound = Identity (minBound :: a)
-  maxBound = Identity (maxBound :: a)
-
-instance Integral a => Integral (Identity a) where
-  toInteger (Identity a) = toInteger a
-  quotRem (Identity a) (Identity b) = (Identity q, Identity r)
-    where
-      (q, r) = quotRem a b
-
-instance Real a => Real (Identity a) where
-  toRational (Identity a) = toRational a
-
-instance Num a => Num (Identity a) where
-  (+) = liftA2 (+)
-  (*) = liftA2 (*)
-  fromInteger a = Identity $ fromInteger a
-  abs = liftA abs
-  signum = liftA signum
-  negate = liftA negate
 
 newtype Huge a = Huge { getHuge :: a }
   deriving (Eq, Ord, Enum, Bounded, Show, Num, Real, Integral)
@@ -99,14 +84,7 @@ instance Monad m => Serial m Word where
   series =
     generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
     where
-      nats = generate $ \d -> if d >0 then [1 .. fromInteger (toInteger d)] else empty
-
-instance (Monad m, Serial m a) => Serial m (Identity a) where
-  series = Identity <$> series
-
-instance Arbitrary a => Arbitrary (Identity a) where
-  arbitrary = Identity <$> arbitrary
-  shrink (Identity x) = Identity <$> shrink x
+      nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
 
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty

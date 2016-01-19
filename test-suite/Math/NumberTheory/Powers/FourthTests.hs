@@ -17,7 +17,6 @@ module Math.NumberTheory.Powers.FourthTests
 import Test.Tasty
 import Test.SmallCheck.Series
 
-import Data.Functor.Identity
 import Data.Maybe
 
 import Math.NumberTheory.Powers.Fourth
@@ -37,8 +36,8 @@ integerFourthRoot'Property (NonNegative n) = m >= 0 && m ^ 4 <= n && (m + 1) ^ 4
   where
     m = integerFourthRoot' n
 
-isFourthPowerProperty :: Integral a => Identity a -> Bool
-isFourthPowerProperty (Identity n) = (n < 0 && not t) || (n /= m ^ 4 && not t) || (n == m ^ 4 && t)
+isFourthPowerProperty :: Integral a => AnySign a -> Bool
+isFourthPowerProperty (AnySign n) = (n < 0 && not t) || (n /= m ^ 4 && not t) || (n == m ^ 4 && t)
   where
     t = isFourthPower n
     m = integerFourthRoot n
@@ -49,8 +48,8 @@ isFourthPower'Property (NonNegative n) = (n /= m ^ 4 && not t) || (n == m ^ 4 &&
     t = isFourthPower' n
     m = integerFourthRoot' n
 
-exactFourthRootProperty :: Integral a => Identity a -> Bool
-exactFourthRootProperty (Identity n) = case exactFourthRoot n of
+exactFourthRootProperty :: Integral a => AnySign a -> Bool
+exactFourthRootProperty (AnySign n) = case exactFourthRoot n of
   Nothing -> not (isFourthPower n)
   Just m  -> isFourthPower n && n == m ^ 4
 

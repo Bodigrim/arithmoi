@@ -18,36 +18,34 @@ import Test.Tasty
 import Test.SmallCheck.Series
 import Test.Tasty.HUnit
 
-import Data.Functor.Identity
-
 import Math.NumberTheory.Powers.General
 import Math.NumberTheory.Powers.Utils
 
-integerRootProperty :: (Integral a, Integral b) => Identity a -> Power b -> Bool
-integerRootProperty (Identity n) (Power pow) = (even pow && n < 0)
+integerRootProperty :: (Integral a, Integral b) => AnySign a -> Power b -> Bool
+integerRootProperty (AnySign n) (Power pow) = (even pow && n < 0)
   || (toInteger root ^ pow <= toInteger n && toInteger n < toInteger (root + 1) ^ pow)
     where
       root = integerRoot pow n
 
-isKthPowerProperty :: (Integral a, Integral b) => Identity a -> Power b -> Bool
-isKthPowerProperty (Identity n) (Power pow) = (even pow && n < 0 && not t) || (n /= root ^ pow && not t) || (n == root ^ pow && t)
+isKthPowerProperty :: (Integral a, Integral b) => AnySign a -> Power b -> Bool
+isKthPowerProperty (AnySign n) (Power pow) = (even pow && n < 0 && not t) || (n /= root ^ pow && not t) || (n == root ^ pow && t)
   where
     t = isKthPower pow n
     root = integerRoot pow n
 
-exactRootProperty :: (Integral a, Integral b) => Identity a -> Power b -> Bool
-exactRootProperty (Identity n) (Power pow) = case exactRoot pow n of
+exactRootProperty :: (Integral a, Integral b) => AnySign a -> Power b -> Bool
+exactRootProperty (AnySign n) (Power pow) = case exactRoot pow n of
   Nothing   -> not (isKthPower pow n)
   Just root -> isKthPower pow n && n == root ^ pow
 
-isPerfectPowerProperty :: Integral a => Identity a -> Bool
-isPerfectPowerProperty (Identity n) = (k > 1 && t) || (k == 1 && not t)
+isPerfectPowerProperty :: Integral a => AnySign a -> Bool
+isPerfectPowerProperty (AnySign n) = (k > 1 && t) || (k == 1 && not t)
   where
     t = isPerfectPower n
     (_, k) = highestPower n
 
-highestPowerProperty :: Integral a => Identity a -> Bool
-highestPowerProperty (Identity n) = (n `elem` [-1, 0, 1] && k == 3) || (b ^ k == n && b' == b && k' == 1)
+highestPowerProperty :: Integral a => AnySign a -> Bool
+highestPowerProperty (AnySign n) = (n `elem` [-1, 0, 1] && k == 3) || (b ^ k == n && b' == b && k' == 1)
   where
     (b, k) = highestPower n
     (b', k') = highestPower b

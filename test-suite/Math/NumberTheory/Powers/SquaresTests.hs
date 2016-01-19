@@ -17,7 +17,6 @@ module Math.NumberTheory.Powers.SquaresTests
 import Test.Tasty
 import Test.SmallCheck.Series
 
-import Data.Functor.Identity
 import Data.Maybe
 
 import Math.NumberTheory.Powers.Squares
@@ -37,8 +36,8 @@ integerSquareRoot'Property (NonNegative n) = m >=0 && m * m <= n && (m + 1) ^ 2 
   where
     m = integerSquareRoot' n
 
-isSquareProperty :: Integral a => Identity a -> Bool
-isSquareProperty (Identity n) = (n < 0 && not t) || (n /= m * m && not t) || (n == m * m && t)
+isSquareProperty :: Integral a => AnySign a -> Bool
+isSquareProperty (AnySign n) = (n < 0 && not t) || (n /= m * m && not t) || (n == m * m && t)
   where
     t = isSquare n
     m = integerSquareRoot n
@@ -49,8 +48,8 @@ isSquare'Property (NonNegative n) = (n /= m * m && not t) || (n == m * m && t)
     t = isSquare' n
     m = integerSquareRoot' n
 
-exactSquareRootProperty :: Integral a => Identity a -> Bool
-exactSquareRootProperty (Identity n) = case exactSquareRoot n of
+exactSquareRootProperty :: Integral a => AnySign a -> Bool
+exactSquareRootProperty (AnySign n) = case exactSquareRoot n of
   Nothing -> not (isSquare n)
   Just m  -> isSquare n && n == m * m
 
