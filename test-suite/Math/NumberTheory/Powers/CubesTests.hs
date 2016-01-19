@@ -22,6 +22,8 @@ import Data.Maybe
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Powers.Utils
 
+-- | Check that 'integerCubeRoot' returns the largest integer @m@ with @m^3 <= n@.
+--
 -- (m + 1) ^ 3 /= n && cond
 -- means
 -- (m + 1) ^ 3 > n
@@ -35,28 +37,34 @@ integerCubeRootProperty (AnySign n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
       | m < 0     = (m + 1) ^ 2 <= n `div` (m + 1)
       | otherwise = (m + 1) ^ 2 >= n `div` (m + 1)
 
+-- | Check that 'integerCubeRoot'' returns the largest integer @m@ with @m^3 <= n@.
 integerCubeRoot'Property :: Integral a => NonNegative a -> Bool
 integerCubeRoot'Property (NonNegative n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && (m + 1) ^ 2 >= n `div` (m + 1)
   where
     m = integerCubeRoot' n
 
+-- | Check that the number 'isCube' iff its 'integerCubeRoot' is exact.
 isCubeProperty :: Integral a => AnySign a -> Bool
 isCubeProperty (AnySign n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
   where
     t = isCube n
     m = integerCubeRoot n
 
+-- | Check that the number 'isCube'' iff its 'integerCubeRoot'' is exact.
 isCube'Property :: Integral a => NonNegative a -> Bool
 isCube'Property (NonNegative n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
   where
     t = isCube' n
     m = integerCubeRoot' n
 
+-- | Check that 'exactCubeRoot' returns an exact integer cubic root
+-- and is consistent with 'isCube'.
 exactCubeRootProperty :: Integral a => AnySign a -> Bool
 exactCubeRootProperty (AnySign n) = case exactCubeRoot n of
   Nothing -> not (isCube n)
   Just m  -> isCube n && n == m ^ 3
 
+-- | Check that 'isPossibleCube' is consistent with 'exactCubeRoot'.
 isPossibleCubeProperty :: Integral a => NonNegative a -> Bool
 isPossibleCubeProperty (NonNegative n) = t || not t && isNothing m
   where

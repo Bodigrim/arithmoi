@@ -26,9 +26,11 @@ import Data.Word
 import Math.NumberTheory.Powers.Integer
 import Math.NumberTheory.Powers.Utils
 
+-- | Check that 'integerPower' == '^'.
 integerPowerProperty :: Integer -> Power Int -> Bool
 integerPowerProperty a (Power b) = integerPower a b == a ^ b
 
+-- | Check that 'integerWordPower' == '^'.
 integerWordPowerProperty :: Integer -> Power Word -> Bool
 integerWordPowerProperty a (Power b) = integerWordPower a b == a ^ b
 

@@ -22,6 +22,8 @@ import Data.Maybe
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Utils
 
+-- | Check that 'integerSquareRoot' returns the largest integer @m@ with @m*m <= n@.
+--
 -- (m + 1) ^ 2 /= n && m + 1 >= n `div` (m + 1)
 -- means
 -- (m + 1) ^ 2 > n
@@ -31,28 +33,35 @@ integerSquareRootProperty (NonNegative n) = m >=0 && m * m <= n && (m + 1) ^ 2 /
   where
     m = integerSquareRoot n
 
+-- | Check that 'integerSquareRoot'' returns the largest integer @r@ with @r*r <= n@.
 integerSquareRoot'Property :: Integral a => NonNegative a -> Bool
 integerSquareRoot'Property (NonNegative n) = m >=0 && m * m <= n && (m + 1) ^ 2 /= n && m + 1 >= n `div` (m + 1)
   where
     m = integerSquareRoot' n
 
+-- | Check that the number 'isSquare' iff its 'integerSquareRoot' is exact.
 isSquareProperty :: Integral a => AnySign a -> Bool
 isSquareProperty (AnySign n) = (n < 0 && not t) || (n /= m * m && not t) || (n == m * m && t)
   where
     t = isSquare n
     m = integerSquareRoot n
 
+-- | Check that the number 'isSquare'' iff its 'integerSquareRoot'' is exact.
 isSquare'Property :: Integral a => NonNegative a -> Bool
 isSquare'Property (NonNegative n) = (n /= m * m && not t) || (n == m * m && t)
   where
     t = isSquare' n
     m = integerSquareRoot' n
 
+-- | Check that 'exactSquareRoot' returns an exact integer square root
+-- and is consistent with 'isSquare'.
 exactSquareRootProperty :: Integral a => AnySign a -> Bool
 exactSquareRootProperty (AnySign n) = case exactSquareRoot n of
   Nothing -> not (isSquare n)
   Just m  -> isSquare n && n == m * m
 
+-- | Check that 'isPossibleSquare' is consistent with 'exactSquareRoot'
+-- and that 'isPossibleSquare2' is a refinement of 'isPossibleSquare'.
 isPossibleSquareProperty :: Integral a => NonNegative a -> Bool
 isPossibleSquareProperty (NonNegative n) = t || not t && not t2 && isNothing m
   where
@@ -60,6 +69,7 @@ isPossibleSquareProperty (NonNegative n) = t || not t && not t2 && isNothing m
     t2 = isPossibleSquare2 n
     m = exactSquareRoot n
 
+-- | Check that 'isPossibleSquare2'' is consistent with 'exactSquareRoot'.
 isPossibleSquare2Property :: Integral a => NonNegative a -> Bool
 isPossibleSquare2Property (NonNegative n) = t || not t && isNothing m
   where
