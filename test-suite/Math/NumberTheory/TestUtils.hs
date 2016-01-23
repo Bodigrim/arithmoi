@@ -11,15 +11,19 @@
 
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -45,6 +49,8 @@ import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import Data.Word
 #endif
+
+import GHC.Exts
 
 newtype AnySign a = AnySign { getAnySign :: a }
   deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
@@ -95,11 +101,25 @@ instance Monad m => Serial m Word where
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty
 
+
+-- https://www.cs.ox.ac.uk/projects/utgp/school/andres.pdf, p. 21
+-- :k Compose = (k1 -> Constraint) -> (k2 -> k1) -> (k2 -> Constraint)
+class    (f (g x)) => (f `Compose` g) x
+instance (f (g x)) => (f `Compose` g) x
+
+type family ConcatMap (w :: * -> Constraint) (cs :: [*]) :: Constraint where
+  ConcatMap w '[] = ()
+  ConcatMap w (c ': cs) = (w c, ConcatMap w cs)
+
+type family Matrix (as :: [* -> Constraint]) (w :: * -> *) (bs :: [*]) :: Constraint where
+  Matrix '[] w bs = ()
+  Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w bs)
+
 type TestableIntegral wrapper =
-  ( Arbitrary (wrapper Int), Arbitrary (wrapper Word), Arbitrary (wrapper Integer)
-  , Arbitrary (Large (wrapper Int)), Arbitrary (Large (wrapper Word)), Arbitrary (Huge (wrapper Integer))
-  , Show (wrapper Int), Show (wrapper Word), Show (wrapper Integer)
-  , Serial IO (wrapper Int), Serial IO (wrapper Word), Serial IO (wrapper Integer))
+  ( Matrix '[Arbitrary, Show, Serial IO] wrapper '[Int, Word, Integer]
+  , ConcatMap Arbitrary '[Large (wrapper Int), Large (wrapper Word), Huge (wrapper Integer)]
+  )
+
 
 testIntegralProperty
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
