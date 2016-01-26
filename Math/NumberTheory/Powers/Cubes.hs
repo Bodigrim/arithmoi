@@ -61,9 +61,9 @@ integerCubeRoot n
 --   that is, the largest integer @r@ such that @r^3 <= n@.
 --   The precondition @n >= 0@ is not checked.
 {-# RULES
-"integerCubeRoot'/Int"  integerCubeRoot' = cubeRootInt'
-"integerCubeRoot'/Word" integerCubeRoot' = cubeRootWord
-"integerCubeRoot'/Igr"  integerCubeRoot' = cubeRootIgr
+"integerCubeRoot'/Int"     integerCubeRoot' = cubeRootInt'
+"integerCubeRoot'/Word"    integerCubeRoot' = cubeRootWord
+"integerCubeRoot'/Integer" integerCubeRoot' = cubeRootIgr
   #-}
 {-# INLINE [1] integerCubeRoot' #-}
 integerCubeRoot' :: Integral a => a -> a
