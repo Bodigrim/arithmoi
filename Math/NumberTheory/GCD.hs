@@ -98,16 +98,21 @@ binaryGCDImpl a b =
 -- | Calculate the greatest common divisor of two numbers and coefficients
 --   for the linear combination.
 --
---   Satisfies:
+--   For signed types satisfies:
 --
 -- > case extendedGCD a b of
 -- >   (d, u, v) -> u*a + v*b == d
--- >
--- > d == gcd a b
+-- >                && d == gcd a b
 --
---   and, for signed types,
+--   For unsigned and bounded types the property above holds, but since @u@ and @v@ must also be unsigned,
+--   the result may look weird. E. g., on 64-bit architecture
 --
--- >
+-- > extendedGCD (2 :: Word) (3 :: Word) == (1, 2^64-1, 1)
+--
+--   For unsigned and unbounded types (like 'Numeric.Natural.Natural') the result is undefined.
+--
+--   For signed types we also have
+--
 -- > abs u < abs b || abs b <= 1
 -- >
 -- > abs v < abs a || abs a <= 1
