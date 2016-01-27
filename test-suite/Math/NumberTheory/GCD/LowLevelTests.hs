@@ -24,7 +24,7 @@ import Test.Tasty
 import Data.Word
 #endif
 
-import GHC.Base
+import GHC.Exts
 
 import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.TestUtils
