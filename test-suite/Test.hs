@@ -1,6 +1,7 @@
 import Test.Tasty
 
 import qualified Math.NumberTheory.GCDTests as GCD
+import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
@@ -22,5 +23,6 @@ tests = testGroup "All"
     ]
   , testGroup "GCD"
     [ GCD.testSuite
+    , GCDLowLevel.testSuite
     ]
   ]
