@@ -15,11 +15,10 @@ module Math.NumberTheory.Powers.GeneralTests
   ) where
 
 import Test.Tasty
-import Test.SmallCheck.Series
 import Test.Tasty.HUnit
 
 import Math.NumberTheory.Powers.General
-import Math.NumberTheory.Powers.Utils
+import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerRoot' @pow@ returns the largest integer @m@ with @m^pow <= n@.
 integerRootProperty :: (Integral a, Integral b) => AnySign a -> Power b -> Bool

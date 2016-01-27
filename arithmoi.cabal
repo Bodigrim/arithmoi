@@ -120,5 +120,5 @@ test-suite spec
                   , Math.NumberTheory.Powers.GeneralTests
                   , Math.NumberTheory.Powers.IntegerTests
                   , Math.NumberTheory.Powers.SquaresTests
-                  , Math.NumberTheory.Powers.Utils
+                  , Math.NumberTheory.TestUtils
 

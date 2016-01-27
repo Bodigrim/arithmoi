@@ -15,12 +15,11 @@ module Math.NumberTheory.Powers.CubesTests
   ) where
 
 import Test.Tasty
-import Test.SmallCheck.Series
 
 import Data.Maybe
 
 import Math.NumberTheory.Powers.Cubes
-import Math.NumberTheory.Powers.Utils
+import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerCubeRoot' returns the largest integer @m@ with @m^3 <= n@.
 --

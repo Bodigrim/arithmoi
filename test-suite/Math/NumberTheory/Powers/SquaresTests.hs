@@ -15,12 +15,11 @@ module Math.NumberTheory.Powers.SquaresTests
   ) where
 
 import Test.Tasty
-import Test.SmallCheck.Series
 
 import Data.Maybe
 
 import Math.NumberTheory.Powers.Squares
-import Math.NumberTheory.Powers.Utils
+import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerSquareRoot' returns the largest integer @m@ with @m*m <= n@.
 --

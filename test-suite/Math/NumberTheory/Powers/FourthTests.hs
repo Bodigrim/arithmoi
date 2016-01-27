@@ -15,12 +15,11 @@ module Math.NumberTheory.Powers.FourthTests
   ) where
 
 import Test.Tasty
-import Test.SmallCheck.Series
 
 import Data.Maybe
 
 import Math.NumberTheory.Powers.Fourth
-import Math.NumberTheory.Powers.Utils
+import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerFourthRoot' returns the largest integer @m@ with @m^4 <= n@.
 --
