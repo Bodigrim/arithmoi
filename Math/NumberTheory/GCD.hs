@@ -83,10 +83,13 @@ binaryGCDImpl :: (Integral a, Bits a) => a -> a -> a
 binaryGCDImpl a 0 = abs a
 binaryGCDImpl 0 b = abs b
 binaryGCDImpl a b =
-    case shiftToOddCount a of
+    case shiftToOddCount a' of
       (!za, !oa) ->
-        case shiftToOddCount b of
+        case shiftToOddCount b' of
           (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
+    where
+      a' = abs a
+      b' = abs b
 
 {-# SPECIALISE extendedGCD :: Int -> Int -> (Int, Int, Int),
                               Word -> Word -> (Word, Word, Word),
