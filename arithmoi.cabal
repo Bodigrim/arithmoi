@@ -117,6 +117,7 @@ test-suite spec
                         , smallcheck >= 1.1 && < 1.2
   other-modules :   Math.NumberTheory.GCDTests
                   , Math.NumberTheory.GCD.LowLevelTests
+                  , Math.NumberTheory.LogarithmsTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.Powers.FourthTests
                   , Math.NumberTheory.Powers.GeneralTests
