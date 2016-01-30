@@ -348,5 +348,6 @@ divisorsTo mx n = case shiftToOddCount n of
       | otherwise =
         case unP p m of
           (0,_) -> go st m ps
-          (k,r) -> go (Set.unions (st:take k (iterate (mset p) st))) r ps
+          -- iterate f x = [x, f x, f (f x)...]
+          (k,r) -> go (Set.unions (take (k + 1) (iterate (mset p) st))) r ps
     go st m [] = go st m [m+1]
