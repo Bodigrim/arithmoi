@@ -18,10 +18,6 @@ module Math.NumberTheory.Powers.GeneralTests
 
 import Test.Tasty
 import Test.Tasty.HUnit
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
 
 import Math.NumberTheory.Powers.General
 import Math.NumberTheory.TestUtils
