@@ -8,6 +8,8 @@
 -- Tests for Math.NumberTheory.Powers.Squares
 --
 
+{-# LANGUAGE CPP #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.Powers.SquaresTests
@@ -15,11 +17,18 @@ module Math.NumberTheory.Powers.SquaresTests
   ) where
 
 import Test.Tasty
+import Test.Tasty.HUnit
 
 import Data.Maybe
+#if MIN_VERSION_base(4,8,0)
+#else
+import Data.Word
+#endif
 
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.TestUtils
+
+#include "MachDeps.h"
 
 -- | Check that 'integerSquareRoot' returns the largest integer @m@ with @m*m <= n@.
 --
@@ -31,6 +40,49 @@ integerSquareRootProperty :: Integral a => NonNegative a -> Bool
 integerSquareRootProperty (NonNegative n) = m >=0 && m * m <= n && (m + 1) ^ 2 /= n && m + 1 >= n `div` (m + 1)
   where
     m = integerSquareRoot n
+
+-- | Specialized to trigger 'isqrtInt''.
+integerSquareRootProperty_Int :: NonNegative Int -> Bool
+integerSquareRootProperty_Int = integerSquareRootProperty
+
+-- | Specialized to trigger 'isqrtWord'.
+integerSquareRootProperty_Word :: NonNegative Word -> Bool
+integerSquareRootProperty_Word = integerSquareRootProperty
+
+-- | Check that 'integerSquareRoot' returns the largest integer @m@ with @m*m <= n@, where @n@ has form @k@^2-1.
+integerSquareRootProperty2 :: Integral a => NonNegative a -> Bool
+integerSquareRootProperty2 (NonNegative k) = n < 0
+  || m >=0 && m * m <= n && (m + 1) ^ 2 /= n && m + 1 >= n `div` (m + 1)
+  where
+    n = k ^ 2 - 1
+    m = integerSquareRoot n
+
+-- | Specialized to trigger 'isqrtInt''.
+integerSquareRootProperty2_Int :: NonNegative Int -> Bool
+integerSquareRootProperty2_Int = integerSquareRootProperty2
+
+-- | Specialized to trigger 'isqrtWord'.
+integerSquareRootProperty2_Word :: NonNegative Word -> Bool
+integerSquareRootProperty2_Word = integerSquareRootProperty2
+
+#if WORD_SIZE_IN_BITS == 64
+
+-- | Check that 'integerSquareRoot' of 2^62-1 is 2^31-1, not 2^31.
+integerSquareRootSpecialCase1_Int :: Assertion
+integerSquareRootSpecialCase1_Int =
+  assertEqual "integerSquareRoot" (integerSquareRoot (maxBound `div` 2 :: Int)) (2 ^ 31 - 1)
+
+-- | Check that 'integerSquareRoot' of 2^62-1 is 2^31-1, not 2^31.
+integerSquareRootSpecialCase1_Word :: Assertion
+integerSquareRootSpecialCase1_Word =
+  assertEqual "integerSquareRoot" (integerSquareRoot (maxBound `div` 4 :: Word)) (2 ^ 31 - 1)
+
+-- | Check that 'integerSquareRoot' of 2^64-1 is 2^32-1, not 2^32.
+integerSquareRootSpecialCase2 :: Assertion
+integerSquareRootSpecialCase2 =
+  assertEqual "integerSquareRoot" (integerSquareRoot (maxBound :: Word)) (2 ^ 32 - 1)
+
+#endif
 
 -- | Check that 'integerSquareRoot'' returns the largest integer @r@ with @r*r <= n@.
 integerSquareRoot'Property :: Integral a => NonNegative a -> Bool
@@ -78,7 +130,20 @@ isPossibleSquare2Property (NonNegative n) = t || not t && isNothing m
 
 testSuite :: TestTree
 testSuite = testGroup "Squares"
-  [ testIntegralProperty "integerSquareRoot"  integerSquareRootProperty
+  [ testGroup "integerSquareRoor"
+    [ testIntegralProperty "generic"          integerSquareRootProperty
+    , testSmallAndQuick    "generic Int"      integerSquareRootProperty_Int
+    , testSmallAndQuick    "generic Word"     integerSquareRootProperty_Word
+
+    , testIntegralProperty "almost square"      integerSquareRootProperty2
+    , testSmallAndQuick    "almost square Int"  integerSquareRootProperty2_Int
+    , testSmallAndQuick    "almost square Word" integerSquareRootProperty2_Word
+
+    , testCase             "maxBound / 2 :: Int"  integerSquareRootSpecialCase1_Int
+    , testCase             "maxBound / 4 :: Word" integerSquareRootSpecialCase1_Word
+    , testCase             "maxBound :: Word"     integerSquareRootSpecialCase2
+    ]
+
   , testIntegralProperty "integerSquareRoot'" integerSquareRoot'Property
   , testIntegralProperty "isSquare"           isSquareProperty
   , testIntegralProperty "isSquare'"          isSquare'Property

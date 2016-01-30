@@ -28,6 +28,7 @@
 module Math.NumberTheory.TestUtils
   ( module Math.NumberTheory.TestUtils
   , module Test.SmallCheck.Series
+  , Large(..)
   ) where
 
 import Test.Tasty

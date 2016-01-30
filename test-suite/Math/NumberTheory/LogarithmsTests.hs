@@ -62,6 +62,14 @@ integerLogBase'Property (Positive b) (Positive n) = b == 1 || b ^ l <= n && b ^ 
   where
     l = toInteger $ integerLogBase' b n
 
+-- | Check that 'integerLogBase'' returns the largest integer @l@ such that @b@ ^ @l@ <= @n@ and @b@ ^ (@l@+1) > @n@ for @b@ > 32 and @n@ >= @b@ ^ 2.
+integerLogBase'Property2 :: Positive Integer -> Positive Integer -> Bool
+integerLogBase'Property2 (Positive b') (Positive n') = b ^ l <= n && b ^ (l + 1) > n
+  where
+    b = b' + 32
+    n = n' + b ^ 2 - 1
+    l = toInteger $ integerLogBase' b n
+
 -- | Check that 'integerLog2'' returns the largest integer @l@ such that 2 ^ @l@ <= @n@ and 2 ^ (@l@+1) > @n@.
 integerLog2'Property :: Positive Integer -> Bool
 integerLog2'Property (Positive n) = 2 ^ l <= n && 2 ^ (l + 1) > n
@@ -95,6 +103,8 @@ testSuite = testGroup "Logarithms"
   , testSmallAndQuick "wordLog2"        wordLog2Property
 
   , testSmallAndQuick "integerLogBase'" integerLogBase'Property
+  , testSmallAndQuick "integerLogBase' with base > 32 and n >= base ^ 2"
+      integerLogBase'Property2
   , testSmallAndQuick "integerLog2'"    integerLog2'Property
   , testSmallAndQuick "integerLog10'"   integerLog10'Property
   , testSmallAndQuick "intLog2'"        intLog2'Property
