@@ -118,6 +118,7 @@ test-suite spec
   other-modules :   Math.NumberTheory.GCDTests
                   , Math.NumberTheory.GCD.LowLevelTests
                   , Math.NumberTheory.LogarithmsTests
+                  , Math.NumberTheory.LucasTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.Powers.FourthTests
                   , Math.NumberTheory.Powers.GeneralTests

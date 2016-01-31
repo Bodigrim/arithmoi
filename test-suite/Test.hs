@@ -5,6 +5,8 @@ import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
 import qualified Math.NumberTheory.LogarithmsTests as Logarithms
 
+import qualified Math.NumberTheory.LucasTests as Lucas
+
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
@@ -29,5 +31,8 @@ tests = testGroup "All"
     ]
   , testGroup "Logarithms"
     [ Logarithms.testSuite
+    ]
+  , testGroup "Lucas"
+    [ Lucas.testSuite
     ]
   ]
