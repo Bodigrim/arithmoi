@@ -13,6 +13,7 @@ module Math.NumberTheory.Primes.Factorisation.Utils
     ( ppTotient
     , totientFromCanonical
     , carmichaelFromCanonical
+    , moebiusFromCanonical
     , divisorsFromCanonical
     , tauFromCanonical
     , divisorSumFromCanonical
@@ -49,6 +50,15 @@ carmichaelFromCanonical = go2
     go !acc ((p,1):pps) = go (lcm acc (p-1)) pps
     go acc ((p,k):pps)  = go ((lcm acc (p-1))*integerPower p (k-1)) pps
     go acc []           = acc
+
+-- | Calculate the Moebius function from the canonical factorisation.
+moebiusFromCanonical :: [(a, Int)] -> Integer
+moebiusFromCanonical = go 1
+  where
+  go acc []            = acc
+  go acc ((_, 1) : xs) = go (negate acc) xs
+  go acc ((_, 0) : xs) = go acc xs          -- Should not really happen
+  go _   _             = 0                  -- Short circuit for powers > 1
 
 -- | The set of divisors, efficiently calculated from the canonical factorisation.
 divisorsFromCanonical :: [(Integer,Int)] -> Set Integer
