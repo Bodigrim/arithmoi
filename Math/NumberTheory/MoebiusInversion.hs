@@ -69,7 +69,7 @@ totientSum = (+1) . generalInversion (triangle . fromIntegral)
 --   Since the function arguments are used as array indices, the domain of
 --   @f@ is restricted to 'Int'.
 --
---   The value @f n@ is then computed by @generalInversion g n@). Note that when
+--   The value @f n@ is then computed by @generalInversion g n@. Note that when
 --   many values of @f@ are needed, there are far more efficient methods, this
 --   method is only appropriate to compute isolated values of @f@.
 generalInversion :: (Int -> Integer) -> Int -> Integer

@@ -7,6 +7,9 @@ import qualified Math.NumberTheory.LogarithmsTests as Logarithms
 
 import qualified Math.NumberTheory.LucasTests as Lucas
 
+import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
+import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversionInt
+
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
@@ -34,5 +37,9 @@ tests = testGroup "All"
     ]
   , testGroup "Lucas"
     [ Lucas.testSuite
+    ]
+  , testGroup "MoebiusInversion"
+    [ MoebiusInversion.testSuite
+    , MoebiusInversionInt.testSuite
     ]
   ]
