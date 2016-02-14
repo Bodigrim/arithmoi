@@ -162,14 +162,17 @@ isPerfectPower n
 --   of the prime exponents if some have been found, otherwise by trying
 --   prime exponents recursively.
 highestPower :: Integral a => a -> (a, Int)
-highestPower n
-  | abs n <= 1  = (n,3)
-  | n < 0       = case integerHighPower (toInteger $ negate n) of
+highestPower n'
+  | abs n <= 1  = (n', 3)
+  | n < 0       = case integerHighPower (negate n) of
                     (r,e) -> case shiftToOddCount e of
                                (k, o) -> (negate $ fromInteger (sqr k r), o)
-  | otherwise   = case integerHighPower (toInteger n) of
+  | otherwise   = case integerHighPower n of
                     (r,e) -> (fromInteger r, e)
     where
+      n :: Integer
+      n = toInteger n'
+
       sqr :: Int -> Integer -> Integer
       sqr 0 m = m
       sqr k m = sqr (k-1) (m*m)
@@ -345,5 +348,6 @@ divisorsTo mx n = case shiftToOddCount n of
       | otherwise =
         case unP p m of
           (0,_) -> go st m ps
-          (k,r) -> go (Set.unions (st:take k (iterate (mset p) st))) r ps
+          -- iterate f x = [x, f x, f (f x)...]
+          (k,r) -> go (Set.unions (take (k + 1) (iterate (mset p) st))) r ps
     go st m [] = go st m [m+1]

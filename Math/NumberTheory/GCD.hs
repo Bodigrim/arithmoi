@@ -83,10 +83,13 @@ binaryGCDImpl :: (Integral a, Bits a) => a -> a -> a
 binaryGCDImpl a 0 = abs a
 binaryGCDImpl 0 b = abs b
 binaryGCDImpl a b =
-    case shiftToOddCount a of
+    case shiftToOddCount a' of
       (!za, !oa) ->
-        case shiftToOddCount b of
+        case shiftToOddCount b' of
           (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
+    where
+      a' = abs a
+      b' = abs b
 
 {-# SPECIALISE extendedGCD :: Int -> Int -> (Int, Int, Int),
                               Word -> Word -> (Word, Word, Word),
@@ -95,16 +98,21 @@ binaryGCDImpl a b =
 -- | Calculate the greatest common divisor of two numbers and coefficients
 --   for the linear combination.
 --
---   Satisfies:
+--   For signed types satisfies:
 --
 -- > case extendedGCD a b of
 -- >   (d, u, v) -> u*a + v*b == d
--- >
--- > d == gcd a b
+-- >                && d == gcd a b
 --
---   and, for signed types,
+--   For unsigned and bounded types the property above holds, but since @u@ and @v@ must also be unsigned,
+--   the result may look weird. E. g., on 64-bit architecture
 --
--- >
+-- > extendedGCD (2 :: Word) (3 :: Word) == (1, 2^64-1, 1)
+--
+--   For unsigned and unbounded types (like 'Numeric.Natural.Natural') the result is undefined.
+--
+--   For signed types we also have
+--
 -- > abs u < abs b || abs b <= 1
 -- >
 -- > abs v < abs a || abs a <= 1

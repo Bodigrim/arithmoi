@@ -1,5 +1,10 @@
 import Test.Tasty
 
+import qualified Math.NumberTheory.GCDTests as GCD
+import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
+
+import qualified Math.NumberTheory.LogarithmsTests as Logarithms
+
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
@@ -10,10 +15,19 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Powers"
-  [ Cubes.testSuite
-  , Fourth.testSuite
-  , General.testSuite
-  , Integer.testSuite
-  , Squares.testSuite
+tests = testGroup "All"
+  [ testGroup "Powers"
+    [ Cubes.testSuite
+    , Fourth.testSuite
+    , General.testSuite
+    , Integer.testSuite
+    , Squares.testSuite
+    ]
+  , testGroup "GCD"
+    [ GCD.testSuite
+    , GCDLowLevel.testSuite
+    ]
+  , testGroup "Logarithms"
+    [ Logarithms.testSuite
+    ]
   ]

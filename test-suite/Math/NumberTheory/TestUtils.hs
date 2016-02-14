@@ -1,12 +1,12 @@
 -- |
--- Module:      Math.NumberTheory.Powers.CubesTests
+-- Module:      Math.NumberTheory.TestUtils
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Utils to test Math.NumberTheory.Powers
+-- Utils to test Math.NumberTheory
 --
 
 {-# LANGUAGE ConstraintKinds            #-}
@@ -25,7 +25,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.Powers.Utils where
+module Math.NumberTheory.TestUtils
+  ( module Math.NumberTheory.TestUtils
+  , module Test.SmallCheck.Series
+  , Large(..)
+  ) where
 
 import Test.Tasty
 import Test.Tasty.SmallCheck as SC
@@ -34,6 +38,7 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getN
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate)
 
 import Control.Applicative
+import Data.Bits
 #if MIN_VERSION_base(4,8,0)
 #else
 import Data.Foldable (Foldable)
@@ -98,7 +103,7 @@ type TestableIntegral wrapper =
 
 testIntegralProperty
   :: forall wrapper. TestableIntegral wrapper
-  => String -> (forall a. (Integral a) => wrapper a -> Bool) -> TestTree
+  => String -> (forall a. (Integral a, Bits a) => wrapper a -> Bool) -> TestTree
 testIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> Bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> Bool)
@@ -111,9 +116,24 @@ testIntegralProperty name f = testGroup name
   , QC.testProperty "quickcheck Huge  Integer" ((f :: wrapper Integer -> Bool) . getHuge)
   ]
 
+testSameIntegralProperty
+  :: forall wrapper. TestableIntegral wrapper
+  => String -> (forall a. (Integral a, Bits a) => wrapper a -> wrapper a -> Bool) -> TestTree
+testSameIntegralProperty name f = testGroup name
+  [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> wrapper Int     -> Bool)
+  , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> wrapper Word    -> Bool)
+  , SC.testProperty "smallcheck Integer" (f :: wrapper Integer -> wrapper Integer -> Bool)
+  , QC.testProperty "quickcheck Int"     (f :: wrapper Int     -> wrapper Int     -> Bool)
+  , QC.testProperty "quickcheck Word"    (f :: wrapper Word    -> wrapper Word    -> Bool)
+  , QC.testProperty "quickcheck Integer" (f :: wrapper Integer -> wrapper Integer -> Bool)
+  , QC.testProperty "quickcheck Large Int"     (\(Large a) (Large b) -> (f :: wrapper Int     -> wrapper Int     -> Bool) a b)
+  , QC.testProperty "quickcheck Large Word"    (\(Large a) (Large b) -> (f :: wrapper Word    -> wrapper Word    -> Bool) a b)
+  , QC.testProperty "quickcheck Huge  Integer" (\(Huge  a) (Huge  b) -> (f :: wrapper Integer -> wrapper Integer -> Bool) a b)
+  ]
+
 testIntegral2Property
   :: forall wrapper1 wrapper2. (TestableIntegral wrapper1, TestableIntegral wrapper2)
-  => String -> (forall a1 a2. (Integral a1, Integral a2) => wrapper1 a1 -> wrapper2 a2 -> Bool) -> TestTree
+  => String -> (forall a1 a2. (Integral a1, Integral a2, Bits a1, Bits a2) => wrapper1 a1 -> wrapper2 a2 -> Bool) -> TestTree
 testIntegral2Property name f = testGroup name
   [ SC.testProperty "smallcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> Bool)
   , SC.testProperty "smallcheck Int Word"        (f :: wrapper1 Int     -> wrapper2 Word    -> Bool)

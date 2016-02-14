@@ -8,6 +8,8 @@
 -- Tests for Math.NumberTheory.Powers.General
 --
 
+{-# LANGUAGE CPP #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.Powers.GeneralTests
@@ -15,11 +17,10 @@ module Math.NumberTheory.Powers.GeneralTests
   ) where
 
 import Test.Tasty
-import Test.SmallCheck.Series
 import Test.Tasty.HUnit
 
 import Math.NumberTheory.Powers.General
-import Math.NumberTheory.Powers.Utils
+import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerRoot' @pow@ returns the largest integer @m@ with @m^pow <= n@.
 integerRootProperty :: (Integral a, Integral b) => AnySign a -> Power b -> Bool
@@ -63,25 +64,65 @@ largePFPowerProperty (Positive bd) n = bd == 1 || b == 0 || d' /= 0 || n <= b * 
     (b, k) = largePFPower bd n
     (d, d') = bd `quotRem` b
 
--- | Freezes before d44a13b.
-highestPowerSpecialCase1 :: Assertion
-highestPowerSpecialCase1 =
-  assertEqual "highestPower" (highestPower 1013582159576576) (1013582159576576, 1 :: Int)
+highestPowerSpecialCases :: [Assertion]
+highestPowerSpecialCases =
+  -- Freezes before d44a13b.
+  [ a ( 1013582159576576
+      , 1013582159576576
+      , 1)
+  -- Freezes before d44a13b.
+  , a ( 1013582159576576 ^ 7
+      , 1013582159576576
+      , 7)
 
--- | Freezes before d44a13b.
-highestPowerSpecialCase2 :: Assertion
-highestPowerSpecialCase2 =
-  assertEqual "highestPower" (highestPower $ 1013582159576576^7) (1013582159576576, 7 :: Int)
+  , a ( -2 ^ 63 :: Int
+      , -2 :: Int
+      , 63)
+
+  , a ( (2 ^ 63 - 1) ^ 21
+      , 2 ^ 63 - 1
+      , 21)
+
+  , a ( 576116746989720969230211509779286598589421531472851155101032940901763389787901933902294777750323196846498573545522289802689311975294763847414975335235584
+      , 576116746989720969230211509779286598589421531472851155101032940901763389787901933902294777750323196846498573545522289802689311975294763847414975335235584
+      , 1)
+
+  , a ( -340282366920938463500268095579187314689
+      , -340282366920938463500268095579187314689
+      , 1)
+
+  , a ( 268398749 :: Int
+      , 268398749 :: Int
+      , 1)
+
+  , a ( 118372752099 :: Int
+      , 118372752099 :: Int
+      , 1)
+
+  , a ( 1409777209 :: Int
+      , 37547 :: Int
+      , 2)
+
+  , a ( -6277101735386680764856636523970481806547819498980467802113
+      , -18446744073709551617
+      , 3)
+
+  , a ( -18446744073709551619 ^ 5
+      , -18446744073709551619
+      , 5)
+  ]
+  where
+    a (n, b, k) = assertEqual "highestPower" (b, k) (highestPower n)
 
 testSuite :: TestTree
 testSuite = testGroup "General"
-  [ testCase              "highestPower special case 1" highestPowerSpecialCase1
-  , testCase              "highestPower special case 2" highestPowerSpecialCase2
-
-  , testIntegral2Property "integerRoot"    integerRootProperty
+  [ testIntegral2Property "integerRoot"    integerRootProperty
   , testIntegral2Property "isKthPower"     isKthPowerProperty
   , testIntegral2Property "exactRoot"      exactRootProperty
   , testIntegralProperty  "isPerfectPower" isPerfectPowerProperty
-  , testIntegralProperty  "highestPower"   highestPowerProperty
+  , testGroup "highestPower"
+    ( testIntegralProperty  "highestPower"   highestPowerProperty
+    : zipWith (\i a -> testCase ("special case " ++ show i) a) [1..] highestPowerSpecialCases
+    )
   , testSmallAndQuick     "largePFPower"   largePFPowerProperty
   ]

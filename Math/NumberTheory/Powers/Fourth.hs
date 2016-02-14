@@ -41,6 +41,10 @@ import Math.NumberTheory.Utils (isTrue#)
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
 --   Throws an error on negaitve input.
+{-# SPECIALISE integerFourthRoot :: Int -> Int,
+                                    Integer -> Integer,
+                                    Word -> Word
+  #-}
 integerFourthRoot :: Integral a => a -> a
 integerFourthRoot n
     | n < 0     = error "integerFourthRoot: negative argument"

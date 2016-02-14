@@ -24,7 +24,7 @@ import Data.Word
 #endif
 
 import Math.NumberTheory.Powers.Integer
-import Math.NumberTheory.Powers.Utils
+import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerPower' == '^'.
 integerPowerProperty :: Integer -> Power Int -> Bool
