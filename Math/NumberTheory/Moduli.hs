@@ -39,7 +39,6 @@ import Data.Word
 #endif
 import Data.Bits
 import Data.Array.Unboxed
-import Data.Array.Base (unsafeAt)
 import Data.Maybe (fromJust)
 import Data.List (nub)
 import Control.Monad (foldM, liftM2)
@@ -47,6 +46,8 @@ import Control.Monad (foldM, liftM2)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import Math.NumberTheory.GCD (extendedGCD)
 import Math.NumberTheory.Primes.Heap (sieveFrom)
+import Math.NumberTheory.Unsafe
+
 -- Guesstimated startup time for the Heap algorithm is lower than
 -- the cost to sieve an entire chunk.
 

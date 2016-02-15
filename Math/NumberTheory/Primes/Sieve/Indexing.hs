@@ -21,8 +21,9 @@ module Math.NumberTheory.Primes.Sieve.Indexing
     ) where
 
 import Data.Array.Unboxed
-import Data.Array.Base (unsafeAt)
 import Data.Bits
+
+import Math.NumberTheory.Unsafe
 
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.

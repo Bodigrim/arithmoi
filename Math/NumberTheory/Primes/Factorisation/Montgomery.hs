@@ -46,7 +46,6 @@ import GHC.Base
 #if __GLASGOW_HASKELL__ < 705
 import GHC.Word     -- Moved to GHC.Types
 #endif
-import Data.Array.Base
 
 import System.Random
 import Control.Monad.State.Strict
@@ -63,6 +62,7 @@ import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Testing.Probabilistic
+import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
 -- | @'factorise' n@ produces the prime factorisation of @n@, including

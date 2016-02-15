@@ -31,7 +31,6 @@ module Math.NumberTheory.Primes.Sieve.Misc
     ) where
 
 import Control.Monad.ST
-import Data.Array.Base (unsafeRead, unsafeWrite, unsafeAt)
 import Data.Array.ST
 import Data.Array.Unboxed
 import Control.Monad (when)
@@ -44,6 +43,7 @@ import Math.NumberTheory.Powers.Squares (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Factorisation.Utils
+import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
 -- | A compact store of smallest prime factors.

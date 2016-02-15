@@ -16,12 +16,11 @@ module Math.NumberTheory.MoebiusInversion.Int
     ) where
 
 import Data.Array.ST
-import Data.Array.Base
 import Control.Monad
 import Control.Monad.ST
 
 import Math.NumberTheory.Powers.Squares
-
+import Math.NumberTheory.Unsafe
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
 --   computed via generalised Moebius inversion.

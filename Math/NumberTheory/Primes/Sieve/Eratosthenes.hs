@@ -35,7 +35,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 #include "MachDeps.h"
 
 import Control.Monad.ST
-import Data.Array.Base
 import Data.Array.ST
 #if !MIN_VERSION_array(0,5,0)
                      hiding (unsafeFreeze, unsafeThaw, castSTUArray)
@@ -47,6 +46,7 @@ import Data.Word
 #endif
 
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
+import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing

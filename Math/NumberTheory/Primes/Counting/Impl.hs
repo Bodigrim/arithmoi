@@ -23,8 +23,8 @@ import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Logarithms
+import Math.NumberTheory.Unsafe
 
-import Data.Array.Base
 import Data.Array.ST
 #if !MIN_VERSION_array(0,5,0)
     hiding (unsafeThaw)

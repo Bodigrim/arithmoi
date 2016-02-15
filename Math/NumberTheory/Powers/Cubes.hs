@@ -21,7 +21,6 @@ module Math.NumberTheory.Powers.Cubes
 #include "MachDeps.h"
 
 import Data.Array.Unboxed
-import Data.Array.Base
 import Data.Array.ST
 
 import Data.Bits
@@ -34,6 +33,7 @@ import GHC.Integer
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
+import Math.NumberTheory.Unsafe
 #if __GLASGOW_HASKELL__ < 707
 import Math.NumberTheory.Utils (isTrue#)
 #endif
