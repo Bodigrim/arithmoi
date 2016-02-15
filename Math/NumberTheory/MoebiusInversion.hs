@@ -16,6 +16,7 @@ module Math.NumberTheory.MoebiusInversion
 
 import Data.Array.ST
 import Data.Array.Base
+import Control.Monad
 import Control.Monad.ST
 
 import Math.NumberTheory.Powers.Squares
@@ -90,7 +91,8 @@ fastInvert fun n = big `unsafeAt` 0
         small <- newArray_ (0,mk0) :: ST s (STArray s Int Integer)
         unsafeWrite small 0 0
         unsafeWrite small 1 $! (fun 1)
-        unsafeWrite small 2 $! (fun 2 - fun 1)
+        when (mk0 >= 2) $
+            unsafeWrite small 2 $! (fun 2 - fun 1)
         let calcit switch change i
                 | mk0 < i   = return (switch,change)
                 | i == change = calcit (switch+1) (change + 4*switch+6) i
