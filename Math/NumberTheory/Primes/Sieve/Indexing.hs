@@ -34,7 +34,9 @@ import Math.NumberTheory.Unsafe
 --   #-}
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)
-idxPr n0 = (fromIntegral bytes0, rm3)
+idxPr n0
+    | n0 < 7    = (0, 0)
+    | otherwise = (fromIntegral bytes0, rm3)
   where
     n = if (fromIntegral n0 .&. 1 == (1 :: Int))
             then n0 else (n0-1)

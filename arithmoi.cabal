@@ -134,5 +134,6 @@ test-suite spec
                   , Math.NumberTheory.Powers.GeneralTests
                   , Math.NumberTheory.Powers.IntegerTests
                   , Math.NumberTheory.Powers.SquaresTests
+                  , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.TestUtils
 

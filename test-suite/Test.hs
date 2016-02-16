@@ -16,6 +16,8 @@ import qualified Math.NumberTheory.Powers.GeneralTests as General
 import qualified Math.NumberTheory.Powers.IntegerTests as Integer
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
+import qualified Math.NumberTheory.PrimesTests as Primes
+
 main :: IO ()
 main = defaultMain tests
 
@@ -41,5 +43,8 @@ tests = testGroup "All"
   , testGroup "MoebiusInversion"
     [ MoebiusInversion.testSuite
     , MoebiusInversionInt.testSuite
+    ]
+  , testGroup "Primes"
+    [ Primes.testSuite
     ]
   ]
