@@ -27,11 +27,11 @@ module Math.NumberTheory.Primes.Counting.Approximate
 approxPrimeCountOverestimateLimit :: Integral a => a
 approxPrimeCountOverestimateLimit = 3742914359
 
--- | @'approxPrimeCount' n@ gives (for @n > 0@) an
+-- | @'approxPrimeCount' n@ gives an
 --   approximation of the number of primes not exceeding
 --   @n@. The approximation is fairly good for @n@ large enough.
 approxPrimeCount :: Integral a => a -> a
-approxPrimeCount = truncate . appi . fromIntegral
+approxPrimeCount = truncate . max 0 . appi . fromIntegral
 
 -- | Following property holds:
 --
