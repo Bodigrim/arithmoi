@@ -12,23 +12,36 @@
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Counting.Approximate
     ( approxPrimeCount
+    , approxPrimeCountOverestimateLimit
     , nthPrimeApprox
+    , nthPrimeApproxUnderestimateLimit
     ) where
+
+-- For prime p = 3742914359 we have
+--   approxPrimeCount p = 178317879
+--         primeCount p = 178317880
+
+-- | Following property holds:
+--
+-- > approxPrimeCount n >= primeCount n || n >= approxPrimeCountOverestimateLimit
+approxPrimeCountOverestimateLimit :: Integral a => a
+approxPrimeCountOverestimateLimit = 3742914359
 
 -- | @'approxPrimeCount' n@ gives (for @n > 0@) an
 --   approximation of the number of primes not exceeding
 --   @n@. The approximation is fairly good for @n@ large enough.
---   The number of primes should be slightly overestimated
---   (so it is suitable for allocation of storage) and is
---   never underestimated for @n <= 10^12@.
 approxPrimeCount :: Integral a => a -> a
 approxPrimeCount = truncate . appi . fromIntegral
 
+-- | Following property holds:
+--
+-- > nthPrimeApprox n <= nthPrime n || n >= nthPrimeApproxUnderestimateLimit
+nthPrimeApproxUnderestimateLimit :: Integer
+nthPrimeApproxUnderestimateLimit = 1000000000000
+
 -- | @'nthPrimeApprox' n@ gives (for @n > 0@) an
 --   approximation to the n-th prime. The approximation
---   is fairly good for @n@ large enough. Dual to
---   @'approxPrimeCount'@, this estimate should err
---   on the low side (and does for @n < 10^12@).
+--   is fairly good for @n@ large enough.
 nthPrimeApprox :: Integral a => a -> a
 nthPrimeApprox = max 1 . truncate . nthApp . fromIntegral . max 3
 

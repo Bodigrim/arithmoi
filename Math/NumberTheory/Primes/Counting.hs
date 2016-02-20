@@ -16,7 +16,9 @@ module Math.NumberTheory.Primes.Counting
     , nthPrimeMaxArg
       -- * Approximations
     , approxPrimeCount
+    , approxPrimeCountOverestimateLimit
     , nthPrimeApprox
+    , nthPrimeApproxUnderestimateLimit
     ) where
 
 import Math.NumberTheory.Primes.Counting.Impl
