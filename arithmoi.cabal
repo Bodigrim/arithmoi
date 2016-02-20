@@ -139,4 +139,5 @@ test-suite spec
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests
                   , Math.NumberTheory.Primes.HeapTests
+                  , Math.NumberTheory.Primes.SieveTests
                   , Math.NumberTheory.TestUtils

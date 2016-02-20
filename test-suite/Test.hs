@@ -19,6 +19,7 @@ import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 import qualified Math.NumberTheory.PrimesTests as Primes
 import qualified Math.NumberTheory.Primes.CountingTests as Counting
 import qualified Math.NumberTheory.Primes.HeapTests as Heap
+import qualified Math.NumberTheory.Primes.SieveTests as Sieve
 
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
@@ -52,6 +53,7 @@ tests = testGroup "All"
     [ Primes.testSuite
     , Counting.testSuite
     , Heap.testSuite
+    , Sieve.testSuite
     ]
   , testGroup "Gaussian"
     [ Gaussian.testSuite
