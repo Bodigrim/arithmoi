@@ -39,10 +39,10 @@ approxPrimeCount = truncate . max 0 . appi . fromIntegral
 nthPrimeApproxUnderestimateLimit :: Integer
 nthPrimeApproxUnderestimateLimit = 1000000000000
 
--- | @'nthPrimeApprox' n@ gives (for @n > 0@) an
+-- | @'nthPrimeApprox' n@ gives an
 --   approximation to the n-th prime. The approximation
 --   is fairly good for @n@ large enough.
-nthPrimeApprox :: Integral a => a -> a
+nthPrimeApprox :: Integer -> Integer
 nthPrimeApprox = max 1 . truncate . nthApp . fromIntegral . max 3
 
 -- Basically the approximation of the prime count by Li(x),
