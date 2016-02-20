@@ -11,7 +11,9 @@
 module Math.NumberTheory.Primes.Counting
     ( -- * Exact functions
       primeCount
+    , primeCountMaxArg
     , nthPrime
+    , nthPrimeMaxArg
       -- * Approximations
     , approxPrimeCount
     , nthPrimeApprox
