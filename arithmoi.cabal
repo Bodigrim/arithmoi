@@ -138,4 +138,5 @@ test-suite spec
                   , Math.NumberTheory.Powers.SquaresTests
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests
+                  , Math.NumberTheory.Primes.HeapTests
                   , Math.NumberTheory.TestUtils
