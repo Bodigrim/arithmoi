@@ -137,5 +137,5 @@ test-suite spec
                   , Math.NumberTheory.Powers.IntegerTests
                   , Math.NumberTheory.Powers.SquaresTests
                   , Math.NumberTheory.PrimesTests
+                  , Math.NumberTheory.Primes.CountingTests
                   , Math.NumberTheory.TestUtils
-
