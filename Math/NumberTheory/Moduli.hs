@@ -51,36 +51,34 @@ import Math.NumberTheory.Unsafe
 -- Guesstimated startup time for the Heap algorithm is lower than
 -- the cost to sieve an entire chunk.
 
--- | Invert a number relative to a modulus.
+-- | Invert a number relative to a positive modulus.
 --   If @number@ and @modulus@ are coprime, the result is
 --   @Just inverse@ where
 --
--- >    (number * inverse) `mod` (abs modulus) == 1
--- >    0 <= inverse < abs modulus
+-- >    (number * inverse) `mod` modulus == 1
+-- >    0 <= inverse < modulus
 --
---   unless @modulus == 0@ and @abs number == 1@, in which case the
---   result is @Just number@.
---   If @gcd number modulus > 1@, the result is @Nothing@.
+--   If @number `mod` modulus == 0@ or @gcd number modulus > 1@, the result is @Nothing@.
 invertMod :: Integer -> Integer -> Maybe Integer
-invertMod k 0 = if k == 1 || k == (-1) then Just k else Nothing
-invertMod k m = wrap $ go False 1 0 m' k'
+invertMod k m
+  | m <= 0 = error "Math.NumberTheory.Moduli.invertMod: non-positive modulus"
+  | otherwise = wrap $ go False 1 0 m k'
   where
-    m' = abs m
-    k' | r < 0     = r+m'
+    k' | r < 0     = r+m
        | otherwise = r
          where
-           r = k `rem` m'
-    wrap x = case (x*k') `rem` m' of
+           r = k `rem` m
+    wrap x = case (x*k') `rem` m of
                1 -> Just x
                _ -> Nothing
-    -- Calculate modular inverse of k' modulo m' by continued fraction expansion
-    -- of m'/k', say [a_0,a_1,...,a_s]. Let the convergents be p_j/q_j.
+    -- Calculate modular inverse of k' modulo m by continued fraction expansion
+    -- of m/k', say [a_0,a_1,...,a_s]. Let the convergents be p_j/q_j.
     -- Starting from j = -2, the arguments of go are
-    -- (p_j/q_j) > m'/k', p_{j+1}, p_j, and n, d with n/d = [a_{j+2},...,a_s].
-    -- Since m'/k' = p_s/q_s, and p_j*q_{j+1} - p_{j+1}*q_j = (-1)^(j+1), we have
-    -- p_{s-1}*k' - q_{s-1}*m' = (-1)^s * gcd m' k', so if the inverse exists,
+    -- (p_j/q_j) > m/k', p_{j+1}, p_j, and n, d with n/d = [a_{j+2},...,a_s].
+    -- Since m/k' = p_s/q_s, and p_j*q_{j+1} - p_{j+1}*q_j = (-1)^(j+1), we have
+    -- p_{s-1}*k' - q_{s-1}*m = (-1)^s * gcd m k', so if the inverse exists,
     -- it is either p_{s-1} or -p_{s-1}, depending on whether s is even or odd.
-    go !b _ po _ 0 = if b then po else (m'-po)
+    go !b _ po _ 0 = if b then po else (m-po)
     go b !pn po n d = case n `quotRem` d of
                         (q,r) -> go (not b) (q*pn+po) pn d r
 
@@ -162,7 +160,7 @@ jacOL !j a b
 --
 -- > powerMod base exponent modulus
 --
---   calculates @(base ^ exponent) \`mod\` modulus@ by repeated squaring and reduction.
+--   calculates @(base ^ exponent) \`mod\` modulus@ by repeated squaring and reduction. Modulus must be positive.
 --   If @exponent < 0@ and @base@ is invertible modulo @modulus@, @(inverse ^ |exponent|) \`mod\` modulus@
 --   is calculated. This function does some input checking and sanitation before calling the unsafe worker.
 {-# RULES
@@ -177,18 +175,17 @@ powerMod = powerModImpl
   #-}
 powerModImpl :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
 powerModImpl base expo md
-  | md == 0     = base ^ expo
-  | md' == 1    = 0
+  | md <= 0     = error "Math.NumberTheory.Moduli.powerMod: non-positive modulus"
+  | md == 1     = 0
   | expo == 0   = 1
   | bse' == 1   = 1
-  | expo < 0    = case invertMod bse' md' of
-                    Just i  -> powerMod'Impl i (negate expo) md'
+  | expo < 0    = case invertMod bse' md of
+                    Just i  -> powerMod'Impl i (negate expo) md
                     Nothing -> error "Math.NumberTheory.Moduli.powerMod: Base isn't invertible with respect to modulus"
   | bse' == 0   = 0
-  | otherwise   = powerMod'Impl bse' expo md'
+  | otherwise   = powerMod'Impl bse' expo md
     where
-      md' = abs md
-      bse' = if base < 0 || md' <= base then base `mod` md' else base
+      bse' = if base < 0 || md <= base then base `mod` md else base
 
 -- | Modular power worker without input checking.
 --   Assumes all arguments strictly positive and modulus greater than 1.
@@ -214,21 +211,20 @@ powerMod'Impl base expo md = go expo 1 base
 -- | Specialised version of 'powerMod' for 'Integer' exponents.
 --   Reduces the number of shifts of the exponent since shifting
 --   large 'Integer's is expensive. Call this function directly
---   if you don't want or can't rely on rewrite rules.
+--   if you don't want or can't rely on rewrite rules. Modulus must be positive.
 powerModInteger :: Integer -> Integer -> Integer -> Integer
 powerModInteger base ex mdl
-  | mdl == 0    = base ^ ex
-  | mdl' == 1   = 0
+  | mdl <= 0     = error "Math.NumberTheory.Moduli.powerModInteger: non-positive modulus"
+  | mdl == 1    = 0
   | ex == 0     = 1
-  | ex < 0      = case invertMod bse' mdl' of
-                    Just i  -> powerModInteger' i (negate ex) mdl'
+  | ex < 0      = case invertMod bse' mdl of
+                    Just i  -> powerModInteger' i (negate ex) mdl
                     Nothing -> error "Math.NumberTheory.Moduli.powerMod: Base isn't invertible with respect to modulus"
   | bse' == 0   = 0
   | bse' == 1   = 1
-  | otherwise   = powerModInteger' bse' ex mdl'
+  | otherwise   = powerModInteger' bse' ex mdl
     where
-      mdl' = abs mdl
-      bse' = if base < 0 || mdl' <= base then base `mod` mdl' else base
+      bse' = if base < 0 || mdl <= base then base `mod` mdl else base
 
 -- | Specialised worker without input checks. Makes the same assumptions
 --   as the general version 'powerMod''.
@@ -323,7 +319,7 @@ sqrtModPList n prime
                         _      -> []
 
 -- | @sqrtModP' square prime@ finds a square root of @square@ modulo
---   prime. @prime@ /must/ be a (positive) prime, and @sqaure@ /must/ be a
+--   prime. @prime@ /must/ be a (positive) prime, and @square@ /must/ be a positive
 --   quadratic residue modulo @prime@, i.e. @'jacobi square prime == 1@.
 --   The precondition is /not/ checked.
 sqrtModP' :: Integer -> Integer -> Integer
@@ -334,7 +330,7 @@ sqrtModP' square prime
 
 -- | @tonelliShanks square prime@ calculates a square root of @square@
 --   modulo @prime@, where @prime@ is a prime of the form @4*k + 1@ and
---   @square@ is a quadratic residue modulo @prime@, using the
+--   @square@ is a positive quadratic residue modulo @prime@, using the
 --   Tonelli-Shanks algorithm.
 --   No checks on the input are performed.
 tonelliShanks :: Integer -> Integer -> Integer
@@ -459,8 +455,8 @@ sqrtModPPList n pe@(prime,expo)
 -- > r ≡ r_k (mod m_k)
 -- >
 --
---   if all moduli are pairwise coprime. If not all moduli are
---   pairwise coprime, the result is @Nothing@ regardless of whether
+--   if all moduli are positive and pairwise coprime. Otherwise
+--   the result is @Nothing@ regardless of whether
 --   a solution exists.
 chineseRemainder :: [(Integer,Integer)] -> Maybe Integer
 chineseRemainder remainders = foldM addRem 0 remainders
