@@ -462,6 +462,7 @@ chineseRemainder :: [(Integer,Integer)] -> Maybe Integer
 chineseRemainder remainders = foldM addRem 0 remainders
   where
     !modulus = product (map snd remainders)
+    addRem acc (_,1) = Just acc
     addRem acc (r,m) = do
         let cf = modulus `quot` m
         inv <- invertMod cf m
