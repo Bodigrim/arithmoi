@@ -129,6 +129,7 @@ test-suite spec
                   , Math.NumberTheory.GCD.LowLevelTests
                   , Math.NumberTheory.LogarithmsTests
                   , Math.NumberTheory.LucasTests
+                  , Math.NumberTheory.ModuliTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.MoebiusInversionTests
                   , Math.NumberTheory.MoebiusInversion.IntTests

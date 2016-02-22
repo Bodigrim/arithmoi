@@ -55,8 +55,9 @@ import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import Data.Word
 #endif
-
 import GHC.Exts
+
+import Math.NumberTheory.Primes
 
 newtype AnySign a = AnySign { getAnySign :: a }
   deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
@@ -95,8 +96,18 @@ newtype Power a = Power { getPower :: a }
 instance (Monad m, Num a, Ord a, Serial m a) => Serial m (Power a) where
   series = Power <$> series `suchThatSerial` (> 0)
 
-instance (Num a, Ord a, Arbitrary (Small a)) => Arbitrary (Power a) where
+instance (Num a, Ord a, Integral a, Arbitrary a) => Arbitrary (Power a) where
   arbitrary = Power <$> (getSmall <$> arbitrary) `suchThat` (> 0)
+  shrink (Power x) = Power <$> filter (> 0) (shrink x)
+
+newtype Prime = Prime { getPrime :: Integer }
+  deriving (Eq, Ord, Show)
+
+instance Arbitrary Prime where
+  arbitrary = Prime <$> arbitrary `suchThat` (\p -> p > 0 && isPrime p)
+
+instance Monad m => Serial m Prime where
+  series = Prime <$> series `suchThatSerial` (\p -> p > 0 && isPrime p)
 
 instance Monad m => Serial m Word where
   series =
