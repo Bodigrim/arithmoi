@@ -51,6 +51,7 @@ library
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
                           Math.NumberTheory.Lucas
+                          Math.NumberTheory.GaussianIntegers
                           Math.NumberTheory.GCD
                           Math.NumberTheory.GCD.LowLevel
                           Math.NumberTheory.Powers
