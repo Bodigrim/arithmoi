@@ -90,7 +90,10 @@ g .% m =
 
 -- |Compute whether a given Gaussian integer is prime.
 isPrime :: GaussianInteger -> Bool
-isPrime = Testing.isPrime . magnitude
+isPrime g@(x :+ y)
+    | x == 0 && y /= 0 = abs y `mod` 4 == 3 && Testing.isPrime y
+    | y == 0 && x /= 0 = abs x `mod` 4 == 3 && Testing.isPrime x
+    | otherwise        = Testing.isPrime $ magnitude g
 
 -- |An infinite list of the Gaussian primes. This list is in order of ascending magnitude.
 primes :: [GaussianInteger]
