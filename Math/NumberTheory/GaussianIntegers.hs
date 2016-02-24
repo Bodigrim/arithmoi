@@ -20,7 +20,6 @@ module Math.NumberTheory.GaussianIntegers (
 ) where
 
 import Prelude hiding (gcd)
-import Data.Bits
 import Data.List  (genericLength)
 import Data.Ratio ((%))
 import qualified Math.NumberTheory.GCD as GCD
@@ -38,7 +37,7 @@ data GaussianInteger = Integer :+ Integer deriving (Ord, Eq)
 
 instance Show GaussianInteger where
     show (a :+ b) = show a ++ op ++ b' ++ "i"
-        where op = if b > 0 then "+" else "-"
+        where op = if b >= 0 then "+" else "-"
               b' = if abs b /= 1 then show (abs b) else ""
 
 -- |The real part of a Gaussian integer.
@@ -93,7 +92,7 @@ g .% m =
 isPrime :: GaussianInteger -> Bool
 isPrime = Testing.isPrime . magnitude
 
--- |An infinte list of the Gaussian primes. This list is in order of ascending magnitude.
+-- |An infinite list of the Gaussian primes. This list is in order of ascending magnitude.
 primes :: [GaussianInteger]
 primes = [ a' :+ b'
             | mag <- Sieve.primes
@@ -127,7 +126,7 @@ roots m
 order :: Integer -> Integer -> Integer
 order x m = head [ ord
                  | ord <- [1 .. genericLength $ units m]
-                 , Moduli.powerMod x ord m == (1 :: (Integral a, Num a, Bits a, Eq a) => a)
+                 , Moduli.powerMod x ord m == 1
                  ]
 
 -- |Find a Gaussian integer whose magnitude squared is the given prime number.
@@ -165,12 +164,12 @@ factorise g
                     in helper pt (g' ./ gp .^ pow) ((gp, pow) : fs)
                 | otherwise      =
                     -- general case: for every prime factor of the magnitude
-                    -- squared, find a gaussian prime whose magnitude squared
+                    -- squared, find a Gaussian prime whose magnitude squared
                     -- is that prime. Then find out how many times the original
-                    -- number is divisible by that gaussian prime and its
+                    -- number is divisible by that Gaussian prime and its
                     -- conjugate. The order that the prime factors are
                     -- processed doesn't really matter, but it is reversed so
-                    -- that the Guassian primes will be in order of increasing
+                    -- that the Gaussian primes will be in order of increasing
                     -- magnitude.
                     let gp = findPrime p
                         (!gNext, !facs) = trialDivide g' [gp, conjugate gp] []
