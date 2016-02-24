@@ -29,8 +29,13 @@ isPrimeProperty x y
     -- Count factors taking into account multiplicity
     n = sum $ map snd nonUnitFactors
 
+-- | The list of primes should include only primes.
+primesGeneratesPrimesProperty :: Int -> Bool
+primesGeneratesPrimesProperty i = i < 0 || isPrime (primes !! i)
+
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers"
   [ testSmallAndQuick "factorise"   factoriseProperty
   , testSmallAndQuick "isPrime"     isPrimeProperty
+  , testSmallAndQuick "primes"      primesGeneratesPrimesProperty
   ]
