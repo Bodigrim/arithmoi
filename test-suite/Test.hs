@@ -18,6 +18,8 @@ import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
 import qualified Math.NumberTheory.PrimesTests as Primes
 
+import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
+
 main :: IO ()
 main = defaultMain tests
 
@@ -46,5 +48,8 @@ tests = testGroup "All"
     ]
   , testGroup "Primes"
     [ Primes.testSuite
+    ]
+  , testGroup "Gaussian"
+    [ Gaussian.testSuite
     ]
   ]
