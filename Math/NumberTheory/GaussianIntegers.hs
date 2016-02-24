@@ -95,18 +95,28 @@ isPrime g@(x :+ y)
     | y == 0 && x /= 0 = abs x `mod` 4 == 3 && Testing.isPrime x
     | otherwise        = Testing.isPrime $ magnitude g
 
--- |An infinite list of the Gaussian primes. This list is in order of ascending magnitude.
+-- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
+-- generate all Gaussian primes, but not quite in order of ascending magnitude.
 primes :: [GaussianInteger]
 primes = [ a' :+ b'
-            | mag <- Sieve.primes
-            , let radius = Powers.integerSquareRoot mag
-            , a <- [0 .. radius]
-            , let d = mag - a * a
-            , Powers.isSquare d
-            , let b = Powers.integerSquareRoot d
-            , a' <- [-a, a]
-            , b' <- [-b, b]
-            ]
+         | p <- Sieve.primes
+         , (a', b') <- if p `mod` 4 == 3
+             then [ (f a', f b')
+                  | a' <- [0, p]
+                  , b' <- [0, p]
+                  , a' /= b'
+                  , f <- [id, negate]
+                  ]
+             else [ (a', b')
+                  | let radius = Powers.integerSquareRoot p
+                  , a <- [0 .. radius]
+                  , let d = p - a * a
+                  , Powers.isSquare d
+                  , let b = Powers.integerSquareRoot d
+                  , a' <- [a, -a]
+                  , b' <- [b, -b]
+                  ]
+         ]
 
 -- |Compute the GCD of two Gaussian integers.
 gcd :: GaussianInteger -> GaussianInteger -> GaussianInteger
