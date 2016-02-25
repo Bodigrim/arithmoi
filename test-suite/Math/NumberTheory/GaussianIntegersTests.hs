@@ -32,8 +32,8 @@ isPrimeProperty x y
     n = sum $ map snd nonUnitFactors
 
 -- | The list of primes should include only primes.
-primesGeneratesPrimesProperty :: Int -> Bool
-primesGeneratesPrimesProperty i = i < 0 || isPrime (primes !! i)
+primesGeneratesPrimesProperty :: NonNegative Int -> Bool
+primesGeneratesPrimesProperty (NonNegative i) = isPrime (primes !! i)
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: Integer -> Integer -> Bool
