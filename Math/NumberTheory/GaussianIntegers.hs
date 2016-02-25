@@ -6,9 +6,6 @@ module Math.NumberTheory.GaussianIntegers (
     imag,
     conjugate,
     magnitude,
-    (.+),
-    (.-),
-    (.*),
     (./),
     (.%),
     (.^),
@@ -31,22 +28,28 @@ import qualified Math.NumberTheory.Primes.Testing as Testing
 
 infix 6 :+
 infixr 8 .^
-infixl 7 .+, .-, .*, ./
+infixl 7 ./
 -- |A Gaussian integer is a+bi, where a and b are both integers.
-data GaussianInteger = Integer :+ Integer deriving (Ord, Eq)
+data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Ord, Eq)
 
 instance Show GaussianInteger where
     show (a :+ b) = show a ++ op ++ b' ++ "i"
         where op = if b >= 0 then "+" else "-"
               b' = if abs b /= 1 then show (abs b) else ""
 
--- |The real part of a Gaussian integer.
-real :: GaussianInteger -> Integer
-real (x :+ _) = x
-
--- |The imaginary part of a Gaussian integer.
-imag :: GaussianInteger -> Integer
-imag (_ :+ y) = y
+instance Num GaussianInteger where
+    (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
+    (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (a * d + b * c)
+    abs z@(a :+ b)
+        | a >= 0 && b >= 0 =   z             -- first quadrant, plus origin: ((0, inf) x [0, inf)i) U {(0,0)}
+        | a <= 0 && b >  0 =   b  :+ (-a)    -- second quadrant: (-inf, 0] x (0, inf)i
+        | a <  0 && b <= 0 = (-a) :+ (-b)    -- third quadrant: (-inf, 0) x (-inf, 0]i
+        | otherwise        = (-b) :+   a     -- fourth quadrant: [0, inf) x (-inf, 0)i
+    negate (a :+ b) = (-a) :+ (-b)
+    fromInteger n = n :+ 0
+    signum z@(a :+ b)
+        | a == 0 && b == 0 = 1               -- hole at origin
+        | otherwise        = z ./ abs z
 
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger
@@ -55,18 +58,6 @@ conjugate (r :+ i) = r :+ (-i)
 -- |The square of the magnitude of a Gaussian integer.
 magnitude :: GaussianInteger -> Integer
 magnitude (x :+ y) = x * x + y * y
-
--- |Add two Gaussian integers together.
-(.+) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-(gr :+ gi) .+ (hr :+ hi) = (gr + hr) :+ (gi + hi)
-
--- |Subtract one Gaussian integer from another.
-(.-) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-(gr :+ gi) .- (hr :+ hi) = (gr - hr) :+ (gi - hi)
-
--- |Multiply two Gaussian integers.
-(.*) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-(gr :+ gi) .* (hr :+ hi) = (gr * hr - hi * gi) :+ (gr * hi + gi * hr)
 
 -- "div" truncates toward -infinity, "quot" truncates toward 0, but we need
 -- something that truncates toward the nearest integer. I.e., we want to
@@ -77,7 +68,7 @@ divToNearest x y = round ((x % 1) / (y % 1))
 -- |Divide one Gaussian integer by another.
 (./) :: GaussianInteger -> GaussianInteger -> GaussianInteger
 g ./ h =
-    let nr :+ ni = g .* conjugate h
+    let nr :+ ni = g * conjugate h
         denom    = magnitude h
     in divToNearest nr denom :+ divToNearest ni denom
 
@@ -85,8 +76,8 @@ g ./ h =
 (.%) :: GaussianInteger -> GaussianInteger -> GaussianInteger
 g .% m =
     let q = g ./ m
-        p = m .* q
-    in g .- p
+        p = m * q
+    in g - p
 
 -- |Compute whether a given Gaussian integer is prime.
 isPrime :: GaussianInteger -> Bool
@@ -121,7 +112,7 @@ primes = [ a' :+ b'
 -- |Compute the GCD of two Gaussian integers.
 gcd :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcd g h
-    | h == 0 :+ 0 = g --done recursing
+    | h == 0    = g --done recursing
     | otherwise = gcd h (g .% h)
 
 -- |Compute the group of units of Zm.
@@ -149,23 +140,23 @@ findPrime p
     | p `mod` 4 == 1 && Testing.isPrime p =
         let r = head $ roots p
             z = Moduli.powerMod r (quot (p - 1) 4) p
-        in gcd (p :+ 0) (z :+ 1)
+        in gcd (fromInteger p) (z :+ 1)
     | otherwise = error "p must be prime, and congruent to 1 (mod 4)"
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
 a .^ e
     | e < 0     = error "Cannot exponentiate Gaussian Int to negative power"
-    | e == 0    = 1 :+ 0
-    | even e    = s .* s
-    | otherwise = a .* a .^ (e - 1)
+    | e == 0    = 1
+    | even e    = s * s
+    | otherwise = a * a .^ (e - 1)
     where
     s = a .^ div e 2
 
 -- |Compute the prime factorization of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
 factorise g
-    | g == 0 :+ 0  = [(g, 1)] -- 0 has no prime factors.
+    | g == 0    = [(g, 1)] -- 0 has no prime factors.
     | otherwise =
         let helper :: [(Integer, Int)] -> GaussianInteger -> [(GaussianInteger, Int)] -> [(GaussianInteger, Int)]
             helper [] g' fs = (g', 1) : fs    -- include the unit.
@@ -173,7 +164,7 @@ factorise g
                 | p `mod` 4 == 3 =
                     -- prime factors congruent to 3 mod 4 are simple.
                     let pow = div e 2
-                        gp = p :+ 0
+                        gp = fromInteger p
                     in helper pt (g' ./ gp .^ pow) ((gp, pow) : fs)
                 | otherwise      =
                     -- general case: for every prime factor of the magnitude
@@ -195,10 +186,10 @@ factorise g
 trialDivide :: GaussianInteger -> [GaussianInteger] -> [(GaussianInteger, Int)] -> (GaussianInteger, [(GaussianInteger, Int)])
 trialDivide g [] fs = (g, fs)
 trialDivide g (pf : pft) fs
-    | g .% pf == 0 :+ 0 =
+    | g .% pf == 0 =
         let (cnt, g') = countEvenDivisions g pf
         in trialDivide g' pft ((pf, cnt) : fs)
-    | otherwise       = trialDivide g pft fs
+    | otherwise    = trialDivide g pft fs
 
 -- Divide a Gaussian integer by a possible factor, and return how many times
 -- the factor divided it evenly, as well as the result of dividing the original
@@ -208,5 +199,5 @@ countEvenDivisions g pf = helper g 0
     where
     helper :: GaussianInteger -> Int -> (Int, GaussianInteger)
     helper g' acc
-        | g' .% pf == 0:+ 0 = helper (g' ./ pf) (1 + acc)
-        | otherwise         = (acc, g')
+        | g' .% pf == 0 = helper (g' ./ pf) (1 + acc)
+        | otherwise     = (acc, g')

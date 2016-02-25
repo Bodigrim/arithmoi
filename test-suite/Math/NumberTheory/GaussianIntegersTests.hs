@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.GaussianIntegersTests
   ( testSuite
   ) where
@@ -13,7 +15,7 @@ factoriseProperty x y = g == g'
   where
     g = x :+ y
     factors = factorise g
-    g' = foldl (.*) (1 :+ 0) $ map (uncurry (.^)) factors
+    g' = product $ map (uncurry (.^)) factors
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.
@@ -33,9 +35,26 @@ isPrimeProperty x y
 primesGeneratesPrimesProperty :: Int -> Bool
 primesGeneratesPrimesProperty i = i < 0 || isPrime (primes !! i)
 
+-- | signum and abs should satisfy: z == signum z * abs z
+signumAbsProperty :: Integer -> Integer -> Bool
+signumAbsProperty x y = z == signum z * abs z
+  where
+    z = x :+ y
+
+-- | abs maps a Gaussian integer to its associate in first quadrant.
+absProperty :: Integer -> Integer -> Bool
+absProperty x y = inFirstQuadrant && isAssociate
+  where
+    z = x :+ y
+    z'@(x' :+ y') = abs z
+    inFirstQuadrant = x' >= 0 && y' >= 0
+    isAssociate = z' `elem` map (\e -> z * (0 :+ 1) .^ e) [0 .. 3]
+
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers"
-  [ testSmallAndQuick "factorise"   factoriseProperty
-  , testSmallAndQuick "isPrime"     isPrimeProperty
-  , testSmallAndQuick "primes"      primesGeneratesPrimesProperty
+  [ testSmallAndQuick "factorise"         factoriseProperty
+  , testSmallAndQuick "isPrime"           isPrimeProperty
+  , testSmallAndQuick "primes"            primesGeneratesPrimesProperty
+  , testSmallAndQuick "signumAbsProperty" signumAbsProperty
+  , testSmallAndQuick "absProperty"       absProperty
   ]
