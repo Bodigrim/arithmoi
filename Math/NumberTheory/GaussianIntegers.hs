@@ -61,7 +61,7 @@ instance Num GaussianInteger where
     negate (a :+ b) = (-a) :+ (-b)
     fromInteger n = n :+ 0
     signum z@(a :+ b)
-        | a == 0 && b == 0 = 1               -- hole at origin
+        | a == 0 && b == 0 = z               -- hole at origin
         | otherwise        = z ./ abs z
 
 -- |Conjugate a Gaussian integer.
