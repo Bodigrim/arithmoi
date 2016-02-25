@@ -1,5 +1,15 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
+-- |
+-- Module:      Math.NumberTheory.GaussianIntegersTests
+-- Copyright:   (c) 2016 Chris Fredrickson
+-- Licence:     MIT
+-- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
+-- Stability:   Provisional
+--
+-- Tests for Math.NumberTheory.GaussianIntegers
+--
+
 module Math.NumberTheory.GaussianIntegersTests
   ( testSuite
   ) where
