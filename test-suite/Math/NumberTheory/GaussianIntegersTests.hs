@@ -53,11 +53,12 @@ signumAbsProperty x y = z == signum z * abs z
 
 -- | abs maps a Gaussian integer to its associate in first quadrant.
 absProperty :: Integer -> Integer -> Bool
-absProperty x y = inFirstQuadrant && isAssociate
+absProperty x y = isOrigin || (inFirstQuadrant && isAssociate)
   where
     z = x :+ y
     z'@(x' :+ y') = abs z
-    inFirstQuadrant = x' >= 0 && y' >= 0
+    isOrigin = z' == 0 && z == 0
+    inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis
     isAssociate = z' `elem` map (\e -> z * (0 :+ 1) .^ e) [0 .. 3]
 
 testSuite :: TestTree

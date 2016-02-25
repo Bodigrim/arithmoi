@@ -53,7 +53,8 @@ instance Num GaussianInteger where
     (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
     (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (a * d + b * c)
     abs z@(a :+ b)
-        | a >= 0 && b >= 0 =   z             -- first quadrant, plus origin: ((0, inf) x [0, inf)i) U {(0,0)}
+        | a == 0 && b == 0 =   z             -- origin
+        | a >  0 && b >= 0 =   z             -- first quadrant: (0, inf) x [0, inf)i
         | a <= 0 && b >  0 =   b  :+ (-a)    -- second quadrant: (-inf, 0] x (0, inf)i
         | a <  0 && b <= 0 = (-a) :+ (-b)    -- third quadrant: (-inf, 0) x (-inf, 0]i
         | otherwise        = (-b) :+   a     -- fourth quadrant: [0, inf) x (-inf, 0)i
