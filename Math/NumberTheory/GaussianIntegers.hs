@@ -30,7 +30,7 @@ infix 6 :+
 infixr 8 .^
 infixl 7 ./
 -- |A Gaussian integer is a+bi, where a and b are both integers.
-data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Ord, Eq)
+data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 
 instance Show GaussianInteger where
     show (a :+ b) = show a ++ op ++ b' ++ "i"
