@@ -135,20 +135,13 @@ primes :: [GaussianInteger]
 primes = [ a' :+ b'
          | p <- Sieve.primes
          , (a', b') <- if p `mod` 4 == 3
-             then [ (f a', f b')
-                  | a' <- [0, p]
-                  , b' <- [0, p]
-                  , a' /= b'
-                  , f <- [id, negate]
-                  ]
-             else [ (a', b')
+             then [ (p, 0) ]
+             else [ (a, b)
                   | let radius = Powers.integerSquareRoot p
                   , a <- [0 .. radius]
                   , let d = p - a * a
                   , Powers.isSquare d
                   , let b = Powers.integerSquareRoot d
-                  , a' <- [a, -a]
-                  , b' <- [b, -b]
                   ]
          ]
 
