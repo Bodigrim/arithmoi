@@ -18,6 +18,12 @@ module Math.NumberTheory.GaussianIntegers (
     imag,
     conjugate,
     magnitude,
+    divModG,
+    divG,
+    modG,
+    quotRemG,
+    quotG,
+    remG,
     (./),
     (.%),
     (.^),
@@ -64,6 +70,51 @@ instance Num GaussianInteger where
         | a == 0 && b == 0 = z               -- hole at origin
         | otherwise        = z ./ abs z
 
+quotRemG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
+quotRemG = divHelper quot
+
+quotG :: GaussianInteger -> GaussianInteger -> GaussianInteger
+n `quotG` d = q where (q,_) = quotRemG n d
+
+remG :: GaussianInteger -> GaussianInteger -> GaussianInteger
+n `remG`  d = r where (_,r) = quotRemG n d
+
+divModG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
+divModG = divHelper div
+
+divG :: GaussianInteger -> GaussianInteger -> GaussianInteger
+n `divG` d = q where (q,_) = divModG n d
+
+modG :: GaussianInteger -> GaussianInteger -> GaussianInteger
+n `modG` d = r where (_,r) = divModG n d
+
+-- "div" truncates toward -infinity, "quot" truncates toward 0, but we need
+-- something that truncates toward the nearest integer. I.e., we want to
+-- truncate with "round".
+divToNearest :: Integer -> Integer -> Integer
+divToNearest x y = round ((x % 1) / (y % 1))
+
+divModWithRoundG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
+divModWithRoundG = divHelper divToNearest
+
+-- |Divide one Gaussian integer by another, rounding each component toward the
+-- nearest integer (or to the even integer, if equidistant).
+(./) :: GaussianInteger -> GaussianInteger -> GaussianInteger
+n ./ d = q where (q, _) = divModWithRoundG n d
+
+-- |Compute the remainder of division, when dividing and rounding to the nearest integer.
+(.%) :: GaussianInteger -> GaussianInteger -> GaussianInteger
+n .% d = r where (_, r) = divModWithRoundG n d
+
+divHelper :: (Integer -> Integer -> Integer) -> GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
+divHelper divide g h =
+    let nr :+ ni = g * conjugate h
+        denom = magnitude h
+        q = divide nr denom :+ divide ni denom
+        p = h * q
+    in (q, g - p)
+
+
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger
 conjugate (r :+ i) = r :+ (-i)
@@ -71,26 +122,6 @@ conjugate (r :+ i) = r :+ (-i)
 -- |The square of the magnitude of a Gaussian integer.
 magnitude :: GaussianInteger -> Integer
 magnitude (x :+ y) = x * x + y * y
-
--- "div" truncates toward -infinity, "quot" truncates toward 0, but we need
--- something that truncates toward the nearest integer. I.e., we want to
--- truncate with "round".
-divToNearest :: (Integral a, Integral b) => a -> a -> b
-divToNearest x y = round ((x % 1) / (y % 1))
-
--- |Divide one Gaussian integer by another.
-(./) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-g ./ h =
-    let nr :+ ni = g * conjugate h
-        denom    = magnitude h
-    in divToNearest nr denom :+ divToNearest ni denom
-
--- |Compute the remainder when dividing one Gaussian integer by another.
-(.%) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-g .% m =
-    let q = g ./ m
-        p = m * q
-    in g - p
 
 -- |Compute whether a given Gaussian integer is prime.
 isPrime :: GaussianInteger -> Bool
@@ -199,7 +230,7 @@ factorise g
 trialDivide :: GaussianInteger -> [GaussianInteger] -> [(GaussianInteger, Int)] -> (GaussianInteger, [(GaussianInteger, Int)])
 trialDivide g [] fs = (g, fs)
 trialDivide g (pf : pft) fs
-    | g .% pf == 0 =
+    | g `modG` pf == 0 =
         let (cnt, g') = countEvenDivisions g pf
         in trialDivide g' pft ((pf, cnt) : fs)
     | otherwise    = trialDivide g pft fs
@@ -212,5 +243,5 @@ countEvenDivisions g pf = helper g 0
     where
     helper :: GaussianInteger -> Int -> (Int, GaussianInteger)
     helper g' acc
-        | g' .% pf == 0 = helper (g' ./ pf) (1 + acc)
+        | g' `modG` pf == 0 = helper (g' ./ pf) (1 + acc)
         | otherwise     = (acc, g')
