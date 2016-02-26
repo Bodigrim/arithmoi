@@ -29,12 +29,11 @@ module Math.NumberTheory.GaussianIntegers (
     (.^),
     isPrime,
     primes,
-    gcd,
+    gcdG,
     findPrime,
     factorise,
 ) where
 
-import Prelude hiding (gcd)
 import Data.List  (genericLength)
 import Data.Ratio ((%))
 import qualified Math.NumberTheory.GCD as GCD
@@ -154,10 +153,10 @@ primes = [ a' :+ b'
          ]
 
 -- |Compute the GCD of two Gaussian integers.
-gcd :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcd g h
+gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
+gcdG g h
     | h == 0    = g --done recursing
-    | otherwise = gcd h (g .% h)
+    | otherwise = gcdG h (g .% h)
 
 -- |Compute the group of units of Zm.
 units :: Integer -> [Integer]
@@ -184,7 +183,7 @@ findPrime p
     | p `mod` 4 == 1 && Testing.isPrime p =
         let r = head $ roots p
             z = Moduli.powerMod r (quot (p - 1) 4) p
-        in gcd (fromInteger p) (z :+ 1)
+        in gcdG (fromInteger p) (z :+ 1)
     | otherwise = error "p must be prime, and congruent to 1 (mod 4)"
 
 -- |Raise a Gaussian integer to a given power.
