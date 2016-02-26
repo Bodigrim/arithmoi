@@ -39,7 +39,7 @@ isPrimeProperty x y
   where
     g = x :+ y
     factors = factorise g
-    nonUnitFactors = filter (\(p, _) -> magnitude p /= 1) factors
+    nonUnitFactors = filter (\(p, _) -> norm p /= 1) factors
     -- Count factors taking into account multiplicity
     n = sum $ map snd nonUnitFactors
 

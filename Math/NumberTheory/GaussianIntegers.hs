@@ -17,7 +17,7 @@ module Math.NumberTheory.GaussianIntegers (
     real,
     imag,
     conjugate,
-    magnitude,
+    norm,
     divModG,
     divG,
     modG,
@@ -108,7 +108,7 @@ n .% d = r where (_, r) = divModWithRoundG n d
 divHelper :: (Integer -> Integer -> Integer) -> GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
 divHelper divide g h =
     let nr :+ ni = g * conjugate h
-        denom = magnitude h
+        denom = norm h
         q = divide nr denom :+ divide ni denom
         p = h * q
     in (q, g - p)
@@ -119,15 +119,15 @@ conjugate :: GaussianInteger -> GaussianInteger
 conjugate (r :+ i) = r :+ (-i)
 
 -- |The square of the magnitude of a Gaussian integer.
-magnitude :: GaussianInteger -> Integer
-magnitude (x :+ y) = x * x + y * y
+norm :: GaussianInteger -> Integer
+norm (x :+ y) = x * x + y * y
 
 -- |Compute whether a given Gaussian integer is prime.
 isPrime :: GaussianInteger -> Bool
 isPrime g@(x :+ y)
     | x == 0 && y /= 0 = abs y `mod` 4 == 3 && Testing.isPrime y
     | y == 0 && x /= 0 = abs x `mod` 4 == 3 && Testing.isPrime x
-    | otherwise        = Testing.isPrime $ magnitude g
+    | otherwise        = Testing.isPrime $ norm g
 
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes, but not quite in order of ascending magnitude.
@@ -215,7 +215,7 @@ factorise g
                     let gp = findPrime p
                         (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
                     in helper pt gNext (facs ++ fs)
-        in helper (reverse . Factorisation.factorise $ magnitude g) g []
+        in helper (reverse . Factorisation.factorise $ norm g) g []
 
 -- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
 -- as many times as possible, and return the final quotient as well as a count
