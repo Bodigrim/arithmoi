@@ -192,10 +192,11 @@ a .^ e
 -- |Compute the prime factorization of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
 factorise g
-    | g == 0    = [(g, 1)] -- 0 has no prime factors.
+    | g == 0    = error "0 has no prime factorisation"
+    | g == 1    = []
     | otherwise =
         let helper :: [(Integer, Int)] -> GaussianInteger -> [(GaussianInteger, Int)] -> [(GaussianInteger, Int)]
-            helper [] g' fs = (g', 1) : fs    -- include the unit.
+            helper [] g' fs = (if g' == 1 then [] else [(g', 1)]) ++ fs    -- include the unit, if it isn't 1
             helper ((!p, !e) : pt) g' fs
                 | p `mod` 4 == 3 =
                     -- prime factors congruent to 3 mod 4 are simple.

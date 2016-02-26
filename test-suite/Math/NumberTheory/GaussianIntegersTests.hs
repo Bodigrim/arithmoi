@@ -19,9 +19,11 @@ import Test.Tasty
 import Math.NumberTheory.GaussianIntegers
 import Math.NumberTheory.TestUtils
 
--- | Number is equal to the product of its factors.
+-- | Number is zero or is equal to the product of its factors.
 factoriseProperty :: Integer -> Integer -> Bool
-factoriseProperty x y = g == g'
+factoriseProperty x y
+  =  x == 0 && y == 0
+  || g == g'
   where
     g = x :+ y
     factors = factorise g
