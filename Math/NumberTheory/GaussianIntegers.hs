@@ -148,7 +148,7 @@ primes = [ a' :+ b'
 -- |Compute the GCD of two Gaussian integers.
 gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG g h
-    | h == 0    = g --done recursing
+    | h == 0    = abs g --done recursing
     | otherwise = gcdG h (g .% h)
 
 -- |Compute the group of units of Zm.
@@ -212,7 +212,7 @@ factorise g
                     -- that the Gaussian primes will be in order of increasing
                     -- magnitude.
                     let gp = findPrime p
-                        (!gNext, !facs) = trialDivide g' [gp, conjugate gp] []
+                        (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
                     in helper pt gNext (facs ++ fs)
         in helper (reverse . Factorisation.factorise $ magnitude g) g []
 
