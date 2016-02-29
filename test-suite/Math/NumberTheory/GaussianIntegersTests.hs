@@ -15,6 +15,7 @@ module Math.NumberTheory.GaussianIntegersTests
   ) where
 
 import Test.Tasty
+import Test.Tasty.HUnit
 
 import Math.NumberTheory.GaussianIntegers
 import Math.NumberTheory.TestUtils
@@ -63,6 +64,10 @@ absProperty x y = isOrigin || (inFirstQuadrant && isAssociate)
     inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis
     isAssociate = z' `elem` map (\e -> z * (0 :+ 1) .^ e) [0 .. 3]
 
+-- | a special case that tests rounding/truncating in GCD.
+gcdGSpecialCase1 :: Assertion
+gcdGSpecialCase1 = assertEqual "gcdG" (gcdG (12 :+ 23) (23 :+ 34)) 1
+
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers"
   [ testSmallAndQuick "factorise"         factoriseProperty
@@ -70,4 +75,5 @@ testSuite = testGroup "GaussianIntegers"
   , testSmallAndQuick "primes"            primesGeneratesPrimesProperty
   , testSmallAndQuick "signumAbsProperty" signumAbsProperty
   , testSmallAndQuick "absProperty"       absProperty
+  , testCase          "gcdG (12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
   ]
