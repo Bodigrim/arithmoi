@@ -70,21 +70,31 @@ instance Num GaussianInteger where
         | a == 0 && b == 0 = z               -- hole at origin
         | otherwise        = z `divG` abs z
 
+-- |Simultaneous 'quot' and 'rem'.
 quotRemG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
 quotRemG = divHelper quot
 
+-- |Gaussian integer division, truncating toward zero.
 quotG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 n `quotG` d = q where (q,_) = quotRemG n d
 
+-- |Gaussian integer remainder, satisfying
+--
+-- > (x `quotG` y)*y + (x `remG` y) == x
 remG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 n `remG`  d = r where (_,r) = quotRemG n d
 
+-- |Simultaneous 'div' and 'mod'.
 divModG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
 divModG = divHelper div
 
+-- |Gaussian integer division, truncating toward negative infinity.
 divG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 n `divG` d = q where (q,_) = divModG n d
 
+-- |Gaussian integer remainder, satisfying
+--
+-- > (x `divG` y)*y + (x `modG` y) == x
 modG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 n `modG` d = r where (_,r) = divModG n d
 
