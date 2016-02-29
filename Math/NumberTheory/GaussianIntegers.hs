@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- |
 -- Module:      Math.NumberTheory.GaussianIntegers
 -- Copyright:   (c) 2016 Chris Fredrickson
@@ -12,6 +10,7 @@
 -- computing their prime factorisations.
 --
 
+{-# LANGUAGE BangPatterns #-}
 module Math.NumberTheory.GaussianIntegers (
     GaussianInteger((:+)),
     ι,
