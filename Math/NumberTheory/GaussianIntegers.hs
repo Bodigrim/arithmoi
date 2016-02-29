@@ -25,18 +25,16 @@ module Math.NumberTheory.GaussianIntegers (
     quotRemG,
     quotG,
     remG,
-    (./),
-    (.%),
     (.^),
     isPrime,
     primes,
     gcdG,
+    gcdG',
     findPrime,
     factorise,
 ) where
 
 import Data.List  (genericLength)
-import Data.Ratio ((%))
 import qualified Math.NumberTheory.GCD as GCD
 import qualified Math.NumberTheory.Moduli as Moduli
 import qualified Math.NumberTheory.Powers as Powers
@@ -46,7 +44,6 @@ import qualified Math.NumberTheory.Primes.Testing as Testing
 
 infix 6 :+
 infixr 8 .^
-infixl 7 ./
 -- |A Gaussian integer is a+bi, where a and b are both integers.
 data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 
@@ -71,7 +68,7 @@ instance Num GaussianInteger where
     fromInteger n = n :+ 0
     signum z@(a :+ b)
         | a == 0 && b == 0 = z               -- hole at origin
-        | otherwise        = z ./ abs z
+        | otherwise        = z `divG` abs z
 
 quotRemG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
 quotRemG = divHelper quot
@@ -90,24 +87,6 @@ n `divG` d = q where (q,_) = divModG n d
 
 modG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 n `modG` d = r where (_,r) = divModG n d
-
--- "div" truncates toward -infinity, "quot" truncates toward 0, but we need
--- something that truncates toward the nearest integer. I.e., we want to
--- truncate with "round".
-divToNearest :: Integer -> Integer -> Integer
-divToNearest x y = round ((x % 1) / (y % 1))
-
-divModWithRoundG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
-divModWithRoundG = divHelper divToNearest
-
--- |Divide one Gaussian integer by another, rounding each component toward the
--- nearest integer (or to the even integer, if equidistant).
-(./) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-n ./ d = q where (q, _) = divModWithRoundG n d
-
--- |Compute the remainder of division, when dividing and rounding to the nearest integer.
-(.%) :: GaussianInteger -> GaussianInteger -> GaussianInteger
-n .% d = r where (_, r) = divModWithRoundG n d
 
 divHelper :: (Integer -> Integer -> Integer) -> GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
 divHelper divide g h =
@@ -149,11 +128,16 @@ primes = [ a' :+ b'
                   ]
          ]
 
--- |Compute the GCD of two Gaussian integers.
+-- |Compute the GCD of two Gaussian integers. Enforces the precondition that each
+-- integer must be in the first quadrant (or zero).
 gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG g h
+gcdG g h = gcdG' (abs g) (abs h)
+
+-- |Compute the GCD of two Gauss integers. Does not check the precondition.
+gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
+gcdG' g h
     | h == 0    = abs g --done recursing
-    | otherwise = gcdG h (g .% h)
+    | otherwise = gcdG h (abs (g `modG` h))
 
 -- |Compute the group of units of Zm.
 units :: Integer -> [Integer]
@@ -212,7 +196,7 @@ factorise g
                     -- prime factors congruent to 3 mod 4 are simple.
                     let pow = div e 2
                         gp = fromInteger p
-                    in helper pt (g' ./ gp .^ pow) ((gp, pow) : fs)
+                    in helper pt (g' `divG` (gp .^ pow)) ((gp, pow) : fs)
                 | otherwise      =
                     -- general case: for every prime factor of the magnitude
                     -- squared, find a Gaussian prime whose magnitude squared
@@ -246,5 +230,5 @@ countEvenDivisions g pf = helper g 0
     where
     helper :: GaussianInteger -> Int -> (Int, GaussianInteger)
     helper g' acc
-        | g' `modG` pf == 0 = helper (g' ./ pf) (1 + acc)
+        | g' `modG` pf == 0 = helper (g' `divG` pf) (1 + acc)
         | otherwise     = (acc, g')
