@@ -29,7 +29,8 @@ module Math.NumberTheory.GaussianIntegers (
     primes,
     gcdG,
     gcdG',
-    findPrime,
+    findPrimeViaGCD,
+    findPrimeViaSqrt,
     factorise,
 ) where
 
@@ -166,13 +167,25 @@ order x m = head [ ord
                  ]
 
 -- |Find a Gaussian integer whose magnitude squared is the given prime number.
-findPrime :: Integer -> GaussianInteger
-findPrime p
+findPrimeViaGCD :: Integer -> GaussianInteger
+findPrimeViaGCD p
     | p == 2 = 1 :+ 1
     | p `mod` 4 == 1 && Testing.isPrime p =
         let r = head $ roots p
             z = Moduli.powerMod r (quot (p - 1) 4) p
         in gcdG (fromInteger p) (z :+ 1)
+    | otherwise = error "p must be prime, and congruent to 1 (mod 4)"
+
+findPrimeViaSqrt :: Integer -> GaussianInteger
+findPrimeViaSqrt p
+    | p == 2 = 1 :+ 1
+    | p `mod` 4 == 1 && Testing.isPrime p =
+        let (Just c) = Moduli.sqrtModP (-1) p
+            bs = [1 .. Powers.integerSquareRoot p]
+            as = map (\b' -> (b' * c) `mod` p) bs
+            a = head $ filter (<= Powers.integerSquareRoot p) as
+            b = head [ b' | b' <- bs, b' * b' + a * a == p]
+        in a :+ b
     | otherwise = error "p must be prime, and congruent to 1 (mod 4)"
 
 -- |Raise a Gaussian integer to a given power.
@@ -215,7 +228,7 @@ factorise g
                     -- processed doesn't really matter, but it is reversed so
                     -- that the Gaussian primes will be in order of increasing
                     -- magnitude.
-                    let gp = findPrime p
+                    let gp = findPrimeViaGCD p
                         (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
                     in helper pt gNext (facs ++ fs)
         in helper (reverse . Factorisation.factorise $ norm g) g []
