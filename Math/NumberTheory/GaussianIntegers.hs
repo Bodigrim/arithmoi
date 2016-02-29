@@ -145,7 +145,7 @@ gcdG g h = gcdG' (abs g) (abs h)
 -- |Compute the GCD of two Gauss integers. Does not check the precondition.
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG' g h
-    | h == 0    = abs g --done recursing
+    | h == 0    = g --done recursing
     | otherwise = gcdG' h (abs (g `modG` h))
 
 -- |Compute the group of units of Zm.
