@@ -29,7 +29,6 @@ import GHC.Integer.GMP.Internals
 
 import Data.Array.Unboxed
 import Data.Array.ST
-import Data.Array.Base (unsafeAt, unsafeWrite)
 
 import Data.Bits
 #if __GLASGOW_HASKELL__ < 705
@@ -37,6 +36,7 @@ import Data.Word        -- Moved to GHC.Types
 #endif
 
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
+import Math.NumberTheory.Unsafe
 #if __GLASGOW_HASKELL__ < 707
 import Math.NumberTheory.Utils (isTrue#)
 #endif

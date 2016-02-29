@@ -15,10 +15,11 @@ module Math.NumberTheory.MoebiusInversion
     ) where
 
 import Data.Array.ST
-import Data.Array.Base
+import Control.Monad
 import Control.Monad.ST
 
 import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Unsafe
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
 --   computed via generalised Moebius inversion.
@@ -69,7 +70,7 @@ totientSum = (+1) . generalInversion (triangle . fromIntegral)
 --   Since the function arguments are used as array indices, the domain of
 --   @f@ is restricted to 'Int'.
 --
---   The value @f n@ is then computed by @generalInversion g n@). Note that when
+--   The value @f n@ is then computed by @generalInversion g n@. Note that when
 --   many values of @f@ are needed, there are far more efficient methods, this
 --   method is only appropriate to compute isolated values of @f@.
 generalInversion :: (Int -> Integer) -> Int -> Integer
@@ -90,7 +91,8 @@ fastInvert fun n = big `unsafeAt` 0
         small <- newArray_ (0,mk0) :: ST s (STArray s Int Integer)
         unsafeWrite small 0 0
         unsafeWrite small 1 $! (fun 1)
-        unsafeWrite small 2 $! (fun 2 - fun 1)
+        when (mk0 >= 2) $
+            unsafeWrite small 2 $! (fun 2 - fun 1)
         let calcit switch change i
                 | mk0 < i   = return (switch,change)
                 | i == change = calcit (switch+1) (change + 4*switch+6) i

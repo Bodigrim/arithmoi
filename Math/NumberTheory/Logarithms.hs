@@ -36,10 +36,10 @@ import GHC.Word (Word(..))      -- Moved to GHC.Types
 
 import Data.Bits
 import Data.Array.Unboxed
-import Data.Array.Base (unsafeAt)
 
 import Math.NumberTheory.Logarithms.Internal
 import Math.NumberTheory.Powers.Integer
+import Math.NumberTheory.Unsafe
 #if __GLASGOW_HASKELL__ < 707
 import Math.NumberTheory.Utils  (isTrue#)
 #endif

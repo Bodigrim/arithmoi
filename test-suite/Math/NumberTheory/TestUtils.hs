@@ -102,68 +102,68 @@ type TestableIntegral wrapper =
   , Serial IO (wrapper Int), Serial IO (wrapper Word), Serial IO (wrapper Integer))
 
 testIntegralProperty
-  :: forall wrapper. TestableIntegral wrapper
-  => String -> (forall a. (Integral a, Bits a) => wrapper a -> Bool) -> TestTree
+  :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
+  => String -> (forall a. (Integral a, Bits a) => wrapper a -> bool) -> TestTree
 testIntegralProperty name f = testGroup name
-  [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> Bool)
-  , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> Bool)
-  , SC.testProperty "smallcheck Integer" (f :: wrapper Integer -> Bool)
-  , QC.testProperty "quickcheck Int"     (f :: wrapper Int     -> Bool)
-  , QC.testProperty "quickcheck Word"    (f :: wrapper Word    -> Bool)
-  , QC.testProperty "quickcheck Integer" (f :: wrapper Integer -> Bool)
-  , QC.testProperty "quickcheck Large Int"     ((f :: wrapper Int     -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word"    ((f :: wrapper Word    -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Huge  Integer" ((f :: wrapper Integer -> Bool) . getHuge)
+  [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> bool)
+  , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> bool)
+  , SC.testProperty "smallcheck Integer" (f :: wrapper Integer -> bool)
+  , QC.testProperty "quickcheck Int"     (f :: wrapper Int     -> bool)
+  , QC.testProperty "quickcheck Word"    (f :: wrapper Word    -> bool)
+  , QC.testProperty "quickcheck Integer" (f :: wrapper Integer -> bool)
+  , QC.testProperty "quickcheck Large Int"     ((f :: wrapper Int     -> bool) . getLarge)
+  , QC.testProperty "quickcheck Large Word"    ((f :: wrapper Word    -> bool) . getLarge)
+  , QC.testProperty "quickcheck Huge  Integer" ((f :: wrapper Integer -> bool) . getHuge)
   ]
 
 testSameIntegralProperty
-  :: forall wrapper. TestableIntegral wrapper
-  => String -> (forall a. (Integral a, Bits a) => wrapper a -> wrapper a -> Bool) -> TestTree
+  :: forall wrapper1 wrapper2 bool. (TestableIntegral wrapper1, TestableIntegral wrapper2, SC.Testable IO bool, QC.Testable bool)
+  => String -> (forall a. (Integral a, Bits a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
 testSameIntegralProperty name f = testGroup name
-  [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> wrapper Int     -> Bool)
-  , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> wrapper Word    -> Bool)
-  , SC.testProperty "smallcheck Integer" (f :: wrapper Integer -> wrapper Integer -> Bool)
-  , QC.testProperty "quickcheck Int"     (f :: wrapper Int     -> wrapper Int     -> Bool)
-  , QC.testProperty "quickcheck Word"    (f :: wrapper Word    -> wrapper Word    -> Bool)
-  , QC.testProperty "quickcheck Integer" (f :: wrapper Integer -> wrapper Integer -> Bool)
-  , QC.testProperty "quickcheck Large Int"     (\(Large a) (Large b) -> (f :: wrapper Int     -> wrapper Int     -> Bool) a b)
-  , QC.testProperty "quickcheck Large Word"    (\(Large a) (Large b) -> (f :: wrapper Word    -> wrapper Word    -> Bool) a b)
-  , QC.testProperty "quickcheck Huge  Integer" (\(Huge  a) (Huge  b) -> (f :: wrapper Integer -> wrapper Integer -> Bool) a b)
+  [ SC.testProperty "smallcheck Int"     (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
+  , SC.testProperty "smallcheck Word"    (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
+  , SC.testProperty "smallcheck Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> bool)
+  , QC.testProperty "quickcheck Int"     (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
+  , QC.testProperty "quickcheck Word"    (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
+  , QC.testProperty "quickcheck Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> bool)
+  , QC.testProperty "quickcheck Large Int"     (\(Large a) (Large b) -> (f :: wrapper1 Int     -> wrapper2 Int     -> bool) a b)
+  , QC.testProperty "quickcheck Large Word"    (\(Large a) (Large b) -> (f :: wrapper1 Word    -> wrapper2 Word    -> bool) a b)
+  , QC.testProperty "quickcheck Huge  Integer" (\(Huge  a) (Huge  b) -> (f :: wrapper1 Integer -> wrapper2 Integer -> bool) a b)
   ]
 
 testIntegral2Property
-  :: forall wrapper1 wrapper2. (TestableIntegral wrapper1, TestableIntegral wrapper2)
-  => String -> (forall a1 a2. (Integral a1, Integral a2, Bits a1, Bits a2) => wrapper1 a1 -> wrapper2 a2 -> Bool) -> TestTree
+  :: forall wrapper1 wrapper2 bool. (TestableIntegral wrapper1, TestableIntegral wrapper2, SC.Testable IO bool, QC.Testable bool)
+  => String -> (forall a1 a2. (Integral a1, Integral a2, Bits a1, Bits a2) => wrapper1 a1 -> wrapper2 a2 -> bool) -> TestTree
 testIntegral2Property name f = testGroup name
-  [ SC.testProperty "smallcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> Bool)
-  , SC.testProperty "smallcheck Int Word"        (f :: wrapper1 Int     -> wrapper2 Word    -> Bool)
-  , SC.testProperty "smallcheck Int Integer"     (f :: wrapper1 Int     -> wrapper2 Integer -> Bool)
-  , SC.testProperty "smallcheck Word Int"        (f :: wrapper1 Word    -> wrapper2 Int     -> Bool)
-  , SC.testProperty "smallcheck Word Word"       (f :: wrapper1 Word    -> wrapper2 Word    -> Bool)
-  , SC.testProperty "smallcheck Word Integer"    (f :: wrapper1 Word    -> wrapper2 Integer -> Bool)
-  , SC.testProperty "smallcheck Integer Int"     (f :: wrapper1 Integer -> wrapper2 Int     -> Bool)
-  , SC.testProperty "smallcheck Integer Word"    (f :: wrapper1 Integer -> wrapper2 Word    -> Bool)
-  , SC.testProperty "smallcheck Integer Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> Bool)
+  [ SC.testProperty "smallcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
+  , SC.testProperty "smallcheck Int Word"        (f :: wrapper1 Int     -> wrapper2 Word    -> bool)
+  , SC.testProperty "smallcheck Int Integer"     (f :: wrapper1 Int     -> wrapper2 Integer -> bool)
+  , SC.testProperty "smallcheck Word Int"        (f :: wrapper1 Word    -> wrapper2 Int     -> bool)
+  , SC.testProperty "smallcheck Word Word"       (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
+  , SC.testProperty "smallcheck Word Integer"    (f :: wrapper1 Word    -> wrapper2 Integer -> bool)
+  , SC.testProperty "smallcheck Integer Int"     (f :: wrapper1 Integer -> wrapper2 Int     -> bool)
+  , SC.testProperty "smallcheck Integer Word"    (f :: wrapper1 Integer -> wrapper2 Word    -> bool)
+  , SC.testProperty "smallcheck Integer Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> bool)
 
-  , QC.testProperty "quickcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> Bool)
-  , QC.testProperty "quickcheck Int Word"        (f :: wrapper1 Int     -> wrapper2 Word    -> Bool)
-  , QC.testProperty "quickcheck Int Integer"     (f :: wrapper1 Int     -> wrapper2 Integer -> Bool)
-  , QC.testProperty "quickcheck Word Int"        (f :: wrapper1 Word    -> wrapper2 Int     -> Bool)
-  , QC.testProperty "quickcheck Word Word"       (f :: wrapper1 Word    -> wrapper2 Word    -> Bool)
-  , QC.testProperty "quickcheck Word Integer"    (f :: wrapper1 Word    -> wrapper2 Integer -> Bool)
-  , QC.testProperty "quickcheck Integer Int"     (f :: wrapper1 Integer -> wrapper2 Int     -> Bool)
-  , QC.testProperty "quickcheck Integer Word"    (f :: wrapper1 Integer -> wrapper2 Word    -> Bool)
-  , QC.testProperty "quickcheck Integer Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> Bool)
+  , QC.testProperty "quickcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
+  , QC.testProperty "quickcheck Int Word"        (f :: wrapper1 Int     -> wrapper2 Word    -> bool)
+  , QC.testProperty "quickcheck Int Integer"     (f :: wrapper1 Int     -> wrapper2 Integer -> bool)
+  , QC.testProperty "quickcheck Word Int"        (f :: wrapper1 Word    -> wrapper2 Int     -> bool)
+  , QC.testProperty "quickcheck Word Word"       (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
+  , QC.testProperty "quickcheck Word Integer"    (f :: wrapper1 Word    -> wrapper2 Integer -> bool)
+  , QC.testProperty "quickcheck Integer Int"     (f :: wrapper1 Integer -> wrapper2 Int     -> bool)
+  , QC.testProperty "quickcheck Integer Word"    (f :: wrapper1 Integer -> wrapper2 Word    -> bool)
+  , QC.testProperty "quickcheck Integer Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> bool)
 
-  , QC.testProperty "quickcheck Large Int Int"         ((f :: wrapper1 Int     -> wrapper2 Int     -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Large Int Word"        ((f :: wrapper1 Int     -> wrapper2 Word    -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Large Int Integer"     ((f :: wrapper1 Int     -> wrapper2 Integer -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word Int"        ((f :: wrapper1 Word    -> wrapper2 Int     -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word Word"       ((f :: wrapper1 Word    -> wrapper2 Word    -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word Integer"    ((f :: wrapper1 Word    -> wrapper2 Integer -> Bool) . getLarge)
-  , QC.testProperty "quickcheck Huge  Integer Int"     ((f :: wrapper1 Integer -> wrapper2 Int     -> Bool) . getHuge)
-  , QC.testProperty "quickcheck Huge  Integer Word"    ((f :: wrapper1 Integer -> wrapper2 Word    -> Bool) . getHuge)
-  , QC.testProperty "quickcheck Huge  Integer Integer" ((f :: wrapper1 Integer -> wrapper2 Integer -> Bool) . getHuge)
+  , QC.testProperty "quickcheck Large Int Int"         ((f :: wrapper1 Int     -> wrapper2 Int     -> bool) . getLarge)
+  , QC.testProperty "quickcheck Large Int Word"        ((f :: wrapper1 Int     -> wrapper2 Word    -> bool) . getLarge)
+  , QC.testProperty "quickcheck Large Int Integer"     ((f :: wrapper1 Int     -> wrapper2 Integer -> bool) . getLarge)
+  , QC.testProperty "quickcheck Large Word Int"        ((f :: wrapper1 Word    -> wrapper2 Int     -> bool) . getLarge)
+  , QC.testProperty "quickcheck Large Word Word"       ((f :: wrapper1 Word    -> wrapper2 Word    -> bool) . getLarge)
+  , QC.testProperty "quickcheck Large Word Integer"    ((f :: wrapper1 Word    -> wrapper2 Integer -> bool) . getLarge)
+  , QC.testProperty "quickcheck Huge  Integer Int"     ((f :: wrapper1 Integer -> wrapper2 Int     -> bool) . getHuge)
+  , QC.testProperty "quickcheck Huge  Integer Word"    ((f :: wrapper1 Integer -> wrapper2 Word    -> bool) . getHuge)
+  , QC.testProperty "quickcheck Huge  Integer Integer" ((f :: wrapper1 Integer -> wrapper2 Integer -> bool) . getHuge)
   ]
 
 testSmallAndQuick

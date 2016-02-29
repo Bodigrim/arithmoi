@@ -31,7 +31,6 @@ module Math.NumberTheory.Primes.Sieve.Misc
     ) where
 
 import Control.Monad.ST
-import Data.Array.Base (unsafeRead, unsafeWrite, unsafeAt)
 import Data.Array.ST
 import Data.Array.Unboxed
 import Control.Monad (when)
@@ -44,6 +43,7 @@ import Math.NumberTheory.Powers.Squares (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Factorisation.Utils
+import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
 -- | A compact store of smallest prime factors.
@@ -149,7 +149,7 @@ sieveFactor (FS bnd sve) = check
                                                  | otherwise -> tdLoop j (integerSquareRoot' j) (ix+1)
           where
             p = toPrim ix
-            pix = unsafeAt sve ix
+            pix = unsafeAt sve $ fromIntegral p
     curve n = stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n
 
 -- | @'totientSieve' n@ creates a store of the totients of the numbers not exceeding @n@.

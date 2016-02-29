@@ -21,8 +21,9 @@ module Math.NumberTheory.Primes.Sieve.Indexing
     ) where
 
 import Data.Array.Unboxed
-import Data.Array.Base (unsafeAt)
 import Data.Bits
+
+import Math.NumberTheory.Unsafe
 
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
@@ -33,7 +34,9 @@ import Data.Bits
 --   #-}
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)
-idxPr n0 = (fromIntegral bytes0, rm3)
+idxPr n0
+    | n0 < 7    = (0, 0)
+    | otherwise = (fromIntegral bytes0, rm3)
   where
     n = if (fromIntegral n0 .&. 1 == (1 :: Int))
             then n0 else (n0-1)

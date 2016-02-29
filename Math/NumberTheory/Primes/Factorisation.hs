@@ -48,6 +48,10 @@ module Math.NumberTheory.Primes.Factorisation
     , carmichaelSieve
     , sieveCarmichael
     , carmichaelFromCanonical
+      -- * Moebius function
+    , moebius
+    , μ
+    , moebiusFromCanonical
       -- * Divisors
     , divisors
     , tau
@@ -111,6 +115,17 @@ carmichael n
 -- | Alias of 'carmichael' for people who prefer Greek letters.
 λ :: Integer -> Integer
 λ = carmichael
+
+-- | Calculates the Moebius function for a positive integer.
+moebius :: Integer -> Integer
+moebius n
+    | n < 1     = error "Carmichael function only defined for positive numbers"
+    | n == 1    = 1
+    | otherwise = moebiusFromCanonical (factorise' n)
+
+-- | Alias of 'moebius' for people who prefer Greek letters.
+μ :: Integer -> Integer
+μ = moebius
 
 -- | @'divisors' n@ is the set of all (positive) divisors of @n@.
 --   @'divisors' 0@ is an error because we can't create the set of all 'Integer's.

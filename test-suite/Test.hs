@@ -5,11 +5,18 @@ import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
 import qualified Math.NumberTheory.LogarithmsTests as Logarithms
 
+import qualified Math.NumberTheory.LucasTests as Lucas
+
+import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
+import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversionInt
+
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
 import qualified Math.NumberTheory.Powers.IntegerTests as Integer
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
+
+import qualified Math.NumberTheory.PrimesTests as Primes
 
 main :: IO ()
 main = defaultMain tests
@@ -29,5 +36,15 @@ tests = testGroup "All"
     ]
   , testGroup "Logarithms"
     [ Logarithms.testSuite
+    ]
+  , testGroup "Lucas"
+    [ Lucas.testSuite
+    ]
+  , testGroup "MoebiusInversion"
+    [ MoebiusInversion.testSuite
+    , MoebiusInversionInt.testSuite
+    ]
+  , testGroup "Primes"
+    [ Primes.testSuite
     ]
   ]
