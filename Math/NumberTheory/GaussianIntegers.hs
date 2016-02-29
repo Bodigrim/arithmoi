@@ -106,7 +106,6 @@ divHelper divide g h =
         p = h * q
     in (q, g - p)
 
-
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger
 conjugate (r :+ i) = r :+ (-i)
@@ -187,6 +186,7 @@ a .^ e
             0 :+ 1 -> (0 :+ (-1)) .^ (abs e `mod` 4)
             _      -> (0 :+ 1) .^ (abs e `mod` 4)
     | e < 0     = error "Cannot exponentiate non-unit Gaussian Int to negative power"
+    | a == 0    = 0
     | e == 0    = 1
     | even e    = s * s
     | otherwise = a * a .^ (e - 1)
