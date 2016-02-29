@@ -14,6 +14,7 @@
 
 module Math.NumberTheory.GaussianIntegers (
     GaussianInteger((:+)),
+    ι,
     real,
     imag,
     conjugate,
@@ -49,8 +50,11 @@ infixl 7 ./
 -- |A Gaussian integer is a+bi, where a and b are both integers.
 data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 
+ι :: GaussianInteger
+ι = 0 :+ 1
+
 instance Show GaussianInteger where
-    show (a :+ b) = show a ++ op ++ b' ++ "i"
+    show (a :+ b) = show a ++ op ++ b' ++ "ι"
         where op = if b >= 0 then "+" else "-"
               b' = if abs b /= 1 then show (abs b) else ""
 
