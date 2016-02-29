@@ -184,10 +184,10 @@ findPrime p
 a .^ e
     | e < 0 && norm a == 1 =
         case a of
-            1         -> 1
-            (-1)      -> if even e then 1 else (-1)
-            0 :+ 1    -> (0 :+ (-1)) .^ (abs e `mod` 4)
-            0 :+ (-1) -> (0 :+ 1) .^ (abs e `mod` 4)
+            1      -> 1
+            (-1)   -> if even e then 1 else (-1)
+            0 :+ 1 -> (0 :+ (-1)) .^ (abs e `mod` 4)
+            _      -> (0 :+ 1) .^ (abs e `mod` 4)
     | e < 0     = error "Cannot exponentiate non-unit Gaussian Int to negative power"
     | e == 0    = 1
     | even e    = s * s
