@@ -45,6 +45,9 @@ infixr 8 .^
 -- |A Gaussian integer is a+bi, where a and b are both integers.
 data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 
+-- |The imaginary unit, where
+--
+-- > ι^2 = -1
 ι :: GaussianInteger
 ι = 0 :+ 1
 
