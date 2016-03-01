@@ -52,9 +52,13 @@ data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 ι = 0 :+ 1
 
 instance Show GaussianInteger where
-    show (a :+ b) = show a ++ op ++ b' ++ "ι"
-        where op = if b >= 0 then "+" else "-"
-              b' = if abs b /= 1 then show (abs b) else ""
+    show (a :+ b)
+        | a == 0 && abs b == 1 = (if b < 0 then "-" else []) ++ "ι"
+        | a == 0               = show b ++ "*ι"
+        | b == 0               = show a
+        | abs b == 1           = show a ++ op ++ "ι"
+        | otherwise            = show a ++ op ++ show (abs b) ++ "*ι"
+        where op = if b > 0 then "+" else "-"
 
 instance Num GaussianInteger where
     (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
