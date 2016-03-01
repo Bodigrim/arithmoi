@@ -29,13 +29,11 @@ module Math.NumberTheory.GaussianIntegers (
     primes,
     gcdG,
     gcdG',
-    findPrimeViaGCD,
-    findPrimeViaSqrt,
+    findPrime,
+    findPrime',
     factorise,
 ) where
 
-import Data.List  (genericLength)
-import qualified Math.NumberTheory.GCD as GCD
 import qualified Math.NumberTheory.Moduli as Moduli
 import qualified Math.NumberTheory.Powers as Powers
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
@@ -148,45 +146,24 @@ gcdG' g h
     | h == 0    = g --done recursing
     | otherwise = gcdG' h (abs (g `modG` h))
 
--- |Compute the group of units of Zm.
-units :: Integer -> [Integer]
-units n = filter (GCD.coprime n) [1 .. n - 1]
+-- |Find a Gaussian integer whose norm is the given prime number.
+-- Checks the precondition that p is prime and that p `mod` 4 /= 3.
+findPrime :: Integer -> GaussianInteger
+findPrime p
+    | p == 2 || (p `mod` 4 == 1 && Testing.isPrime p) = findPrime' p
+    | otherwise = error "p must be prime, and not congruent to 3 (mod 4)"
 
--- |Compute the primitive roots of Zm.
-roots :: Integer -> [Integer]
-roots m
-    | null us   = []
-    | otherwise = [ u | u <- us, order u m == genericLength us]
-    where us = units m
-
--- |Compute the order of x in Zm.
-order :: Integer -> Integer -> Integer
-order x m = head [ ord
-                 | ord <- [1 .. genericLength $ units m]
-                 , Moduli.powerMod x ord m == 1
-                 ]
-
--- |Find a Gaussian integer whose magnitude squared is the given prime number.
-findPrimeViaGCD :: Integer -> GaussianInteger
-findPrimeViaGCD p
-    | p == 2 = 1 :+ 1
-    | p `mod` 4 == 1 && Testing.isPrime p =
-        let r = head $ roots p
-            z = Moduli.powerMod r (quot (p - 1) 4) p
-        in gcdG (fromInteger p) (z :+ 1)
-    | otherwise = error "p must be prime, and congruent to 1 (mod 4)"
-
-findPrimeViaSqrt :: Integer -> GaussianInteger
-findPrimeViaSqrt p
-    | p == 2 = 1 :+ 1
-    | p `mod` 4 == 1 && Testing.isPrime p =
-        let (Just c) = Moduli.sqrtModP (-1) p
-            bs = [1 .. Powers.integerSquareRoot p]
-            as = map (\b' -> (b' * c) `mod` p) bs
-            a = head $ filter (<= Powers.integerSquareRoot p) as
-            b = head [ b' | b' <- bs, b' * b' + a * a == p]
-        in a :+ b
-    | otherwise = error "p must be prime, and congruent to 1 (mod 4)"
+-- |Find a Gaussian integer whose norm is the given prime number. Does not
+-- check the precondition.
+findPrime' :: Integer -> GaussianInteger
+findPrime' p =
+    let (Just c) = Moduli.sqrtModP (-1) p
+        k  = Powers.integerSquareRoot p
+        bs = [1 .. k]
+        as = map (\b' -> (b' * c) `mod` p) bs
+        a  = head [ a' | a' <- as, a' <= k]
+        b  = head [ b' | b' <- bs, b' * b' + a * a == p]
+    in a :+ b
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
@@ -228,7 +205,7 @@ factorise g
                     -- processed doesn't really matter, but it is reversed so
                     -- that the Gaussian primes will be in order of increasing
                     -- magnitude.
-                    let gp = findPrimeViaGCD p
+                    let gp = findPrime' p
                         (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
                     in helper pt gNext (facs ++ fs)
         in helper (reverse . Factorisation.factorise $ norm g) g []
