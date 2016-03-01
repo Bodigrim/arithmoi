@@ -167,9 +167,8 @@ findPrime' p =
     let (Just c) = Moduli.sqrtModP (-1) p
         k  = Powers.integerSquareRoot p
         bs = [1 .. k]
-        as = map (\b' -> (b' * c) `mod` p) bs
-        a  = head [ a' | a' <- as, a' <= k]
-        b  = head [ b' | b' <- bs, b' * b' + a * a == p]
+        asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
+        (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
     in a :+ b
 
 -- |Raise a Gaussian integer to a given power.
