@@ -56,8 +56,8 @@ data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 instance Show GaussianInteger where
     show (a :+ b)
         | a == 0 && abs b == 1 = (if b < 0 then "-" else []) ++ "ι"
-        | a == 0               = show b ++ "*ι"
         | b == 0               = show a
+        | a == 0               = show b ++ "*ι"
         | abs b == 1           = show a ++ op ++ "ι"
         | otherwise            = show a ++ op ++ show (abs b) ++ "*ι"
         where op = if b > 0 then "+" else "-"
