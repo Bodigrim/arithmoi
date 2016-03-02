@@ -34,8 +34,6 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
-import Data.List (nub)
-
 import qualified Math.NumberTheory.Moduli as Moduli
 import qualified Math.NumberTheory.Powers as Powers
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
@@ -135,9 +133,12 @@ primes :: [GaussianInteger]
 primes = [ g
          | p <- Sieve.primes
          , g <- if p `mod` 4 == 3
-             then [p :+ 0]
-             else let x :+ y = findPrime' p
-                  in nub [x :+ y, y :+ x]
+                then [p :+ 0]
+                else
+                    if p == 2
+                    then [1 :+ 1]
+                    else let x :+ y = findPrime' p
+                         in [x :+ y, y :+ x]
          ]
 
 -- |Compute the GCD of two Gaussian integers. Enforces the precondition that each
