@@ -34,6 +34,8 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
+import Data.List (nub)
+
 import qualified Math.NumberTheory.Moduli as Moduli
 import qualified Math.NumberTheory.Powers as Powers
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
@@ -129,17 +131,12 @@ isPrime g@(x :+ y)
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes, but not quite in order of ascending magnitude.
 primes :: [GaussianInteger]
-primes = [ a' :+ b'
+primes = [ g
          | p <- Sieve.primes
-         , (a', b') <- if p `mod` 4 == 3
-             then [ (p, 0) ]
-             else [ (a, b)
-                  | let radius = Powers.integerSquareRoot p
-                  , a <- [0 .. radius]
-                  , let d = p - a * a
-                  , Powers.isSquare d
-                  , let b = Powers.integerSquareRoot d
-                  ]
+         , g <- if p `mod` 4 == 3
+             then [p :+ 0]
+             else let x :+ y = findPrime' p
+                  in nub [x :+ y, y :+ x]
          ]
 
 -- |Compute the GCD of two Gaussian integers. Enforces the precondition that each
