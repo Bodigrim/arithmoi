@@ -66,7 +66,7 @@ absProperty x y = isOrigin || (inFirstQuadrant && isAssociate)
 
 -- | a special case that tests rounding/truncating in GCD.
 gcdGSpecialCase1 :: Assertion
-gcdGSpecialCase1 = assertEqual "gcdG" (gcdG (12 :+ 23) (23 :+ 34)) 1
+gcdGSpecialCase1 = assertEqual "gcdG" 1 $ gcdG (12 :+ 23) (23 :+ 34)
 
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers"
