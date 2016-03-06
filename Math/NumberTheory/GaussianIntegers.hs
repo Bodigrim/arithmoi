@@ -47,7 +47,7 @@ data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
 
 -- |The imaginary unit, where
 --
--- > ι^2 = -1
+-- > ι .^ 2 == -1
 ι :: GaussianInteger
 ι = 0 :+ 1
 
