@@ -414,14 +414,17 @@ sqM2P n e
 
 -- | @sqrtModF n primePowers@ calculates a square root of @n@ modulo
 --   @product [p^k | (p,k) <- primePowers]@ if one exists and all primes
---   are distinct.
+--   are distinct. The list must be non-empty.
 sqrtModF :: Integer -> [(Integer,Int)] -> Maybe Integer
+sqrtModF _ []  = Nothing
 sqrtModF n pps = do roots <- mapM (sqrtModPP n) pps
                     chineseRemainder $ zip roots (map (uncurry (^)) pps)
 
 -- | @sqrtModFList n primePowers@ calculates all square roots of @n@ modulo
 --   @product [p^k | (p,k) <- primePowers]@ if all primes are distinct.
+--   The list must be non-empty.
 sqrtModFList :: Integer -> [(Integer,Int)] -> [Integer]
+sqrtModFList _ []  = []
 sqrtModFList n pps = map fst $ foldl1 (liftM2 comb) cs
   where
     ms :: [Integer]
