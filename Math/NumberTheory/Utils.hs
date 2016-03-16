@@ -63,7 +63,7 @@ uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 "shiftToOddCount/Integer"   shiftToOddCount = shiftOCInteger
   #-}
 {-# INLINE [1] shiftToOddCount #-}
-shiftToOddCount :: (Integral a, Bits a) => a -> (Int, a)
+shiftToOddCount :: Integral a => a -> (Int, a)
 shiftToOddCount n = case shiftOCInteger (fromIntegral n) of
                       (z, o) -> (z, fromInteger o)
 
@@ -125,7 +125,7 @@ bigNatZeroCount bn# = count 0# 0#
 "shiftToOdd/Integer"   shiftToOdd = shiftOInteger
   #-}
 {-# INLINE [1] shiftToOdd #-}
-shiftToOdd :: (Integral a, Bits a) => a -> a
+shiftToOdd :: Integral a => a -> a
 shiftToOdd n = fromInteger (shiftOInteger (fromIntegral n))
 
 -- | Specialised version for @'Int'@.
