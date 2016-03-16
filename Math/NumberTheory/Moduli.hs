@@ -436,6 +436,7 @@ sqrtModFList n pps = map fst $ foldl1 (liftM2 comb) cs
 --   square roots of @n@ modulo @prime^expo@. The same restriction
 --   as in 'sqrtModPP' applies to the arguments.
 sqrtModPPList :: Integer -> (Integer,Int) -> [Integer]
+sqrtModPPList n (2,1) = [n `mod` 2]
 sqrtModPPList n (2,expo)
     = case sqM2P n expo of
         Just r -> let m = 1 `shiftL` (expo-1)
