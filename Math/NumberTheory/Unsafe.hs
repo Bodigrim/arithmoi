@@ -34,6 +34,9 @@ import Data.Array.IArray
   , (!)
   )
 import Data.Array.MArray
+#if !MIN_VERSION_array(0,5,0)
+  hiding (unsafeFreeze, unsafeThaw)
+#endif
 
 unsafeAt :: (IArray a e, Ix i) => a i e -> i -> e
 unsafeAt = (!)
