@@ -490,21 +490,21 @@ chineseRemainder2 (r1, md1) (r2,md2)
                         Int -> Bool,
                         Word -> Bool
   #-}
-evenI :: (Integral a, Bits a) => a -> Bool
+evenI :: Integral a => a -> Bool
 evenI n = fromIntegral n .&. 1 == (0 :: Int)
 
 {-# SPECIALISE rem4 :: Integer -> Int,
                        Int -> Int,
                        Word -> Int
   #-}
-rem4 :: (Integral a, Bits a) => a -> Int
+rem4 :: Integral a => a -> Int
 rem4 n = fromIntegral n .&. 3
 
 {-# SPECIALISE rem8 :: Integer -> Int,
                        Int -> Int,
                        Word -> Int
   #-}
-rem8 :: (Integral a, Bits a) => a -> Int
+rem8 :: Integral a => a -> Int
 rem8 n = fromIntegral n .&. 7
 
 jac2 :: UArray Int Int
