@@ -39,7 +39,6 @@ import Data.Word
 #endif
 import Data.Bits
 import Data.Array.Unboxed
-import Data.Maybe (fromJust)
 import Data.List (nub)
 import Control.Monad (foldM, liftM2)
 
@@ -363,15 +362,15 @@ tonelliShanks square prime = loop rc t1 generator log2
 sqrtModPP :: Integer -> (Integer,Int) -> Maybe Integer
 sqrtModPP n (2,e) = sqM2P n e
 sqrtModPP n (prime,expo) = case sqrtModP n prime of
-                             Just r -> Just $ fixup r
+                             Just r -> fixup r
                              _      -> Nothing
   where
     fixup r = let diff' = r*r-n
               in if diff' == 0
-                   then r
+                   then Just r
                    else case splitOff prime diff' of
-                          (e,q) | expo <= e -> r
-                                | otherwise -> hoist (fromJust $ invertMod (2*r) prime) r (q `mod` prime) (prime^e)
+                          (e,q) | expo <= e -> Just r
+                                | otherwise -> fmap (\inv -> hoist inv r (q `mod` prime) (prime^e)) (invertMod (2*r) prime)
                       --
     hoist inv root elim pp
         | diff' == 0    = root'
@@ -414,7 +413,8 @@ sqM2P n e
 
 -- | @sqrtModF n primePowers@ calculates a square root of @n@ modulo
 --   @product [p^k | (p,k) <- primePowers]@ if one exists and all primes
---   are distinct. The list must be non-empty.
+--   are distinct.
+--   The list must be non-empty, @n@ must be coprime with all primes.
 sqrtModF :: Integer -> [(Integer,Int)] -> Maybe Integer
 sqrtModF _ []  = Nothing
 sqrtModF n pps = do roots <- mapM (sqrtModPP n) pps
@@ -422,7 +422,7 @@ sqrtModF n pps = do roots <- mapM (sqrtModPP n) pps
 
 -- | @sqrtModFList n primePowers@ calculates all square roots of @n@ modulo
 --   @product [p^k | (p,k) <- primePowers]@ if all primes are distinct.
---   The list must be non-empty.
+--   The list must be non-empty, @n@ must be coprime with all primes.
 sqrtModFList :: Integer -> [(Integer,Int)] -> [Integer]
 sqrtModFList _ []  = []
 sqrtModFList n pps = map fst $ foldl1 (liftM2 comb) cs
