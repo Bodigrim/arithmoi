@@ -13,7 +13,12 @@
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
 #endif
 {-# OPTIONS_HADDOCK hide #-}
-module Math.NumberTheory.Primes.Counting.Impl (primeCount, nthPrime) where
+module Math.NumberTheory.Primes.Counting.Impl
+    ( primeCount
+    , primeCountMaxArg
+    , nthPrime
+    , nthPrimeMaxArg
+    ) where
 
 #include "MachDeps.h"
 
@@ -39,10 +44,14 @@ import Data.Int
 #define COUNT_T Int
 #endif
 
+-- | Maximal allowed argument of 'primeCount'. Currently 8e18.
+primeCountMaxArg :: Integer
+primeCountMaxArg = 8000000000000000000
+
 -- | @'primeCount' n == &#960;(n)@ is the number of (positive) primes not exceeding @n@.
 --
 --   For efficiency, the calculations are done on 64-bit signed integers, therefore @n@ must
---   not exceed @8 * 10^18@.
+--   not exceed 'primeCountMaxArg'.
 --
 --   Requires @/O/(n^0.5)@ space, the time complexity is roughly @/O/(n^0.7)@.
 --   For small bounds, @'primeCount' n@ simply counts the primes not exceeding @n@,
@@ -51,7 +60,7 @@ import Data.Int
 --   <http://en.wikipedia.org/wiki/Prime_counting_function#Algorithms_for_evaluating_.CF.80.28x.29>.
 primeCount :: Integer -> Integer
 primeCount n
-    | n > 8000000000000000000   = error $ "primeCount: can't handle bound " ++ show n
+    | n > primeCountMaxArg = error $ "primeCount: can't handle bound " ++ show n
     | n < 2     = 0
     | n < 1000  = fromIntegral . length . takeWhile (<= n) . primeList . primeSieve $ max 242 n
     | n < 30000 = runST $ do
@@ -69,15 +78,19 @@ primeCount n
             !pdf = sieveCount ub cs sr
         in phn1 - pdf
 
+-- | Maximal allowed argument of 'nthPrime'. Currently 1.5e17.
+nthPrimeMaxArg :: Integer
+nthPrimeMaxArg = 150000000000000000
+
 -- | @'nthPrime' n@ calculates the @n@-th prime. Numbering of primes is
 --   @1@-based, so @'nthPrime' 1 == 2@.
 --
 --   Requires @/O/((n*log n)^0.5)@ space, the time complexity is roughly @/O/((n*log n)^0.7@.
---   The argument must be strictly positive, and must not exceed @1.5 * 10^17@.
+--   The argument must be strictly positive, and must not exceed 'nthPrimeMaxArg'.
 nthPrime :: Integer -> Integer
 nthPrime n
     | n < 1         = error "Prime indexing starts at 1"
-    | n > 150000000000000000    = error $ "nthPrime: can't handle index " ++ show n
+    | n > nthPrimeMaxArg = error $ "nthPrime: can't handle index " ++ show n
     | n < 200000    = nthPrimeCt n
     | ct0 < n       = tooLow n p0 (n-ct0) approxGap
     | otherwise     = tooHigh n p0 (ct0-n) approxGap

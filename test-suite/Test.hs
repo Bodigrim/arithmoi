@@ -7,6 +7,8 @@ import qualified Math.NumberTheory.LogarithmsTests as Logarithms
 
 import qualified Math.NumberTheory.LucasTests as Lucas
 
+import qualified Math.NumberTheory.ModuliTests as Moduli
+
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
 import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversionInt
 
@@ -17,6 +19,9 @@ import qualified Math.NumberTheory.Powers.IntegerTests as Integer
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
 import qualified Math.NumberTheory.PrimesTests as Primes
+import qualified Math.NumberTheory.Primes.CountingTests as Counting
+import qualified Math.NumberTheory.Primes.HeapTests as Heap
+import qualified Math.NumberTheory.Primes.SieveTests as Sieve
 
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
@@ -42,12 +47,18 @@ tests = testGroup "All"
   , testGroup "Lucas"
     [ Lucas.testSuite
     ]
+  , testGroup "Moduli"
+    [ Moduli.testSuite
+    ]
   , testGroup "MoebiusInversion"
     [ MoebiusInversion.testSuite
     , MoebiusInversionInt.testSuite
     ]
   , testGroup "Primes"
     [ Primes.testSuite
+    , Counting.testSuite
+    , Heap.testSuite
+    , Sieve.testSuite
     ]
   , testGroup "Gaussian"
     [ Gaussian.testSuite

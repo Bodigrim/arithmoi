@@ -332,12 +332,14 @@ findIx r
     | r < m     = down (a-1)
     | otherwise = up a
       where
-        a = min 5758 ((192*r) `quot` 1001 - 1)
+        a = max 0 (min 5758 ((192*r) `quot` 1001 - 1))
         m = remainders `unsafeAt` a
         down k
+            | k < 0                         = 0
             | r < (remainders `unsafeAt` k) = down (k-1)
             | otherwise                     = k
         up k
+            | k+1 > 5759                        = 5759
             | r < (remainders `unsafeAt` (k+1)) = k
             | otherwise                         = up (k+1)
 

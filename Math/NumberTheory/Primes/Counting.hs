@@ -11,10 +11,14 @@
 module Math.NumberTheory.Primes.Counting
     ( -- * Exact functions
       primeCount
+    , primeCountMaxArg
     , nthPrime
+    , nthPrimeMaxArg
       -- * Approximations
     , approxPrimeCount
+    , approxPrimeCountOverestimateLimit
     , nthPrimeApprox
+    , nthPrimeApproxUnderestimateLimit
     ) where
 
 import Math.NumberTheory.Primes.Counting.Impl

@@ -97,7 +97,7 @@ type CacheWord = Word64
 -- | Compact store of primality flags.
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
 
--- | Sieve primes up to (and including) a bound.
+-- | Sieve primes up to (and including) a bound (or 7, if bound is smaller).
 --   For small enough bounds, this is more efficient than
 --   using the segmented sieve.
 --

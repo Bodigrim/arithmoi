@@ -11,16 +11,26 @@
 
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
+
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE UndecidableSuperClasses    #-}
+
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
+#endif
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -45,6 +55,9 @@ import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
 import Data.Word
 #endif
+import GHC.Exts
+
+import Math.NumberTheory.Primes
 
 newtype AnySign a = AnySign { getAnySign :: a }
   deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
@@ -83,8 +96,18 @@ newtype Power a = Power { getPower :: a }
 instance (Monad m, Num a, Ord a, Serial m a) => Serial m (Power a) where
   series = Power <$> series `suchThatSerial` (> 0)
 
-instance (Num a, Ord a, Arbitrary (Small a)) => Arbitrary (Power a) where
+instance (Num a, Ord a, Integral a, Arbitrary a) => Arbitrary (Power a) where
   arbitrary = Power <$> (getSmall <$> arbitrary) `suchThat` (> 0)
+  shrink (Power x) = Power <$> filter (> 0) (shrink x)
+
+newtype Prime = Prime { getPrime :: Integer }
+  deriving (Eq, Ord, Show)
+
+instance Arbitrary Prime where
+  arbitrary = Prime <$> arbitrary `suchThat` (\p -> p > 0 && isPrime p)
+
+instance Monad m => Serial m Prime where
+  series = Prime <$> series `suchThatSerial` (\p -> p > 0 && isPrime p)
 
 instance Monad m => Serial m Word where
   series =
@@ -95,11 +118,38 @@ instance Monad m => Serial m Word where
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty
 
+
+-- https://www.cs.ox.ac.uk/projects/utgp/school/andres.pdf, p. 21
+-- :k Compose = (k1 -> Constraint) -> (k2 -> k1) -> (k2 -> Constraint)
+class    (f (g x)) => (f `Compose` g) x
+instance (f (g x)) => (f `Compose` g) x
+
+type family ConcatMap (w :: * -> Constraint) (cs :: [*]) :: Constraint
+#if __GLASGOW_HASKELL__ >= 708
+  where
+    ConcatMap w '[] = ()
+    ConcatMap w (c ': cs) = (w c, ConcatMap w cs)
+#else
+type instance ConcatMap w '[] = ()
+type instance ConcatMap w (c ': cs) = (w c, ConcatMap w cs)
+#endif
+
+type family Matrix (as :: [* -> Constraint]) (w :: * -> *) (bs :: [*]) :: Constraint
+#if __GLASGOW_HASKELL__ >= 708
+  where
+    Matrix '[] w bs = ()
+    Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w bs)
+#else
+type instance Matrix '[] w bs = ()
+type instance Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w bs)
+#endif
+
 type TestableIntegral wrapper =
-  ( Arbitrary (wrapper Int), Arbitrary (wrapper Word), Arbitrary (wrapper Integer)
-  , Arbitrary (Large (wrapper Int)), Arbitrary (Large (wrapper Word)), Arbitrary (Huge (wrapper Integer))
-  , Show (wrapper Int), Show (wrapper Word), Show (wrapper Integer)
-  , Serial IO (wrapper Int), Serial IO (wrapper Word), Serial IO (wrapper Integer))
+  ( Matrix '[Arbitrary, Show, Serial IO] wrapper '[Int, Word, Integer]
+  , Matrix '[Bounded, Integral] wrapper '[Int, Word]
+  , Num (wrapper Integer)
+  )
+
 
 testIntegralProperty
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
