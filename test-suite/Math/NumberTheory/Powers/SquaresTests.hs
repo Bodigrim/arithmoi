@@ -139,9 +139,11 @@ testSuite = testGroup "Squares"
     , testSmallAndQuick    "almost square Int"  integerSquareRootProperty2_Int
     , testSmallAndQuick    "almost square Word" integerSquareRootProperty2_Word
 
+#if WORD_SIZE_IN_BITS == 64
     , testCase             "maxBound / 2 :: Int"  integerSquareRootSpecialCase1_Int
     , testCase             "maxBound / 4 :: Word" integerSquareRootSpecialCase1_Word
     , testCase             "maxBound :: Word"     integerSquareRootSpecialCase2
+#endif
     ]
 
   , testIntegralProperty "integerSquareRoot'" integerSquareRoot'Property
