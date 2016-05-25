@@ -1,3 +1,18 @@
+0.4.2.0:
+    This release supports GHC 7.6, 7.8 and 8.0.
+
+    Add new cabal flag check-bounds, which replaces all unsafe array functions with safe ones.
+
+    Add basic functions on Gaussian integers.
+    Add Moebius mu-function.
+
+    Forbid non-positive moduli in Math.NumberTheory.Moduli.
+
+    Fix out-of-bounds error in Math.NumberTheory.Primes.Heap, Math.NumberTheory.Primes.Sieve and Math.NumberTheory.MoebiusInversion.
+    Fix 32-bit build.
+    Fix binaryGCD on negative numbers.
+    Fix highestPower (various issues).
+
 0.4.1.0:
     Add integerLog10 variants at Bas van Dijk's request and expose
     Math.NumberTheory.Powers.Integer, with an added integerWordPower.
