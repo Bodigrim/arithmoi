@@ -31,11 +31,6 @@ tested-with         : GHC==7.6.3, GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
 
 extra-source-files  : Changes, TODO
 
-flag llvm
-    description         : Compile the library with the LLVM backend
-    default             : False
-    manual              : True
-
 flag check-bounds
     description         : Replace unsafe array operations with safe ones
     default             : False
@@ -90,8 +85,6 @@ library
     other-extensions          : BangPatterns
 
     ghc-options         : -O2 -Wall
-    if flag(llvm)
-        ghc-options     : -fllvm
     ghc-prof-options    : -O2 -auto
     if flag(check-bounds)
         cpp-options     : -DCheckBounds
