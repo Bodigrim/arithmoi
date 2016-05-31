@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.4.1.3
+version             : 0.4.2.0
 cabal-version       : >= 1.10
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
@@ -30,11 +30,6 @@ category            : Math, Algorithms, Number Theory
 tested-with         : GHC==7.6.3, GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
 
 extra-source-files  : Changes, TODO
-
-flag llvm
-    description         : Compile the library with the LLVM backend
-    default             : False
-    manual              : True
 
 flag check-bounds
     description         : Replace unsafe array operations with safe ones
@@ -90,8 +85,6 @@ library
     other-extensions          : BangPatterns
 
     ghc-options         : -O2 -Wall
-    if flag(llvm)
-        ghc-options     : -fllvm
     ghc-prof-options    : -O2 -auto
     if flag(check-bounds)
         cpp-options     : -DCheckBounds
