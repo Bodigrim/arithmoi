@@ -1,5 +1,5 @@
 0.4.2.0:
-    This release supports GHC 7.6, 7.8 and 8.0.
+    This release supports GHC 7.6, 7.8, 7.10 and 8.0.
 
     Add new cabal flag check-bounds, which replaces all unsafe array functions with safe ones.
 
