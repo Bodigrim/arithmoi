@@ -46,7 +46,8 @@ library
                           , random >= 1.0 && < 1.2
                           , mtl >= 2.0 && < 2.3
 
-    exposed-modules     : Math.NumberTheory.Logarithms
+    exposed-modules     : Math.NumberTheory.ArithmeticFunctions
+                          Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
