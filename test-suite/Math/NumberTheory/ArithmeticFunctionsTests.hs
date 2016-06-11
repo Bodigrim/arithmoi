@@ -22,7 +22,7 @@ import Test.Tasty.HUnit
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.TestUtils
 
-oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction a -> [a] -> Assertion
+oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a] -> Assertion
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])
 
 tauOeis :: Assertion
@@ -71,7 +71,10 @@ totientOeis = oeisAssertion "A000010" totient
   ]
 
 jordanProperty1 :: Natural -> Bool
-jordanProperty1 n = runFunction totient n == runFunction (jordan 1) n
+jordanProperty1 n = n <= 1 || runFunction (jordan 0) n == 0
+
+jordanProperty2 :: Natural -> Bool
+jordanProperty2 n = runFunction totient n == runFunction (jordan 1) n
 
 jordan2Oeis :: Assertion
 jordan2Oeis = oeisAssertion "A007434" (jordan 2)
@@ -167,7 +170,8 @@ testSuite = testGroup "ArithmeticFunctions"
     , testCase "OEIS" totientOeis
     ]
   , testGroup "Jordan"
-    [ testSmallAndQuick "jordan_1 = totient" jordanProperty1
+    [ testSmallAndQuick "jordan_0 = [== 1]" jordanProperty1
+    , testSmallAndQuick "jordan_1 = totient" jordanProperty2
     , testCase "OEIS jordan_2" jordan2Oeis
     ]
   , testGroup "Moebius"
