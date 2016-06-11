@@ -11,6 +11,7 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
+
 module Math.NumberTheory.GaussianIntegers (
     GaussianInteger((:+)),
     ι,
