@@ -25,6 +25,8 @@ import qualified Math.NumberTheory.Primes.SieveTests as Sieve
 
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
+import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctions
+
 main :: IO ()
 main = defaultMain tests
 
@@ -62,5 +64,8 @@ tests = testGroup "All"
     ]
   , testGroup "Gaussian"
     [ Gaussian.testSuite
+    ]
+  , testGroup "ArithmeticFunctions"
+    [ ArithmeticFunctions.testSuite
     ]
   ]

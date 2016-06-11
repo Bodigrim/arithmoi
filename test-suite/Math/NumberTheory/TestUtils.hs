@@ -50,6 +50,7 @@ import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series
 import Control.Applicative
 import Data.Bits
 #if MIN_VERSION_base(4,8,0)
+import Numeric.Natural
 #else
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
@@ -114,6 +115,15 @@ instance Monad m => Serial m Word where
     generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
     where
       nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
+
+#if MIN_VERSION_base(4,8,0)
+instance Monad m => Serial m Natural where
+  series =
+    generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
+    where
+      nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
+#endif
+
 
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty

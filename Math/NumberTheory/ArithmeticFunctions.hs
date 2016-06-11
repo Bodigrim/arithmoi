@@ -13,6 +13,7 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE GADTs               #-}
+{-# LANGUAGE LambdaCase          #-}
 
 module Math.NumberTheory.ArithmeticFunctions
   ( Natural
@@ -20,6 +21,7 @@ module Math.NumberTheory.ArithmeticFunctions
   , unPrime
   , ArithmeticFunction(..)
   , runFunction
+  , runFunctionSieve
   , multiplicative
   , tau
   , sigma
@@ -31,10 +33,11 @@ module Math.NumberTheory.ArithmeticFunctions
   , additive
   , smallOmega
   , bigOmega
-  , mangoldt
+  , expMangoldt
   ) where
 
 import Control.Applicative
+import Control.Arrow
 import Data.Semigroup
 
 #if MIN_VERSION_base(4,8,0)
@@ -43,7 +46,7 @@ import Numeric.Natural
 import Data.Word
 #endif
 
-import Math.NumberTheory.Primes.Factorisation (factorise')
+import Math.NumberTheory.Primes.Factorisation as F (factorise')
 
 #if MIN_VERSION_base(4,8,0)
 #else
@@ -57,13 +60,18 @@ newtype Prime = Prime { unPrime :: Natural }
 data ArithmeticFunction a where
   ArithmeticFunction :: Monoid m => (Prime -> Word -> m) -> (m -> a) -> ArithmeticFunction a
 
+factorise :: Natural -> [(Prime, Word)]
+factorise = map (Prime . fromInteger *** fromIntegral) . filter (\(x, _) -> x /= 0 && x /= 1) . F.factorise' . toInteger
+
 runFunction :: ArithmeticFunction a -> Natural -> a
 runFunction (ArithmeticFunction f g)
   = g
   . mconcat
-  . map (\(p, k) -> f (Prime (fromInteger p)) (fromIntegral k))
-  . factorise'
-  . toInteger
+  . map (uncurry f)
+  . factorise
+
+runFunctionSieve :: ArithmeticFunction a -> Natural -> Natural -> [a]
+runFunctionSieve = undefined
 
 instance Functor ArithmeticFunction where
   fmap f (ArithmeticFunction g h) = ArithmeticFunction g (f . h)
@@ -95,6 +103,21 @@ instance Fractional a => Fractional (ArithmeticFunction a) where
   recip = fmap recip
   (/) = liftA2 (/)
 
+instance Floating a => Floating (ArithmeticFunction a) where
+  pi    = pure pi
+  exp   = fmap exp
+  log   = fmap log
+  sin   = fmap sin
+  cos   = fmap cos
+  asin  = fmap asin
+  acos  = fmap acos
+  atan  = fmap atan
+  sinh  = fmap sinh
+  cosh  = fmap cosh
+  asinh = fmap asinh
+  acosh = fmap acosh
+  atanh = fmap atanh
+
 multiplicative :: Num a => (Prime -> Word -> a) -> ArithmeticFunction a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
 
@@ -116,9 +139,9 @@ jordan a = multiplicative $ \(Prime p) k -> fromIntegral ((p ^ a - 1) * p ^ (a *
 moebius :: (Eq a, Num a) => ArithmeticFunction a
 moebius = ArithmeticFunction (const (Product0 . f)) getProduct0
   where
-    f 0 = 1
-    f 1 = (-1)
-    f _ = 0
+    f 0 =  1    -- impossible case
+    f 1 = -1
+    f _ =  0
 
 liouville :: Num a => ArithmeticFunction a
 liouville = multiplicative $ const ((-1) ^)
@@ -140,8 +163,8 @@ smallOmega = additive $ (\_ _ -> 1)
 bigOmega :: Num a => ArithmeticFunction a
 bigOmega = additive $ const (fromInteger . toInteger)
 
-mangoldt :: ArithmeticFunction Double
-mangoldt = ArithmeticFunction (\p _ -> Mangoldt (Just p)) (maybe 0 (log . fromIntegral . unPrime) . getMangoldt)
+expMangoldt :: Num a => ArithmeticFunction a
+expMangoldt = ArithmeticFunction (\(Prime p) _ -> MangoldtOne p) (fromIntegral . runMangoldt)
 
 newtype Product0 a = Product0 { getProduct0 :: a }
 
@@ -154,15 +177,24 @@ instance (Eq a, Num a) => Monoid (Product0 a) where
   mempty = Product0 1
   mappend = (<>)
 
-newtype Mangoldt a = Mangoldt { getMangoldt :: a }
+data Mangoldt a
+  = MangoldtZero
+  | MangoldtOne a
+  | MangoldtMany
 
-instance Semigroup (Mangoldt (Maybe a)) where
-  Mangoldt Nothing <> a = a
-  a <> Mangoldt Nothing = a
-  _ <> _ = Mangoldt Nothing
+runMangoldt :: Num a => Mangoldt a -> a
+runMangoldt = \case
+  MangoldtZero  -> 1
+  MangoldtOne a -> a
+  MangoldtMany  -> 1
 
-instance Monoid (Mangoldt (Maybe a)) where
-  mempty = Mangoldt Nothing
+instance Semigroup (Mangoldt a) where
+  MangoldtZero <> a = a
+  a <> MangoldtZero = a
+  _ <> _ = MangoldtMany
+
+instance Monoid (Mangoldt a) where
+  mempty = MangoldtZero
   mappend = (<>)
 
 newtype LCM a = LCM { getLCM :: a }
