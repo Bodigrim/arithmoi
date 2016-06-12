@@ -93,6 +93,9 @@ jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
 moebiusProperty1 :: Natural -> Bool
 moebiusProperty1 n = runFunction moebiusA n `elem` [-1, 0, 1]
 
+moebiusLazy :: Assertion
+moebiusLazy = assertEqual "moebius" 0 (runFunction moebiusA (2^2 * (2^100000-1) :: Natural))
+
 moebiusOeis :: Assertion
 moebiusOeis = oeisAssertion "A008683" moebiusA
   [ 1, -1, -1, 0, -1, 1, -1, 0, 0, 1, -1, 0, -1, 1, 1, 0, -1, 0, -1, 0, 1, 1, -1
@@ -183,6 +186,7 @@ testSuite = testGroup "ArithmeticFunctions"
   , testGroup "Moebius"
     [ testSmallAndQuick "moebius values" moebiusProperty1
     , testCase "OEIS" moebiusOeis
+    , testCase "Lazy" moebiusLazy
     ]
   , testGroup "Liouville"
     [ testSmallAndQuick "liouville values" liouvilleProperty1
