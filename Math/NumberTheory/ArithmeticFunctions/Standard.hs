@@ -15,17 +15,17 @@
 
 module Math.NumberTheory.ArithmeticFunctions.Standard
   ( multiplicative
-  , tau
-  , sigma
-  , totient
-  , jordan
-  , moebius
-  , liouville
-  , carmichael
+  , tau, tauA
+  , sigma, sigmaA
+  , totient, totientA
+  , jordan, jordanA
+  , moebius, moebiusA
+  , liouville, liouvilleA
+  , carmichael, carmichaelA
   , additive
-  , smallOmega
-  , bigOmega
-  , expMangoldt
+  , smallOmega, smallOmegaA
+  , bigOmega, bigOmegaA
+  , expMangoldt, expMangoldtA
   ) where
 
 import Data.Semigroup
@@ -41,31 +41,52 @@ import Data.Word
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
 
-tau :: Num a => ArithmeticFunction n a
-tau = multiplicative $ \_ k -> fromIntegral (k + 1)
+tau :: (UniqueFactorization n, Num a) => n -> a
+tau = runFunction tauA
 
-sigma :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
-sigma 0 = tau
-sigma a = multiplicative $ \((unPrime :: Prime n -> n) -> p) k -> (p ^ (a * (k + 1)) - 1) `div` (p ^ a - 1)
+tauA :: Num a => ArithmeticFunction n a
+tauA = multiplicative $ \_ k -> fromIntegral (k + 1)
 
-totient :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
-totient = jordan 1
+sigma :: (UniqueFactorization n, Integral n) => Word -> n -> n
+sigma = runFunction . sigmaA
 
-jordan :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
-jordan a = multiplicative $ \((unPrime :: Prime n -> n) -> p) k -> (p ^ a - 1) * p ^ (a * (k - 1))
+sigmaA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
+sigmaA 0 = tauA
+sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) k -> (p ^ (a * (k + 1)) - 1) `div` (p ^ a - 1)
 
-moebius :: (Eq a, Num a) => ArithmeticFunction n a
-moebius = ArithmeticFunction (const (Product0 . f)) getProduct0
+totient :: (UniqueFactorization n, Integral n) => n -> n
+totient = runFunction totientA
+
+totientA :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
+totientA = jordanA 1
+
+jordan :: (UniqueFactorization n, Integral n) => Word -> n -> n
+jordan = runFunction . jordanA
+
+jordanA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
+jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) k -> (p ^ a - 1) * p ^ (a * (k - 1))
+
+moebius :: (UniqueFactorization n, Eq a, Num a) => n -> a
+moebius = runFunction moebiusA
+
+moebiusA :: (Eq a, Num a) => ArithmeticFunction n a
+moebiusA = ArithmeticFunction (const (Product0 . f)) getProduct0
   where
     f 0 =  1    -- impossible case
     f 1 = -1
     f _ =  0
 
-liouville :: Num a => ArithmeticFunction n a
-liouville = multiplicative $ const ((-1) ^)
+liouville :: (UniqueFactorization n, Num a) => n -> a
+liouville = runFunction liouvilleA
 
-carmichael :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
-carmichael = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f p k) getLCM
+liouvilleA :: Num a => ArithmeticFunction n a
+liouvilleA = multiplicative $ const ((-1) ^)
+
+carmichael :: (UniqueFactorization n, Integral n) => n -> n
+carmichael = runFunction carmichaelA
+
+carmichaelA :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
+carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f p k) getLCM
   where
     f 2 1 = 1
     f 2 2 = 2
@@ -75,14 +96,23 @@ carmichael = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f 
 additive :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 additive f = ArithmeticFunction ((Sum .) . f) getSum
 
-smallOmega :: Num a => ArithmeticFunction n a
-smallOmega = additive (\_ _ -> 1)
+smallOmega :: (UniqueFactorization n, Num a) => n -> a
+smallOmega = runFunction smallOmegaA
 
-bigOmega :: ArithmeticFunction n Word
-bigOmega = additive $ const id
+smallOmegaA :: Num a => ArithmeticFunction n a
+smallOmegaA = additive (\_ _ -> 1)
 
-expMangoldt :: forall n. (UniqueFactorization n, Num n) => ArithmeticFunction n n
-expMangoldt = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
+bigOmega :: UniqueFactorization n => n -> Word
+bigOmega = runFunction bigOmegaA
+
+bigOmegaA :: ArithmeticFunction n Word
+bigOmegaA = additive $ const id
+
+expMangoldt :: (UniqueFactorization n, Num n) => n -> n
+expMangoldt = runFunction expMangoldtA
+
+expMangoldtA :: forall n. (UniqueFactorization n, Num n) => ArithmeticFunction n n
+expMangoldtA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
 
 newtype Product0 a = Product0 { getProduct0 :: a }
 
@@ -92,7 +122,7 @@ instance (Eq a, Num a) => Semigroup (Product0 a) where
   (Product0 a) <> (Product0 b) = Product0 $ a * b
 
 instance (Eq a, Num a) => Monoid (Product0 a) where
-  mempty = Product0 1
+  mempty  = Product0 1
   mappend = (<>)
 
 data Mangoldt a

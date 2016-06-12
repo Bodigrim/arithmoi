@@ -32,7 +32,7 @@ oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a]
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])
 
 tauOeis :: Assertion
-tauOeis = oeisAssertion "A000005" tau
+tauOeis = oeisAssertion "A000005" tauA
   [ 1, 2, 2, 3, 2, 4, 2, 4, 3, 4, 2, 6, 2, 4, 4, 5, 2, 6, 2, 6, 4, 4, 2, 8
   , 3, 4, 4, 6, 2, 8, 2, 6, 4, 4, 4, 9, 2, 4, 4, 8, 2, 8, 2, 6, 6, 4, 2, 10
   , 3, 6, 4, 6, 2, 8, 4, 8, 4, 4, 2, 12, 2, 4, 6, 7, 4, 8, 2, 6, 4, 8, 2
@@ -41,13 +41,13 @@ tauOeis = oeisAssertion "A000005" tau
   ]
 
 sigmaProperty1 :: Natural -> Bool
-sigmaProperty1 n = runFunction tau n == runFunction (sigma 0) n
+sigmaProperty1 n = runFunction tauA n == runFunction (sigmaA 0) n
 
 sigmaProperty2 :: Natural -> Bool
-sigmaProperty2 n = n <= 1 || runFunction (sigma 1) n > n
+sigmaProperty2 n = n <= 1 || runFunction (sigmaA 1) n > n
 
 sigma1Oeis :: Assertion
-sigma1Oeis = oeisAssertion "A000203" (sigma 1)
+sigma1Oeis = oeisAssertion "A000203" (sigmaA 1)
   [ 1, 3, 4, 7, 6, 12, 8, 15, 13, 18, 12, 28, 14, 24, 24, 31, 18, 39, 20
   , 42, 32, 36, 24, 60, 31, 42, 40, 56, 30, 72, 32, 63, 48, 54, 48, 91, 38
   , 60, 56, 90, 42, 96, 44, 84, 78, 72, 48, 124, 57, 93, 72, 98, 54, 120
@@ -55,7 +55,7 @@ sigma1Oeis = oeisAssertion "A000203" (sigma 1)
   ]
 
 sigma2Oeis :: Assertion
-sigma2Oeis = oeisAssertion "A001157" (sigma 2)
+sigma2Oeis = oeisAssertion "A001157" (sigmaA 2)
   [ 1, 5, 10, 21, 26, 50, 50, 85, 91, 130, 122, 210, 170, 250, 260, 341, 290
   , 455, 362, 546, 500, 610, 530, 850, 651, 850, 820, 1050, 842, 1300, 962
   , 1365, 1220, 1450, 1300, 1911, 1370, 1810, 1700, 2210, 1682, 2500, 1850
@@ -63,13 +63,13 @@ sigma2Oeis = oeisAssertion "A001157" (sigma 2)
   ]
 
 totientProperty1 :: Natural -> Bool
-totientProperty1 n = n <= 2 || even (runFunction totient n)
+totientProperty1 n = n <= 2 || even (runFunction totientA n)
 
 totientProperty2 :: Natural -> Bool
-totientProperty2 n = n <= 1 || runFunction totient n < n
+totientProperty2 n = n <= 1 || runFunction totientA n < n
 
 totientOeis :: Assertion
-totientOeis = oeisAssertion "A000010" totient
+totientOeis = oeisAssertion "A000010" totientA
   [ 1, 1, 2, 2, 4, 2, 6, 4, 6, 4, 10, 4, 12, 6, 8, 8, 16, 6, 18, 8, 12, 10
   , 22, 8, 20, 12, 18, 12, 28, 8, 30, 16, 20, 16, 24, 12, 36, 18, 24, 16, 40
   , 12, 42, 20, 24, 22, 46, 16, 42, 20, 32, 24, 52, 18, 40, 24, 36, 28, 58
@@ -77,13 +77,13 @@ totientOeis = oeisAssertion "A000010" totient
   ]
 
 jordanProperty1 :: Natural -> Bool
-jordanProperty1 n = n <= 1 || runFunction (jordan 0) n == 0
+jordanProperty1 n = n <= 1 || runFunction (jordanA 0) n == 0
 
 jordanProperty2 :: Natural -> Bool
-jordanProperty2 n = runFunction totient n == runFunction (jordan 1) n
+jordanProperty2 n = runFunction totientA n == runFunction (jordanA 1) n
 
 jordan2Oeis :: Assertion
-jordan2Oeis = oeisAssertion "A007434" (jordan 2)
+jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
   [ 1, 3, 8, 12, 24, 24, 48, 48, 72, 72, 120, 96, 168, 144, 192, 192, 288
   , 216, 360, 288, 384, 360, 528, 384, 600, 504, 648, 576, 840, 576, 960
   , 768, 960, 864, 1152, 864, 1368, 1080, 1344, 1152, 1680, 1152, 1848, 1440
@@ -91,10 +91,10 @@ jordan2Oeis = oeisAssertion "A007434" (jordan 2)
   ]
 
 moebiusProperty1 :: Natural -> Bool
-moebiusProperty1 n = runFunction moebius n `elem` [-1, 0, 1]
+moebiusProperty1 n = runFunction moebiusA n `elem` [-1, 0, 1]
 
 moebiusOeis :: Assertion
-moebiusOeis = oeisAssertion "A008683" moebius
+moebiusOeis = oeisAssertion "A008683" moebiusA
   [ 1, -1, -1, 0, -1, 1, -1, 0, 0, 1, -1, 0, -1, 1, 1, 0, -1, 0, -1, 0, 1, 1, -1
   , 0, 0, 1, 0, 0, -1, -1, -1, 0, 1, 1, 1, 0, -1, 1, 1, 0, -1, -1, -1, 0, 0, 1
   , -1, 0, 0, 0, 1, 0, -1, 0, 1, 0, 1, 1, -1, 0, -1, 1, 0, 0, 1, -1, -1, 0, 1
@@ -102,16 +102,16 @@ moebiusOeis = oeisAssertion "A008683" moebius
   ]
 
 liouvilleProperty1 :: Natural -> Bool
-liouvilleProperty1 n = runFunction liouville n `elem` [-1, 1]
+liouvilleProperty1 n = runFunction liouvilleA n `elem` [-1, 1]
 
 liouvilleProperty2 :: Natural -> Bool
 liouvilleProperty2 n = m == 0 || l == m
   where
-    l = runFunction liouville n
-    m = runFunction moebius   n
+    l = runFunction liouvilleA n
+    m = runFunction moebiusA   n
 
 liouvilleOeis :: Assertion
-liouvilleOeis = oeisAssertion "A008836" liouville
+liouvilleOeis = oeisAssertion "A008836" liouvilleA
   [ 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1
   , -1, 1, 1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, 1, 1, 1, -1, -1, -1, -1
   , -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1
@@ -120,10 +120,10 @@ liouvilleOeis = oeisAssertion "A008836" liouville
   ]
 
 carmichaelProperty1 :: Natural -> Bool
-carmichaelProperty1 n = runFunction totient n `mod` runFunction carmichael n == 0
+carmichaelProperty1 n = runFunction totientA n `mod` runFunction carmichaelA n == 0
 
 carmichaelOeis :: Assertion
-carmichaelOeis = oeisAssertion "A002322" carmichael
+carmichaelOeis = oeisAssertion "A002322" carmichaelA
   [ 1, 1, 2, 2, 4, 2, 6, 2, 6, 4, 10, 2, 12, 6, 4, 4, 16, 6, 18, 4, 6, 10, 22, 2
   , 20, 12, 18, 6, 28, 4, 30, 8, 10, 16, 12, 6, 36, 18, 12, 4, 40, 6, 42, 10, 12
   , 22, 46, 4, 42, 20, 16, 12, 52, 18, 20, 6, 18, 28, 58, 4, 60, 30, 6, 16, 12
@@ -131,10 +131,10 @@ carmichaelOeis = oeisAssertion "A002322" carmichael
   ]
 
 omegaProperty1 :: Natural -> Bool
-omegaProperty1 n = runFunction smallOmega n <= runFunction bigOmega n
+omegaProperty1 n = runFunction smallOmegaA n <= runFunction bigOmegaA n
 
 smallOmegaOeis :: Assertion
-smallOmegaOeis = oeisAssertion "A001221" smallOmega
+smallOmegaOeis = oeisAssertion "A001221" smallOmegaA
   [ 0, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 2, 2, 1, 1, 2, 1, 2, 2, 2, 1, 2, 1, 2
   , 1, 2, 1, 3, 1, 1, 2, 2, 2, 2, 1, 2, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 1, 2, 2, 2
   , 1, 2, 2, 2, 2, 2, 1, 3, 1, 2, 2, 1, 2, 3, 1, 2, 2, 3, 1, 2, 1, 2, 2, 2, 2, 3
@@ -143,7 +143,7 @@ smallOmegaOeis = oeisAssertion "A001221" smallOmega
   ]
 
 bigOmegaOeis :: Assertion
-bigOmegaOeis = oeisAssertion "A001222" bigOmega
+bigOmegaOeis = oeisAssertion "A001222" bigOmegaA
   [ 0, 1, 1, 2, 1, 2, 1, 3, 2, 2, 1, 3, 1, 2, 2, 4, 1, 3, 1, 3, 2, 2, 1, 4, 2, 2
   , 3, 3, 1, 3, 1, 5, 2, 2, 2, 4, 1, 2, 2, 4, 1, 3, 1, 3, 3, 2, 1, 5, 2, 3, 2, 3
   , 1, 4, 2, 4, 2, 2, 1, 4, 1, 2, 3, 6, 2, 3, 1, 3, 2, 3, 1, 5, 1, 2, 3, 3, 2, 3
@@ -152,7 +152,7 @@ bigOmegaOeis = oeisAssertion "A001222" bigOmega
   ]
 
 mangoldtOeis :: Assertion
-mangoldtOeis = oeisAssertion "A014963" expMangoldt
+mangoldtOeis = oeisAssertion "A014963" expMangoldtA
   [ 1, 2, 3, 2, 5, 1, 7, 2, 3, 1, 11, 1, 13, 1, 1, 2, 17, 1, 19, 1, 1, 1, 23, 1
   , 5, 1, 3, 1, 29, 1, 31, 2, 1, 1, 1, 1, 37, 1, 1, 1, 41, 1, 43, 1, 1, 1, 47, 1
   , 7, 1, 1, 1, 53, 1, 1, 1, 1, 1, 59, 1, 61, 1, 1, 2, 1, 1, 67, 1, 1, 1, 71, 1
