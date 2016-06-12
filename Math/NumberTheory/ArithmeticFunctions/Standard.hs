@@ -31,6 +31,8 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
 import Data.Coerce
 import Data.Semigroup
 
+import Unsafe.Coerce
+
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.UniqueFactorization
 
@@ -38,6 +40,10 @@ import Math.NumberTheory.UniqueFactorization
 #else
 import Data.Word
 #endif
+
+-- There are special rewrite rules for (^ Int), but not for (^ Word).
+unsafeCoerceWI :: Word -> Int
+unsafeCoerceWI = unsafeCoerce
 
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
@@ -54,12 +60,12 @@ sigma = runFunction . sigmaA
 sigmaA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper p
-sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ a)
+sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ unsafeCoerceWI a)
 
 sigmaHelper :: Integral n => n -> Word -> n
 sigmaHelper pa 1 = pa + 1
 sigmaHelper pa 2 = pa * pa + pa + 1
-sigmaHelper pa k = (pa ^ (k + 1) - 1) `div` (pa - 1)
+sigmaHelper pa k = (pa ^ unsafeCoerceWI (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
 totient :: (UniqueFactorization n, Integral n) => n -> n
@@ -74,12 +80,12 @@ jordan = runFunction . jordanA
 jordanA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
-jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ a)
+jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ unsafeCoerceWI a)
 
 jordanHelper :: Integral n => n -> Word -> n
 jordanHelper pa 1 = pa - 1
 jordanHelper pa 2 = (pa - 1) * pa
-jordanHelper pa k = (pa - 1) * pa ^ (k - 1)
+jordanHelper pa k = (pa - 1) * pa ^ unsafeCoerceWI (k - 1)
 {-# INLINE jordanHelper #-}
 
 moebius :: (UniqueFactorization n, Eq a, Num a) => n -> a
@@ -106,9 +112,9 @@ carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f
   where
     f 2 1 = 1
     f 2 2 = 2
-    f 2 k = 2 ^ (k - 2)
+    f 2 k = 2 ^ unsafeCoerceWI (k - 2)
     f p 1 = p - 1
-    f p k = (p - 1) * p ^ (k - 1)
+    f p k = (p - 1) * p ^ unsafeCoerceWI (k - 1)
 
 additive :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 additive f = ArithmeticFunction ((Sum .) . f) getSum
