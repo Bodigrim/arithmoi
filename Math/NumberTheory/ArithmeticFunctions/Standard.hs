@@ -106,6 +106,9 @@ liouvilleA = ArithmeticFunction (const $ Xor . odd) runXor
 
 carmichael :: (UniqueFactorization n, Integral n) => n -> n
 carmichael = runFunction carmichaelA
+{- The specializations reflects available specializations of lcm. -}
+{-# SPECIALIZE carmichael :: Int -> Int #-}
+{-# SPECIALIZE carmichael :: Integer -> Integer #-}
 
 carmichaelA :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
 carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f p k) getLCM
@@ -199,5 +202,5 @@ instance Semigroup Xor where
    (<>) = coerce ((/=) :: Bool -> Bool -> Bool)
 
 instance Monoid Xor where
-  mempty = Xor False
+  mempty  = Xor False
   mappend = (<>)
