@@ -28,6 +28,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , expMangoldt, expMangoldtA
   ) where
 
+import Data.Coerce
 import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
@@ -45,36 +46,51 @@ tau :: (UniqueFactorization n, Num a) => n -> a
 tau = runFunction tauA
 
 tauA :: Num a => ArithmeticFunction n a
-tauA = multiplicative $ \_ k -> fromIntegral (k + 1)
+tauA = multiplicative $ const (fromIntegral . succ)
 
 sigma :: (UniqueFactorization n, Integral n) => Word -> n -> n
 sigma = runFunction . sigmaA
 
 sigmaA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
 sigmaA 0 = tauA
-sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) k -> (p ^ (a * (k + 1)) - 1) `div` (p ^ a - 1)
+sigmaA 1 = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper p
+sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ a)
+
+sigmaHelper :: Integral n => n -> Word -> n
+sigmaHelper pa 1 = pa + 1
+sigmaHelper pa 2 = pa * pa + pa + 1
+sigmaHelper pa k = (pa ^ (k + 1) - 1) `div` (pa - 1)
+{-# INLINE sigmaHelper #-}
 
 totient :: (UniqueFactorization n, Integral n) => n -> n
 totient = runFunction totientA
 
 totientA :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
-totientA = jordanA 1
+totientA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper p
 
 jordan :: (UniqueFactorization n, Integral n) => Word -> n -> n
 jordan = runFunction . jordanA
 
 jordanA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
-jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) k -> (p ^ a - 1) * p ^ (a * (k - 1))
+jordanA 0 = multiplicative $ \_ _ -> 0
+jordanA 1 = totientA
+jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ a)
+
+jordanHelper :: Integral n => n -> Word -> n
+jordanHelper pa 1 = pa - 1
+jordanHelper pa 2 = (pa - 1) * pa
+jordanHelper pa k = (pa - 1) * pa ^ (k - 1)
+{-# INLINE jordanHelper #-}
 
 moebius :: (UniqueFactorization n, Eq a, Num a) => n -> a
 moebius = runFunction moebiusA
 
 moebiusA :: (Eq a, Num a) => ArithmeticFunction n a
-moebiusA = ArithmeticFunction (const (Product0 . f)) getProduct0
+moebiusA = ArithmeticFunction (const f) runMoebius
   where
-    f 0 =  1    -- impossible case
-    f 1 = -1
-    f _ =  0
+    f 1 = MoebiusN
+    f 0 = MoebiusP
+    f _ = MoebiusZ
 
 liouville :: (UniqueFactorization n, Num a) => n -> a
 liouville = runFunction liouvilleA
@@ -91,6 +107,7 @@ carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f
     f 2 1 = 1
     f 2 2 = 2
     f 2 k = 2 ^ (k - 2)
+    f p 1 = p - 1
     f p k = (p - 1) * p ^ (k - 1)
 
 additive :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
@@ -114,15 +131,26 @@ expMangoldt = runFunction expMangoldtA
 expMangoldtA :: forall n. (UniqueFactorization n, Num n) => ArithmeticFunction n n
 expMangoldtA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
 
-newtype Product0 a = Product0 { getProduct0 :: a }
+data Moebius
+  = MoebiusZ
+  | MoebiusP
+  | MoebiusN
 
-instance (Eq a, Num a) => Semigroup (Product0 a) where
-  (Product0 0) <> _            = Product0 0
-  _            <> (Product0 0) = Product0 0
-  (Product0 a) <> (Product0 b) = Product0 $ a * b
+runMoebius :: Num a => Moebius -> a
+runMoebius m = case m of
+  MoebiusZ ->  0
+  MoebiusP ->  1
+  MoebiusN -> -1
 
-instance (Eq a, Num a) => Monoid (Product0 a) where
-  mempty  = Product0 1
+instance Semigroup Moebius where
+  MoebiusZ <> _ = MoebiusZ
+  _ <> MoebiusZ = MoebiusZ
+  MoebiusP <> a = a
+  a <> MoebiusP = a
+  _ <> _ = MoebiusP
+
+instance Monoid Moebius where
+  mempty = MoebiusP
   mappend = (<>)
 
 data Mangoldt a
@@ -148,7 +176,7 @@ instance Monoid (Mangoldt a) where
 newtype LCM a = LCM { getLCM :: a }
 
 instance Integral a => Semigroup (LCM a) where
-  (LCM a) <> (LCM b) = LCM $ a `lcm` b
+  (<>) = coerce (lcm :: a -> a -> a)
 
 instance Integral a => Monoid (LCM a) where
   mempty  = LCM 1
