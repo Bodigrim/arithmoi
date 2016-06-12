@@ -17,7 +17,12 @@ module Math.NumberTheory.UniqueFactorization
   , UniqueFactorization(..)
   ) where
 
-import Control.Arrow
+import Data.Coerce
+
+{- Coercions below relies on the fact that runtime representations
+   of small non-negative Int, Word, Integer and Natural coincides.
+-}
+import Unsafe.Coerce
 
 #if MIN_VERSION_base(4,8,0)
 #else
@@ -33,10 +38,10 @@ import Numeric.Natural
 type Natural = Integer
 #endif
 
-newtype SmallPrime = SmallPrime { unSmallPrime :: Word }
+newtype SmallPrime = SmallPrime { _unSmallPrime :: Word }
   deriving (Eq, Ord, Show)
 
-newtype BigPrime = BigPrime { unBigPrime :: Natural }
+newtype BigPrime = BigPrime { _unBigPrime :: Natural }
   deriving (Eq, Ord, Show)
 
 type family Prime (f :: *) :: *
@@ -54,27 +59,31 @@ class UniqueFactorization a where
   factorise :: a -> [(Prime a, Word)]
 
 instance UniqueFactorization Int where
-  unPrime = fromIntegral . unSmallPrime
-  factorise = factoriseGeneric (SmallPrime . fromIntegral)
+  unPrime = unsafeCoerce
+  factorise = factoriseGeneric
 
 instance UniqueFactorization Word where
-  unPrime   = unSmallPrime
-  factorise = factoriseGeneric (SmallPrime . fromIntegral)
+  unPrime   = coerce
+  factorise = factoriseGeneric
 
 instance UniqueFactorization Integer where
-  unPrime   = toInteger . unBigPrime
-  factorise = factoriseGeneric (BigPrime . fromInteger)
+  unPrime   = unsafeCoerce
+  factorise = factoriseGeneric
 
 #if MIN_VERSION_base(4,8,0)
 instance UniqueFactorization Natural where
-  unPrime   = unBigPrime
-  factorise = factoriseGeneric (BigPrime . fromInteger)
+  unPrime   = coerce
+  factorise = factoriseGeneric
 #endif
 
-factoriseGeneric :: Integral a => (Integer -> Prime a) -> a -> [(Prime a, Word)]
-factoriseGeneric _ 0 = []
-factoriseGeneric f n = map (f *** fromIntegral) . filter (\(x, _) -> x /= 0 && x /= 1 && x /= -1) . F.factorise' . toInteger $ n
+factoriseGeneric :: Integral a => a -> [(Prime a, Word)]
+factoriseGeneric
+  = (\m -> if m <= 1
+            then []
+            else unsafeCoerce . F.factorise' . unsafeCoerce $ m
+    )
+  . abs
 
 instance UniqueFactorization G.GaussianInteger where
-  unPrime = id
-  factorise = map (id *** fromIntegral) . G.factorise
+  unPrime   = id
+  factorise = unsafeCoerce . G.factorise
