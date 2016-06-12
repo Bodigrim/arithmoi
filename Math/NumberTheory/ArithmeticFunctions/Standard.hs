@@ -96,7 +96,7 @@ liouville :: (UniqueFactorization n, Num a) => n -> a
 liouville = runFunction liouvilleA
 
 liouvilleA :: Num a => ArithmeticFunction n a
-liouvilleA = multiplicative $ const ((-1) ^)
+liouvilleA = ArithmeticFunction (const $ Xor . odd) runXor
 
 carmichael :: (UniqueFactorization n, Integral n) => n -> n
 carmichael = runFunction carmichaelA
@@ -180,4 +180,18 @@ instance Integral a => Semigroup (LCM a) where
 
 instance Integral a => Monoid (LCM a) where
   mempty  = LCM 1
+  mappend = (<>)
+
+newtype Xor = Xor { _getXor :: Bool }
+
+runXor :: Num a => Xor -> a
+runXor m = case m of
+  Xor False ->  1
+  Xor True  -> -1
+
+instance Semigroup Xor where
+   (<>) = coerce ((/=) :: Bool -> Bool -> Bool)
+
+instance Monoid Xor where
+  mempty = Xor False
   mappend = (<>)
