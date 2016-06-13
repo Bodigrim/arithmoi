@@ -103,8 +103,9 @@ source-repository head
 
 benchmark criterion
   build-depends:    base
-                    ,arithmoi
-                    ,criterion
+                    , arithmoi
+                    , criterion
+                    , containers
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0

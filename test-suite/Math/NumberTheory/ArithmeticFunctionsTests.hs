@@ -27,6 +27,15 @@ import Numeric.Natural
 oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a] -> Assertion
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])
 
+divisorsProperty1 :: Natural -> Bool
+divisorsProperty1 n = length (runFunction divisorsA n) == runFunction tauA n
+
+divisorsProperty2 :: Natural -> Bool
+divisorsProperty2 n = sum (runFunction divisorsA n) == runFunction (sigmaA 1) n
+
+divisorsProperty3 :: Natural -> Bool
+divisorsProperty3 n = all (\d -> n `mod` d == 0) (runFunction divisorsA n)
+
 tauOeis :: Assertion
 tauOeis = oeisAssertion "A000005" tauA
   [ 1, 2, 2, 3, 2, 4, 2, 4, 3, 4, 2, 6, 2, 4, 4, 5, 2, 6, 2, 6, 4, 4, 2, 8
@@ -160,7 +169,12 @@ mangoldtOeis = oeisAssertion "A014963" expMangoldtA
 
 testSuite :: TestTree
 testSuite = testGroup "ArithmeticFunctions"
-  [ testGroup "Tau"
+  [ testGroup "Divisors"
+    [ testSmallAndQuick "length . divisors = tau" divisorsProperty1
+    , testSmallAndQuick "sum . divisors = sigma_1" divisorsProperty2
+    , testSmallAndQuick "matches definition" divisorsProperty3
+    ]
+  , testGroup "Tau"
     [ testCase "OEIS" tauOeis
     ]
   , testGroup "Sigma"

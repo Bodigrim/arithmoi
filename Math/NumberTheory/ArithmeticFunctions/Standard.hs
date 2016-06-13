@@ -15,6 +15,7 @@
 
 module Math.NumberTheory.ArithmeticFunctions.Standard
   ( multiplicative
+  , divisors, divisorsA
   , tau, tauA
   , sigma, sigmaA
   , totient, totientA
@@ -28,6 +29,8 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , expMangoldt, expMangoldtA
   ) where
 
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Semigroup
 
 import Unsafe.Coerce
@@ -53,6 +56,19 @@ unsafeCoerceWI = unsafeCoerce
 
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
+
+divisors :: (UniqueFactorization n, Num n, Ord n) => n -> Set n
+divisors = runFunction divisorsA
+{-# SPECIALIZE divisors :: Integer -> Set Integer #-}
+
+divisorsA :: forall n. (UniqueFactorization n, Num n, Ord n) => ArithmeticFunction n (Set n)
+divisorsA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> SetProduct $ divisorsHelper p k) (S.insert 1 . getSetProduct)
+
+divisorsHelper :: Num n => n -> Word -> Set n
+divisorsHelper _ 0 = S.empty
+divisorsHelper p 1 = S.singleton p
+divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. unsafeCoerceWI a]
+{-# INLINE divisorsHelper #-}
 
 tau :: (UniqueFactorization n, Num a) => n -> a
 tau = runFunction tauA
@@ -209,4 +225,13 @@ instance Semigroup Xor where
 
 instance Monoid Xor where
   mempty  = Xor False
+  mappend = (<>)
+
+newtype SetProduct a = SetProduct { getSetProduct :: Set a }
+
+instance (Num a, Ord a) => Semigroup (SetProduct a) where
+  SetProduct s1 <> SetProduct s2 = SetProduct $ s1 <> s2 <> foldMap (\n -> S.mapMonotonic (* n) s2) s1
+
+instance (Num a, Ord a) => Monoid (SetProduct a) where
+  mempty  = SetProduct mempty
   mappend = (<>)
