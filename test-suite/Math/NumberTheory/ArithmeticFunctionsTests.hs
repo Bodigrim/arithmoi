@@ -22,11 +22,7 @@ import Test.Tasty.HUnit
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.TestUtils
 
-#if MIN_VERSION_base(4,8,0)
 import Numeric.Natural
-#else
-type Natural = Integer
-#endif
 
 oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a] -> Assertion
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])

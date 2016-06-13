@@ -32,11 +32,7 @@ import Data.Word
 import Math.NumberTheory.Primes.Factorisation as F (factorise')
 import Math.NumberTheory.GaussianIntegers as G
 
-#if MIN_VERSION_base(4,8,0)
 import Numeric.Natural
-#else
-type Natural = Integer
-#endif
 
 newtype SmallPrime = SmallPrime { _unSmallPrime :: Word }
   deriving (Eq, Ord, Show)
@@ -49,9 +45,8 @@ type family Prime (f :: *) :: *
 type instance Prime Int     = SmallPrime
 type instance Prime Word    = SmallPrime
 type instance Prime Integer = BigPrime
-#if MIN_VERSION_base(4,8,0)
 type instance Prime Natural = BigPrime
-#endif
+
 type instance Prime G.GaussianInteger = G.GaussianInteger
 
 class UniqueFactorization a where
