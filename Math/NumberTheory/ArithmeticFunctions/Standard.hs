@@ -28,7 +28,6 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , expMangoldt, expMangoldtA
   ) where
 
-import Data.Coerce
 import Data.Semigroup
 
 import Unsafe.Coerce
@@ -39,6 +38,13 @@ import Math.NumberTheory.UniqueFactorization
 #if MIN_VERSION_base(4,8,0)
 #else
 import Data.Word
+#endif
+
+#if MIN_VERSION_base(4,7,0)
+import Data.Coerce
+#else
+coerce :: a -> b
+coerce = unsafeCoerce
 #endif
 
 -- There are special rewrite rules for (^ Int), but not for (^ Word).
@@ -91,7 +97,7 @@ jordanHelper pa k = (pa - 1) * pa ^ unsafeCoerceWI (k - 1)
 moebius :: (UniqueFactorization n, Eq a, Num a) => n -> a
 moebius = runFunction moebiusA
 
-moebiusA :: (Eq a, Num a) => ArithmeticFunction n a
+moebiusA :: Num a => ArithmeticFunction n a
 moebiusA = ArithmeticFunction (const f) runMoebius
   where
     f 1 = MoebiusN
