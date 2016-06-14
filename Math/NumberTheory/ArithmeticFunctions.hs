@@ -7,6 +7,7 @@
 -- Portability: Non-portable (GHC extensions)
 --
 -- This module provides an interface for defining and manipulating
+-- arithmetic functions. It also defines several most widespreaded
 -- arithmetic functions.
 --
 

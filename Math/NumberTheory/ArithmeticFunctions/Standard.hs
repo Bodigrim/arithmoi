@@ -14,8 +14,11 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ViewPatterns        #-}
 
+{-# OPTIONS_HADDOCK hide #-}
+
 module Math.NumberTheory.ArithmeticFunctions.Standard
-  ( multiplicative
+  ( -- * Multiplicative functions
+    multiplicative
   , divisors, divisorsA
   , divisorsSmall, divisorsSmallA
   , tau, tauA
@@ -24,10 +27,12 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , jordan, jordanA
   , moebius, moebiusA
   , liouville, liouvilleA
-  , carmichael, carmichaelA
+    -- * Additive functions
   , additive
   , smallOmega, smallOmegaA
   , bigOmega, bigOmegaA
+    -- * Misc
+  , carmichael, carmichaelA
   , expMangoldt, expMangoldtA
   ) where
 
@@ -40,7 +45,7 @@ import Data.Semigroup
 import Unsafe.Coerce
 
 import Math.NumberTheory.ArithmeticFunctions.Class
-import Math.NumberTheory.UniqueFactorization
+import Math.NumberTheory.UniqueFactorisation
 
 #if MIN_VERSION_base(4,8,0)
 #else
@@ -56,81 +61,95 @@ coerce = unsafeCoerce
 #endif
 
 -- There are special rewrite rules for (^ Int), but not for (^ Word).
-unsafeCoerceWI :: Word -> Int
-unsafeCoerceWI = unsafeCoerce
+wordToInt :: Word -> Int
+wordToInt = unsafeCoerce
 
+-- | Create a multiplicative function from the function on prime's powers. See examples below.
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
 
-divisors :: (UniqueFactorization n, Num n, Ord n) => n -> Set n
+divisors :: (UniqueFactorisation n, Num n, Ord n) => n -> Set n
 divisors = runFunction divisorsA
 {-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
-divisorsA :: forall n. (UniqueFactorization n, Num n, Ord n) => ArithmeticFunction n (Set n)
+-- | The set of all (positive) divisors of an argument.
+divisorsA :: forall n. (UniqueFactorisation n, Num n, Ord n) => ArithmeticFunction n (Set n)
 divisorsA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> SetProduct $ divisorsHelper p k) (S.insert 1 . getSetProduct)
 
 divisorsHelper :: Num n => n -> Word -> Set n
 divisorsHelper _ 0 = S.empty
 divisorsHelper p 1 = S.singleton p
-divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. unsafeCoerceWI a]
+divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelper #-}
 
-divisorsSmall :: (UniqueFactorization n, Prime n ~ Prime Int) => n -> IntSet
+divisorsSmall :: (UniqueFactorisation n, Prime n ~ Prime Int) => n -> IntSet
 divisorsSmall = runFunction divisorsSmallA
 {-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
+-- | Same as 'divisors', but with better performance on cost of type restriction.
 divisorsSmallA :: forall n. (Prime n ~ Prime Int) => ArithmeticFunction n IntSet
 divisorsSmallA = ArithmeticFunction (\p k -> IntSetProduct $ divisorsHelperSmall (unsafeCoerce p) k) (IS.insert 1 . getIntSetProduct)
 
 divisorsHelperSmall :: Int -> Word -> IntSet
 divisorsHelperSmall _ 0 = IS.empty
 divisorsHelperSmall p 1 = IS.singleton p
-divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. unsafeCoerceWI a]
+divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelperSmall #-}
 
-tau :: (UniqueFactorization n, Num a) => n -> a
+tau :: (UniqueFactorisation n, Num a) => n -> a
 tau = runFunction tauA
 
+-- | The number of (positive) divisors of an argument.
+--
+-- > tauA = multiplicative (\_ k -> k + 1)
 tauA :: Num a => ArithmeticFunction n a
 tauA = multiplicative $ const (fromIntegral . succ)
 
-sigma :: (UniqueFactorization n, Integral n) => Word -> n -> n
+sigma :: (UniqueFactorisation n, Integral n) => Word -> n -> n
 sigma = runFunction . sigmaA
 
-sigmaA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
+-- | The sum of (positive) divisors of an argument.
+--
+-- > sigmaA = multiplicative (\p k -> sum $ map (p ^) [0..k])
+sigmaA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper p
-sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ unsafeCoerceWI a)
+sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ wordToInt a)
 
 sigmaHelper :: Integral n => n -> Word -> n
 sigmaHelper pa 1 = pa + 1
 sigmaHelper pa 2 = pa * pa + pa + 1
-sigmaHelper pa k = (pa ^ unsafeCoerceWI (k + 1) - 1) `quot` (pa - 1)
+sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
-totient :: (UniqueFactorization n, Integral n) => n -> n
+totient :: (UniqueFactorisation n, Integral n) => n -> n
 totient = runFunction totientA
 
-totientA :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
+-- | Calculates the totient of a positive number @n@, i.e.
+--   the number of @k@ with @1 <= k <= n@ and @'gcd' n k == 1@,
+--   in other words, the order of the group of units in @&#8484;/(n)@.
+totientA :: forall n. (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
 totientA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper p
 
-jordan :: (UniqueFactorization n, Integral n) => Word -> n -> n
+jordan :: (UniqueFactorisation n, Integral n) => Word -> n -> n
 jordan = runFunction . jordanA
 
-jordanA :: forall n. (UniqueFactorization n, Integral n) => Word -> ArithmeticFunction n n
+-- | Calculates the k-th Jordan function of an argument.
+jordanA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
-jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ unsafeCoerceWI a)
+jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ wordToInt a)
 
 jordanHelper :: Integral n => n -> Word -> n
 jordanHelper pa 1 = pa - 1
 jordanHelper pa 2 = (pa - 1) * pa
-jordanHelper pa k = (pa - 1) * pa ^ unsafeCoerceWI (k - 1)
+jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
 
-moebius :: (UniqueFactorization n, Num a) => n -> a
+moebius :: (UniqueFactorisation n, Num a) => n -> a
 moebius = runFunction moebiusA
 
+-- | Calculates the Moebius function of an argument.
 moebiusA :: Num a => ArithmeticFunction n a
 moebiusA = ArithmeticFunction (const f) runMoebius
   where
@@ -138,46 +157,57 @@ moebiusA = ArithmeticFunction (const f) runMoebius
     f 0 = MoebiusP
     f _ = MoebiusZ
 
-liouville :: (UniqueFactorization n, Num a) => n -> a
+liouville :: (UniqueFactorisation n, Num a) => n -> a
 liouville = runFunction liouvilleA
 
+-- | Calculates the Liouville function of an argument.
 liouvilleA :: Num a => ArithmeticFunction n a
 liouvilleA = ArithmeticFunction (const $ Xor . odd) runXor
 
-carmichael :: (UniqueFactorization n, Integral n) => n -> n
+carmichael :: (UniqueFactorisation n, Integral n) => n -> n
 carmichael = runFunction carmichaelA
 {- The specializations reflects available specializations of lcm. -}
 {-# SPECIALIZE carmichael :: Int -> Int #-}
 {-# SPECIALIZE carmichael :: Integer -> Integer #-}
 
-carmichaelA :: forall n. (UniqueFactorization n, Integral n) => ArithmeticFunction n n
+-- | Calculates the Carmichael function for a positive integer, that is,
+--   the (smallest) exponent of the group of units in @&#8484;/(n)@.
+carmichaelA :: forall n. (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
 carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f p k) getLCM
   where
     f 2 1 = 1
     f 2 2 = 2
-    f 2 k = 2 ^ unsafeCoerceWI (k - 2)
+    f 2 k = 2 ^ wordToInt (k - 2)
     f p 1 = p - 1
-    f p k = (p - 1) * p ^ unsafeCoerceWI (k - 1)
+    f p k = (p - 1) * p ^ wordToInt (k - 1)
 
+-- | Create an additive function from the function on prime's powers. See examples below.
 additive :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 additive f = ArithmeticFunction ((Sum .) . f) getSum
 
-smallOmega :: (UniqueFactorization n, Num a) => n -> a
+smallOmega :: (UniqueFactorisation n, Num a) => n -> a
 smallOmega = runFunction smallOmegaA
 
+-- | Number of distinct prime factors.
+--
+-- > smallOmegaA = additive (\_ _ -> 1)
 smallOmegaA :: Num a => ArithmeticFunction n a
 smallOmegaA = additive (\_ _ -> 1)
 
-bigOmega :: UniqueFactorization n => n -> Word
+bigOmega :: UniqueFactorisation n => n -> Word
 bigOmega = runFunction bigOmegaA
 
+-- | Number of prime factors, counted with multiplicity.
+--
+-- > bigOmegaA = additive (\_ k -> k)
 bigOmegaA :: ArithmeticFunction n Word
 bigOmegaA = additive $ const id
 
-expMangoldt :: (UniqueFactorization n, Num n) => n -> n
+expMangoldt :: (UniqueFactorisation n, Num n) => n -> n
 expMangoldt = runFunction expMangoldtA
 
-expMangoldtA :: forall n. (UniqueFactorization n, Num n) => ArithmeticFunction n n
+-- | The exponent of von Mangoldt function. Use @log expMangoldtA@ to recover von Mangoldt function itself.
+expMangoldtA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
 expMangoldtA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
 
 data Moebius

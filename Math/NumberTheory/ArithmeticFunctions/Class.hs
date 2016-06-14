@@ -7,11 +7,13 @@
 -- Portability: Non-portable (GHC extensions)
 --
 -- Generic type for arithmetic functions over arbitrary unique
--- factorization domains.
+-- factorisation domains.
 --
 
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
+
+{-# OPTIONS_HADDOCK hide #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Class
   ( ArithmeticFunction(..)
@@ -26,12 +28,26 @@ import Data.Semigroup
 import Data.Word
 #endif
 
-import Math.NumberTheory.UniqueFactorization
+import Math.NumberTheory.UniqueFactorisation
 
+-- | A typical arithmetic function operates on the canonical factorisation of
+-- a number into prime's powers and consists of two rules. The first one
+-- determines the values of the function on the powers of primes. The second
+-- one determines how to combine these values into final result.
+--
+-- In the following definition the first argument is the function on prime's
+-- powers, the monoid instance determines a rule of combination (typically
+-- 'Product' or 'Sum'), and the second argument is convenient for unwrapping
+-- (typically, 'getProduct' or 'getSum').
 data ArithmeticFunction n a where
-  ArithmeticFunction :: Monoid m => (Prime n -> Word -> m) -> (m -> a) -> ArithmeticFunction n a
+  ArithmeticFunction
+    :: Monoid m
+    => (Prime n -> Word -> m)
+    -> (m -> a)
+    -> ArithmeticFunction n a
 
-runFunction :: UniqueFactorization n => ArithmeticFunction n a -> n -> a
+-- | Convert to function. The value on 0 is undefined.
+runFunction :: UniqueFactorisation n => ArithmeticFunction n a -> n -> a
 runFunction (ArithmeticFunction f g)
   = g
   . mconcat
@@ -54,6 +70,8 @@ instance Monoid a => Monoid (ArithmeticFunction n a) where
   mempty  = pure mempty
   mappend = liftA2 mappend
 
+-- | Factorisation is expensive, so it is better to avoid doing it twice.
+-- Write 'runFunction (f + g) n' instead of 'runFunction f n + runFunction g n'.
 instance Num a => Num (ArithmeticFunction n a) where
   fromInteger = pure . fromInteger
   negate = fmap negate

@@ -1,20 +1,20 @@
 -- |
--- Module:      Math.NumberTheory.UniqueFactorization
+-- Module:      Math.NumberTheory.UniqueFactorisation
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- An abstract type class for unique factorization domains.
+-- An abstract type class for unique factorisation domains.
 --
 
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Math.NumberTheory.UniqueFactorization
+module Math.NumberTheory.UniqueFactorisation
   ( Prime
-  , UniqueFactorization(..)
+  , UniqueFactorisation(..)
   ) where
 
 {- Coercions below relies on the fact that runtime representations
@@ -45,6 +45,12 @@ newtype SmallPrime = SmallPrime { _unSmallPrime :: Word }
 newtype BigPrime = BigPrime { _unBigPrime :: Natural }
   deriving (Eq, Ord, Show)
 
+-- | Type of primes of a given unique factorisation domain.
+-- When the domain has exactly one unit, @Prime t = t@,
+-- but when units are multiple more restricted types
+-- (or at least newtypes) should be specified.
+--
+-- @abs n == n@ must hold for all values of @Prime t@
 type family Prime (f :: *) :: *
 
 type instance Prime Int     = SmallPrime
@@ -54,23 +60,28 @@ type instance Prime Natural = BigPrime
 
 type instance Prime G.GaussianInteger = G.GaussianInteger
 
-class UniqueFactorization a where
+-- | The following invariant must hold for @n /= 0@:
+--
+-- > n == signum n * product (map (\(p, k) -> unPrime p ^ k) (factorise n))
+--
+-- The result of 'factorise' should not contain zero powers and should not change after multiplication of the argument by domain's unit.
+class UniqueFactorisation a where
   unPrime   :: Prime a -> a
   factorise :: a -> [(Prime a, Word)]
 
-instance UniqueFactorization Int where
+instance UniqueFactorisation Int where
   unPrime = unsafeCoerce
   factorise = factoriseGeneric
 
-instance UniqueFactorization Word where
+instance UniqueFactorisation Word where
   unPrime   = coerce
   factorise = factoriseGeneric
 
-instance UniqueFactorization Integer where
+instance UniqueFactorisation Integer where
   unPrime   = unsafeCoerce
   factorise = factoriseGeneric
 
-instance UniqueFactorization Natural where
+instance UniqueFactorisation Natural where
   unPrime   = coerce
   factorise = factoriseGeneric
 
@@ -82,6 +93,6 @@ factoriseGeneric
     )
   . abs
 
-instance UniqueFactorization G.GaussianInteger where
+instance UniqueFactorisation G.GaussianInteger where
   unPrime   = id
   factorise = unsafeCoerce . G.factorise
