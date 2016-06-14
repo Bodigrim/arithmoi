@@ -23,6 +23,7 @@ import qualified Data.Set as S
 import qualified Data.IntSet as IS
 
 import Math.NumberTheory.ArithmeticFunctions
+import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.TestUtils
 
 import Numeric.Natural
@@ -78,6 +79,14 @@ totientProperty1 n = n <= 2 || even (runFunction totientA n)
 
 totientProperty2 :: Natural -> Bool
 totientProperty2 n = n <= 1 || runFunction totientA n < n
+
+totientSieve100 :: TotientSieve
+totientSieve100 = totientSieve 100
+
+totientProperty3 :: Natural -> Bool
+totientProperty3 n = n < 1
+  || fromIntegral (runFunction totientA n)
+    == sieveTotient totientSieve100 (fromIntegral n)
 
 totientOeis :: Assertion
 totientOeis = oeisAssertion "A000010" totientA
@@ -136,6 +145,14 @@ liouvilleOeis = oeisAssertion "A008836" liouvilleA
 carmichaelProperty1 :: Natural -> Bool
 carmichaelProperty1 n = runFunction totientA n `mod` runFunction carmichaelA n == 0
 
+carmichaelSieve100 :: CarmichaelSieve
+carmichaelSieve100 = carmichaelSieve 100
+
+carmichaelProperty2 :: Natural -> Bool
+carmichaelProperty2 n = n < 1
+  || fromIntegral (runFunction carmichaelA n)
+    == sieveCarmichael carmichaelSieve100 (fromIntegral n)
+
 carmichaelOeis :: Assertion
 carmichaelOeis = oeisAssertion "A002322" carmichaelA
   [ 1, 1, 2, 2, 4, 2, 6, 2, 6, 4, 10, 2, 12, 6, 4, 4, 16, 6, 18, 4, 6, 10, 22, 2
@@ -193,6 +210,7 @@ testSuite = testGroup "ArithmeticFunctions"
   , testGroup "Totient"
     [ testSmallAndQuick "totient is even" totientProperty1
     , testSmallAndQuick "totient n < n" totientProperty2
+    , testSmallAndQuick "matches sieveTotient" totientProperty3
     , testCase "OEIS" totientOeis
     ]
   , testGroup "Jordan"
@@ -212,6 +230,7 @@ testSuite = testGroup "ArithmeticFunctions"
     ]
   , testGroup "Carmichael"
     [ testSmallAndQuick "carmichael divides totient" carmichaelProperty1
+    , testSmallAndQuick "matches sieveCarmichael" carmichaelProperty2
     , testCase "OEIS" carmichaelOeis
     ]
   , testGroup "Omegas"
