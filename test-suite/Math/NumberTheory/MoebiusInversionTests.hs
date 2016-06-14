@@ -19,7 +19,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC hiding (Positive)
 
 import Math.NumberTheory.MoebiusInversion
-import Math.NumberTheory.Primes.Factorisation
+import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.TestUtils
 
 totientSumProperty :: Positive Int -> Bool
