@@ -11,11 +11,13 @@
 
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ViewPatterns        #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Standard
   ( multiplicative
   , divisors, divisorsA
+  , divisorsSmall, divisorsSmallA
   , tau, tauA
   , sigma, sigmaA
   , totient, totientA
@@ -29,6 +31,8 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , expMangoldt, expMangoldtA
   ) where
 
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IS
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Semigroup
@@ -69,6 +73,19 @@ divisorsHelper _ 0 = S.empty
 divisorsHelper p 1 = S.singleton p
 divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. unsafeCoerceWI a]
 {-# INLINE divisorsHelper #-}
+
+divisorsSmall :: (UniqueFactorization n, Prime n ~ Prime Int) => n -> IntSet
+divisorsSmall = runFunction divisorsSmallA
+{-# SPECIALIZE divisors :: Integer -> Set Integer #-}
+
+divisorsSmallA :: forall n. (UniqueFactorization n, Prime n ~ Prime Int) => ArithmeticFunction n IntSet
+divisorsSmallA = ArithmeticFunction (\p k -> IntSetProduct $ divisorsHelperSmall (unsafeCoerce p) k) (IS.insert 1 . getIntSetProduct)
+
+divisorsHelperSmall :: Int -> Word -> IntSet
+divisorsHelperSmall _ 0 = IS.empty
+divisorsHelperSmall p 1 = IS.singleton p
+divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. unsafeCoerceWI a]
+{-# INLINE divisorsHelperSmall #-}
 
 tau :: (UniqueFactorization n, Num a) => n -> a
 tau = runFunction tauA
@@ -234,4 +251,13 @@ instance (Num a, Ord a) => Semigroup (SetProduct a) where
 
 instance (Num a, Ord a) => Monoid (SetProduct a) where
   mempty  = SetProduct mempty
+  mappend = (<>)
+
+newtype IntSetProduct = IntSetProduct { getIntSetProduct :: IntSet }
+
+instance Semigroup IntSetProduct where
+  IntSetProduct s1 <> IntSetProduct s2 = IntSetProduct $ IS.unions $ s1 : s2 : map (\n -> IS.map (* n) s2) (IS.toAscList s1)
+
+instance Monoid IntSetProduct where
+  mempty  = IntSetProduct mempty
   mappend = (<>)

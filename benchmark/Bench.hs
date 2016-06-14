@@ -20,6 +20,7 @@ compareSetFunctions name old new = bgroup name
 
 main = defaultMain
   [ compareSetFunctions "divisors" F.divisors A.divisors
+  , bench "divisors/int" $ nf (map A.divisorsSmall) [1 :: Int .. 100000]
   , compareFunctions "totient" F.totient A.totient
   , compareFunctions "carmichael" F.carmichael A.carmichael
   , compareFunctions "moebius" F.moebius A.moebius

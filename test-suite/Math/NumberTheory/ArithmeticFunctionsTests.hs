@@ -19,6 +19,9 @@ module Math.NumberTheory.ArithmeticFunctionsTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Set as S
+import qualified Data.IntSet as IS
+
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.TestUtils
 
@@ -35,6 +38,9 @@ divisorsProperty2 n = sum (runFunction divisorsA n) == runFunction (sigmaA 1) n
 
 divisorsProperty3 :: Natural -> Bool
 divisorsProperty3 n = all (\d -> n `mod` d == 0) (runFunction divisorsA n)
+
+divisorsProperty4 :: Int -> Bool
+divisorsProperty4 n = S.toAscList (runFunction divisorsA n) == IS.toAscList (runFunction divisorsSmallA n)
 
 tauOeis :: Assertion
 tauOeis = oeisAssertion "A000005" tauA
@@ -173,6 +179,7 @@ testSuite = testGroup "ArithmeticFunctions"
     [ testSmallAndQuick "length . divisors = tau" divisorsProperty1
     , testSmallAndQuick "sum . divisors = sigma_1" divisorsProperty2
     , testSmallAndQuick "matches definition" divisorsProperty3
+    , testSmallAndQuick "divisors = divisorsSmall" divisorsProperty4
     ]
   , testGroup "Tau"
     [ testCase "OEIS" tauOeis
