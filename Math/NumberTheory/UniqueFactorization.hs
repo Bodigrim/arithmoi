@@ -17,8 +17,6 @@ module Math.NumberTheory.UniqueFactorization
   , UniqueFactorization(..)
   ) where
 
-import Data.Coerce
-
 {- Coercions below relies on the fact that runtime representations
    of small non-negative Int, Word, Integer and Natural coincides.
 -}
@@ -33,6 +31,13 @@ import Math.NumberTheory.Primes.Factorisation as F (factorise')
 import Math.NumberTheory.GaussianIntegers as G
 
 import Numeric.Natural
+
+#if MIN_VERSION_base(4,7,0)
+import Data.Coerce
+#else
+coerce :: a -> b
+coerce = unsafeCoerce
+#endif
 
 newtype SmallPrime = SmallPrime { _unSmallPrime :: Word }
   deriving (Eq, Ord, Show)
@@ -65,11 +70,9 @@ instance UniqueFactorization Integer where
   unPrime   = unsafeCoerce
   factorise = factoriseGeneric
 
-#if MIN_VERSION_base(4,8,0)
 instance UniqueFactorization Natural where
   unPrime   = coerce
   factorise = factoriseGeneric
-#endif
 
 factoriseGeneric :: Integral a => a -> [(Prime a, Word)]
 factoriseGeneric

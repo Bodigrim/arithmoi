@@ -19,6 +19,12 @@ module Math.NumberTheory.ArithmeticFunctionsTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+#if MIN_VERSION_base(4,8,0)
+#else
+import Prelude hiding (sum, all, elem)
+import Data.Foldable
+#endif
+
 import qualified Data.Set as S
 import qualified Data.IntSet as IS
 
@@ -32,7 +38,7 @@ oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a]
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])
 
 divisorsProperty1 :: Natural -> Bool
-divisorsProperty1 n = length (runFunction divisorsA n) == runFunction tauA n
+divisorsProperty1 n = S.size (runFunction divisorsA n) == runFunction tauA n
 
 divisorsProperty2 :: Natural -> Bool
 divisorsProperty2 n = sum (runFunction divisorsA n) == runFunction (sigmaA 1) n

@@ -44,6 +44,7 @@ import Math.NumberTheory.UniqueFactorization
 
 #if MIN_VERSION_base(4,8,0)
 #else
+import Data.Foldable
 import Data.Word
 #endif
 
@@ -78,7 +79,7 @@ divisorsSmall :: (UniqueFactorization n, Prime n ~ Prime Int) => n -> IntSet
 divisorsSmall = runFunction divisorsSmallA
 {-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
-divisorsSmallA :: forall n. (UniqueFactorization n, Prime n ~ Prime Int) => ArithmeticFunction n IntSet
+divisorsSmallA :: forall n. (Prime n ~ Prime Int) => ArithmeticFunction n IntSet
 divisorsSmallA = ArithmeticFunction (\p k -> IntSetProduct $ divisorsHelperSmall (unsafeCoerce p) k) (IS.insert 1 . getIntSetProduct)
 
 divisorsHelperSmall :: Int -> Word -> IntSet
@@ -127,7 +128,7 @@ jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ unsafeCoerceWI (k - 1)
 {-# INLINE jordanHelper #-}
 
-moebius :: (UniqueFactorization n, Eq a, Num a) => n -> a
+moebius :: (UniqueFactorization n, Num a) => n -> a
 moebius = runFunction moebiusA
 
 moebiusA :: Num a => ArithmeticFunction n a
