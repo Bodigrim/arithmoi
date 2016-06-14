@@ -13,6 +13,9 @@
 -- on the canonical factorisation, these require that the number be positive
 -- and in the case of the Carmichael function that the list of prime factors
 -- with their multiplicities is ascending.
+
+{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
+
 module Math.NumberTheory.Primes.Factorisation
     ( -- * Factorisation functions
       -- $algorithm
@@ -73,6 +76,8 @@ import Math.NumberTheory.Primes.Factorisation.Utils
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Sieve.Misc
+
+{-# DEPRECATED totient, φ, carmichael, λ, moebius, μ, divisors, tau, τ, divisorCount, divisorSum, sigma, σ, divisorPowerSum "Use 'Math.NumberTheory.ArithmeticFunctions'" #-}
 
 -- $algorithm
 --
