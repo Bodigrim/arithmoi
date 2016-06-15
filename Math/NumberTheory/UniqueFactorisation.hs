@@ -50,7 +50,7 @@ newtype BigPrime = BigPrime { _unBigPrime :: Natural }
 -- but when units are multiple more restricted types
 -- (or at least newtypes) should be specified.
 --
--- @abs n == n@ must hold for all values of @Prime t@
+-- @abs (unPrime n) == unPrime n@ must hold for all @n@ of type @Prime t@
 type family Prime (f :: *) :: *
 
 type instance Prime Int     = SmallPrime
@@ -58,11 +58,11 @@ type instance Prime Word    = SmallPrime
 type instance Prime Integer = BigPrime
 type instance Prime Natural = BigPrime
 
-type instance Prime G.GaussianInteger = G.GaussianInteger
+type instance Prime G.GaussianInteger = GaussianPrime
 
 -- | The following invariant must hold for @n /= 0@:
 --
--- > n == signum n * product (map (\(p, k) -> unPrime p ^ k) (factorise n))
+-- > abs n == abs (product (map (\(p, k) -> unPrime p ^ k) (factorise n)))
 --
 -- The result of 'factorise' should not contain zero powers and should not change after multiplication of the argument by domain's unit.
 class UniqueFactorisation a where
@@ -70,7 +70,7 @@ class UniqueFactorisation a where
   factorise :: a -> [(Prime a, Word)]
 
 instance UniqueFactorisation Int where
-  unPrime = unsafeCoerce
+  unPrime   = unsafeCoerce
   factorise = factoriseGeneric
 
 instance UniqueFactorisation Word where
@@ -93,6 +93,11 @@ factoriseGeneric
     )
   . abs
 
+newtype GaussianPrime = GaussianPrime { _unGaussianPrime :: G.GaussianInteger }
+  deriving (Eq, Show)
+
 instance UniqueFactorisation G.GaussianInteger where
-  unPrime   = id
-  factorise = unsafeCoerce . G.factorise
+  unPrime = coerce
+
+  factorise 0 = []
+  factorise g = unsafeCoerce $ filter (\(h, _) -> abs h /= 1) $ G.factorise g

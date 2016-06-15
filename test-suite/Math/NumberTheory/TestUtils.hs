@@ -41,6 +41,7 @@ module Math.NumberTheory.TestUtils
   , Large(..)
   ) where
 
+import Test.SmallCheck.Series (cons2)
 import Test.Tasty
 import Test.Tasty.SmallCheck as SC
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative)
@@ -58,6 +59,7 @@ import Data.Word
 import GHC.Exts
 import Numeric.Natural
 
+import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Primes
 
 newtype AnySign a = AnySign { getAnySign :: a }
@@ -129,6 +131,12 @@ instance Monad m => Serial m Natural where
     where
       nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
 
+instance Arbitrary GaussianInteger where
+  arbitrary = (:+) <$> arbitrary <*> arbitrary
+  shrink (x :+ y) = (:+) <$> shrink x <*> shrink y
+
+instance Monad m => Serial m GaussianInteger where
+  series = cons2 (:+)
 
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty

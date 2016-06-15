@@ -47,6 +47,8 @@ import Unsafe.Coerce
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.UniqueFactorisation
 
+import Numeric.Natural
+
 #if MIN_VERSION_base(4,8,0)
 #else
 import Data.Foldable
@@ -70,6 +72,7 @@ multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
 
 divisors :: (UniqueFactorisation n, Num n, Ord n) => n -> Set n
 divisors = runFunction divisorsA
+{-# SPECIALIZE divisors :: Natural -> Set Natural #-}
 {-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
 -- | The set of all (positive) divisors of an argument.
@@ -84,7 +87,6 @@ divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToI
 
 divisorsSmall :: (UniqueFactorisation n, Prime n ~ Prime Int) => n -> IntSet
 divisorsSmall = runFunction divisorsSmallA
-{-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
 -- | Same as 'divisors', but with better performance on cost of type restriction.
 divisorsSmallA :: forall n. (Prime n ~ Prime Int) => ArithmeticFunction n IntSet
@@ -108,9 +110,10 @@ tauA = multiplicative $ const (fromIntegral . succ)
 sigma :: (UniqueFactorisation n, Integral n) => Word -> n -> n
 sigma = runFunction . sigmaA
 
--- | The sum of (positive) divisors of an argument.
+-- | The sum of the @k@-th powers of (positive) divisors of an argument.
 --
 -- > sigmaA = multiplicative (\p k -> sum $ map (p ^) [0..k])
+-- > sigmaA 0 = tauA
 sigmaA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper p
@@ -135,6 +138,8 @@ jordan :: (UniqueFactorisation n, Integral n) => Word -> n -> n
 jordan = runFunction . jordanA
 
 -- | Calculates the k-th Jordan function of an argument.
+--
+-- > jordanA 1 = totientA
 jordanA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
@@ -179,6 +184,7 @@ carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f
     f 2 2 = 2
     f 2 k = 2 ^ wordToInt (k - 2)
     f p 1 = p - 1
+    f p 2 = (p - 1) * p
     f p k = (p - 1) * p ^ wordToInt (k - 1)
 
 -- | Create an additive function from the function on prime's powers. See examples below.
