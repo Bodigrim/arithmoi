@@ -57,6 +57,7 @@ library
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
+                          Math.NumberTheory.Recurrencies.Bilinear
                           Math.NumberTheory.Recurrencies.Linear
                           Math.NumberTheory.GaussianIntegers
                           Math.NumberTheory.GCD
