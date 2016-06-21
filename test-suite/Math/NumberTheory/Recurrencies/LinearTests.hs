@@ -1,25 +1,25 @@
 -- |
--- Module:      Math.NumberTheory.LucasTests
+-- Module:      Math.NumberTheory.Recurrencies.LinearTests
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.Lucas
+-- Tests for Math.NumberTheory.Recurrencies.Linear
 --
 
 {-# LANGUAGE CPP       #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.LucasTests
+module Math.NumberTheory.Recurrencies.LinearTests
   ( testSuite
   ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Math.NumberTheory.Lucas
+import Math.NumberTheory.Recurrencies.Linear
 import Math.NumberTheory.TestUtils
 
 -- | Check that 'fibonacci' matches the definition of Fibonacci sequence.

@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Lucas
+-- Module:      Math.NumberTheory.Recurrencies.Linear
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
@@ -8,7 +8,7 @@
 --
 -- Efficient calculation of Lucas sequences.
 {-# LANGUAGE CPP #-}
-module Math.NumberTheory.Lucas
+module Math.NumberTheory.Recurrencies.Linear
   ( fibonacci
   , fibonacciPair
   , lucas

@@ -5,7 +5,7 @@ import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
 import qualified Math.NumberTheory.LogarithmsTests as Logarithms
 
-import qualified Math.NumberTheory.LucasTests as Lucas
+import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
 
 import qualified Math.NumberTheory.ModuliTests as Moduli
 
@@ -47,8 +47,8 @@ tests = testGroup "All"
   , testGroup "Logarithms"
     [ Logarithms.testSuite
     ]
-  , testGroup "Lucas"
-    [ Lucas.testSuite
+  , testGroup "Recurrencies"
+    [ RecurrenciesLinear.testSuite
     ]
   , testGroup "Moduli"
     [ Moduli.testSuite
