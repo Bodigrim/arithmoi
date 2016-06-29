@@ -42,6 +42,8 @@ module Math.NumberTheory.Recurrencies.Bilinear
   , eulerian1
   , eulerian2
   , bernoulli
+
+  , zetaEven
   ) where
 
 import Data.List
@@ -52,6 +54,8 @@ import Numeric.Natural
 #else
 import Data.Word
 #endif
+
+import Data.ExactPi
 
 factorial :: (Num a, Enum a) => [a]
 factorial = scanl (*) 1 [1..]
@@ -200,3 +204,19 @@ zipIndexedListWithTail f n as a = case as of
       []       -> let v = f m y a in [v]
       (z : zs) -> let v = f m y z in (v : go (succ m) z zs)
 {-# INLINE zipIndexedListWithTail #-}
+
+-------------------------------------------------------------------------------
+-- Zeta function
+
+-- zeta(2n) = - (2 pi i)^(2n) B_2n / 2 / (2n)!
+--       = - (-4)^n / 2 * B_2n / (2n)!  *  pi^2n
+-- Usage:
+-- > approximateValue  $ zetaEven !! 30 :: Fixed (PrecPlus20 Prec50)
+zetaEven :: [ExactPi]
+zetaEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
+  where
+    cs = (- 1 % 2) : zipWith (\i f -> i * (-4) / fromInteger (2 * f * (2 * f - 1))) cs [1..]
+
+skipOdds :: [a] -> [a]
+skipOdds (x:_:xs) = x : skipOdds xs
+skipOdds xs = xs

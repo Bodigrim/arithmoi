@@ -41,6 +41,7 @@ library
                         , containers >= 0.5 && < 0.6
                         , random >= 1.0 && < 1.2
                         , mtl >= 2.0 && < 2.3
+                        , exact-pi >= 0.4.1.1
     if impl(ghc < 7.10)
       build-depends     : nats >= 1 && <1.2
     if impl(ghc < 8.0)
