@@ -44,7 +44,6 @@ import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.Unsafe (wordToInt)
 
 import Numeric.Natural
 
@@ -62,6 +61,9 @@ import Unsafe.Coerce
 coerce :: a -> b
 coerce = unsafeCoerce
 #endif
+
+wordToInt :: Word -> Int
+wordToInt = fromIntegral
 
 -- | Create a multiplicative function from the function on prime's powers. See examples below.
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a

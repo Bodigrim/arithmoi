@@ -5,7 +5,7 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Layer to switch between safe and unsafe operations, including arrays and type casts.
+-- Layer to switch between safe and unsafe arrays.
 --
 
 {-# LANGUAGE CPP #-}
@@ -20,17 +20,7 @@ module Math.NumberTheory.Unsafe
   , unsafeRead
   , unsafeThaw
   , unsafeWrite
-
-  , wordToInt
-  , wordToInteger
-  , intToWord
-  , intToInteger
-  , naturalToInteger
-  , integerToNatural
-  , integerToWord
   ) where
-
-import Numeric.Natural
 
 #ifdef CheckBounds
 
@@ -66,27 +56,6 @@ unsafeThaw = thaw
 unsafeWrite :: (MArray a e m, Ix i) => a i e -> i -> e -> m ()
 unsafeWrite = writeArray
 
-wordToInt :: Word -> Int
-wordToInt = fromIntegral
-
-wordToInteger :: Word -> Integer
-wordToInteger = fromIntegral
-
-intToWord :: Int -> Word
-intToWord = fromIntegral
-
-intToInteger :: Int -> Integer
-intToInteger = fromIntegral
-
-naturalToInteger :: Natural -> Integer
-naturalToInteger = fromIntegral
-
-integerToNatural :: Integer -> Natural
-integerToNatural = fromIntegral
-
-integerToWord :: Integer -> Word
-integerToWord = fromIntegral
-
 #else
 
 import Data.Array.Base
@@ -100,28 +69,5 @@ import Data.Array.Base
   , unsafeThaw
   , unsafeWrite
   )
-
-import Unsafe.Coerce
-
-wordToInt :: Word -> Int
-wordToInt = unsafeCoerce
-
-wordToInteger :: Word -> Integer
-wordToInteger = unsafeCoerce
-
-intToWord :: Int -> Word
-intToWord = unsafeCoerce
-
-intToInteger :: Int -> Integer
-intToInteger = unsafeCoerce
-
-naturalToInteger :: Natural -> Integer
-naturalToInteger = unsafeCoerce
-
-integerToNatural :: Integer -> Natural
-integerToNatural = unsafeCoerce
-
-integerToWord :: Integer -> Word
-integerToWord = unsafeCoerce
 
 #endif
