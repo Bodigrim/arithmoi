@@ -17,10 +17,7 @@ module Math.NumberTheory.UniqueFactorisation
   , UniqueFactorisation(..)
   ) where
 
-{- Coercions below relies on the fact that runtime representations
-   of small non-negative Int, Word, Integer and Natural coincides.
--}
-import Unsafe.Coerce
+import Control.Arrow
 
 #if MIN_VERSION_base(4,8,0)
 #else
@@ -29,6 +26,7 @@ import Data.Word
 
 import Math.NumberTheory.Primes.Factorisation as F (factorise')
 import Math.NumberTheory.GaussianIntegers as G
+import Math.NumberTheory.Unsafe
 
 import Numeric.Natural
 
@@ -70,28 +68,33 @@ class UniqueFactorisation a where
   factorise :: a -> [(Prime a, Word)]
 
 instance UniqueFactorisation Int where
-  unPrime   = unsafeCoerce
-  factorise = factoriseGeneric
+  unPrime   = coerce wordToInt
+  factorise m' = if m <= 1
+                then []
+                else map (coerce integerToWord *** intToWord) . F.factorise' . intToInteger $ m
+                  where
+                    m = abs m'
 
 instance UniqueFactorisation Word where
-  unPrime   = coerce
-  factorise = factoriseGeneric
+  unPrime     = coerce
+  factorise m = if m <= 1
+                  then []
+                  else map (coerce integerToWord *** intToWord) . F.factorise' . wordToInteger $ m
+
 
 instance UniqueFactorisation Integer where
-  unPrime   = unsafeCoerce
-  factorise = factoriseGeneric
+  unPrime      = coerce naturalToInteger
+  factorise m' = if m <= 1
+                then []
+                else map (coerce integerToNatural *** intToWord) . F.factorise' $ m
+                  where
+                    m = abs m'
 
 instance UniqueFactorisation Natural where
   unPrime   = coerce
-  factorise = factoriseGeneric
-
-factoriseGeneric :: Integral a => a -> [(Prime a, Word)]
-factoriseGeneric
-  = (\m -> if m <= 1
-            then []
-            else unsafeCoerce . F.factorise' . unsafeCoerce $ m
-    )
-  . abs
+  factorise m = if m <= 1
+                  then []
+                  else map (coerce integerToNatural *** intToWord) . F.factorise' . naturalToInteger $ m
 
 newtype GaussianPrime = GaussianPrime { _unGaussianPrime :: G.GaussianInteger }
   deriving (Eq, Show)
@@ -100,4 +103,4 @@ instance UniqueFactorisation G.GaussianInteger where
   unPrime = coerce
 
   factorise 0 = []
-  factorise g = unsafeCoerce $ filter (\(h, _) -> abs h /= 1) $ G.factorise g
+  factorise g = map (coerce *** intToWord) $ filter (\(h, _) -> abs h /= 1) $ G.factorise g

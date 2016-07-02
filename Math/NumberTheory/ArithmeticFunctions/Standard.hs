@@ -42,10 +42,9 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Semigroup
 
-import Unsafe.Coerce
-
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Unsafe (wordToInt)
 
 import Numeric.Natural
 
@@ -58,13 +57,11 @@ import Data.Word
 #if MIN_VERSION_base(4,7,0)
 import Data.Coerce
 #else
+import Unsafe.Coerce
+
 coerce :: a -> b
 coerce = unsafeCoerce
 #endif
-
--- There are special rewrite rules for (^ Int), but not for (^ Word).
-wordToInt :: Word -> Int
-wordToInt = unsafeCoerce
 
 -- | Create a multiplicative function from the function on prime's powers. See examples below.
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
@@ -90,7 +87,7 @@ divisorsSmall = runFunction divisorsSmallA
 
 -- | Same as 'divisors', but with better performance on cost of type restriction.
 divisorsSmallA :: forall n. (Prime n ~ Prime Int) => ArithmeticFunction n IntSet
-divisorsSmallA = ArithmeticFunction (\p k -> IntSetProduct $ divisorsHelperSmall (unsafeCoerce p) k) (IS.insert 1 . getIntSetProduct)
+divisorsSmallA = ArithmeticFunction (\p k -> IntSetProduct $ divisorsHelperSmall (unPrime p) k) (IS.insert 1 . getIntSetProduct)
 
 divisorsHelperSmall :: Int -> Word -> IntSet
 divisorsHelperSmall _ 0 = IS.empty
