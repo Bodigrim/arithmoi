@@ -34,6 +34,8 @@
 
 {-# LANGUAGE CPP #-}
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Math.NumberTheory.Recurrencies.Bilinear
   ( binomial
   , stirling1
@@ -44,6 +46,8 @@ module Math.NumberTheory.Recurrencies.Bilinear
   , bernoulli
 
   , zetaEven
+  , approximateValue
+  , zetaOdd
   ) where
 
 import Data.List
@@ -208,15 +212,58 @@ zipIndexedListWithTail f n as a = case as of
 -------------------------------------------------------------------------------
 -- Zeta function
 
--- zeta(2n) = - (2 pi i)^(2n) B_2n / 2 / (2n)!
---       = - (-4)^n / 2 * B_2n / (2n)!  *  pi^2n
--- Usage:
--- > approximateValue  $ zetaEven !! 30 :: Fixed (PrecPlus20 Prec50)
+-- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
+-- Note that due to numerical errors convertation to 'Double' may return values below 1:
+--
+-- > > approximateValue (zetaEven !! 25) :: Double
+-- > 0.9999999999999996
+--
+-- Use your favorite type for long-precision arithmetic. For instance, 'Data.Number.Fixed.Fixed' works fine:
+--
+-- > > approximateValue (zetaEven !! 25) :: Fixed Prec50
+-- > 1.00000000000000088817842111574532859293035196051773
+--
 zetaEven :: [ExactPi]
 zetaEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
   where
     cs = (- 1 % 2) : zipWith (\i f -> i * (-4) / fromInteger (2 * f * (2 * f - 1))) cs [1..]
 
 skipOdds :: [a] -> [a]
-skipOdds (x:_:xs) = x : skipOdds xs
+skipOdds (x : _ : xs) = x : skipOdds xs
 skipOdds xs = xs
+
+-- | Infinite sequence of approximate (up to given precision)
+-- values of Riemann zeta-function at odd arguments, starting with @ζ(1)@.
+-- Computations are performed in accordance to
+-- <https://cr.yp.to/bib/2000/borwein.pdf Computational strategies for the Riemann zeta function>
+-- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57).
+--
+-- > > take 5 (zetaOdd 1e-5) :: [Double]
+-- > [Infinity,1.2020507291357774,1.0369201007325664,1.0083396911882425,1.001996752492786]
+--
+zetaOdd :: forall a. (Floating a, Ord a) => a -> [a]
+zetaOdd eps = zs
+  where
+    zs = (1 / 0) : map worker [1..]
+
+    worker :: Int -> a
+    worker m = negate $ fromRational ((4^m) % (2*4^m-1)) * summands
+      where
+        summands :: a
+        summands = sum1 + approximateValue (piifac m) * (log 2 + sum2)
+
+        sum1 :: a
+        sum1 = sum $ map (\k -> zs !! k * approximateValue (piifac (m - k) * fromRational ((4^k-1) % (4^k)))) [1 .. m - 1]
+
+        sum2 :: a
+        sum2 = suminf eps (zipWith (\a b -> approximateValue $ a / fromRational (b%1)) zetaEven (map (\k -> 4^k * (fromIntegral $ k+m)) [0..]))
+
+    -- n -> (pi * i) ^ 2n / (2n)!
+    piifac :: Int -> ExactPi
+    piifac n = Exact (fromIntegral $ 2 * n) ((if even n then 1 else (-1)) % factorial !! (2 * n))
+
+limit :: (Num a, Ord a) => a -> [a] -> a
+limit eps xs = snd $ head $ dropWhile (\(a, b) -> abs (a - b) >= eps) $ zip xs (tail xs)
+
+suminf :: (Num a, Ord a) => a -> [a] -> a
+suminf eps xs = limit eps $ scanl (+) 0 xs
