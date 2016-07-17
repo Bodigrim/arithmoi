@@ -45,8 +45,14 @@ library
                           , containers >= 0.3 && < 0.6
                           , random >= 1.0 && < 1.2
                           , mtl >= 2.0 && < 2.3
+                          , semigroups >= 0.8
+                          , nats >= 1.0
 
-    exposed-modules     : Math.NumberTheory.Logarithms
+
+    exposed-modules     : Math.NumberTheory.ArithmeticFunctions
+                          Math.NumberTheory.ArithmeticFunctions.Class
+                          Math.NumberTheory.ArithmeticFunctions.Standard
+                          Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
@@ -68,6 +74,7 @@ library
                           Math.NumberTheory.Primes.Testing
                           Math.NumberTheory.Primes.Testing.Certificates
                           Math.NumberTheory.Primes.Heap
+                          Math.NumberTheory.UniqueFactorisation
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Unsafe
                           Math.NumberTheory.Logarithms.Internal
@@ -96,8 +103,9 @@ source-repository head
 
 benchmark criterion
   build-depends:    base
-                    ,arithmoi
-                    ,criterion
+                    , arithmoi
+                    , criterion
+                    , containers
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0
@@ -110,6 +118,8 @@ test-suite spec
   main-is:              Test.hs
   default-language: Haskell2010
   build-depends:        base >= 4 && < 5
+                        , containers >= 0.3 && < 0.6
+                        , nats >= 1.0
                         , arithmoi >= 0.4 && < 0.5
                         , tasty >= 0.10 && < 0.12
                         , tasty-smallcheck >= 0.8 && < 0.9
@@ -117,7 +127,8 @@ test-suite spec
                         , tasty-hunit >= 0.9 && < 0.10
                         , QuickCheck >= 2.8 && < 2.9
                         , smallcheck >= 1.1 && < 1.2
-  other-modules :   Math.NumberTheory.GaussianIntegersTests
+  other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
+                  , Math.NumberTheory.GaussianIntegersTests
                   , Math.NumberTheory.GCDTests
                   , Math.NumberTheory.GCD.LowLevelTests
                   , Math.NumberTheory.LogarithmsTests
@@ -135,3 +146,4 @@ test-suite spec
                   , Math.NumberTheory.Primes.HeapTests
                   , Math.NumberTheory.Primes.SieveTests
                   , Math.NumberTheory.TestUtils
+                  , Math.NumberTheory.UniqueFactorisationTests

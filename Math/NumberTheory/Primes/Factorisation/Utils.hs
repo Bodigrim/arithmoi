@@ -27,6 +27,8 @@ import Data.List
 
 import Math.NumberTheory.Powers.Integer
 
+{-# DEPRECATED totientFromCanonical, carmichaelFromCanonical, moebiusFromCanonical, divisorsFromCanonical, tauFromCanonical, divisorSumFromCanonical, sigmaFromCanonical "Use 'Math.NumberTheory.ArithmeticFunctions'" #-}
+
 -- | Totient of a prime power.
 ppTotient :: (Integer,Int) -> Integer
 ppTotient (p,1) = p-1

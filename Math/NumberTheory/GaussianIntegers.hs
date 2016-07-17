@@ -11,6 +11,7 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
+
 module Math.NumberTheory.GaussianIntegers (
     GaussianInteger((:+)),
     ι,
@@ -187,7 +188,7 @@ a .^ e
     where
     s = a .^ div e 2
 
--- |Compute the prime factorization of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
+-- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
 factorise g
     | g == 0    = error "0 has no prime factorisation"
