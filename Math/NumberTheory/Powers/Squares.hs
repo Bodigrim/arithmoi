@@ -29,14 +29,11 @@ import Data.Array.Unboxed
 import Data.Array.ST
 
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 705
+#if __GLASGOW_HASKELL__ < 709
 import Data.Word        -- Moved to GHC.Types
 #endif
 
 import Math.NumberTheory.Unsafe
-#if __GLASGOW_HASKELL__ < 707
-import Math.NumberTheory.Utils (isTrue#)
-#endif
 
 import Math.NumberTheory.Powers.Squares.Internal
 

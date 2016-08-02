@@ -29,6 +29,9 @@ import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Logarithms (integerLog2)
 import Math.NumberTheory.Logarithms.Internal (integerLog2#)
+#if __GLASGOW_HASKELL__ < 707
+import Math.NumberTheory.Utils (isTrue#)
+#endif
 
 -- Find approximation to square root in 'Integer', then
 -- find the integer square root by the integer variant
