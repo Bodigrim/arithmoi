@@ -107,6 +107,9 @@ benchmark criterion
                     , arithmoi
                     , criterion
                     , containers
+                    , random
+  other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
+                  , Math.NumberTheory.PowersBench
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0

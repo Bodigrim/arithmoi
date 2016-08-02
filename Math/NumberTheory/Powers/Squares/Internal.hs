@@ -94,7 +94,7 @@ appSqrt _ = error "integerSquareRoot': negative argument"
 karatsubaSqrt :: Integer -> (Integer, Integer)
 karatsubaSqrt 0 = (0, 0)
 karatsubaSqrt n
-    | lgN < 4096 =
+    | lgN < 2300 =
         let s = isqrtA n in (s, n - s * s)
     | otherwise =
         if lgN .&. 2 /= 0 then
