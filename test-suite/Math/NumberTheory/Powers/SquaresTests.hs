@@ -49,6 +49,10 @@ integerSquareRootProperty_Int = integerSquareRootProperty
 integerSquareRootProperty_Word :: NonNegative Word -> Bool
 integerSquareRootProperty_Word = integerSquareRootProperty
 
+-- | Specialized to trigger 'isqrtInteger'.
+integerSquareRootProperty_Integer :: NonNegative Integer -> Bool
+integerSquareRootProperty_Integer = integerSquareRootProperty
+
 -- | Check that 'integerSquareRoot' returns the largest integer @m@ with @m*m <= n@, where @n@ has form @k@^2-1.
 integerSquareRootProperty2 :: Integral a => NonNegative a -> Bool
 integerSquareRootProperty2 (NonNegative k) = n < 0
@@ -64,6 +68,10 @@ integerSquareRootProperty2_Int = integerSquareRootProperty2
 -- | Specialized to trigger 'isqrtWord'.
 integerSquareRootProperty2_Word :: NonNegative Word -> Bool
 integerSquareRootProperty2_Word = integerSquareRootProperty2
+
+-- | Specialized to trigger 'isqrtInteger'.
+integerSquareRootProperty2_Integer :: NonNegative Integer -> Bool
+integerSquareRootProperty2_Integer = integerSquareRootProperty2
 
 #if WORD_SIZE_IN_BITS == 64
 
@@ -130,14 +138,16 @@ isPossibleSquare2Property (NonNegative n) = t || not t && isNothing m
 
 testSuite :: TestTree
 testSuite = testGroup "Squares"
-  [ testGroup "integerSquareRoor"
+  [ testGroup "integerSquareRoot"
     [ testIntegralProperty "generic"          integerSquareRootProperty
     , testSmallAndQuick    "generic Int"      integerSquareRootProperty_Int
     , testSmallAndQuick    "generic Word"     integerSquareRootProperty_Word
+    , testSmallAndQuick    "generic Integer"  integerSquareRootProperty_Integer
 
-    , testIntegralProperty "almost square"      integerSquareRootProperty2
-    , testSmallAndQuick    "almost square Int"  integerSquareRootProperty2_Int
-    , testSmallAndQuick    "almost square Word" integerSquareRootProperty2_Word
+    , testIntegralProperty "almost square"         integerSquareRootProperty2
+    , testSmallAndQuick    "almost square Int"     integerSquareRootProperty2_Int
+    , testSmallAndQuick    "almost square Word"    integerSquareRootProperty2_Word
+    , testSmallAndQuick    "almost square Integer" integerSquareRootProperty2_Integer
 
 #if WORD_SIZE_IN_BITS == 64
     , testCase             "maxBound / 2 :: Int"  integerSquareRootSpecialCase1_Int

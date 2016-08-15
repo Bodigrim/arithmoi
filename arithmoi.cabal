@@ -62,6 +62,7 @@ library
                           Math.NumberTheory.GCD.LowLevel
                           Math.NumberTheory.Powers
                           Math.NumberTheory.Powers.Squares
+                          Math.NumberTheory.Powers.Squares.Internal
                           Math.NumberTheory.Powers.Cubes
                           Math.NumberTheory.Powers.Fourth
                           Math.NumberTheory.Powers.General
@@ -106,6 +107,9 @@ benchmark criterion
                     , arithmoi
                     , criterion
                     , containers
+                    , random
+  other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
+                  , Math.NumberTheory.PowersBench
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0
