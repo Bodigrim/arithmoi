@@ -149,8 +149,8 @@ sieveFactor (FS bnd sve) = check
                                                j | j <= bound -> intLoop (fromIntegral (j `shiftR` 1) - 1)
                                                  | otherwise -> tdLoop j (integerSquareRoot' j) (ix+1)
           where
-            p = toPrim ix
-            pix = unsafeAt sve $ fromIntegral p
+            p = fromIntegral $ 2*ix + 3
+            pix = unsafeAt sve ix
     curve n = stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n
 
 -- | @'totientSieve' n@ creates a store of the totients of the numbers not exceeding @n@.

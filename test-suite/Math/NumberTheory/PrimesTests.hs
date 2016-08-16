@@ -31,10 +31,16 @@ primesSumProperty (NonNegative n) = primesSumWonk n == primesSum n
 
 
 sieveFactorSpecialCase1 :: Assertion
-sieveFactorSpecialCase1 = assertEqual "sieveFactor" [(29, 1), (73, 1)] $ sieveFactor (factorSieve 2048) (29*73)
+sieveFactorSpecialCase1 = do
+    assertEqual "sieveFactor 2048" [(29, 1), (73, 1)] $ sieveFactor (factorSieve 2048) (29*73)
+    assertEqual "sieveFactor 15"   [(3, 1),  (5, 2)]  $ sieveFactor (factorSieve 15) (75)
+
+sieveFactorProperty :: Integer -> Bool
+sieveFactorProperty n = (n==0) || factorise n == sieveFactor (factorSieve 25) n
 
 testSuite :: TestTree
 testSuite = testGroup "Primes"
   [ testSmallAndQuick "primesSum"   primesSumProperty
-  , testCase          "sieveFactor" sieveFactorSpecialCase1
+  , testCase          "sieveFactor special"  sieveFactorSpecialCase1
+  , testSmallAndQuick "sieveFactor property" sieveFactorProperty
   ]
