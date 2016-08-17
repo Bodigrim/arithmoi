@@ -36,9 +36,13 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.TestUtils
-  ( module Math.NumberTheory.TestUtils
+  ( module Math.NumberTheory.TestUtils.Wrappers
   , module Test.SmallCheck.Series
   , Large(..)
+  , testIntegralProperty
+  , testSameIntegralProperty
+  , testIntegral2Property
+  , testSmallAndQuick
   ) where
 
 import Test.SmallCheck.Series (cons2)
@@ -52,65 +56,15 @@ import Control.Applicative
 import Data.Bits
 #if MIN_VERSION_base(4,8,0)
 #else
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable)
 import Data.Word
 #endif
 import GHC.Exts
 import Numeric.Natural
 
 import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
-import Math.NumberTheory.Primes
 
-newtype AnySign a = AnySign { getAnySign :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
-
-instance (Monad m, Serial m a) => Serial m (AnySign a) where
-  series = AnySign <$> series
-
-instance (Num a, Ord a, Arbitrary a) => Arbitrary (Positive a) where
-  arbitrary = Positive <$> (arbitrary `suchThat` (> 0))
-  shrink (Positive x) = Positive <$> filter (> 0) (shrink x)
-
-instance (Num a, Ord a, Arbitrary a) => Arbitrary (NonNegative a) where
-  arbitrary = NonNegative <$> (arbitrary `suchThat` (>= 0))
-  shrink (NonNegative x) = NonNegative <$> filter (>= 0) (shrink x)
-
-instance (Num a, Bounded a) => Bounded (Positive a) where
-  minBound = Positive 1
-  maxBound = Positive (maxBound :: a)
-
-instance (Num a, Bounded a) => Bounded (NonNegative a) where
-  minBound = NonNegative 0
-  maxBound = NonNegative (maxBound :: a)
-
-newtype Huge a = Huge { getHuge :: a }
-  deriving (Eq, Ord, Enum, Bounded, Show, Num, Real, Integral)
-
-instance (Num a, Arbitrary a) => Arbitrary (Huge a) where
-  arbitrary = do
-    Positive l <- arbitrary
-    ds <- vector l
-    return $ Huge $ foldl1 (\acc n -> acc * 2^63 + n) ds
-
-newtype Power a = Power { getPower :: a }
-  deriving (Eq, Ord, Enum, Bounded, Show, Num, Real, Integral)
-
-instance (Monad m, Num a, Ord a, Serial m a) => Serial m (Power a) where
-  series = Power <$> series `suchThatSerial` (> 0)
-
-instance (Num a, Ord a, Integral a, Arbitrary a) => Arbitrary (Power a) where
-  arbitrary = Power <$> (getSmall <$> arbitrary) `suchThat` (> 0)
-  shrink (Power x) = Power <$> filter (> 0) (shrink x)
-
-newtype Prime = Prime { getPrime :: Integer }
-  deriving (Eq, Ord, Show)
-
-instance Arbitrary Prime where
-  arbitrary = Prime <$> arbitrary `suchThat` (\p -> p > 0 && isPrime p)
-
-instance Monad m => Serial m Prime where
-  series = Prime <$> series `suchThatSerial` (\p -> p > 0 && isPrime p)
+import Math.NumberTheory.TestUtils.Compose ()
+import Math.NumberTheory.TestUtils.Wrappers
 
 instance Monad m => Serial m Word where
   series =
@@ -137,10 +91,6 @@ instance Arbitrary GaussianInteger where
 
 instance Monad m => Serial m GaussianInteger where
   series = cons2 (:+)
-
-suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
-suchThatSerial s p = s >>= \x -> if p x then pure x else empty
-
 
 -- https://www.cs.ox.ac.uk/projects/utgp/school/andres.pdf, p. 21
 -- :k Compose = (k1 -> Constraint) -> (k2 -> k1) -> (k2 -> Constraint)
@@ -169,8 +119,10 @@ type instance Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w
 
 type TestableIntegral wrapper =
   ( Matrix '[Arbitrary, Show, Serial IO] wrapper '[Int, Word, Integer]
+  , Matrix '[Arbitrary, Show] wrapper '[Large Int, Large Word, Huge Integer]
   , Matrix '[Bounded, Integral] wrapper '[Int, Word]
   , Num (wrapper Integer)
+  , Functor wrapper
   )
 
 
@@ -199,9 +151,9 @@ testSameIntegralProperty name f = testGroup name
   , QC.testProperty "quickcheck Int"     (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
   , QC.testProperty "quickcheck Word"    (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
   , QC.testProperty "quickcheck Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> bool)
-  , QC.testProperty "quickcheck Large Int"     (\(Large a) (Large b) -> (f :: wrapper1 Int     -> wrapper2 Int     -> bool) a b)
-  , QC.testProperty "quickcheck Large Word"    (\(Large a) (Large b) -> (f :: wrapper1 Word    -> wrapper2 Word    -> bool) a b)
-  , QC.testProperty "quickcheck Huge  Integer" (\(Huge  a) (Huge  b) -> (f :: wrapper1 Integer -> wrapper2 Integer -> bool) a b)
+  , QC.testProperty "quickcheck Large Int"     (\a b -> (f :: wrapper1 Int     -> wrapper2 Int     -> bool) (getLarge <$> a) (getLarge <$> b))
+  , QC.testProperty "quickcheck Large Word"    (\a b -> (f :: wrapper1 Word    -> wrapper2 Word    -> bool) (getLarge <$> a) (getLarge <$> b))
+  , QC.testProperty "quickcheck Huge  Integer" (\a b -> (f :: wrapper1 Integer -> wrapper2 Integer -> bool) (getHuge  <$> a) (getHuge  <$> b))
   ]
 
 testIntegral2Property
@@ -228,15 +180,15 @@ testIntegral2Property name f = testGroup name
   , QC.testProperty "quickcheck Integer Word"    (f :: wrapper1 Integer -> wrapper2 Word    -> bool)
   , QC.testProperty "quickcheck Integer Integer" (f :: wrapper1 Integer -> wrapper2 Integer -> bool)
 
-  , QC.testProperty "quickcheck Large Int Int"         ((f :: wrapper1 Int     -> wrapper2 Int     -> bool) . getLarge)
-  , QC.testProperty "quickcheck Large Int Word"        ((f :: wrapper1 Int     -> wrapper2 Word    -> bool) . getLarge)
-  , QC.testProperty "quickcheck Large Int Integer"     ((f :: wrapper1 Int     -> wrapper2 Integer -> bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word Int"        ((f :: wrapper1 Word    -> wrapper2 Int     -> bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word Word"       ((f :: wrapper1 Word    -> wrapper2 Word    -> bool) . getLarge)
-  , QC.testProperty "quickcheck Large Word Integer"    ((f :: wrapper1 Word    -> wrapper2 Integer -> bool) . getLarge)
-  , QC.testProperty "quickcheck Huge  Integer Int"     ((f :: wrapper1 Integer -> wrapper2 Int     -> bool) . getHuge)
-  , QC.testProperty "quickcheck Huge  Integer Word"    ((f :: wrapper1 Integer -> wrapper2 Word    -> bool) . getHuge)
-  , QC.testProperty "quickcheck Huge  Integer Integer" ((f :: wrapper1 Integer -> wrapper2 Integer -> bool) . getHuge)
+  , QC.testProperty "quickcheck Large Int Int"         ((f :: wrapper1 Int     -> wrapper2 Int     -> bool) . fmap getLarge)
+  , QC.testProperty "quickcheck Large Int Word"        ((f :: wrapper1 Int     -> wrapper2 Word    -> bool) . fmap getLarge)
+  , QC.testProperty "quickcheck Large Int Integer"     ((f :: wrapper1 Int     -> wrapper2 Integer -> bool) . fmap getLarge)
+  , QC.testProperty "quickcheck Large Word Int"        ((f :: wrapper1 Word    -> wrapper2 Int     -> bool) . fmap getLarge)
+  , QC.testProperty "quickcheck Large Word Word"       ((f :: wrapper1 Word    -> wrapper2 Word    -> bool) . fmap getLarge)
+  , QC.testProperty "quickcheck Large Word Integer"    ((f :: wrapper1 Word    -> wrapper2 Integer -> bool) . fmap getLarge)
+  , QC.testProperty "quickcheck Huge  Integer Int"     ((f :: wrapper1 Integer -> wrapper2 Int     -> bool) . fmap getHuge)
+  , QC.testProperty "quickcheck Huge  Integer Word"    ((f :: wrapper1 Integer -> wrapper2 Word    -> bool) . fmap getHuge)
+  , QC.testProperty "quickcheck Huge  Integer Integer" ((f :: wrapper1 Integer -> wrapper2 Integer -> bool) . fmap getHuge)
   ]
 
 testSmallAndQuick
