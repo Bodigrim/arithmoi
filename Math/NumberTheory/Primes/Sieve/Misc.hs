@@ -47,6 +47,27 @@ import Math.NumberTheory.Primes.Factorisation.Utils
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
+{-
+IMPORTANT NOTICE: Not all sieves use the same layout!
+
+FactorSieve:
+
+   To remain as efficient as possible, FactorSieve omits only even numbers.
+   To relate an odd number x to its index i:
+
+       i = (x `div` 2) - 1
+       x = i * 2 + 3
+
+TotientSieve, CarmichaelSieve:
+
+   These sieves use a (2,3,5) wheel optimization, sacrificing performance to save
+   more memory. The only indices stored are those coprime to 2, 3, and 5.
+   To relate such an integer x to its index i:
+
+       i = toIdx x
+       x = toPrim i
+-}
+
 -- | A compact store of smallest prime factors.
 data FactorSieve = FS {-# UNPACK #-} !Word {-# UNPACK #-} !(UArray Int Word16)
 
@@ -149,8 +170,8 @@ sieveFactor (FS bnd sve) = check
                                                j | j <= bound -> intLoop (fromIntegral (j `shiftR` 1) - 1)
                                                  | otherwise -> tdLoop j (integerSquareRoot' j) (ix+1)
           where
-            p = toPrim ix
-            pix = unsafeAt sve $ fromIntegral p
+            p = fromIntegral $ 2 * ix + 3
+            pix = unsafeAt sve ix
     curve n = stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n
 
 -- | @'totientSieve' n@ creates a store of the totients of the numbers not exceeding @n@.
@@ -278,6 +299,9 @@ sieveCarmichael (CS bnd sve) = check
     curve tt n = tt `lcm` carmichaelFromCanonical (stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n)
 
 
+-- NOTE: This is a legacy implementation of FactorSieve which uses the
+--       same (2,3,5) wheel optimization as the other sieves.
+--       It is still used to generate the other sieves.
 spfSieve :: Word -> ST s (STUArray s Int Word)
 spfSieve bound = do
   let (octs,lidx) = idxPr bound
