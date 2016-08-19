@@ -8,8 +8,8 @@
 -- Tests for Math.NumberTheory.Moduli
 --
 
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP             #-}
+{-# LANGUAGE ViewPatterns    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -32,42 +32,42 @@ unwrapPP :: (Prime, Power Int) -> (Integer, Int)
 unwrapPP (Prime p, Power e) = (p, e)
 
 -- | Check that 'jacobi' matches 'jacobi''.
-jacobiProperty1 :: (Integral a, Bits a) => AnySign a -> (Compose NonNegative Odd) a -> Bool
-jacobiProperty1 (AnySign a) (Compose (NonNegative (Odd n))) = n == 1 && j == 1 || n > 1 && j == j'
+jacobiProperty1 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
+jacobiProperty1 (AnySign a) (Compose (Positive (Odd n))) = n == 1 && j == 1 || n > 1 && j == j'
   where
     j = jacobi a n
     j' = jacobi' a n
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 2
-jacobiProperty2 :: (Integral a, Bits a) => AnySign a -> (Compose NonNegative Odd) a -> Bool
-jacobiProperty2 (AnySign a) (Compose (NonNegative (Odd n)))
+jacobiProperty2 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
+jacobiProperty2 (AnySign a) (Compose (Positive (Odd n)))
   =  a + n < a -- check overflow
   || jacobi a n == jacobi (a + n) n
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 3
-jacobiProperty3 :: (Integral a, Bits a) => AnySign a -> (Compose NonNegative Odd) a -> Bool
-jacobiProperty3 (AnySign a) (Compose (NonNegative (Odd n))) = j == 0 && g /= 1 || abs j == 1 && g == 1
+jacobiProperty3 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
+jacobiProperty3 (AnySign a) (Compose (Positive (Odd n))) = j == 0 && g /= 1 || abs j == 1 && g == 1
   where
     j = jacobi a n
     g = gcd a n
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 4
-jacobiProperty4 :: (Integral a, Bits a) => AnySign a -> AnySign a -> (Compose NonNegative Odd) a -> Bool
-jacobiProperty4 (AnySign a) (AnySign b) (Compose (NonNegative (Odd n))) = jacobi (a * b) n == jacobi a n * jacobi b n
+jacobiProperty4 :: (Integral a, Bits a) => AnySign a -> AnySign a -> (Compose Positive Odd) a -> Bool
+jacobiProperty4 (AnySign a) (AnySign b) (Compose (Positive (Odd n))) = jacobi (a * b) n == jacobi a n * jacobi b n
 
-jacobiProperty4_Integer :: AnySign Integer -> AnySign Integer -> (Compose NonNegative Odd) Integer -> Bool
+jacobiProperty4_Integer :: AnySign Integer -> AnySign Integer -> (Compose Positive Odd) Integer -> Bool
 jacobiProperty4_Integer = jacobiProperty4
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 5
-jacobiProperty5 :: (Integral a, Bits a) => AnySign a -> (Compose NonNegative Odd) a -> (Compose NonNegative Odd) a -> Bool
-jacobiProperty5 (AnySign a) (Compose (NonNegative (Odd m))) (Compose (NonNegative (Odd n))) = jacobi a (m * n) == jacobi a m * jacobi a n
+jacobiProperty5 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> (Compose Positive Odd) a -> Bool
+jacobiProperty5 (AnySign a) (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = jacobi a (m * n) == jacobi a m * jacobi a n
 
-jacobiProperty5_Integer :: AnySign Integer -> (Compose NonNegative Odd) Integer -> (Compose NonNegative Odd) Integer -> Bool
+jacobiProperty5_Integer :: AnySign Integer -> (Compose Positive Odd) Integer -> (Compose Positive Odd) Integer -> Bool
 jacobiProperty5_Integer = jacobiProperty5
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 6
-jacobiProperty6 :: (Integral a, Bits a) => (Compose NonNegative Odd) a -> (Compose NonNegative Odd) a -> Bool
-jacobiProperty6 (Compose (NonNegative (Odd m))) (Compose (NonNegative (Odd n))) = gcd m n /= 1 || jacobi m n * jacobi n m == (if m `mod` 4 == 1 || n `mod` 4 == 1 then 1 else -1)
+jacobiProperty6 :: (Integral a, Bits a) => (Compose Positive Odd) a -> (Compose Positive Odd) a -> Bool
+jacobiProperty6 (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = gcd m n /= 1 || jacobi m n * jacobi n m == (if m `mod` 4 == 1 || n `mod` 4 == 1 then 1 else -1)
 
 -- | Check that 'invertMod' inverts numbers modulo.
 invertModProperty :: AnySign Integer -> Positive Integer -> Bool
