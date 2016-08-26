@@ -131,6 +131,7 @@ test-suite spec
                         , tasty-hunit >= 0.9 && < 0.10
                         , QuickCheck >= 2.8 && < 2.9
                         , smallcheck >= 1.1 && < 1.2
+                        , transformers >= 0.4
   other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
                   , Math.NumberTheory.GaussianIntegersTests
                   , Math.NumberTheory.GCDTests
@@ -150,4 +151,6 @@ test-suite spec
                   , Math.NumberTheory.Primes.HeapTests
                   , Math.NumberTheory.Primes.SieveTests
                   , Math.NumberTheory.TestUtils
+                  , Math.NumberTheory.TestUtils.Wrappers
+                  , Math.NumberTheory.TestUtils.Compose
                   , Math.NumberTheory.UniqueFactorisationTests
