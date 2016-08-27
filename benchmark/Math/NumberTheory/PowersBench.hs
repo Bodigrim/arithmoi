@@ -27,4 +27,4 @@ compareRoots bits = bgroup ("sqrt" ++ show bits)
   where
     n = genInteger 0 bits
 
-benchSuite = bgroup "Powers" $ map compareRoots [2300, 2300 .. 2600]
+benchSuite = bgroup "Powers" $ map compareRoots [2300, 2400 .. 2600]
