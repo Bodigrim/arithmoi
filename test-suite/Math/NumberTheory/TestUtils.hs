@@ -12,12 +12,8 @@
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveFoldable             #-}
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -54,8 +50,7 @@ import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series
 
 import Control.Applicative
 import Data.Bits
-#if MIN_VERSION_base(4,8,0)
-#else
+#if !(MIN_VERSION_base(4,8,0))
 import Data.Word
 #endif
 import GHC.Exts
@@ -72,8 +67,7 @@ instance Monad m => Serial m Word where
     where
       nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
 
-#if MIN_VERSION_base(4,8,0)
-#else
+#if !(MIN_VERSION_base(4,8,0)) && !(MIN_VERSION_QuickCheck(2,9,0))
 instance Arbitrary Natural where
   arbitrary = fromInteger <$> (arbitrary `suchThat` (>= 0))
   shrink = map fromInteger . filter (>= 0) . shrink . toInteger
