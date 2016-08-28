@@ -81,7 +81,7 @@ generalLucasProperty3 :: AnySign Integer -> AnySign Integer -> Bool
 generalLucasProperty3 (AnySign p) (AnySign q) = generalLucas p q 0 == (0, 1, 2, p)
 
 testSuite :: TestTree
-testSuite = testGroup "Lucas"
+testSuite = testGroup "Linear"
   [ testGroup "fibonacci"
     [ testSmallAndQuick "matches definition"  fibonacciProperty1
     , testSmallAndQuick "negative indices"    fibonacciProperty2
