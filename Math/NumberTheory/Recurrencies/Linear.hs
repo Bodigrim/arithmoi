@@ -6,7 +6,8 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Efficient calculation of Lucas sequences.
+-- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
+
 {-# LANGUAGE CPP #-}
 module Math.NumberTheory.Recurrencies.Linear
   ( fibonacci
