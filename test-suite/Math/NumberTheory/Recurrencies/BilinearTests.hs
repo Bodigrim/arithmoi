@@ -149,6 +149,84 @@ bernoulliProperty2 (NonNegative m)
          | k <- [0 .. m - 1]
          ]
 
+assertEqualUpToEps :: String -> Double -> Double -> Double -> Assertion
+assertEqualUpToEps msg eps expected actual
+  = assertBool msg (abs (expected - actual) < eps)
+
+epsilon :: Double
+epsilon = 1e-15
+
+zetaEvenSpecialCase1 :: Assertion
+zetaEvenSpecialCase1
+  = assertEqual "zeta(0) = -1/2"
+    (approximateValue $ zetaEven !! 0)
+    (-1 / 2)
+
+zetaEvenSpecialCase2 :: Assertion
+zetaEvenSpecialCase2
+  = assertEqualUpToEps "zeta(2) = pi^2/6" epsilon
+    (approximateValue $ zetaEven !! 1)
+    (pi * pi / 6)
+
+zetaEvenSpecialCase3 :: Assertion
+zetaEvenSpecialCase3
+  = assertEqualUpToEps "zeta(4) = pi^4/90" epsilon
+    (approximateValue $ zetaEven !! 2)
+    (pi ^ 4 / 90)
+
+zetaEvenProperty1 :: Positive Int -> Bool
+zetaEvenProperty1 (Positive m)
+  =  zetaM < 1
+  || zetaM > zetaM1
+  where
+    zetaM  = approximateValue (zetaEven !! m)
+    zetaM1 = approximateValue (zetaEven !! (m + 1))
+
+zetaOdd' :: [Double]
+zetaOdd' = zetaOdd epsilon
+
+zetaOddSpecialCase1 :: Assertion
+zetaOddSpecialCase1
+  = assertEqual "zeta(1) = Infinity"
+    (zetaOdd' !! 0)
+    (1 / 0)
+
+zetaOddSpecialCase2 :: Assertion
+zetaOddSpecialCase2
+  = assertEqualUpToEps "zeta(3) = 1.2020569" 1e-15
+    (zetaOdd' !! 1)
+    1.2020569031595942853997381615114499908
+
+zetaOddSpecialCase3 :: Assertion
+zetaOddSpecialCase3
+  = assertEqualUpToEps "zeta(5) = 1.0369277" 1e-15
+    (zetaOdd' !! 2)
+    1.0369277551433699263313654864570341681
+
+zetaOddProperty1 :: Positive Int -> Bool
+zetaOddProperty1 (Positive m)
+  =  zetaM < 1
+  || zetaM > zetaM1
+  where
+    zetaM  = zetaOdd' !! m
+    zetaM1 = zetaOdd' !! (m + 1)
+
+zetaProperty1 :: Positive Int -> Bool
+zetaProperty1 (Positive m)
+  =  zetaM < 1
+  || zetaM > zetaM1
+  where
+    zetaM  = approximateValue (zetaEven !! m)
+    zetaM1 = zetaOdd' !! m
+
+zetaProperty2 :: NonNegative Int -> Bool
+zetaProperty2 (NonNegative m)
+  =  zetaM < 1
+  || zetaM > zetaM1
+  where
+    zetaM  = zetaOdd' !! m
+    zetaM1 = approximateValue (zetaEven !! (m + 1))
+
 testSuite :: TestTree
 testSuite = testGroup "Bilinear"
   [ testGroup "binomial"
@@ -192,5 +270,17 @@ testSuite = testGroup "Bilinear"
     , testCase "B_1"                           bernoulliSpecialCase2
     , testSmallAndQuick "sign"                 bernoulliProperty1
     , testSmallAndQuick "recursive definition" bernoulliProperty2
+    ]
+  , testGroup "zeta"
+    [ testCase "zeta(0)"                          zetaEvenSpecialCase1
+    , testCase "zeta(2)"                          zetaEvenSpecialCase2
+    , testCase "zeta(4)"                          zetaEvenSpecialCase3
+    , testSmallAndQuick "zeta(2n) > zeta(2n+2)"   zetaEvenProperty1
+    , testCase "zeta(1)"                          zetaOddSpecialCase1
+    , testCase "zeta(3)"                          zetaOddSpecialCase2
+    , testCase "zeta(5)"                          zetaOddSpecialCase3
+    , testSmallAndQuick "zeta(2n+1) > zeta(2n+3)" zetaOddProperty1
+    , testSmallAndQuick "zeta(2n) > zeta(2n+1)"   zetaProperty1
+    , testSmallAndQuick "zeta(2n+1) > zeta(2n+2)" zetaProperty2
     ]
   ]
