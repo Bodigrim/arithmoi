@@ -238,29 +238,49 @@ skipOdds xs = xs
 -- <https://cr.yp.to/bib/2000/borwein.pdf Computational strategies for the Riemann zeta function>
 -- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57).
 --
--- > > take 5 (zetaOdd 1e-5) :: [Double]
--- > [Infinity,1.2020507291357774,1.0369201007325664,1.0083396911882425,1.001996752492786]
+-- > > take 5 (zetaOdd 1e-15) :: [Double]
+-- > [Infinity,1.2020569031595936,1.0369277551433693,1.0083492773819225,1.002008392826082]
 --
 zetaOdd :: forall a. (Floating a, Ord a) => a -> [a]
-zetaOdd eps = zs
+zetaOdd eps = (1 / 0) : zetas
   where
-    zs = (1 / 0) : map worker [1..]
+    zetas :: [a] -- [zeta(3), zeta(5), zeta(7)...]
+    zetas = map (max 1) $ zipWith (*) zs (tail $ zipWith (*) (iterate (* (pi * pi)) 1) (cycle [1, -1]))
 
-    worker :: Int -> a
-    worker m = negate $ fromRational ((4^m) % (2*4^m-1)) * summands
-      where
-        summands :: a
-        summands = sum1 + approximateValue (piifac m) * (log 2 + sum2)
+    zs :: [a] -- [zeta(3) / (-pi^2), zeta(5) / pi^4, zeta(7) / (-pi^6)...]
+    zs = zipWith (\w f -> negate (w / (1 + f))) ws fourth
 
-        sum1 :: a
-        sum1 = sum $ map (\k -> zs !! k * approximateValue (piifac (m - k) * fromRational ((4^k-1) % (4^k)))) [1 .. m - 1]
+    ys :: [a] -- [(1 - 1/4) * zeta(3) / (-pi^2), (1 - 1/4^2) * zeta(5) / pi^4...]
+    ys = zipWith (*) zs fourth
+    yss :: [[a]] -- [[], [ys !! 0], [ys !! 1, ys !! 0], [ys !! 2, ys !! 1, ys !! 0]...]
+    yss = [] : zipWith (:) ys yss
 
-        sum2 :: a
-        sum2 = suminf eps (zipWith (\a b -> approximateValue $ a / fromRational (b%1)) zetaEven (map (\k -> 4^k * (fromIntegral $ k+m)) [0..]))
+    xs :: [a] -- first summand of RHS in (57) for m=[1..]
+    xs = map (sum . zipWith (flip (/)) factorial2) yss
 
-    -- n -> (pi * i) ^ 2n / (2n)!
-    piifac :: Int -> ExactPi
-    piifac n = Exact (fromIntegral $ 2 * n) ((if even n then 1 else (-1)) % factorial !! (2 * n))
+    ws :: [a] -- RHS in (57) for m=[1..]
+    ws = zipWith (+) xs cs
+
+    rs :: [a] -- [1, 1/2, 1/3, 1/4...]
+    rs = map (\n -> recip (fromInteger n)) [1..]
+    rss :: [[a]] -- [[1, 1/2, 1/3...], [1/2, 1/3, 1/4...], [1/3, 1/4...]]
+    rss = rs : map tail rss
+
+    factorial2 :: [a] -- [2!, 4!, 6!..]
+    factorial2 = map fromInteger $ tail $ skipOdds factorial
+
+    fourth :: [a] -- [1 - 1/4, 1 - 1/4^2, 1 - 1/4^3...]
+    fourth = tail $ map (1 -) $ iterate (/ 4) 1
+
+    as :: [a] -- [zeta(0), zeta(2)/4, zeta(2*2)/4^2, zeta(2*3)/4^3...]
+    as = zipWith (/) (approximateValue (head zetaEven) : map (max 1 . approximateValue) (tail zetaEven)) (iterate (* 4) 1)
+
+    bs :: [a] -- map (+ log 2) [b(1), b(2), b(3)...],
+              -- where b(m) = \sum_{n=0}^\infty zeta(2n) / 4^n / (n + m)
+    bs = map ((+ log 2) . suminf eps . zipWith (*) as) rss
+
+    cs :: [a] -- second summand of RHS in (57) for m = [1..]
+    cs = zipWith (\b f -> b / f) bs factorial2
 
 limit :: (Num a, Ord a) => a -> [a] -> a
 limit eps xs = snd $ head $ dropWhile (\(a, b) -> abs (a - b) >= eps) $ zip xs (tail xs)

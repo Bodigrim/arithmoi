@@ -206,7 +206,7 @@ zetaOddSpecialCase3
 zetaOddProperty1 :: Positive Int -> Bool
 zetaOddProperty1 (Positive m)
   =  zetaM < 1
-  || zetaM > zetaM1
+  || zetaM >= zetaM1
   where
     zetaM  = zetaOdd' !! m
     zetaM1 = zetaOdd' !! (m + 1)
