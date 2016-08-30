@@ -45,9 +45,9 @@ module Math.NumberTheory.Recurrencies.Bilinear
   , eulerian2
   , bernoulli
 
-  , zetaEven
+  , zetasEven
   , approximateValue
-  , zetaOdd
+  , zetas
   ) where
 
 import Data.List
@@ -215,16 +215,16 @@ zipIndexedListWithTail f n as a = case as of
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors convertation to 'Double' may return values below 1:
 --
--- > > approximateValue (zetaEven !! 25) :: Double
+-- > > approximateValue (zetasEven !! 25) :: Double
 -- > 0.9999999999999996
 --
 -- Use your favorite type for long-precision arithmetic. For instance, 'Data.Number.Fixed.Fixed' works fine:
 --
--- > > approximateValue (zetaEven !! 25) :: Fixed Prec50
+-- > > approximateValue (zetasEven !! 25) :: Fixed Prec50
 -- > 1.00000000000000088817842111574532859293035196051773
 --
-zetaEven :: [ExactPi]
-zetaEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
+zetasEven :: [ExactPi]
+zetasEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
   where
     cs = (- 1 % 2) : zipWith (\i f -> i * (-4) / fromInteger (2 * f * (2 * f - 1))) cs [1..]
 
@@ -232,20 +232,14 @@ skipOdds :: [a] -> [a]
 skipOdds (x : _ : xs) = x : skipOdds xs
 skipOdds xs = xs
 
--- | Infinite sequence of approximate (up to given precision)
--- values of Riemann zeta-function at odd arguments, starting with @ζ(1)@.
--- Computations are performed in accordance to
--- <https://cr.yp.to/bib/2000/borwein.pdf Computational strategies for the Riemann zeta function>
--- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57).
---
--- > > take 5 (zetaOdd 1e-15) :: [Double]
--- > [Infinity,1.2020569031595936,1.0369277551433693,1.0083492773819225,1.002008392826082]
---
-zetaOdd :: forall a. (Floating a, Ord a) => a -> [a]
-zetaOdd eps = (1 / 0) : zetas
+zetasEven' :: (Floating a, Ord a) => [a]
+zetasEven' = map approximateValue zetasEven
+
+zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
+zetasOdd eps = (1 / 0) : zets
   where
-    zetas :: [a] -- [zeta(3), zeta(5), zeta(7)...]
-    zetas = map (max 1) $ zipWith (*) zs (tail $ zipWith (*) (iterate (* (pi * pi)) 1) (cycle [1, -1]))
+    zets :: [a] -- [zeta(3), zeta(5), zeta(7)...]
+    zets = zipWith (*) zs (tail (iterate (* (- pi * pi)) 1))
 
     zs :: [a] -- [zeta(3) / (-pi^2), zeta(5) / pi^4, zeta(7) / (-pi^6)...]
     zs = zipWith (\w f -> negate (w / (1 + f))) ws fourth
@@ -273,7 +267,7 @@ zetaOdd eps = (1 / 0) : zetas
     fourth = tail $ map (1 -) $ iterate (/ 4) 1
 
     as :: [a] -- [zeta(0), zeta(2)/4, zeta(2*2)/4^2, zeta(2*3)/4^3...]
-    as = zipWith (/) (approximateValue (head zetaEven) : map (max 1 . approximateValue) (tail zetaEven)) (iterate (* 4) 1)
+    as = zipWith (/) zetasEven' (iterate (* 4) 1)
 
     bs :: [a] -- map (+ log 2) [b(1), b(2), b(3)...],
               -- where b(m) = \sum_{n=0}^\infty zeta(2n) / 4^n / (n + m)
@@ -282,8 +276,30 @@ zetaOdd eps = (1 / 0) : zetas
     cs :: [a] -- second summand of RHS in (57) for m = [1..]
     cs = zipWith (\b f -> b / f) bs factorial2
 
-limit :: (Num a, Ord a) => a -> [a] -> a
-limit eps xs = snd $ head $ dropWhile (\(a, b) -> abs (a - b) >= eps) $ zip xs (tail xs)
+suminf :: (Floating a, Ord a) => a -> [a] -> a
+suminf eps = sum . takeWhile ((>= eps / 111) . abs)
 
-suminf :: (Num a, Ord a) => a -> [a] -> a
-suminf eps xs = limit eps $ scanl (+) 0 xs
+-- | Infinite sequence of approximate (up to given precision)
+-- values of Riemann zeta-function at integer arguments, starting with @ζ(0)@.
+-- Computations for odd arguments are performed in accordance to
+-- <https://cr.yp.to/bib/2000/borwein.pdf Computational strategies for the Riemann zeta function>
+-- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57).
+--
+-- > > take 5 (zetas 1e-14) :: [Double]
+-- > [-0.5,Infinity,1.6449340668482262,1.2020569031595942,1.0823232337111381]
+--
+-- Beware to force evaluation of @zetas !! 1@, if the type @a@ does not support infinite values
+-- (for instance, 'Data.Number.Fixed.Fixed').
+--
+zetas :: (Floating a, Ord a) => a -> [a]
+zetas eps = e : o : scanl1 f (intertwine es os)
+  where
+    e : es = zetasEven'
+    o : os = zetasOdd eps
+
+    intertwine (x : xs) (y : ys) = x : y : intertwine xs ys
+    intertwine      xs       ys  = xs ++ ys
+
+    -- Cap-and-floor to improve numerical stability:
+    -- 0 < zeta(n + 1) - 1 < (zeta(n) - 1) / 2
+    f x y = 1 `max` (y `min` (1 + (x - 1) / 2))

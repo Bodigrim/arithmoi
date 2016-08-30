@@ -154,78 +154,77 @@ assertEqualUpToEps msg eps expected actual
   = assertBool msg (abs (expected - actual) < eps)
 
 epsilon :: Double
-epsilon = 1e-15
+epsilon = 1e-14
 
-zetaEvenSpecialCase1 :: Assertion
-zetaEvenSpecialCase1
+zetasEvenSpecialCase1 :: Assertion
+zetasEvenSpecialCase1
   = assertEqual "zeta(0) = -1/2"
-    (approximateValue $ zetaEven !! 0)
+    (approximateValue $ zetasEven !! 0)
     (-1 / 2)
 
-zetaEvenSpecialCase2 :: Assertion
-zetaEvenSpecialCase2
+zetasEvenSpecialCase2 :: Assertion
+zetasEvenSpecialCase2
   = assertEqualUpToEps "zeta(2) = pi^2/6" epsilon
-    (approximateValue $ zetaEven !! 1)
+    (approximateValue $ zetasEven !! 1)
     (pi * pi / 6)
 
-zetaEvenSpecialCase3 :: Assertion
-zetaEvenSpecialCase3
+zetasEvenSpecialCase3 :: Assertion
+zetasEvenSpecialCase3
   = assertEqualUpToEps "zeta(4) = pi^4/90" epsilon
-    (approximateValue $ zetaEven !! 2)
+    (approximateValue $ zetasEven !! 2)
     (pi ^ 4 / 90)
 
-zetaEvenProperty1 :: Positive Int -> Bool
-zetaEvenProperty1 (Positive m)
+zetasEvenProperty1 :: Positive Int -> Bool
+zetasEvenProperty1 (Positive m)
   =  zetaM < 1
   || zetaM > zetaM1
   where
-    zetaM  = approximateValue (zetaEven !! m)
-    zetaM1 = approximateValue (zetaEven !! (m + 1))
+    zetaM  = approximateValue (zetasEven !! m)
+    zetaM1 = approximateValue (zetasEven !! (m + 1))
 
-zetaOdd' :: [Double]
-zetaOdd' = zetaOdd epsilon
+zetasEvenProperty2 :: Positive Int -> Bool
+zetasEvenProperty2 (Positive m)
+  = abs (zetaM - zetaM') < epsilon
+  where
+    zetaM  = approximateValue (zetasEven !! m)
+    zetaM' = zetas' !! (2 * m)
 
-zetaOddSpecialCase1 :: Assertion
-zetaOddSpecialCase1
+zetas' :: [Double]
+zetas' = zetas epsilon
+
+zetasSpecialCase1 :: Assertion
+zetasSpecialCase1
   = assertEqual "zeta(1) = Infinity"
-    (zetaOdd' !! 0)
+    (zetas' !! 1)
     (1 / 0)
 
-zetaOddSpecialCase2 :: Assertion
-zetaOddSpecialCase2
-  = assertEqualUpToEps "zeta(3) = 1.2020569" 1e-15
-    (zetaOdd' !! 1)
+zetasSpecialCase2 :: Assertion
+zetasSpecialCase2
+  = assertEqualUpToEps "zeta(3) = 1.2020569" epsilon
+    (zetas' !! 3)
     1.2020569031595942853997381615114499908
 
-zetaOddSpecialCase3 :: Assertion
-zetaOddSpecialCase3
-  = assertEqualUpToEps "zeta(5) = 1.0369277" 1e-15
-    (zetaOdd' !! 2)
+zetasSpecialCase3 :: Assertion
+zetasSpecialCase3
+  = assertEqualUpToEps "zeta(5) = 1.0369277" epsilon
+    (zetas' !! 5)
     1.0369277551433699263313654864570341681
 
-zetaOddProperty1 :: Positive Int -> Bool
-zetaOddProperty1 (Positive m)
-  =  zetaM < 1
-  || zetaM >= zetaM1
+zetasProperty1 :: Positive Int -> Bool
+zetasProperty1 (Positive m)
+  =  zetaM >= zetaM1
+  && zetaM1 >= 1
   where
-    zetaM  = zetaOdd' !! m
-    zetaM1 = zetaOdd' !! (m + 1)
+    zetaM  = zetas' !! m
+    zetaM1 = zetas' !! (m + 1)
 
-zetaProperty1 :: Positive Int -> Bool
-zetaProperty1 (Positive m)
-  =  zetaM < 1
-  || zetaM > zetaM1
+zetasProperty2 :: NonNegative Int -> NonNegative Int -> Bool
+zetasProperty2 (NonNegative e1) (NonNegative e2)
+  = maximum (take 25 $ drop 2 $ zipWith ((abs .) . (-)) (zetas eps1) (zetas eps2)) < eps1 + eps2
   where
-    zetaM  = approximateValue (zetaEven !! m)
-    zetaM1 = zetaOdd' !! m
-
-zetaProperty2 :: NonNegative Int -> Bool
-zetaProperty2 (NonNegative m)
-  =  zetaM < 1
-  || zetaM > zetaM1
-  where
-    zetaM  = zetaOdd' !! m
-    zetaM1 = approximateValue (zetaEven !! (m + 1))
+    eps1, eps2 :: Double
+    eps1 = 1.0 / 2 ^ e1
+    eps2 = 1.0 / 2 ^ e2
 
 testSuite :: TestTree
 testSuite = testGroup "Bilinear"
@@ -272,15 +271,15 @@ testSuite = testGroup "Bilinear"
     , testSmallAndQuick "recursive definition" bernoulliProperty2
     ]
   , testGroup "zeta"
-    [ testCase "zeta(0)"                          zetaEvenSpecialCase1
-    , testCase "zeta(2)"                          zetaEvenSpecialCase2
-    , testCase "zeta(4)"                          zetaEvenSpecialCase3
-    , testSmallAndQuick "zeta(2n) > zeta(2n+2)"   zetaEvenProperty1
-    , testCase "zeta(1)"                          zetaOddSpecialCase1
-    , testCase "zeta(3)"                          zetaOddSpecialCase2
-    , testCase "zeta(5)"                          zetaOddSpecialCase3
-    , testSmallAndQuick "zeta(2n+1) > zeta(2n+3)" zetaOddProperty1
-    , testSmallAndQuick "zeta(2n) > zeta(2n+1)"   zetaProperty1
-    , testSmallAndQuick "zeta(2n+1) > zeta(2n+2)" zetaProperty2
+    [ testCase "zeta(0)"                          zetasEvenSpecialCase1
+    , testCase "zeta(2)"                          zetasEvenSpecialCase2
+    , testCase "zeta(4)"                          zetasEvenSpecialCase3
+    , testSmallAndQuick "zeta(2n) > zeta(2n+2)"   zetasEvenProperty1
+    , testSmallAndQuick "zetasEven matches zetas" zetasEvenProperty2
+    , testCase "zeta(1)"                          zetasSpecialCase1
+    , testCase "zeta(3)"                          zetasSpecialCase2
+    , testCase "zeta(5)"                          zetasSpecialCase3
+    , testSmallAndQuick "zeta(n) > zeta(n+1)"     zetasProperty1
+    , testSmallAndQuick "precision"               zetasProperty2
     ]
   ]
