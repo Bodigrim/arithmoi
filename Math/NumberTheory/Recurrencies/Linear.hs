@@ -10,7 +10,8 @@
 
 {-# LANGUAGE CPP #-}
 module Math.NumberTheory.Recurrencies.Linear
-  ( fibonacci
+  ( factorial
+  , fibonacci
   , fibonacciPair
   , lucas
   , lucasPair
@@ -20,6 +21,15 @@ module Math.NumberTheory.Recurrencies.Linear
 #include "MachDeps.h"
 
 import Data.Bits
+import Numeric.Natural
+
+-- | Infinite sequence of factorials, starting with 0!
+factorial :: (Num a, Enum a) => [a]
+factorial = scanl (*) 1 [1..]
+{-# SPECIALIZE factorial :: [Int]     #-}
+{-# SPECIALIZE factorial :: [Word]    #-}
+{-# SPECIALIZE factorial :: [Integer] #-}
+{-# SPECIALIZE factorial :: [Natural] #-}
 
 -- | @'fibonacci' k@ calculates the @k@-th Fibonacci number in
 --   /O/(@log (abs k)@) steps. The index may be negative. This
