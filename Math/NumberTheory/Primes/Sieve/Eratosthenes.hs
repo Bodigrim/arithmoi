@@ -9,9 +9,7 @@
 -- Sieve
 --
 {-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
-#if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
-#endif
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
     ( primes
@@ -36,9 +34,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 import Control.Monad.ST
 import Data.Array.ST
-#if !MIN_VERSION_array(0,5,0)
-                     hiding (unsafeFreeze, unsafeThaw, castSTUArray)
-#endif
 import Control.Monad (when)
 import Data.Bits
 #if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32

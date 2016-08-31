@@ -30,10 +30,6 @@ module Math.NumberTheory.Logarithms
 
 import GHC.Base
 
-#if __GLASGOW_HASKELL__ < 705
-import GHC.Word (Word(..))      -- Moved to GHC.Types
-#endif
-
 import Data.Bits
 import Data.Array.Unboxed
 

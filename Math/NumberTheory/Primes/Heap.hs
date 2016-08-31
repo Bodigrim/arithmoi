@@ -16,9 +16,7 @@
 -- This module is mainly intended for comparison and verification.
 {-# LANGUAGE BangPatterns, CPP, MonoLocalBinds #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
-#if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fno-float-in -fno-spec-constr -fno-full-laziness #-}
-#endif
 module Math.NumberTheory.Primes.Heap (primes, sieveFrom) where
 
 import Data.Array.Unboxed
@@ -58,10 +56,6 @@ data Hipp a
 {-# SPECIALISE push :: Word -> Word -> Int -> Hipp Word -> Hipp Word #-}
 {-# SPECIALISE push :: Integer -> Integer -> Int -> Hipp Integer -> Hipp Integer #-}
 push :: Integral a => a -> a -> Int -> Hipp a -> Hipp a
--- GHC 7 does not like the old code, so it gets a new implementation.
--- That is faster than what it does with the old code, but still slower
--- than what GHC 6 did with it. :(
-#if __GLASGOW_HASKELL__ >= 700
 push !c !p !w = go
   where
     less = (< c)
@@ -69,21 +63,12 @@ push !c !p !w = go
         | less hc   = H hc hp hw (go r) l
         | otherwise = H c p w (push hc hp hw r) l
     go _ = H c p w E E
-#else
-push c p w (H hc hp hw l r)
-    | c < hc    = H c p w (push hc hp hw r) l
-    | otherwise = H hc hp hw (push c p w r) l
-push c p w E = H c p w E E
-#endif
 
 -- bubble down increased top to regain heap invariant
 {-# SPECIALISE bubble :: Hipp Int -> Hipp Int #-}
 {-# SPECIALISE bubble :: Hipp Word -> Hipp Word #-}
 {-# SPECIALISE bubble :: Hipp Integer -> Hipp Integer #-}
 bubble :: Integral a => Hipp a -> Hipp a
--- Again, GHC 6 fared better, so new code for GHC 7, still
--- not as good as GHC 6 was.
-#if __GLASGOW_HASKELL__ >= 700
 bubble h@(H c p w l r) =
     case r of
         E -> case l of
@@ -100,19 +85,9 @@ bubble h@(H c p w l r) =
                 | rc < c -> H rc rp rw l (mkHipp c p w rl rr)
                 | otherwise -> h
             _ -> error "Heap invariant violated, left smaller than right!"
-#else
-bubble h@(H c p w l@(H lc lp lw ll lr) r@(H rc rp rw rl rr))
-    | c <= lc && c <= rc = h
-    | lc < rc   = H lc lp lw (bubble (H c p w ll lr)) r
-    | otherwise = H rc rp rw l (bubble (H c p w rl rr))
-bubble h@(H c p w (H lc lp lw _ _) _)
-    | c <= lc   = h
-    | otherwise = H lc lp lw (H c p w E E) E
-#endif
 bubble h = h
 
--- join two heaps and composite-data, GHC 7 doesn't do well on the old bubble.
-#if __GLASGOW_HASKELL__ >= 700
+-- join two heaps and composite-data
 {-# SPECIALISE
     mkHipp :: Int -> Int -> Int -> Hipp Int -> Hipp Int -> Hipp Int,
               Integer -> Integer -> Int -> Hipp Integer -> Hipp Integer -> Hipp Integer,
@@ -138,8 +113,6 @@ mkHipp !c !p !w = go
                 | less rc -> H rc rp rw l (go rl rr)
                 | otherwise -> H c p w l r
             _ -> error "Heap invariant violated, left smaller than right!"
--- {-# INLINE mkHipp #-}
-#endif
 
 -- increase the top of the heap and re-heap
 {-# SPECIALISE inc :: Hipp Int -> Hipp Int #-}

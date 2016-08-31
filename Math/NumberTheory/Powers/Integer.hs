@@ -16,9 +16,6 @@ module Math.NumberTheory.Powers.Integer
     ) where
 
 import GHC.Base
-#if __GLASGOW_HASKELL__ < 705
-import GHC.Word
-#endif
 
 import Math.NumberTheory.Logarithms.Internal ( wordLog2# )
 #if __GLASGOW_HASKELL__ < 707

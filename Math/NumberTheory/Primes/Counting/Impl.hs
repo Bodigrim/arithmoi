@@ -9,9 +9,7 @@
 -- Number of primes not exceeding @n@, @&#960;(n)@, and @n@-th prime.
 --
 {-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
-#if __GLASGOW_HASKELL__ >= 700
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
-#endif
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Counting.Impl
     ( primeCount
@@ -31,9 +29,6 @@ import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Unsafe
 
 import Data.Array.ST
-#if !MIN_VERSION_array(0,5,0)
-    hiding (unsafeThaw)
-#endif
 import Control.Monad.ST
 import Data.Bits
 import Data.Int

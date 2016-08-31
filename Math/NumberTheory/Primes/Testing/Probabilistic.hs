@@ -28,9 +28,6 @@ import Data.Bits
 
 import GHC.Base
 
-#if __GLASGOW_HASKELL__ < 705
-import GHC.Word     -- Moved to GHC.Types
-#endif
 import GHC.Integer.GMP.Internals
 
 -- | @'isPrime' n@ tests whether @n@ is a prime (negative or positive).

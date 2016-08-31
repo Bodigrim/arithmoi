@@ -24,9 +24,6 @@ import Data.Array.Unboxed
 import Data.Array.ST
 
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 705
-import Data.Word
-#endif
 
 import GHC.Base
 import GHC.Integer
