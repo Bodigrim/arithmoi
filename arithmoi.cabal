@@ -79,7 +79,6 @@ library
                           Math.NumberTheory.UniqueFactorisation
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Unsafe
-                          Math.NumberTheory.Logarithms.Internal
                           Math.NumberTheory.Primes.Counting.Impl
                           Math.NumberTheory.Primes.Counting.Approximate
                           Math.NumberTheory.Primes.Factorisation.Montgomery

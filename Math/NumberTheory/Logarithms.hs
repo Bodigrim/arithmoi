@@ -33,7 +33,8 @@ import GHC.Base
 import Data.Bits
 import Data.Array.Unboxed
 
-import Math.NumberTheory.Logarithms.Internal
+import GHC.Integer.Logarithms
+
 import Math.NumberTheory.Powers.Integer
 import Math.NumberTheory.Unsafe
 #if __GLASGOW_HASKELL__ < 707

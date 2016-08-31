@@ -25,13 +25,13 @@ module Math.NumberTheory.Powers.General
 import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
+import GHC.Integer.Logarithms (integerLog2#)
 
 import Data.Bits
 import Data.List (foldl')
 import qualified Data.Set as Set
 
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 import Math.NumberTheory.Utils  (shiftToOddCount
                                 , splitOff
 #if __GLASGOW_HASKELL__ < 707

@@ -52,8 +52,9 @@ import Control.Applicative
 import Data.Bits
 import Data.Maybe
 
+import GHC.Integer.Logarithms
+
 import Math.NumberTheory.Logarithms
-import Math.NumberTheory.Logarithms.Internal
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
