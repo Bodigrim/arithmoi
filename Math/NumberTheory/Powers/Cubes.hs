@@ -24,15 +24,12 @@ import Data.Array.Unboxed
 import Data.Array.ST
 
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 705
-import Data.Word
-#endif
 
 import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
+import GHC.Integer.Logarithms (integerLog2#)
 
-import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 import Math.NumberTheory.Unsafe
 #if __GLASGOW_HASKELL__ < 707
 import Math.NumberTheory.Utils (isTrue#)

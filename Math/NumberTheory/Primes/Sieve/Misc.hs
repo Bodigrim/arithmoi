@@ -6,10 +6,11 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
-{-# LANGUAGE CPP, BangPatterns, ScopedTypeVariables, MonoLocalBinds, FlexibleContexts #-}
-#if __GLASGOW_HASKELL__ >= 700
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE MonoLocalBinds      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
-#endif
 {-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Misc

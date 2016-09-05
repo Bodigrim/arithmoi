@@ -38,16 +38,17 @@ flag check-bounds
 
 library
     default-language: Haskell2010
-    build-depends       : base >= 4 && < 5
-                          , array >= 0.3 && < 0.6
-                          , ghc-prim < 0.6
-                          , integer-gmp < 1.1
-                          , containers >= 0.3 && < 0.6
-                          , random >= 1.0 && < 1.2
-                          , mtl >= 2.0 && < 2.3
-                          , semigroups >= 0.8
-                          , nats >= 1 && <1.2
-
+    build-depends       : base >= 4.6 && < 5
+                        , array >= 0.5 && < 0.6
+                        , ghc-prim < 0.6
+                        , integer-gmp < 1.1
+                        , containers >= 0.5 && < 0.6
+                        , random >= 1.0 && < 1.2
+                        , mtl >= 2.0 && < 2.3
+    if impl(ghc < 7.10)
+      build-depends     : nats >= 1 && <1.2
+    if impl(ghc < 8.0)
+      build-depends     : semigroups >= 0.8
 
     exposed-modules     : Math.NumberTheory.ArithmeticFunctions
                           Math.NumberTheory.ArithmeticFunctions.Class
@@ -78,7 +79,6 @@ library
                           Math.NumberTheory.UniqueFactorisation
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Unsafe
-                          Math.NumberTheory.Logarithms.Internal
                           Math.NumberTheory.Primes.Counting.Impl
                           Math.NumberTheory.Primes.Counting.Approximate
                           Math.NumberTheory.Primes.Factorisation.Montgomery
@@ -121,18 +121,20 @@ test-suite spec
   ghc-options:          -Wall
   main-is:              Test.hs
   default-language: Haskell2010
-  build-depends:        base >= 4 && < 5
-                        , containers >= 0.3 && < 0.6
-                        , nats >= 1 && <1.2
-                        , arithmoi >= 0.4 && < 0.5
-                        , tasty >= 0.10 && < 0.12
-                        , tasty-smallcheck >= 0.8 && < 0.9
-                        , tasty-quickcheck >= 0.8 && < 0.9
-                        , tasty-hunit >= 0.9 && < 0.10
-                        , QuickCheck >= 2.7.6 && < 2.10
-                        , smallcheck >= 1.1 && < 1.2
-                        , transformers >= 0.3
-                        , transformers-compat >= 0.4
+  build-depends:        base >= 4.6 && < 5
+                      , containers >= 0.5 && < 0.6
+                      , arithmoi >= 0.4 && < 0.5
+                      , tasty >= 0.10 && < 0.12
+                      , tasty-smallcheck >= 0.8 && < 0.9
+                      , tasty-quickcheck >= 0.8 && < 0.9
+                      , tasty-hunit >= 0.9 && < 0.10
+                      , QuickCheck >= 2.7.6 && < 2.10
+                      , smallcheck >= 1.1 && < 1.2
+                      , transformers >= 0.3
+                      , transformers-compat >= 0.4
+  if impl(ghc < 7.10)
+    build-depends     : nats >= 1 && <1.2
+
   other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
                   , Math.NumberTheory.GaussianIntegersTests
                   , Math.NumberTheory.GCDTests

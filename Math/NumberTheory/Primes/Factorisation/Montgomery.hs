@@ -43,9 +43,6 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 #include "MachDeps.h"
 
 import GHC.Base
-#if __GLASGOW_HASKELL__ < 705
-import GHC.Word     -- Moved to GHC.Types
-#endif
 
 import System.Random
 import Control.Monad.State.Strict
@@ -55,8 +52,9 @@ import Control.Applicative
 import Data.Bits
 import Data.Maybe
 
+import GHC.Integer.Logarithms
+
 import Math.NumberTheory.Logarithms
-import Math.NumberTheory.Logarithms.Internal
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes

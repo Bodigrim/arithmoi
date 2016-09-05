@@ -26,9 +26,9 @@ import Data.Bits
 import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
+import GHC.Integer.Logarithms (integerLog2#)
 
 import Math.NumberTheory.Logarithms (integerLog2)
-import Math.NumberTheory.Logarithms.Internal (integerLog2#)
 #if __GLASGOW_HASKELL__ < 707
 import Math.NumberTheory.Utils (isTrue#)
 #endif
