@@ -1,3 +1,17 @@
+0.4.3.0:
+    This release supports GHC 7.6, 7.8, 7.10 and 8.0.
+
+    Add Math.NumberTheory.ArithmeticFunctions with brand-new machinery
+    for arithmetic functions: divisors, tau, sigma, totient, jordan,
+    moebius, liouville, smallOmega, bigOmega, carmichael, expMangoldt (#30).
+    Old implementations (exposed via Math.NumberTheory.Primes.Factorisation
+    and Math.NumberTheory.Powers.Integer) are deprecated and will be removed
+    in the next major release.
+
+    Add Karatsuba sqrt algorithm, improving performance on large integers (#6).
+
+    Fix incorrect indexing of FactorSieve (#35).
+
 0.4.2.0:
     This release supports GHC 7.6, 7.8, 7.10 and 8.0.
 
