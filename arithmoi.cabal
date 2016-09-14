@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.4.2.0
+version             : 0.4.3.0
 cabal-version       : >= 1.10
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer
@@ -20,10 +20,6 @@ description         : A library of basic functionality needed for
                       Primes and related things (totients, factorisation),
                       powers (integer roots and tests, modular exponentiation),
                       integer logarithms.
-
-                      Note: Requires GHC >= 6.12 with the integer-gmp package
-                      for efficiency. Portability is on the to-do list (with
-                      low priority, however).
 
 category            : Math, Algorithms, Number Theory
 
