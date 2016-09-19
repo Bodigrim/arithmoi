@@ -109,8 +109,11 @@ benchmark criterion
                     , criterion
                     , containers
                     , random
+  if impl(ghc < 7.10)
+    build-depends     : nats >= 1 && <1.2
   other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
                   , Math.NumberTheory.PowersBench
+                  , Math.NumberTheory.RecurrenciesBench
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0
