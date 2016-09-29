@@ -166,6 +166,6 @@ zipIndexedListWithTail f n as a = case as of
   (x : xs) -> go n x xs
   where
     go m y ys = case ys of
-      []       -> [f m y a]
-      (z : zs) -> f m y z : go (succ m) z zs
+      []       -> let v = f m y a in v `seq` [v]
+      (z : zs) -> let v = f m y z in v `seq` (v : go (succ m) z zs)
 {-# INLINE zipIndexedListWithTail #-}
