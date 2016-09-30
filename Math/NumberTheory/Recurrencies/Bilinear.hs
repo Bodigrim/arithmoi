@@ -153,6 +153,7 @@ bernoulli :: Integral a => [Ratio a]
 bernoulli = map f stirling2
   where
     f = sum . zipWith4 (\sgn denom fact stir -> sgn * fact * stir % denom) (cycle [1, -1]) [1..] factorial
+{-# SPECIALIZE bernoulli :: [Ratio Int] #-}
 {-# SPECIALIZE bernoulli :: [Rational] #-}
 
 -------------------------------------------------------------------------------
