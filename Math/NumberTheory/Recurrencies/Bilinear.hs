@@ -59,10 +59,15 @@ factorial = scanl (*) 1 [1..]
 {-# SPECIALIZE factorial :: [Integer] #-}
 {-# SPECIALIZE factorial :: [Natural] #-}
 
--- | Infinite zero-based table of binomial coefficients: @binomial !! n !! k == n! \/ k! \/ (n - k)!@.
+-- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle):
+-- @binomial !! n !! k == n! \/ k! \/ (n - k)!@.
 --
 -- > > take 5 (map (take 5) binomial)
 -- > [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1]]
+--
+-- Complexity: @binomial !! n !! k@ is O(n) bits long, its computation
+-- takes O(k n) time and forces thunks @binomial !! n !! i@ for @0 <= i <= k@.
+-- Use the symmetry of Pascal triangle @binomial !! n !! k == binomial !! n !! (n - k)@ to speed up computations.
 --
 -- One could also consider 'Math.Combinat.Numbers.binomial' to compute stand-alone values.
 binomial :: Integral a => [[a]]
@@ -74,19 +79,13 @@ binomial = map f [0..]
 {-# SPECIALIZE binomial :: [[Integer]] #-}
 {-# SPECIALIZE binomial :: [[Natural]] #-}
 
--- binomial_ :: Num a => [[a]]
--- binomial_ = map f [0..]
---   where
---     f n = go
--- (n k) = n! / k! / (n - k)! = n! / (k - 1)! / (n - k + 1)! * (n - k + 1) / k = (n k-1) * (n - k + 1) / k
---
--- {-# SPECIALIZE binomial_ :: [[Integer]] #-}
--- {-# SPECIALIZE binomial_ :: [[Natural]] #-}
-
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --
 -- > > take 5 (map (take 5) stirling1)
 -- > [[1],[0,1],[0,1,1],[0,2,3,1],[0,6,11,6,1]]
+--
+-- Complexity: @stirling1 !! n !! k@ is O(n ln n) bits long, its computation
+-- takes O(k n^2 ln n) time and forces thunks @stirling1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
 -- One could also consider 'Math.Combinat.Numbers.unsignedStirling1st' to compute stand-alone values.
 stirling1 :: (Num a, Enum a) => [[a]]
@@ -103,6 +102,9 @@ stirling1 = scanl f [1] [0..]
 -- > > take 5 (map (take 5) stirling2)
 -- > [[1],[0,1],[0,1,1],[0,1,3,1],[0,1,7,6,1]]
 --
+-- Complexity: @stirling2 !! n !! k@ is O(n ln n) bits long, its computation
+-- takes O(k n^2 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
+--
 -- One could also consider 'Math.Combinat.Numbers.stirling2nd' to compute stand-alone values.
 stirling2 :: (Num a, Enum a) => [[a]]
 stirling2 = iterate f [1]
@@ -118,6 +120,9 @@ stirling2 = iterate f [1]
 -- > > take 5 (map (take 5) eulerian1)
 -- > [[],[1],[1,1],[1,4,1],[1,11,11,1]]
 --
+-- Complexity: @eulerian1 !! n !! k@ is O(n ln n) bits long, its computation
+-- takes O(k n^2 ln n) time and forces thunks @eulerian1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
+--
 eulerian1 :: (Num a, Enum a) => [[a]]
 eulerian1 = scanl f [] [1..]
   where
@@ -131,6 +136,9 @@ eulerian1 = scanl f [] [1..]
 --
 -- > > take 5 (map (take 5) eulerian2)
 -- > [[],[1],[1,2],[1,8,6],[1,22,58,24]]
+--
+-- Complexity: @eulerian2 !! n !! k@ is O(n ln n) bits long, its computation
+-- takes O(k n^2 ln n) time and forces thunks @eulerian2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
 eulerian2 :: (Num a, Enum a) => [[a]]
 eulerian2 = scanl f [] [1..]
@@ -147,6 +155,9 @@ eulerian2 = scanl f [] [1..]
 --
 -- > > take 5 bernoulli
 -- > [1 % 1,(-1) % 2,1 % 6,0 % 1,(-1) % 30]
+--
+-- Complexity: @bernoulli !! n@ is O(n ln n) bits long, its computation
+-- takes O(n^3 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @0 <= j <= i@.
 --
 -- One could also consider 'Math.Combinat.Numbers.bernoulli' to compute stand-alone values.
 bernoulli :: Integral a => [Ratio a]
@@ -167,6 +178,6 @@ zipIndexedListWithTail f n as a = case as of
   (x : xs) -> go n x xs
   where
     go m y ys = case ys of
-      []       -> let v = f m y a in v `seq` [v]
-      (z : zs) -> let v = f m y z in v `seq` (v : go (succ m) z zs)
+      []       -> let v = f m y a in [v]
+      (z : zs) -> let v = f m y z in (v : go (succ m) z zs)
 {-# INLINE zipIndexedListWithTail #-}
