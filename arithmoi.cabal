@@ -53,7 +53,8 @@ library
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
-                          Math.NumberTheory.Lucas
+                          Math.NumberTheory.Recurrencies.Bilinear
+                          Math.NumberTheory.Recurrencies.Linear
                           Math.NumberTheory.GaussianIntegers
                           Math.NumberTheory.GCD
                           Math.NumberTheory.GCD.LowLevel
@@ -104,8 +105,11 @@ benchmark criterion
                     , criterion
                     , containers
                     , random
+  if impl(ghc < 7.10)
+    build-depends     : nats >= 1 && <1.2
   other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
                   , Math.NumberTheory.PowersBench
+                  , Math.NumberTheory.RecurrenciesBench
   hs-source-dirs:   benchmark
   main-is:          Bench.hs
   type:             exitcode-stdio-1.0
@@ -136,7 +140,8 @@ test-suite spec
                   , Math.NumberTheory.GCDTests
                   , Math.NumberTheory.GCD.LowLevelTests
                   , Math.NumberTheory.LogarithmsTests
-                  , Math.NumberTheory.LucasTests
+                  , Math.NumberTheory.Recurrencies.LinearTests
+                  , Math.NumberTheory.Recurrencies.BilinearTests
                   , Math.NumberTheory.ModuliTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.MoebiusInversionTests

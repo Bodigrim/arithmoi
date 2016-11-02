@@ -1,14 +1,15 @@
 -- |
--- Module:      Math.NumberTheory.Lucas
+-- Module:      Math.NumberTheory.Recurrencies.Linear
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Efficient calculation of Lucas sequences.
+-- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
+
 {-# LANGUAGE CPP #-}
-module Math.NumberTheory.Lucas
+module Math.NumberTheory.Recurrencies.Linear
   ( fibonacci
   , fibonacciPair
   , lucas
