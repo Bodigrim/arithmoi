@@ -74,6 +74,23 @@ stirling2Property4 (Positive i) (Positive j)
   == stirling2 !! (i - 1) !! (j - 1)
   +  toInteger j * stirling2 !! (i - 1) !! j
 
+lahProperty1 :: NonNegative Int -> Bool
+lahProperty1 (NonNegative i) = length (lah !! i) == i + 1
+
+lahProperty2 :: NonNegative Int -> Bool
+lahProperty2 (NonNegative i)
+  =  lah !! i !! 0
+  == product [1 .. i+1]
+
+lahProperty3 :: NonNegative Int -> Bool
+lahProperty3 (NonNegative i) = lah !! i !! i == 1
+
+lahProperty4 :: Positive Int -> Positive Int -> Bool
+lahProperty4 (Positive i) (Positive j)
+  =  j >= i
+  || lah !! i !! j
+  == sum [ stirling1 !! (i + 1) !! k * stirling2 !! k !! (j + 1) | k <- [j + 1 .. i + 1] ]
+
 eulerian1Property1 :: NonNegative Int -> Bool
 eulerian1Property1 (NonNegative i) = length (eulerian1 !! i) == i
 
@@ -151,6 +168,12 @@ testSuite = testGroup "Bilinear"
     , testSmallAndQuick "left side"  stirling2Property2
     , testSmallAndQuick "right side" stirling2Property3
     , testSmallAndQuick "recurrency" stirling2Property4
+    ]
+  , testGroup "lah"
+    [ testSmallAndQuick "shape"         lahProperty1
+    , testSmallAndQuick "left side"     lahProperty2
+    , testSmallAndQuick "right side"    lahProperty3
+    , testSmallAndQuick "zip stirlings" lahProperty4
     ]
   , testGroup "eulerian1"
     [ testSmallAndQuick "shape"      eulerian1Property1

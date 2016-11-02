@@ -38,6 +38,7 @@ module Math.NumberTheory.Recurrencies.Bilinear
   ( binomial
   , stirling1
   , stirling2
+  , lah
   , eulerian1
   , eulerian2
   , bernoulli
@@ -114,6 +115,24 @@ stirling2 = iterate f [1]
 {-# SPECIALIZE stirling2 :: [[Word]]    #-}
 {-# SPECIALIZE stirling2 :: [[Integer]] #-}
 {-# SPECIALIZE stirling2 :: [[Natural]] #-}
+
+-- | Infinite one-based table of <https://en.wikipedia.org/wiki/Lah_number Lah numbers>.
+-- @lah !! n !! k@ equals to lah(n + 1, k + 1).
+--
+-- > > take 5 (map (take 5) lah)
+-- > [[1],[2,1],[6,6,1],[24,36,12,1],[120,240,120,20,1]]
+--
+-- Complexity: @lah !! n !! k@ is O(n ln n) bits long, its computation
+-- takes O(k n ln n) time and forces thunks @lah !! n !! i@ for @0 <= i <= k@.
+lah :: Integral a => [[a]]
+-- Implementation was derived from code by https://github.com/grandpascorpion
+lah = zipWith f (tail factorial) [1..]
+  where
+    f nf n = scanl (\x k -> x * (n - k) `div` (k * (k + 1))) nf [1..n-1]
+{-# SPECIALIZE lah :: [[Int]]     #-}
+{-# SPECIALIZE lah :: [[Word]]    #-}
+{-# SPECIALIZE lah :: [[Integer]] #-}
+{-# SPECIALIZE lah :: [[Natural]] #-}
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Eulerian_number Eulerian numbers of the first kind>.
 --
