@@ -92,24 +92,14 @@ class    (f (g x)) => (f `Compose` g) x
 instance (f (g x)) => (f `Compose` g) x
 
 type family ConcatMap (w :: * -> Constraint) (cs :: [*]) :: Constraint
-#if __GLASGOW_HASKELL__ >= 708
   where
     ConcatMap w '[] = ()
     ConcatMap w (c ': cs) = (w c, ConcatMap w cs)
-#else
-type instance ConcatMap w '[] = ()
-type instance ConcatMap w (c ': cs) = (w c, ConcatMap w cs)
-#endif
 
 type family Matrix (as :: [* -> Constraint]) (w :: * -> *) (bs :: [*]) :: Constraint
-#if __GLASGOW_HASKELL__ >= 708
   where
     Matrix '[] w bs = ()
     Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w bs)
-#else
-type instance Matrix '[] w bs = ()
-type instance Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w bs)
-#endif
 
 type TestableIntegral wrapper =
   ( Matrix '[Arbitrary, Show, Serial IO] wrapper '[Int, Word, Integer]

@@ -34,9 +34,6 @@ import qualified Data.Set as Set
 import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Utils  (shiftToOddCount
                                 , splitOff
-#if __GLASGOW_HASKELL__ < 707
-                                , isTrue#
-#endif
                                 )
 import qualified Math.NumberTheory.Powers.Squares as P2
 import qualified Math.NumberTheory.Powers.Cubes as P3

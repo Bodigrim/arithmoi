@@ -36,6 +36,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , expMangoldt, expMangoldtA
   ) where
 
+import Data.Coerce
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 import Data.Set (Set)
@@ -51,15 +52,6 @@ import Numeric.Natural
 #else
 import Data.Foldable
 import Data.Word
-#endif
-
-#if MIN_VERSION_base(4,7,0)
-import Data.Coerce
-#else
-import Unsafe.Coerce
-
-coerce :: a -> b
-coerce = unsafeCoerce
 #endif
 
 wordToInt :: Word -> Int

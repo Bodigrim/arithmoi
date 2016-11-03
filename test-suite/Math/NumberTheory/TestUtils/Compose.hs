@@ -9,7 +9,6 @@
 -- Utils to test Math.NumberTheory
 --
 
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -23,10 +22,6 @@
 module Math.NumberTheory.TestUtils.Compose where
 
 import Data.Functor.Compose
-#if MIN_VERSION_transformers(0,5,0)
-#else
-import GHC.Generics
-#endif
 
 import Test.Tasty.QuickCheck (Arbitrary)
 import Test.SmallCheck.Series (Serial)
@@ -40,8 +35,4 @@ deriving instance (Ord (Compose f g a), Integral (f (g a))) => Integral (Compose
 
 deriving instance Arbitrary (f (g a)) => Arbitrary (Compose f g a)
 
-#if MIN_VERSION_transformers(0,5,0)
-#else
-deriving instance Generic (Compose f g a)
-#endif
 instance (Monad m, Serial m (f (g a))) => Serial m (Compose f g a)

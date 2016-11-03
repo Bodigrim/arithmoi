@@ -18,6 +18,7 @@ module Math.NumberTheory.UniqueFactorisation
   ) where
 
 import Control.Arrow
+import Data.Coerce
 
 #if MIN_VERSION_base(4,8,0)
 #else
@@ -28,15 +29,6 @@ import Math.NumberTheory.Primes.Factorisation as F (factorise')
 import Math.NumberTheory.GaussianIntegers as G
 
 import Numeric.Natural
-
-#if MIN_VERSION_base(4,7,0)
-import Data.Coerce
-#else
-import Unsafe.Coerce
-
-coerce :: a -> b
-coerce = unsafeCoerce
-#endif
 
 newtype SmallPrime = SmallPrime { _unSmallPrime :: Word }
   deriving (Eq, Ord, Show)
