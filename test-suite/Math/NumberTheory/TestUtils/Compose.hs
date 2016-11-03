@@ -21,6 +21,7 @@
 
 module Math.NumberTheory.TestUtils.Compose where
 
+import Data.Functor.Classes
 import Data.Functor.Compose
 
 import Test.Tasty.QuickCheck (Arbitrary)
@@ -30,8 +31,8 @@ deriving instance Num (f (g a))     => Num (Compose f g a)
 deriving instance Enum (f (g a))    => Enum (Compose f g a)
 deriving instance Bounded (f (g a)) => Bounded (Compose f g a)
 
-deriving instance (Ord (Compose f g a), Real (f (g a)))     => Real (Compose f g a)
-deriving instance (Ord (Compose f g a), Integral (f (g a))) => Integral (Compose f g a)
+deriving instance (Ord1 f, Ord1 g, Ord a, Real (f (g a)))     => Real (Compose f g a)
+deriving instance (Ord1 f, Ord1 g, Ord a, Integral (f (g a))) => Integral (Compose f g a)
 
 deriving instance Arbitrary (f (g a)) => Arbitrary (Compose f g a)
 
