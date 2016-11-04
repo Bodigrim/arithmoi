@@ -9,7 +9,7 @@
 -- Integer Logarithms. For efficiency, the internal representation of 'Integer's
 -- from integer-gmp is used.
 --
-{-# LANGUAGE CPP, MagicHash #-}
+{-# LANGUAGE MagicHash #-}
 module Math.NumberTheory.Logarithms
     ( -- * Integer logarithms with input checks
       integerLogBase
@@ -37,9 +37,6 @@ import GHC.Integer.Logarithms
 
 import Math.NumberTheory.Powers.Integer
 import Math.NumberTheory.Unsafe
-#if __GLASGOW_HASKELL__ < 707
-import Math.NumberTheory.Utils  (isTrue#)
-#endif
 
 -- | Calculate the integer logarithm for an arbitrary base.
 --   The base must be greater than 1, the second argument, the number

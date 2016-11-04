@@ -20,9 +20,6 @@ module Math.NumberTheory.Utils
     , bitCountWord#
     , uncheckedShiftR
     , splitOff
-#if __GLASGOW_HASKELL__ < 707
-    , isTrue#
-#endif
     ) where
 
 #include "MachDeps.h"
@@ -205,9 +202,3 @@ splitOff p n = go 0 n
     go !k m = case m `quotRem` p of
                 (q,r) | r == 0 -> go (k+1) q
                       | otherwise -> (k,m)
-
-#if __GLASGOW_HASKELL__ < 707
--- The times they are a-changing. The types of primops too :(
-isTrue# :: Bool -> Bool
-isTrue# = id
-#endif

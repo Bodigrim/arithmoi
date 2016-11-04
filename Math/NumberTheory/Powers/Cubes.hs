@@ -31,9 +31,6 @@ import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
 
 import Math.NumberTheory.Unsafe
-#if __GLASGOW_HASKELL__ < 707
-import Math.NumberTheory.Utils (isTrue#)
-#endif
 
 -- | Calculate the integer cube root of an integer @n@,
 --   that is the largest integer @r@ such that @r^3 <= n@.

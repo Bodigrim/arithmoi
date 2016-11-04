@@ -31,9 +31,6 @@ import Data.Array.ST
 import Data.Bits
 
 import Math.NumberTheory.Unsafe
-#if __GLASGOW_HASKELL__ < 707
-import Math.NumberTheory.Utils (isTrue#)
-#endif
 
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.

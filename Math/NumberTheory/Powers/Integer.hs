@@ -9,7 +9,8 @@
 -- Potentially faster power function for 'Integer' base and 'Int'
 -- or 'Word' exponent.
 --
-{-# LANGUAGE MagicHash, BangPatterns, CPP #-}
+{-# LANGUAGE MagicHash    #-}
+{-# LANGUAGE BangPatterns #-}
 module Math.NumberTheory.Powers.Integer
     ( integerPower
     , integerWordPower
@@ -17,10 +18,6 @@ module Math.NumberTheory.Powers.Integer
 
 import GHC.Base
 import GHC.Integer.Logarithms (wordLog2#)
-
-#if __GLASGOW_HASKELL__ < 707
-import Math.NumberTheory.Utils (isTrue#)
-#endif
 
 -- | Power of an 'Integer' by the left-to-right repeated squaring algorithm.
 --   This needs two multiplications in each step while the right-to-left
