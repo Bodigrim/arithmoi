@@ -23,6 +23,11 @@ module Math.NumberTheory.Recurrencies.Linear
 import Data.Bits
 import Numeric.Natural
 
+#if MIN_VERSION_base(4,8,0)
+#else
+import Data.Word
+#endif
+
 -- | Infinite sequence of factorials, starting with 0!
 factorial :: (Num a, Enum a) => [a]
 factorial = scanl (*) 1 [1..]
