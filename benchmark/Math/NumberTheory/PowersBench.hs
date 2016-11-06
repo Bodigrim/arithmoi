@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
-
 module Math.NumberTheory.PowersBench
   ( benchSuite
   ) where
