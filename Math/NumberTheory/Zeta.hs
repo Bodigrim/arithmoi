@@ -57,7 +57,7 @@ zetasOdd eps = (1 / 0) : zets
     ys :: [a] -- [(1 - 1/4) * zeta(3) / (-pi^2), (1 - 1/4^2) * zeta(5) / pi^4...]
     ys = zipWith (*) zs fourth
     yss :: [[a]] -- [[], [ys !! 0], [ys !! 1, ys !! 0], [ys !! 2, ys !! 1, ys !! 0]...]
-    yss = [] : zipWith (:) ys yss
+    yss = scanl (flip (:)) [] ys
 
     xs :: [a] -- first summand of RHS in (57) for m=[1..]
     xs = map (sum . zipWith (flip (/)) factorial2) yss
@@ -68,7 +68,7 @@ zetasOdd eps = (1 / 0) : zets
     rs :: [a] -- [1, 1/2, 1/3, 1/4...]
     rs = map (\n -> recip (fromInteger n)) [1..]
     rss :: [[a]] -- [[1, 1/2, 1/3...], [1/2, 1/3, 1/4...], [1/3, 1/4...]]
-    rss = rs : map tail rss
+    rss = iterate tail rs
 
     factorial2 :: [a] -- [2!, 4!, 6!..]
     factorial2 = map fromInteger $ tail $ skipOdds factorial
