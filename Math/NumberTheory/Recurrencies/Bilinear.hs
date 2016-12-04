@@ -10,7 +10,7 @@
 -- roughly covering Ch. 5-6 of /Concrete Mathematics/
 -- by R. L. Graham, D. E. Knuth and O. Patashnik.
 --
--- __Note on memory leaks and memoization.__
+-- #memory# __Note on memory leaks and memoization.__
 -- Top-level definitions in this module are polymorphic, so the results of computations are not retained in memory.
 -- Make them monomorphic to take advantages of memoization. Compare
 --
@@ -53,12 +53,7 @@ import Numeric.Natural
 import Data.Word
 #endif
 
-factorial :: (Num a, Enum a) => [a]
-factorial = scanl (*) 1 [1..]
-{-# SPECIALIZE factorial :: [Int]     #-}
-{-# SPECIALIZE factorial :: [Word]    #-}
-{-# SPECIALIZE factorial :: [Integer] #-}
-{-# SPECIALIZE factorial :: [Natural] #-}
+import Math.NumberTheory.Recurrencies.Linear (factorial)
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle):
 -- @binomial !! n !! k == n! \/ k! \/ (n - k)!@.
