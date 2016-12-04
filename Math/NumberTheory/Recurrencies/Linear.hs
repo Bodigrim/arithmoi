@@ -28,7 +28,13 @@ import Numeric.Natural
 import Data.Word
 #endif
 
--- | Infinite sequence of factorials, starting with 0!
+-- | Infinite zero-based table of factorials.
+--
+-- > > take 5 factorial
+-- > [1,1,2,6,24]
+--
+-- The time-and-space behaviour of 'factorial' is similar to described in
+-- "Math.NumberTheory.Recurrencies.Bilinear#memory".
 factorial :: (Num a, Enum a) => [a]
 factorial = scanl (*) 1 [1..]
 {-# SPECIALIZE factorial :: [Int]     #-}

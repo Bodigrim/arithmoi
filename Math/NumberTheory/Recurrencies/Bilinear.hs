@@ -10,7 +10,7 @@
 -- roughly covering Ch. 5-6 of /Concrete Mathematics/
 -- by R. L. Graham, D. E. Knuth and O. Patashnik.
 --
--- __Note on memory leaks and memoization.__
+-- #memory# __Note on memory leaks and memoization.__
 -- Top-level definitions in this module are polymorphic, so the results of computations are not retained in memory.
 -- Make them monomorphic to take advantages of memoization. Compare
 --
