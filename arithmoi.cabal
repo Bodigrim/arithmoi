@@ -43,6 +43,7 @@ library
                         , random >= 1.0 && < 1.2
                         , mtl >= 2.0 && < 2.3
                         , exact-pi >= 0.4.1.1
+                        , integer-logarithms >= 1.0
     if impl(ghc < 7.10)
       build-depends     : nats >= 1 && <1.2
     if impl(ghc < 8.0)
@@ -51,7 +52,6 @@ library
     exposed-modules     : Math.NumberTheory.ArithmeticFunctions
                           Math.NumberTheory.ArithmeticFunctions.Class
                           Math.NumberTheory.ArithmeticFunctions.Standard
-                          Math.NumberTheory.Logarithms
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
@@ -108,6 +108,7 @@ benchmark criterion
                     , criterion
                     , containers
                     , random
+                    , integer-logarithms
   if impl(ghc < 7.10)
     build-depends     : nats >= 1 && <1.2
   other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
@@ -141,7 +142,6 @@ test-suite spec
                   , Math.NumberTheory.GaussianIntegersTests
                   , Math.NumberTheory.GCDTests
                   , Math.NumberTheory.GCD.LowLevelTests
-                  , Math.NumberTheory.LogarithmsTests
                   , Math.NumberTheory.Recurrencies.LinearTests
                   , Math.NumberTheory.Recurrencies.BilinearTests
                   , Math.NumberTheory.ModuliTests

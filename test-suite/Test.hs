@@ -3,8 +3,6 @@ import Test.Tasty
 import qualified Math.NumberTheory.GCDTests as GCD
 import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
-import qualified Math.NumberTheory.LogarithmsTests as Logarithms
-
 import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
 import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
 
@@ -45,9 +43,6 @@ tests = testGroup "All"
   , testGroup "GCD"
     [ GCD.testSuite
     , GCDLowLevel.testSuite
-    ]
-  , testGroup "Logarithms"
-    [ Logarithms.testSuite
     ]
   , testGroup "Recurrencies"
     [ RecurrenciesLinear.testSuite
