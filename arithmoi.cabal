@@ -2,10 +2,11 @@ name                : arithmoi
 version             : 0.4.3.0
 cabal-version       : >= 1.10
 author              : Daniel Fischer
-copyright           : (c) 2011 Daniel Fischer
+copyright           : (c) 2011 Daniel Fischer, 2016-2017 Andrew Lelechenko, Carter Schonwald
 license             : MIT
 license-file        : LICENSE
-maintainer          : Carter Schonwald  carter at wellposed dot com
+maintainer          : Carter Schonwald  carter at wellposed dot com,
+                      Andrew Lelechenko andrew dot lelechenko at gmail dot com
 build-type          : Simple
 stability           : Provisional
 homepage            : https://github.com/cartazio/arithmoi
@@ -25,7 +26,7 @@ category            : Math, Algorithms, Number Theory
 
 tested-with         : GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
 
-extra-source-files  : Changes, TODO
+extra-source-files  : Changes
 
 flag check-bounds
     description         : Replace unsafe array operations with safe ones
