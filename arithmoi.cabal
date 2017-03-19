@@ -150,7 +150,6 @@ test-suite spec
                   , Math.NumberTheory.MoebiusInversion.IntTests
                   , Math.NumberTheory.Powers.FourthTests
                   , Math.NumberTheory.Powers.GeneralTests
-                  , Math.NumberTheory.Powers.IntegerTests
                   , Math.NumberTheory.Powers.SquaresTests
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests

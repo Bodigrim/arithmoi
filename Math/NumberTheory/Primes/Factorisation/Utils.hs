@@ -25,14 +25,12 @@ import qualified Data.Set as Set
 import Data.Bits
 import Data.List
 
-import Math.NumberTheory.Powers.Integer
-
 {-# DEPRECATED totientFromCanonical, carmichaelFromCanonical, moebiusFromCanonical, divisorsFromCanonical, tauFromCanonical, divisorSumFromCanonical, sigmaFromCanonical "Use 'Math.NumberTheory.ArithmeticFunctions'" #-}
 
 -- | Totient of a prime power.
 ppTotient :: (Integer,Int) -> Integer
 ppTotient (p,1) = p-1
-ppTotient (p,k) = (p-1)*(integerPower p (k-1))  -- slightly faster than (^) usually
+ppTotient (p,k) = (p-1)* p ^ (k-1)
 
 -- | Calculate the totient from the canonical factorisation.
 totientFromCanonical :: [(Integer,Int)] -> Integer
@@ -50,7 +48,7 @@ carmichaelFromCanonical = go2
                      in go acc ps
     go2 ps = go 1 ps
     go !acc ((p,1):pps) = go (lcm acc (p-1)) pps
-    go acc ((p,k):pps)  = go ((lcm acc (p-1))*integerPower p (k-1)) pps
+    go acc ((p,k):pps)  = go ((lcm acc (p-1)) * p ^ (k-1)) pps
     go acc []           = acc
 
 -- | Calculate the Moebius function from the canonical factorisation.
