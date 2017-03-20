@@ -133,9 +133,11 @@ testSuite = testGroup "Fourth"
     , testSmallAndQuick    "almost Fourth Int"  integerFourthRootProperty2_Int
     , testSmallAndQuick    "almost Fourth Word" integerFourthRootProperty2_Word
 
+#if WORD_SIZE_IN_BITS == 64
     , testCase             "maxBound / 8 :: Int"   integerFourthRootSpecialCase1_Int
     , testCase             "maxBound / 16 :: Word" integerFourthRootSpecialCase1_Word
     , testCase             "maxBound :: Word"      integerFourthRootSpecialCase2
+#endif
     ]
   , testIntegralProperty "integerFourthRoot'"    integerFourthRoot'Property
   , testIntegralProperty "isFourthPower"         isFourthPowerProperty
