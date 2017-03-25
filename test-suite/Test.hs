@@ -3,8 +3,6 @@ import Test.Tasty
 import qualified Math.NumberTheory.GCDTests as GCD
 import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
-import qualified Math.NumberTheory.LogarithmsTests as Logarithms
-
 import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
 import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
 
@@ -16,7 +14,6 @@ import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversion
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
-import qualified Math.NumberTheory.Powers.IntegerTests as Integer
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
 import qualified Math.NumberTheory.PrimesTests as Primes
@@ -39,15 +36,11 @@ tests = testGroup "All"
     [ Cubes.testSuite
     , Fourth.testSuite
     , General.testSuite
-    , Integer.testSuite
     , Squares.testSuite
     ]
   , testGroup "GCD"
     [ GCD.testSuite
     , GCDLowLevel.testSuite
-    ]
-  , testGroup "Logarithms"
-    [ Logarithms.testSuite
     ]
   , testGroup "Recurrencies"
     [ RecurrenciesLinear.testSuite
