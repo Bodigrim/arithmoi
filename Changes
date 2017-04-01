@@ -1,3 +1,40 @@
+0.5.0.0:
+    This release supports GHC 7.8, 7.10 and 8.0. GHC 7.6 is no longer supported.
+
+    Breaking changes:
+
+        Remove deprecated interface to arithmetic functions (divisors, tau,
+        sigma, totient, jordan, moebius, liouville, smallOmega, bigOmega,
+        carmichael, expMangoldt). New interface is exposed via
+        Math.NumberTheory.ArithmeticFunctions (#30).
+
+        Deprecate integerPower and integerWordPower from
+        Math.NumberTheory.Powers.Integer. Use (^) instead (#51).
+
+        Math.NumberTheory.Logarithms has been moved to the separate package
+        integer-logarithms (#51).
+
+        Rename Math.NumberTheory.Lucas to Math.NumberTheory.Recurrencies.Linear.
+
+    New functions:
+
+        Add basic combinatorial sequences: binomial coefficients, Stirling
+        numbers of both kinds, Eulerian numbers of both kinds, Bernoulli
+        numbers (#39). E. g.,
+
+        > take 10 $ Math.NumberTheory.Recurrencies.Bilinear.bernoulli
+        [1 % 1,(-1) % 2,1 % 6,0 % 1,(-1) % 30,0 % 1,1 % 42,0 % 1,(-1) % 30,0 % 1]
+
+        Add the Riemann zeta function on non-negative integer arguments (#44).
+        E. g.,
+
+        > take 5 $ Math.NumberTheory.Zeta.zetas 1e-15
+        [-0.5,Infinity,1.6449340668482262,1.2020569031595945,1.0823232337111381]
+
+    Improvements:
+
+        Speed up isPrime twice; rework millerRabinV and isStrongFermatPP (#22, #25).
+
 0.4.3.0:
     This release supports GHC 7.6, 7.8, 7.10 and 8.0.
 
