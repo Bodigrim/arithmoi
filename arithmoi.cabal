@@ -154,6 +154,7 @@ test-suite spec
                   , Math.NumberTheory.Powers.SquaresTests
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests
+                  , Math.NumberTheory.Primes.FactorisationTests
                   , Math.NumberTheory.Primes.HeapTests
                   , Math.NumberTheory.Primes.SieveTests
                   , Math.NumberTheory.Primes.TestingTests
