@@ -135,6 +135,7 @@ test-suite spec
                       , QuickCheck >= 2.7.6 && < 2.10
                       , smallcheck >= 1.1 && < 1.2
                       , transformers >= 0.5
+                      , integer-gmp < 1.1
   if impl(ghc < 7.10)
     build-depends     : nats >= 1 && <1.2
 
@@ -153,8 +154,10 @@ test-suite spec
                   , Math.NumberTheory.Powers.SquaresTests
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests
+                  , Math.NumberTheory.Primes.FactorisationTests
                   , Math.NumberTheory.Primes.HeapTests
                   , Math.NumberTheory.Primes.SieveTests
+                  , Math.NumberTheory.Primes.TestingTests
                   , Math.NumberTheory.TestUtils
                   , Math.NumberTheory.TestUtils.Wrappers
                   , Math.NumberTheory.TestUtils.Compose
