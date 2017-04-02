@@ -59,9 +59,8 @@ millerRabinV (I# k) n = case testPrimeInteger n k of
   0# -> False
   _  -> True
 
--- | @'isStrongFermatPP' n b@ tests whether @n@ is a strong Fermat
---   probable prime for base @b@, where @n > 2@ and @1 < b < n@.
---   The conditions on the arguments are not checked.
+-- | @'isStrongFermatPP' n b@ tests whether non-negative @n@ is
+--   a strong Fermat probable prime for base @b@.
 --
 --   Apart from primes, also some composite numbers have the tested
 --   property, but those are rare. Very rare are composite numbers
@@ -77,21 +76,19 @@ millerRabinV (I# k) n = case testPrimeInteger n k of
 --   @1/4@, so five to ten tests give a reasonable level of certainty
 --   in general.
 --
---   Some notes about the choice of bases: @b@ is a strong Fermat base
---   for @n@ if and only if @n-b@ is, hence one needs only test @b <= (n-1)/2@.
---   If @b@ is a strong Fermat base for @n@, then so is @b^k `mod` n@ for
---   all @k > 1@, hence one needs not test perfect powers, since their
---   base yields a stronger condition. Finally, if @a@ and @b@ are strong
---   Fermat bases for @n@, then @a*b@ is in most cases a strong Fermat
---   base for @n@, it can only fail to be so if @n `mod` 4 == 1@ and
---   the strong Fermat condition is reached at the same step for @a@ as for @b@,
---   so primes are the most powerful bases to test.
+--   Please consult <https://miller-rabin.appspot.com Deterministic variants of the Miller-Rabin primality test>
+--   for the best choice of bases.
 isStrongFermatPP :: Integer -> Integer -> Bool
-isStrongFermatPP n b = a == 1 || go t a
+isStrongFermatPP n b
+  | n < 0          = error "isStrongFermatPP: negative argument"
+  | n <= 1         = False
+  | n == 2         = True
+  | b `mod` n == 0 = True
+  | otherwise      = a == 1 || go t a
   where
     m = n-1
     (t,u) = shiftToOddCount m
-    a = powerModInteger' b u n
+    a = powerModInteger' (b `mod` n) u n
     go 0 _ = False
     go k x = x == m || go (k-1) ((x*x) `rem` n)
 
