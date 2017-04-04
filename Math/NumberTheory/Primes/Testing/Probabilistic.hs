@@ -1,6 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Primes.Testing.Probabilistic
--- Copyright:   (c) 2011 Daniel Fischer
+-- Copyright:   (c) 2011 Daniel Fischer, 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 -- Stability:   Provisional
@@ -20,59 +20,47 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
 
 #include "MachDeps.h"
 
+import Data.Bits
+import GHC.Base
+import GHC.Integer.GMP.Internals
+
 import Math.NumberTheory.Moduli
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Powers.Squares
 
-import Data.Bits
-
-import GHC.Base
-
-import GHC.Integer.GMP.Internals
-
--- | @'isPrime' n@ tests whether @n@ is a prime (negative or positive).
---   First, trial division by the primes less than @1200@ is performed.
---   If that hasn't determined primality or compositeness, a Baillie PSW
---   test is performed.
+-- | @isPrime n@ tests whether @n@ is a prime (negative or positive).
+--   It is a combination of trial division and Baillie-PSW test.
 --
---   Since the Baillie PSW test may not be perfect, it is possible that
---   some large composites are wrongly deemed prime, however, no composites
---   passing the test are known and none exist below @2^64@.
+--   If @isPrime n@ returns @False@ then @n@ is definitely composite.
+--   There is a theoretical possibility that @isPrime n@ is @True@,
+--   but in fact @n@ is not prime. However, no such numbers are known
+--   and none exist below @2^64@. If you have found one, please report it,
+--   because it is a major discovery.
 isPrime :: Integer -> Bool
 isPrime n
   | n < 0       = isPrime (-n)
   | n < 2       = False
   | n < 4       = True
-  | otherwise   = go smallPrimes
-    where
-      go (p:ps)
-        | p*p > n   = True
-        | otherwise = case n `rem` p of
-                        0 -> False
-                        _ -> go ps
-      go [] = bailliePSW n
+  | otherwise   = millerRabinV 0 n -- trial division test
+                  && bailliePSW n
 
--- | A Miller-Rabin like probabilistic primality test with preceding
---   trial division. While the classic Miller-Rabin test uses
---   randomly chosen bases, @'millerRabinV' k n@ uses the @k@
---   smallest primes as bases if trial division has not reached
---   a conclusive result. (Only the primes up to @1200@ are
---   available in this module, so the maximal effective @k@ is @196@.)
+-- | Miller-Rabin probabilistic primality test. It consists of the trial
+-- division test and several rounds of the strong Fermat test with different
+-- bases. The choice of trial divisors and bases are
+-- implementation details and may change in future silently.
+--
+-- First argument stands for the number of rounds of strong Fermat test.
+-- If it is 0, only trial division test is performed.
+--
+-- If @millerRabinV k n@ returns @False@ then @n@ is definitely composite.
+-- Otherwise @n@ may appear composite with probability @1/4^k@.
 millerRabinV :: Int -> Integer -> Bool
-millerRabinV k n
-  | n < 0       = millerRabinV k (-n)
-  | n < 2       = False
-  | n < 4       = True
-  | otherwise   = go smallPrimes
-    where
-      go (p:ps)
-        | p*p > n   = True
-        | otherwise = (n `rem` p /= 0) && go ps
-      go [] = all (isStrongFermatPP n) (take k smallPrimes)
+millerRabinV (I# k) n = case testPrimeInteger n k of
+  0# -> False
+  _  -> True
 
--- | @'isStrongFermatPP' n b@ tests whether @n@ is a strong Fermat
---   probable prime for base @b@, where @n > 2@ and @1 < b < n@.
---   The conditions on the arguments are not checked.
+-- | @'isStrongFermatPP' n b@ tests whether non-negative @n@ is
+--   a strong Fermat probable prime for base @b@.
 --
 --   Apart from primes, also some composite numbers have the tested
 --   property, but those are rare. Very rare are composite numbers
@@ -88,21 +76,19 @@ millerRabinV k n
 --   @1/4@, so five to ten tests give a reasonable level of certainty
 --   in general.
 --
---   Some notes about the choice of bases: @b@ is a strong Fermat base
---   for @n@ if and only if @n-b@ is, hence one needs only test @b <= (n-1)/2@.
---   If @b@ is a strong Fermat base for @n@, then so is @b^k `mod` n@ for
---   all @k > 1@, hence one needs not test perfect powers, since their
---   base yields a stronger condition. Finally, if @a@ and @b@ are strong
---   Fermat bases for @n@, then @a*b@ is in most cases a strong Fermat
---   base for @n@, it can only fail to be so if @n `mod` 4 == 1@ and
---   the strong Fermat condition is reached at the same step for @a@ as for @b@,
---   so primes are the most powerful bases to test.
+--   Please consult <https://miller-rabin.appspot.com Deterministic variants of the Miller-Rabin primality test>
+--   for the best choice of bases.
 isStrongFermatPP :: Integer -> Integer -> Bool
-isStrongFermatPP n b = a == 1 || go t a
+isStrongFermatPP n b
+  | n < 0          = error "isStrongFermatPP: negative argument"
+  | n <= 1         = False
+  | n == 2         = True
+  | b `mod` n == 0 = True
+  | otherwise      = a == 1 || go t a
   where
     m = n-1
     (t,u) = shiftToOddCount m
-    a = powerModInteger' b u n
+    a = powerModInteger' (b `mod` n) u n
     go 0 _ = False
     go k x = x == m || go (k-1) ((x*x) `rem` n)
 
@@ -126,21 +112,21 @@ isFermatPP :: Integer -> Integer -> Bool
 isFermatPP n b = powerModInteger' b (n-1) n == 1
 
 -- | Primality test after Baillie, Pomerance, Selfridge and Wagstaff.
---   The Baillie PSW test consists of a strong Fermat probable primality
+--   The Baillie-PSW test consists of a strong Fermat probable primality
 --   test followed by a (strong) Lucas primality test. This implementation
 --   assumes that the number @n@ to test is odd and larger than @3@.
 --   Even and small numbers have to be handled before. Also, before
 --   applying this test, trial division by small primes should be performed
---   to identify many composites cheaply (although the Baillie PSW test is
+--   to identify many composites cheaply (although the Baillie-PSW test is
 --   rather fast, about the same speed as a strong Fermat test for four or
 --   five bases usually, it is, for large numbers, much more costly than
 --   trial division by small primes, the primes less than @1000@, say, so
 --   eliminating numbers with small prime factors beforehand is more efficient).
 --
---   The Baillie PSW test is very reliable, so far no composite numbers
+--   The Baillie-PSW test is very reliable, so far no composite numbers
 --   passing it are known, and it is known (Gilchrist 2010) that no
---   Baillie PSW pseudoprimes exist below @2^64@. However, a heuristic argument
---   by Pomerance indicates that there are likely infinitely many Baillie PSW
+--   Baillie-PSW pseudoprimes exist below @2^64@. However, a heuristic argument
+--   by Pomerance indicates that there are likely infinitely many Baillie-PSW
 --   pseudoprimes. On the other hand, according to
 --   <http://mathworld.wolfram.com/Baillie-PSWPrimalityTest.html> there is
 --   reason to believe that there are none with less than several
@@ -229,11 +215,3 @@ testLucas n q (Jp# bn#) = test (s# -# 1#)
 -- Listed as a precondition of lucasTest
 testLucas _ _ _ = error "lucasTest: negative argument"
 #endif
-
-smallPrimes :: [Integer]
-smallPrimes = 2:3:5:prs
-  where
-    prs = 7:11:filter isPr (takeWhile (< 1200) . scanl (+) 13 $ cycle [4,2,4,6,2,6,4,2])
-    isPr n = td n prs
-    td n (p:ps) = (p*p > n) || (n `rem` p /= 0 && td n ps)
-    td _ []     = True

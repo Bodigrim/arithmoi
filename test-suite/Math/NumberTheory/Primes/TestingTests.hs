@@ -54,6 +54,9 @@ isPrimeProperty6 (NonNegative n) = if isPrime n
   then nextPrimeInteger (n - 1) == n
   else isPrime (nextPrimeInteger n)
 
+isStrongFermatPPProperty :: NonNegative Integer -> Integer -> Bool
+isStrongFermatPPProperty (NonNegative n) b = not (isPrime n) || isStrongFermatPP n b
+
 testSuite :: TestTree
 testSuite = testGroup "Testing"
   [ testGroup "isPrime"
@@ -63,5 +66,8 @@ testSuite = testGroup "Testing"
     , testCase          "strong pseudoprimes base 2" isPrimeProperty4
     , testCase          "strong Lucas pseudoprimes"  isPrimeProperty5
     , testSmallAndQuick "matches GMP"                isPrimeProperty6
+    ]
+  , testGroup "isStrongFermatPP"
+    [ testSmallAndQuick "matches isPrime" isStrongFermatPPProperty
     ]
   ]
