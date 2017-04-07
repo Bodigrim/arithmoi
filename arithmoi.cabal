@@ -235,3 +235,13 @@ executable sequence-model
   hs-source-dirs: app
   default-language: Haskell2010
   ghc-options: -Wall -Widentities
+
+executable Factorise
+  build-depends:
+    base,
+    containers,
+    arithmoi
+  main-is: Factorise.hs
+  hs-source-dirs: app
+  default-language: Haskell2010
+  ghc-options: -Wall -Widentities
