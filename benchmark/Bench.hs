@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
-
 module Main where
 
 import Criterion.Main

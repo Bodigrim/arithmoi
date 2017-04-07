@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.4.3.0
+version             : 0.5.0.0
 cabal-version       : >= 1.10
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer, 2016-2017 Andrew Lelechenko, Carter Schonwald
@@ -13,14 +13,12 @@ homepage            : https://github.com/cartazio/arithmoi
 bug-reports         : https://github.com/cartazio/arithmoi/issues
 
 synopsis            : Efficient basic number-theoretic functions.
-                      Primes, powers, integer logarithms.
 description         : A library of basic functionality needed for
                       number-theoretic calculations. The aim of this library
                       is to provide efficient implementations of the functions.
 
                       Primes and related things (totients, factorisation),
-                      powers (integer roots and tests, modular exponentiation),
-                      integer logarithms.
+                      powers (integer roots and tests, modular exponentiation).
 
 category            : Math, Algorithms, Number Theory
 
@@ -82,7 +80,6 @@ library
                           Math.NumberTheory.Primes.Counting.Impl
                           Math.NumberTheory.Primes.Counting.Approximate
                           Math.NumberTheory.Primes.Factorisation.Montgomery
-                          Math.NumberTheory.Primes.Factorisation.Utils
                           Math.NumberTheory.Primes.Factorisation.TrialDivision
                           Math.NumberTheory.Primes.Sieve.Eratosthenes
                           Math.NumberTheory.Primes.Sieve.Indexing
@@ -128,7 +125,7 @@ test-suite spec
   default-language: Haskell2010
   build-depends:        base >= 4.6 && < 5
                       , containers >= 0.5 && < 0.6
-                      , arithmoi >= 0.4 && < 0.5
+                      , arithmoi >= 0.5 && < 0.6
                       , tasty >= 0.10 && < 0.12
                       , tasty-smallcheck >= 0.8 && < 0.9
                       , tasty-quickcheck >= 0.8 && < 0.9

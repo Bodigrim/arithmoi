@@ -11,7 +11,6 @@
 {-# LANGUAGE MonoLocalBinds      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Misc
     ( -- * Types
@@ -44,7 +43,6 @@ import System.Random
 import Math.NumberTheory.Powers.Squares (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Factorisation.Montgomery
-import Math.NumberTheory.Primes.Factorisation.Utils
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
@@ -232,6 +230,15 @@ sieveTotient (TS bnd sve) = check
             pix = unsafeAt sve ix
     curve tt n = tt * totientFromCanonical (stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n)
 
+-- | Calculate the totient from the canonical factorisation.
+totientFromCanonical :: [(Integer,Int)] -> Integer
+totientFromCanonical = product . map ppTotient
+
+-- | Totient of a prime power.
+ppTotient :: (Integer, Int) -> Integer
+ppTotient (p, 1) = p - 1
+ppTotient (p, k) = (p - 1) * p ^ (k - 1)
+
 -- | @'carmichaelSieve' n@ creates a store of values of the Carmichael function
 --   for numbers not exceeding @n@.
 --   Like a 'TotientSieve', a 'CarmichaelSieve' only stores values for numbers coprime to @30@
@@ -299,6 +306,20 @@ sieveCarmichael (CS bnd sve) = check
             pix = unsafeAt sve ix
     curve tt n = tt `lcm` carmichaelFromCanonical (stdGenFactorisation (Just (bound*(bound+2))) (mkStdGen $ fromIntegral n `xor` 0xdecaf00d) Nothing n)
 
+-- | Calculate the Carmichael function from the factorisation.
+--   Requires that the list of prime factors is strictly ascending.
+carmichaelFromCanonical :: [(Integer, Int)] -> Integer
+carmichaelFromCanonical = go2
+  where
+    go2 ((2, k) : ps) = let acc = case k of
+                                  1 -> 1
+                                  2 -> 2
+                                  _ -> 1 `shiftL` (k-2)
+                        in go acc ps
+    go2 ps = go 1 ps
+    go !acc ((p, 1) : pps) = go (lcm acc (p - 1)) pps
+    go acc ((p, k) : pps)  = go ((lcm acc (p - 1)) * p ^ (k - 1)) pps
+    go acc []              = acc
 
 -- NOTE: This is a legacy implementation of FactorSieve which uses the
 --       same (2,3,5) wheel optimization as the other sieves.
