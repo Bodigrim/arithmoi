@@ -24,7 +24,6 @@ import Data.Bits
 import GHC.Base
 import GHC.Integer.GMP.Internals
 
-import Math.NumberTheory.Moduli (powerModInteger')
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Powers.Squares
@@ -89,7 +88,7 @@ isStrongFermatPP n b
   where
     m = n-1
     (t,u) = shiftToOddCount m
-    a = powerModInteger' (b `mod` n) u n
+    a = powModInteger (b `mod` n) u n
     go 0 _ = False
     go k x = x == m || go (k-1) ((x*x) `rem` n)
 
@@ -110,7 +109,7 @@ isStrongFermatPP n b
 --   of prime bases is reasonable to find out whether it's worth the
 --   effort to undertake the prime factorisation).
 isFermatPP :: Integer -> Integer -> Bool
-isFermatPP n b = powerModInteger' b (n-1) n == 1
+isFermatPP n b = powModInteger b (n-1) n == 1
 
 -- | Primality test after Baillie, Pomerance, Selfridge and Wagstaff.
 --   The Baillie-PSW test consists of a strong Fermat probable primality

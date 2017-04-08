@@ -10,18 +10,15 @@
 --
 {-# LANGUAGE CPP, BangPatterns #-}
 module Math.NumberTheory.Moduli
-    ( -- * Functions with input check
-      JacobiSymbol(..)
+    ( -- * Wrapper for modular arithmetic
+      module Math.NumberTheory.Moduli.Class
+      -- * Functions with input check
+    , JacobiSymbol(..)
     , jacobi
-    , invertMod
-    , powerMod
-    , powerModInteger
     , chineseRemainder
       -- ** Partially checked input
     , sqrtModP
       -- * Unchecked functions
-    , powerMod'
-    , powerModInteger'
     , sqrtModPList
     , sqrtModP'
     , tonelliShanks
@@ -34,189 +31,20 @@ module Math.NumberTheory.Moduli
 
 #include "MachDeps.h"
 
+import Control.Monad (foldM, liftM2)
+import Data.Bits
+import Data.List (nub)
 #if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32
 import Data.Word
 #endif
-import Data.Bits
-import Data.List (nub)
-import Control.Monad (foldM, liftM2)
+import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import Math.NumberTheory.GCD (extendedGCD)
 import Math.NumberTheory.Primes.Heap (sieveFrom)
 
+import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Jacobi
-
--- Guesstimated startup time for the Heap algorithm is lower than
--- the cost to sieve an entire chunk.
-
--- | Invert a number relative to a positive modulus.
---   If @number@ and @modulus@ are coprime, the result is
---   @Just inverse@ where
---
--- >    (number * inverse) `mod` modulus == 1
--- >    0 <= inverse < modulus
---
---   If @number `mod` modulus == 0@ or @gcd number modulus > 1@, the result is @Nothing@.
-invertMod :: Integer -> Integer -> Maybe Integer
-invertMod k m
-  | m <= 0 = error "Math.NumberTheory.Moduli.invertMod: non-positive modulus"
-  | otherwise = wrap $ go False 1 0 m k'
-  where
-    k' | r < 0     = r+m
-       | otherwise = r
-         where
-           r = k `rem` m
-    wrap x = case (x*k') `rem` m of
-               1 -> Just x
-               _ -> Nothing
-    -- Calculate modular inverse of k' modulo m by continued fraction expansion
-    -- of m/k', say [a_0,a_1,...,a_s]. Let the convergents be p_j/q_j.
-    -- Starting from j = -2, the arguments of go are
-    -- (p_j/q_j) > m/k', p_{j+1}, p_j, and n, d with n/d = [a_{j+2},...,a_s].
-    -- Since m/k' = p_s/q_s, and p_j*q_{j+1} - p_{j+1}*q_j = (-1)^(j+1), we have
-    -- p_{s-1}*k' - q_{s-1}*m = (-1)^s * gcd m k', so if the inverse exists,
-    -- it is either p_{s-1} or -p_{s-1}, depending on whether s is even or odd.
-    go !b _ po _ 0 = if b then po else (m-po)
-    go b !pn po n d = case n `quotRem` d of
-                        (q,r) -> go (not b) (q*pn+po) pn d r
-
-
--- | Modular power.
---
--- > powerMod base exponent modulus
---
---   calculates @(base ^ exponent) \`mod\` modulus@ by repeated squaring and reduction. Modulus must be positive.
---   If @exponent < 0@ and @base@ is invertible modulo @modulus@, @(inverse ^ |exponent|) \`mod\` modulus@
---   is calculated. This function does some input checking and sanitation before calling the unsafe worker.
-{-# RULES
-"powerMod/Integer" powerMod = powerModInteger
-  #-}
-{-# INLINE [1] powerMod #-}
-powerMod :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
-powerMod = powerModImpl
-
-{-# SPECIALISE powerModImpl :: Integer -> Int -> Integer -> Integer,
-                               Integer -> Word -> Integer -> Integer
-  #-}
-powerModImpl :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
-powerModImpl base expo md
-  | md <= 0     = error "Math.NumberTheory.Moduli.powerMod: non-positive modulus"
-  | md == 1     = 0
-  | expo == 0   = 1
-  | bse' == 1   = 1
-  | expo < 0    = case invertMod bse' md of
-                    Just i  -> powerMod'Impl i (negate expo) md
-                    Nothing -> error "Math.NumberTheory.Moduli.powerMod: Base isn't invertible with respect to modulus"
-  | bse' == 0   = 0
-  | otherwise   = powerMod'Impl bse' expo md
-    where
-      bse' = if base < 0 || md <= base then base `mod` md else base
-
--- | Modular power worker without input checking.
---   Assumes all arguments strictly positive and modulus greater than 1.
-{-# RULES
-"powerMod'/Integer" powerMod' = powerModInteger'
-  #-}
-{-# INLINE [1] powerMod' #-}
-powerMod' :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
-powerMod' = powerMod'Impl
-
-
-{-# SPECIALISE powerMod'Impl :: Integer -> Int -> Integer -> Integer,
-                                Integer -> Word -> Integer -> Integer
-  #-}
-powerMod'Impl :: (Integral a, Bits a) => Integer -> a -> Integer -> Integer
-powerMod'Impl base expo md = go expo 1 base
-  where
-    go 1 !a !s  = (a*s) `rem` md
-    go e a s
-      | testBit e 0 = go (e `shiftR` 1) ((a*s) `rem` md) ((s*s) `rem` md)
-      | otherwise   = go (e `shiftR` 1) a ((s*s) `rem` md)
-
--- | Specialised version of 'powerMod' for 'Integer' exponents.
---   Reduces the number of shifts of the exponent since shifting
---   large 'Integer's is expensive. Call this function directly
---   if you don't want or can't rely on rewrite rules. Modulus must be positive.
-powerModInteger :: Integer -> Integer -> Integer -> Integer
-powerModInteger base ex mdl
-  | mdl <= 0     = error "Math.NumberTheory.Moduli.powerModInteger: non-positive modulus"
-  | mdl == 1    = 0
-  | ex == 0     = 1
-  | ex < 0      = case invertMod bse' mdl of
-                    Just i  -> powerModInteger' i (negate ex) mdl
-                    Nothing -> error "Math.NumberTheory.Moduli.powerMod: Base isn't invertible with respect to modulus"
-  | bse' == 0   = 0
-  | bse' == 1   = 1
-  | otherwise   = powerModInteger' bse' ex mdl
-    where
-      bse' = if base < 0 || mdl <= base then base `mod` mdl else base
-
--- | Specialised worker without input checks. Makes the same assumptions
---   as the general version 'powerMod''.
-powerModInteger' :: Integer -> Integer -> Integer -> Integer
-powerModInteger' base expo md = go w1 1 base e1
-  where
-    w1 = fromInteger expo
-    e1 = expo `shiftR` 64
-#if WORD_SIZE_IN_BITS == 32
-  -- Shifting large Integers is expensive, hence we reduce the
-  -- number of shifts by processing in 64-bit chunks.
-  -- On 32-bit systems, every testBit on a Word64 would be a C-call,
-  -- thus it is faster to split each Word64 into the constituent 32-bit
-  -- Words and process those separately.
-  -- The code becomes ugly, unfortunately.
-    go :: Word64 -> Integer -> Integer -> Integer -> Integer
-    go !w !a !s 0  = end a s w
-    go w a s e = inner1 a s 0
-      where
-        wl :: Word
-        !wl = fromIntegral w
-        wh :: Word
-        !wh = fromIntegral (w `shiftR` 32)
-        inner1 !au !sq 32 = inner2 au sq 0
-        inner1 au sq i
-          | testBit wl i = inner1 ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
-          | otherwise    = inner1 au ((sq*sq) `rem` md) (i+1)
-        inner2 !au !sq 32 = go (fromInteger e) au sq (e `shiftR` 64)
-        inner2 au sq i
-          | testBit wh i = inner2 ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
-          | otherwise    = inner2 au ((sq*sq) `rem` md) (i+1)
-    end !a !s w
-      | wh == 0   = fin a s wl
-      | otherwise = innerE a s 0
-        where
-          wl :: Word
-          !wl = fromIntegral w
-          wh :: Word
-          !wh = fromIntegral (w `shiftR` 32)
-          innerE !au !sq 32 = fin au sq wh
-          innerE au sq i
-            | testBit wl i = innerE ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
-            | otherwise    = innerE au ((sq*sq) `rem` md) (i+1)
-    fin :: Integer -> Integer -> Word -> Integer
-    fin !a !s 1 = (a*s) `rem` md
-    fin a s w
-      | testBit w 0 = fin ((a*s) `rem` md) ((s*s) `rem` md) (w `shiftR` 1)
-      | otherwise   = fin a ((s*s) `rem` md) (w `shiftR` 1)
-
-#else
-  -- WORD_SIZE_IN_BITS == 64, otherwise things wouldn't compile anyway
-  -- Shorter code since we need not split each 64-bit word.
-    go :: Word -> Integer -> Integer -> Integer -> Integer
-    go !w !a !s 0  = end a s w
-    go w a s e = inner a s 0
-      where
-        inner !au !sq 64 = go (fromInteger e) au sq (e `shiftR` 64)
-        inner au sq i
-          | testBit w i = inner ((au*sq) `rem` md) ((sq*sq) `rem` md) (i+1)
-          | otherwise   = inner au ((sq*sq) `rem` md) (i+1)
-    end !a !s 1 = (a*s) `rem` md
-    end a s w
-      | testBit w 0 = end ((a*s) `rem` md) ((s*s) `rem` md) (w `shiftR` 1)
-      | otherwise   = end a ((s*s) `rem` md) (w `shiftR` 1)
-
-#endif
 
 -- | @sqrtModP n prime@ calculates a modular square root of @n@ modulo @prime@
 --   if that exists. The second argument /must/ be a (positive) prime, otherwise
@@ -251,7 +79,7 @@ sqrtModPList n prime
 sqrtModP' :: Integer -> Integer -> Integer
 sqrtModP' square prime
     | prime == 2    = square
-    | rem4 prime == 3 = powerModInteger' square ((prime + 1) `quot` 4) prime
+    | rem4 prime == 3 = powModInteger square ((prime + 1) `quot` 4) prime
     | otherwise     = tonelliShanks square prime
 
 -- | @tonelliShanks square prime@ calculates a square root of @square@
@@ -264,9 +92,9 @@ tonelliShanks square prime = loop rc t1 generator log2
   where
     (log2,q) = shiftToOddCount (prime-1)
     nonSquare = findNonSquare prime
-    generator = powerModInteger' nonSquare q prime
-    rc = powerModInteger' square ((q+1) `quot` 2) prime
-    t1 = powerModInteger' square q prime
+    generator = powModInteger nonSquare q prime
+    rc = powModInteger square ((q+1) `quot` 2) prime
+    t1 = powModInteger square q prime
     msqr x = (x*x) `rem` prime
     msquare 0 x = x
     msquare k x = msquare (k-1) (msqr x)
@@ -297,8 +125,8 @@ sqrtModPP n (prime,expo) = case sqrtModP n prime of
                    then Just r
                    else case splitOff prime diff' of
                           (e,q) | expo <= e -> Just r
-                                | otherwise -> fmap (\inv -> hoist inv r (q `mod` prime) (prime^e)) (invertMod (2*r) prime)
-                      --
+                                | otherwise -> fmap (\inv -> hoist inv r (q `mod` prime) (prime^e)) (recipMod (2*r) prime)
+
     hoist inv root elim pp
         | diff' == 0    = root'
         | expo <= ex    = root'
@@ -396,7 +224,7 @@ chineseRemainder remainders = foldM addRem 0 remainders
     addRem acc (_,1) = Just acc
     addRem acc (r,m) = do
         let cf = modulus `quot` m
-        inv <- invertMod cf m
+        inv <- recipMod cf m
         Just $! (acc + inv*cf*r) `mod` modulus
 
 -- | @chineseRemainder2 (r_1,m_1) (r_2,m_2)@ calculates the solution of
@@ -437,3 +265,8 @@ findNonSquare n
           MinusOne -> p
           _        -> search ps
         search _ = error "Should never have happened, prime list exhausted."
+
+recipMod :: Integer -> Integer -> Maybe Integer
+recipMod x m = case recipModInteger x m of
+  0 -> Nothing
+  y -> Just y

@@ -26,11 +26,17 @@ import Data.List (tails, nub)
 import Data.Maybe
 import Data.Semigroup
 
-import Math.NumberTheory.Moduli
+import Math.NumberTheory.Moduli hiding (invertMod)
 import Math.NumberTheory.TestUtils
 
 unwrapPP :: (Prime, Power Int) -> (Integer, Int)
 unwrapPP (Prime p, Power e) = (p, e)
+
+invertMod :: Integer -> Integer -> Maybe Integer
+invertMod x m = getSomeVal <$> invertSomeMod (x `modulo` fromInteger m)
+
+powerMod :: Integral a => Integer -> a -> Integer -> Integer
+powerMod b e m = getSomeVal ((b `modulo` fromInteger m) ^ e)
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 2
 jacobiProperty2 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
@@ -71,16 +77,16 @@ invertModProperty (AnySign k) (Positive m) = case invertMod k m of
       && k * inv `mod` m == 1 && 0 <= inv && inv < m
 
 -- | Check that the result of 'powerMod' is between 0 and modulo (non-inclusive).
-powerModProperty1 :: (Integral a, Bits a) => AnySign a -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty1 (AnySign e) (AnySign b) (Positive m)
+powerModProperty1 :: (Integral a, Bits a) => NonNegative a -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty1 (NonNegative e) (AnySign b) (Positive m)
   =  e < 0 && isNothing (invertMod b m)
   || (0 <= pm && pm < m)
   where
     pm = powerMod b e m
 
 -- | Check that 'powerMod' is multiplicative by first argument.
-powerModProperty2 :: (Integral a, Bits a) => AnySign a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty2 (AnySign e) (AnySign b1) (AnySign b2) (Positive m)
+powerModProperty2 :: (Integral a, Bits a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
   =  e < 0 && (isNothing (invertMod b1 m) || isNothing (invertMod b2 m))
   || pm1 * pm2 `mod` m == pm12
   where
@@ -89,8 +95,8 @@ powerModProperty2 (AnySign e) (AnySign b1) (AnySign b2) (Positive m)
     pm12 = powerMod (b1 * b2) e m
 
 -- | Check that 'powerMod' is additive by second argument.
-powerModProperty3 :: (Integral a, Bits a) => AnySign a -> AnySign a -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty3 (AnySign e1) (AnySign e2) (AnySign b) (Positive m)
+powerModProperty3 :: (Integral a, Bits a) => NonNegative a -> NonNegative a -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
   =  (e1 < 0 || e2 < 0) && isNothing (invertMod b m)
   || e2 >= 0 && e1 + e2 < e1 -- check overflow
   || e1 >= 0 && e1 + e2 < e2 -- check overflow
@@ -103,24 +109,16 @@ powerModProperty3 (AnySign e1) (AnySign e2) (AnySign b) (Positive m)
     pm12 = powerMod b (e1 + e2) m
 
 -- | Specialized to trigger 'powerModInteger'.
-powerModProperty1_Integer :: AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty1_Integer :: NonNegative Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty1_Integer = powerModProperty1
 
 -- | Specialized to trigger 'powerModInteger'.
-powerModProperty2_Integer :: AnySign Integer -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty2_Integer :: NonNegative Integer -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty2_Integer = powerModProperty2
 
 -- | Specialized to trigger 'powerModInteger'.
-powerModProperty3_Integer :: AnySign Integer -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty3_Integer :: NonNegative Integer -> NonNegative Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty3_Integer = powerModProperty3
-
--- | Check that 'powerMod' matches 'powerMod''.
-powerMod'Property :: (Integral a, Bits a) => Positive a -> Positive Integer -> Positive Integer -> Bool
-powerMod'Property (Positive e) (Positive b) (Positive m) = m == 1 || powerMod' b e m == powerMod b e m
-
--- | Specialized to trigger 'powerModInteger''.
-powerMod'Property_Integer :: Positive Integer -> Positive Integer -> Positive Integer -> Bool
-powerMod'Property_Integer = powerMod'Property
 
 -- | Check that 'chineseRemainder' is defined iff modulos are coprime.
 --   Also check that the result is a solution of input modular equations.
@@ -195,13 +193,11 @@ testSuite = testGroup "Moduli"
       [ testIntegralProperty "bounded between 0 and m"  powerModProperty1
       , testIntegralProperty "multiplicative by base"   powerModProperty2
       , testSameIntegralProperty "additive by exponent" powerModProperty3
-      , testIntegralProperty "matches powerMod'"        powerMod'Property
       ]
     , testGroup "Integer"
       [ testSmallAndQuick "bounded between 0 and m" powerModProperty1_Integer
       , testSmallAndQuick "multiplicative by base"  powerModProperty2_Integer
       , testSmallAndQuick "additive by exponent"    powerModProperty3_Integer
-      , testSmallAndQuick "matches powerMod'"       powerMod'Property_Integer
       ]
     ]
     , testSmallAndQuick "chineseRemainder"  chineseRemainderProperty

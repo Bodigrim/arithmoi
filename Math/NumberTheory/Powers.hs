@@ -32,12 +32,9 @@ module Math.NumberTheory.Powers
   , exactRoot
   , isPerfectPower
   , highestPower
-    -- Modular powers
-  , powerMod
   ) where
 
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Powers.Fourth
 import Math.NumberTheory.Powers.General
-import Math.NumberTheory.Moduli
