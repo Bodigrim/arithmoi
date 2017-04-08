@@ -79,15 +79,17 @@ invertMod mx@(Mod x) = case recipModInteger x (natVal mx) of
   0 -> Nothing
   y -> Just (Mod y)
 
+#if __GLASGOW_HASKELL__ >= 800
+
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx@(Mod x) a
   | a < 0     = error $ "^{Mod}: negative exponent"
   | otherwise = Mod $ powModInteger x (toInteger a) (natVal mx)
 
-#if __GLASGOW_HASKELL__ >= 800
 {-# RULES
 "^/Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = powMod x p
 #-}
+
 #endif
 
 data SomeMod where
@@ -161,13 +163,15 @@ getSomeVal :: SomeMod -> Integer
 getSomeVal (SomeMod mx) = getVal mx
 
 invertSomeMod :: SomeMod -> Maybe SomeMod
-invertSomeMod (SomeMod mx) = SomeMod <$> invertMod mx
+invertSomeMod (SomeMod mx) = fmap SomeMod (invertMod mx)
+
+#if __GLASGOW_HASKELL__ >= 800
 
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
 powSomeMod (SomeMod mx) a = SomeMod (powMod mx a)
 
-#if __GLASGOW_HASKELL__ >= 800
 {-# RULES
 "^/SomeMod" forall (x :: SomeMod) p. x ^ p = powSomeMod x p
 #-}
+
 #endif

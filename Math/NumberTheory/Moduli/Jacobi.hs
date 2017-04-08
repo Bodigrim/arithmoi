@@ -9,6 +9,7 @@
 -- Jacobi symbol.
 --
 
+{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Math.NumberTheory.Moduli.Jacobi
@@ -20,7 +21,7 @@ module Math.NumberTheory.Moduli.Jacobi
 import Data.Array.Unboxed
 import Data.Bits
 import Data.Semigroup
-#if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32
+#if __GLASGOW_HASKELL__ < 709
 import Data.Word
 #endif
 

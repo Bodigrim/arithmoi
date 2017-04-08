@@ -19,6 +19,9 @@ module Math.NumberTheory.ModuliTests
 
 import Test.Tasty
 
+#if __GLASGOW_HASKELL__ < 709
+import Control.Applicative
+#endif
 import Control.Arrow
 import Data.Bits
 import Data.Functor.Compose

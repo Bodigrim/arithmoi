@@ -138,6 +138,8 @@ test-suite spec
                       , integer-gmp < 1.1
   if impl(ghc < 7.10)
     build-depends     : nats >= 1 && <1.2
+  if impl(ghc < 8.0)
+    build-depends     : semigroups >= 0.8
 
   other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
                   , Math.NumberTheory.GaussianIntegersTests

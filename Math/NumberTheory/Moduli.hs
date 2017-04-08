@@ -29,12 +29,10 @@ module Math.NumberTheory.Moduli
     , chineseRemainder2
     ) where
 
-#include "MachDeps.h"
-
 import Control.Monad (foldM, liftM2)
 import Data.Bits
 import Data.List (nub)
-#if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32
+#if __GLASGOW_HASKELL__ < 709
 import Data.Word
 #endif
 import GHC.Integer.GMP.Internals
