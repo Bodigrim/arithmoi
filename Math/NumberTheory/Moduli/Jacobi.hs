@@ -1,86 +1,123 @@
-{-# LANGUAGE BangPatterns #-}
+-- |
+-- Module:      Math.NumberTheory.Moduli.Jacobi
+-- Copyright:   (c) 2011 Daniel Fischer, 2017 Andrew Lelechenko
+-- Licence:     MIT
+-- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+-- Stability:   Provisional
+-- Portability: Non-portable (GHC extensions)
+--
+-- Jacobi symbol.
+--
+
+{-# LANGUAGE LambdaCase #-}
 
 module Math.NumberTheory.Moduli.Jacobi
-  ( jacobi
+  ( JacobiSymbol(..)
+  , jacobi
   , jacobi'
   ) where
 
 import Data.Array.Unboxed
 import Data.Bits
+import Data.Semigroup
+#if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32
+import Data.Word
+#endif
 
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
+
+-- | Type for result of 'jacobi'.
+data JacobiSymbol = MinusOne | Zero | One
+  deriving (Eq, Ord, Show)
+
+instance Semigroup JacobiSymbol where
+  (<>) = \case
+    MinusOne -> negJS
+    Zero     -> const Zero
+    One      -> id
+
+instance Monoid JacobiSymbol where
+  mempty = One
+  mappend = (<>)
+
+negJS :: JacobiSymbol -> JacobiSymbol
+negJS = \case
+  MinusOne -> One
+  Zero     -> Zero
+  One      -> MinusOne
 
 -- | Jacobi symbol of two numbers.
 --   The \"denominator\" must be odd and positive, this condition is checked.
 --
 --   If both numbers have a common prime factor, the result
 --   is @0@, otherwise it is &#177;1.
-{-# SPECIALISE jacobi :: Integer -> Integer -> Int,
-                         Int -> Int -> Int,
-                         Word -> Word -> Int
+{-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
+                         Int -> Int -> JacobiSymbol,
+                         Word -> Word -> JacobiSymbol
   #-}
-jacobi :: (Integral a, Bits a) => a -> a -> Int
+jacobi :: (Integral a, Bits a) => a -> a -> JacobiSymbol
 jacobi a b
   | b < 0       = error "Math.NumberTheory.Moduli.jacobi: negative denominator"
   | evenI b     = error "Math.NumberTheory.Moduli.jacobi: even denominator"
-  | b == 1      = 1
+  | b == 1      = One
   | otherwise   = jacobi' a b   -- b odd, > 1
 
 -- Invariant: b > 1 and odd
 -- | Jacobi symbol of two numbers without validity check of
 --   the \"denominator\".
-{-# SPECIALISE jacobi' :: Integer -> Integer -> Int,
-                          Int -> Int -> Int,
-                          Word -> Word -> Int
+{-# SPECIALISE jacobi' :: Integer -> Integer -> JacobiSymbol,
+                          Int -> Int -> JacobiSymbol,
+                          Word -> Word -> JacobiSymbol
   #-}
-jacobi' :: (Integral a, Bits a) => a -> a -> Int
+jacobi' :: (Integral a, Bits a) => a -> a -> JacobiSymbol
 jacobi' a b
-  | a == 0      = 0
-  | a == 1      = 1
-  | a < 0       = let n | rem4 b == 1 = 1
-                        | otherwise   = -1
+  | a == 0      = Zero
+  | a == 1      = One
+  | a < 0       = let n | rem4 b == 1 = One
+                        | otherwise   = MinusOne
                       -- Blech, minBound may pose problems
                       (z,o) = shiftToOddCount (abs $ toInteger a)
                       s | evenI z || unsafeAt jac2 (rem8 b) == 1 = n
-                        | otherwise                              = (-n)
-                  in s*jacobi' (fromInteger o) b
+                        | otherwise                              = negJS n
+                  in s <> jacobi' (fromInteger o) b
   | a >= b      = case a `rem` b of
-                    0 -> 0
-                    r -> jacPS 1 r b
+                    0 -> Zero
+                    r -> jacPS One r b
   | evenI a     = case shiftToOddCount a of
-                    (z,o) -> let r = 2 - (rem4 o .&. rem4 b)
+                    (z,o) -> let r | rem4 o .&. rem4 b == 1 = One
+                                   | otherwise              = MinusOne
                                  s | evenI z || unsafeAt jac2 (rem8 b) == 1 = r
-                                   | otherwise                              = (-r)
+                                   | otherwise                              = negJS r
                              in jacOL s b o
   | otherwise   = case rem4 a .&. rem4 b of
-                    3 -> jacOL (-1) b a
-                    _ -> jacOL 1 b a
+                    3 -> jacOL MinusOne b a
+                    _ -> jacOL One      b a
 
 -- numerator positive and smaller than denominator
-{-# SPECIALISE jacPS :: Int -> Integer -> Integer -> Int,
-                        Int -> Int -> Int -> Int,
-                        Int -> Word -> Word -> Int
+{-# SPECIALISE jacPS :: JacobiSymbol -> Integer -> Integer -> JacobiSymbol,
+                        JacobiSymbol -> Int -> Int -> JacobiSymbol,
+                        JacobiSymbol -> Word -> Word -> JacobiSymbol
   #-}
-jacPS :: (Integral a, Bits a) => Int -> a -> a -> Int
-jacPS !j a b
+jacPS :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
+jacPS j a b
   | evenI a     = case shiftToOddCount a of
                     (z,o) | evenI z || unsafeAt jac2 (rem8 b) == 1 ->
-                              jacOL (if rem4 o .&. rem4 b == 3 then (-j) else j) b o
+                              jacOL (if rem4 o .&. rem4 b == 3 then (negJS j) else j) b o
                           | otherwise ->
-                              jacOL (if rem4 o .&. rem4 b == 3 then j else (-j)) b o
-  | otherwise   = jacOL (if rem4 a .&. rem4 b == 3 then (-j) else j) b a
+                              jacOL (if rem4 o .&. rem4 b == 3 then j else (negJS j)) b o
+  | otherwise   = jacOL (if rem4 a .&. rem4 b == 3 then (negJS j) else j) b a
 
 -- numerator odd, positive and larger than denominator
-{-# SPECIALISE jacOL :: Int -> Integer -> Integer -> Int,
-                        Int -> Int -> Int -> Int,
-                        Int -> Word -> Word -> Int
+{-# SPECIALISE jacOL :: JacobiSymbol -> Integer -> Integer -> JacobiSymbol,
+                        JacobiSymbol -> Int -> Int -> JacobiSymbol,
+                        JacobiSymbol -> Word -> Word -> JacobiSymbol
   #-}
-jacOL :: (Integral a, Bits a) => Int -> a -> a -> Int
-jacOL !j a b
+jacOL :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
+jacOL j a b
   | b == 1    = j
   | otherwise = case a `rem` b of
-                 0 -> 0
+                 0 -> Zero
                  r -> jacPS j r b
 
 -- Utilities

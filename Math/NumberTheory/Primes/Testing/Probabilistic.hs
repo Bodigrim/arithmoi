@@ -24,7 +24,8 @@ import Data.Bits
 import GHC.Base
 import GHC.Integer.GMP.Internals
 
-import Math.NumberTheory.Moduli
+import Math.NumberTheory.Moduli (powerModInteger')
+import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Powers.Squares
 
@@ -148,9 +149,9 @@ lucasTest n
       r = integerSquareRoot n
       d = find True 5
       find !pos cd = case jacobi' (n `rem` cd) cd of
-                       0 -> if cd == n then 1 else 0
-                       1 -> find (not pos) (cd+2)
-                       _ -> if pos then cd else (-cd)
+                       MinusOne -> if pos then cd else (-cd)
+                       Zero     -> if cd == n then 1 else 0
+                       One      -> find (not pos) (cd+2)
       q = (1-d) `quot` 4
       (t,o) = shiftToOddCount (n+1)
       (uo, vo, qo) = testLucas n q o

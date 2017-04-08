@@ -21,22 +21,16 @@ import Test.Tasty
 
 import Control.Arrow
 import Data.Bits
+import Data.Functor.Compose
 import Data.List (tails, nub)
 import Data.Maybe
-import Data.Functor.Compose
+import Data.Semigroup
 
 import Math.NumberTheory.Moduli
 import Math.NumberTheory.TestUtils
 
 unwrapPP :: (Prime, Power Int) -> (Integer, Int)
 unwrapPP (Prime p, Power e) = (p, e)
-
--- | Check that 'jacobi' matches 'jacobi''.
-jacobiProperty1 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
-jacobiProperty1 (AnySign a) (Compose (Positive (Odd n))) = n == 1 && j == 1 || n > 1 && j == j'
-  where
-    j = jacobi a n
-    j' = jacobi' a n
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 2
 jacobiProperty2 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
@@ -46,28 +40,28 @@ jacobiProperty2 (AnySign a) (Compose (Positive (Odd n)))
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 3
 jacobiProperty3 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
-jacobiProperty3 (AnySign a) (Compose (Positive (Odd n))) = j == 0 && g /= 1 || abs j == 1 && g == 1
-  where
-    j = jacobi a n
-    g = gcd a n
+jacobiProperty3 (AnySign a) (Compose (Positive (Odd n))) = case jacobi a n of
+  MinusOne -> a `gcd` n == 1
+  Zero     -> a `gcd` n /= 1
+  One      -> a `gcd` n == 1
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 4
 jacobiProperty4 :: (Integral a, Bits a) => AnySign a -> AnySign a -> (Compose Positive Odd) a -> Bool
-jacobiProperty4 (AnySign a) (AnySign b) (Compose (Positive (Odd n))) = jacobi (a * b) n == jacobi a n * jacobi b n
+jacobiProperty4 (AnySign a) (AnySign b) (Compose (Positive (Odd n))) = jacobi (a * b) n == jacobi a n <> jacobi b n
 
 jacobiProperty4_Integer :: AnySign Integer -> AnySign Integer -> (Compose Positive Odd) Integer -> Bool
 jacobiProperty4_Integer = jacobiProperty4
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 5
 jacobiProperty5 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> (Compose Positive Odd) a -> Bool
-jacobiProperty5 (AnySign a) (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = jacobi a (m * n) == jacobi a m * jacobi a n
+jacobiProperty5 (AnySign a) (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = jacobi a (m * n) == jacobi a m <> jacobi a n
 
 jacobiProperty5_Integer :: AnySign Integer -> (Compose Positive Odd) Integer -> (Compose Positive Odd) Integer -> Bool
 jacobiProperty5_Integer = jacobiProperty5
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 6
 jacobiProperty6 :: (Integral a, Bits a) => (Compose Positive Odd) a -> (Compose Positive Odd) a -> Bool
-jacobiProperty6 (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = gcd m n /= 1 || jacobi m n * jacobi n m == (if m `mod` 4 == 1 || n `mod` 4 == 1 then 1 else -1)
+jacobiProperty6 (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = gcd m n /= 1 || jacobi m n <> jacobi n m == (if m `mod` 4 == 1 || n `mod` 4 == 1 then One else MinusOne)
 
 -- | Check that 'invertMod' inverts numbers modulo.
 invertModProperty :: AnySign Integer -> Positive Integer -> Bool
@@ -148,19 +142,19 @@ chineseRemainder2Property r1 (Positive m1) r2 (Positive m2) = gcd m1 m2 /= 1
 --   Also check that the result is a solution of input modular equation.
 sqrtModPProperty :: AnySign Integer -> Prime -> Bool
 sqrtModPProperty (AnySign n) (Prime p) = case sqrtModP n p of
-  Nothing -> jacobi n p == -1
-  Just rt -> (p == 2 || jacobi n p /= -1) && rt ^ 2 `mod` p == n `mod` p
+  Nothing -> jacobi n p == MinusOne
+  Just rt -> (p == 2 || jacobi n p /= MinusOne) && rt ^ 2 `mod` p == n `mod` p
 
 sqrtModPListProperty :: AnySign Integer -> Prime -> Bool
 sqrtModPListProperty (AnySign n) (Prime p) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtModPList n p)
 
 sqrtModP'Property :: Positive Integer -> Prime -> Bool
-sqrtModP'Property (Positive n) (Prime p) = (p /= 2 && jacobi n p /= 1) || rt ^ 2 `mod` p == n `mod` p
+sqrtModP'Property (Positive n) (Prime p) = (p /= 2 && jacobi n p /= One) || rt ^ 2 `mod` p == n `mod` p
   where
     rt = sqrtModP' n p
 
 tonelliShanksProperty :: Positive Integer -> Prime -> Bool
-tonelliShanksProperty (Positive n) (Prime p) = p `mod` 4 /= 1 || jacobi n p /= 1 || rt ^ 2 `mod` p == n `mod` p
+tonelliShanksProperty (Positive n) (Prime p) = p `mod` 4 /= 1 || jacobi n p /= One || rt ^ 2 `mod` p == n `mod` p
   where
     rt = tonelliShanks n p
 
@@ -189,8 +183,7 @@ sqrtModFListProperty (AnySign n) (map unwrapPP -> pes)
 testSuite :: TestTree
 testSuite = testGroup "Moduli"
   [ testGroup "jacobi"
-    [ testSameIntegralProperty "matches jacobi'"              jacobiProperty1
-    , testSameIntegralProperty "same modulo n"                jacobiProperty2
+    [ testSameIntegralProperty "same modulo n"                jacobiProperty2
     , testSameIntegralProperty "consistent with gcd"          jacobiProperty3
     , testSmallAndQuick        "multiplicative 1"             jacobiProperty4_Integer
     , testSmallAndQuick        "multiplicative 2"             jacobiProperty5_Integer

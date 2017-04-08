@@ -11,7 +11,8 @@
 {-# LANGUAGE CPP, BangPatterns #-}
 module Math.NumberTheory.Moduli
     ( -- * Functions with input check
-      jacobi
+      JacobiSymbol(..)
+    , jacobi
     , invertMod
     , powerMod
     , powerModInteger
@@ -19,7 +20,6 @@ module Math.NumberTheory.Moduli
       -- ** Partially checked input
     , sqrtModP
       -- * Unchecked functions
-    , jacobi'
     , powerMod'
     , powerModInteger'
     , sqrtModPList
@@ -229,9 +229,9 @@ powerModInteger' base expo md = go w1 1 base e1
 sqrtModP :: Integer -> Integer -> Maybe Integer
 sqrtModP n 2 = Just (n `mod` 2)
 sqrtModP n prime = case jacobi' n prime of
-                     0 -> Just 0
-                     1 -> Just (sqrtModP' (n `mod` prime) prime)
-                     _ -> Nothing
+                     MinusOne -> Nothing
+                     Zero     -> Just 0
+                     One      -> Just (sqrtModP' (n `mod` prime) prime)
 
 -- | @sqrtModPList n prime@ computes the list of all square roots of @n@
 --   modulo @prime@. @prime@ /must/ be a (positive) prime.
@@ -433,7 +433,7 @@ findNonSquare n
       where
         primelist = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67]
                         ++ sieveFrom (68 + n `rem` 4) -- prevent sharing
-        search (p:ps)
-            | jacobi' p n == -1 = p
-            | otherwise         = search ps
+        search (p:ps) = case jacobi' p n of
+          MinusOne -> p
+          _        -> search ps
         search _ = error "Should never have happened, prime list exhausted."
