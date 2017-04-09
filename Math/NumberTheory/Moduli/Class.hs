@@ -13,6 +13,7 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving  #-}
@@ -24,9 +25,9 @@ module Math.NumberTheory.Moduli.Class
 
   , SomeMod(..)
   , modulo
-  , getSomeMod
-  , getSomeVal
   , invertSomeMod
+
+  , KnownNat
   ) where
 
 import Data.Proxy
@@ -42,7 +43,7 @@ newtype Mod (m :: Nat) = Mod
   } deriving (Eq, Ord)
 
 instance KnownNat m => Show (Mod m) where
-  show m = "(" ++ show (getVal m) ++ " mod " ++ show (natVal m) ++ ")"
+  show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (natVal m) ++ ")"
 
 instance KnownNat m => Num (Mod m) where
   mx@(Mod x) + Mod y =
@@ -65,7 +66,11 @@ instance KnownNat m => Num (Mod m) where
       mx = Mod $ fromInteger $ x `mod` natVal mx
 
 instance KnownNat m => Fractional (Mod m) where
-  fromRational r = fromInteger (numerator r) / fromInteger (denominator r)
+  fromRational r = case denominator r of
+    1   -> num
+    den -> num / fromInteger den
+    where
+      num = fromInteger (numerator r)
   recip mx = case invertMod mx of
     Nothing -> error $ "recip{Mod}: residue is not coprime with modulo"
     Just y  -> y
@@ -94,12 +99,17 @@ powMod mx@(Mod x) a
 
 data SomeMod where
   SomeMod :: KnownNat m => Mod m -> SomeMod
+  InfMod  :: Rational -> SomeMod
 
 instance Eq SomeMod where
   SomeMod mx == SomeMod my = getMod mx == getMod my && getVal mx == getVal my
+  InfMod rx  == InfMod ry  = rx == ry
+  _          == _          = False
 
 instance Show SomeMod where
-  show (SomeMod m) = show m
+  show = \case
+    SomeMod m -> show m
+    InfMod  r -> show r
 
 modulo :: Integer -> Natural -> SomeMod
 modulo n m = case someNatVal m' of
@@ -111,9 +121,12 @@ modulo n m = case someNatVal m' of
 
 liftUnOp
   :: (forall k. KnownNat k => Mod k -> Mod k)
+  -> (Rational -> Rational)
   -> SomeMod
   -> SomeMod
-liftUnOp f (SomeMod mx) = SomeMod (f mx)
+liftUnOp fm fr = \case
+  SomeMod m -> SomeMod (fm m)
+  InfMod  r -> InfMod  (fr r)
 
 liftBinOpMod
   :: (KnownNat m, KnownNat n)
@@ -129,46 +142,47 @@ liftBinOpMod f mx@(Mod x) my@(Mod y) = case someNatVal m of
 
 liftBinOp
   :: (forall k. KnownNat k => Mod k -> Mod k -> Mod k)
+  -> (Rational -> Rational -> Rational)
   -> SomeMod
   -> SomeMod
   -> SomeMod
-liftBinOp f (SomeMod (mx :: Mod m)) (SomeMod (my :: Mod n))
-    = case (Proxy :: Proxy m) `sameNat` (Proxy :: Proxy n) of
-      Nothing   -> liftBinOpMod f mx my
-      Just Refl -> SomeMod (mx `f` my)
+liftBinOp _ fr (InfMod rx)  (InfMod ry)  = InfMod  (rx `fr` ry)
+liftBinOp fm _ (InfMod rx)  (SomeMod my) = SomeMod (fromRational rx `fm` my)
+liftBinOp fm _ (SomeMod mx) (InfMod ry)  = SomeMod (mx `fm` fromRational ry)
+liftBinOp fm _ (SomeMod (mx :: Mod m)) (SomeMod (my :: Mod n))
+  = case (Proxy :: Proxy m) `sameNat` (Proxy :: Proxy n) of
+    Nothing   -> liftBinOpMod fm mx my
+    Just Refl -> SomeMod (mx `fm` my)
 
 -- | 'fromInteger' implementation does not make much sense,
 -- it is present for the sake of completeness.
 instance Num SomeMod where
-  (+)    = liftBinOp (+)
-  (-)    = liftBinOp (-)
-  negate = liftUnOp negate
-  (*)    = liftBinOp (*)
+  (+)    = liftBinOp (+) (+)
+  (-)    = liftBinOp (-) (+)
+  negate = liftUnOp negate negate
+  (*)    = liftBinOp (*) (*)
   abs    = id
-  signum = liftUnOp signum
-  fromInteger x = modulo 1 (fromInteger x)
+  signum = const 1
+  fromInteger = InfMod . fromInteger
 
 -- | 'fromRational' implementation does not make much sense,
 -- it is present for the sake of completeness.
 instance Fractional SomeMod where
-  fromRational r = fromInteger (numerator r) / fromInteger (denominator r)
-  recip = liftUnOp recip
-
--- | Linking type and value level: extract modulo as a value.
-getSomeMod :: SomeMod -> Natural
-getSomeMod (SomeMod mx) = getMod mx
-
--- | Extract residue.
-getSomeVal :: SomeMod -> Integer
-getSomeVal (SomeMod mx) = getVal mx
+  fromRational = InfMod
+  recip x = case invertSomeMod x of
+    Nothing -> error $ "recip{SomeMod}: residue is not coprime with modulo"
+    Just y  -> y
 
 invertSomeMod :: SomeMod -> Maybe SomeMod
-invertSomeMod (SomeMod mx) = fmap SomeMod (invertMod mx)
+invertSomeMod = \case
+  SomeMod m -> fmap SomeMod (invertMod m)
+  InfMod  r -> Just (InfMod (recip r))
 
 #if __GLASGOW_HASKELL__ >= 800
 
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
-powSomeMod (SomeMod mx) a = SomeMod (powMod mx a)
+powSomeMod (SomeMod m) a = SomeMod (powMod m a)
+powSomeMod (InfMod  r) a = InfMod  (r ^ a)
 
 {-# RULES
 "^/SomeMod" forall (x :: SomeMod) p. x ^ p = powSomeMod x p

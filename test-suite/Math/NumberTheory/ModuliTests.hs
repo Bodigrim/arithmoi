@@ -19,9 +19,6 @@ module Math.NumberTheory.ModuliTests
 
 import Test.Tasty
 
-#if __GLASGOW_HASKELL__ < 709
-import Control.Applicative
-#endif
 import Control.Arrow
 import Data.Bits
 import Data.Functor.Compose
@@ -35,11 +32,11 @@ import Math.NumberTheory.TestUtils
 unwrapPP :: (Prime, Power Int) -> (Integer, Int)
 unwrapPP (Prime p, Power e) = (p, e)
 
-invertMod :: Integer -> Integer -> Maybe Integer
-invertMod x m = getSomeVal <$> invertSomeMod (x `modulo` fromInteger m)
+invertMod :: Integer -> Integer -> Maybe SomeMod
+invertMod x m = invertSomeMod (x `modulo` fromInteger m)
 
-powerMod :: Integral a => Integer -> a -> Integer -> Integer
-powerMod b e m = getSomeVal ((b `modulo` fromInteger m) ^ e)
+powerMod :: Integral a => Integer -> a -> Integer -> SomeMod
+powerMod b e m = (b `modulo` fromInteger m) ^ e
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 2
 jacobiProperty2 :: (Integral a, Bits a) => AnySign a -> (Compose Positive Odd) a -> Bool
@@ -75,23 +72,15 @@ jacobiProperty6 (Compose (Positive (Odd m))) (Compose (Positive (Odd n))) = gcd 
 -- | Check that 'invertMod' inverts numbers modulo.
 invertModProperty :: AnySign Integer -> Positive Integer -> Bool
 invertModProperty (AnySign k) (Positive m) = case invertMod k m of
-  Nothing  -> k `mod` m == 0 || gcd k m > 1
-  Just inv -> gcd k m == 1
-      && k * inv `mod` m == 1 && 0 <= inv && inv < m
-
--- | Check that the result of 'powerMod' is between 0 and modulo (non-inclusive).
-powerModProperty1 :: (Integral a, Bits a) => NonNegative a -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty1 (NonNegative e) (AnySign b) (Positive m)
-  =  e < 0 && isNothing (invertMod b m)
-  || (0 <= pm && pm < m)
-  where
-    pm = powerMod b e m
+  Nothing            -> k `mod` m == 0 || gcd k m > 1
+  Just InfMod{}      -> False
+  Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1
 
 -- | Check that 'powerMod' is multiplicative by first argument.
 powerModProperty2 :: (Integral a, Bits a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
   =  e < 0 && (isNothing (invertMod b1 m) || isNothing (invertMod b2 m))
-  || pm1 * pm2 `mod` m == pm12
+  || pm1 * pm2 == pm12
   where
     pm1  = powerMod b1  e m
     pm2  = powerMod b2  e m
@@ -105,15 +94,11 @@ powerModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
   || e1 >= 0 && e1 + e2 < e2 -- check overflow
   || e2 <= 0 && e1 + e2 > e1 -- check overflow
   || e1 <= 0 && e1 + e2 > e2 -- check overflow
-  || pm1 * pm2 `mod` m == pm12
+  || pm1 * pm2 == pm12
   where
     pm1  = powerMod b e1 m
     pm2  = powerMod b e2 m
     pm12 = powerMod b (e1 + e2) m
-
--- | Specialized to trigger 'powerModInteger'.
-powerModProperty1_Integer :: NonNegative Integer -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty1_Integer = powerModProperty1
 
 -- | Specialized to trigger 'powerModInteger'.
 powerModProperty2_Integer :: NonNegative Integer -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
@@ -193,13 +178,11 @@ testSuite = testGroup "Moduli"
   , testSmallAndQuick "invertMod" invertModProperty
   , testGroup "powerMod"
     [ testGroup "generic"
-      [ testIntegralProperty "bounded between 0 and m"  powerModProperty1
-      , testIntegralProperty "multiplicative by base"   powerModProperty2
+      [ testIntegralProperty "multiplicative by base"   powerModProperty2
       , testSameIntegralProperty "additive by exponent" powerModProperty3
       ]
     , testGroup "Integer"
-      [ testSmallAndQuick "bounded between 0 and m" powerModProperty1_Integer
-      , testSmallAndQuick "multiplicative by base"  powerModProperty2_Integer
+      [ testSmallAndQuick "multiplicative by base"  powerModProperty2_Integer
       , testSmallAndQuick "additive by exponent"    powerModProperty3_Integer
       ]
     ]
