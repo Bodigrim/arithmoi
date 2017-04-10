@@ -20,8 +20,16 @@
 --
 -- Given enough time, the algorithm should be able to factor numbers of 100-120 digits, but it
 -- is best suited for numbers of up to 50-60 digits.
-{-# LANGUAGE CPP, BangPatterns, MagicHash #-}
+
+{-# LANGUAGE BangPatterns   #-}
+{-# LANGUAGE CPP            #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MagicHash      #-}
+
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# OPTIONS_HADDOCK hide #-}
+
 module Math.NumberTheory.Primes.Factorisation.Montgomery
   ( -- *  Complete factorisation functions
     -- ** Functions with input checking
@@ -55,6 +63,7 @@ import Data.Maybe
 import GHC.Integer.Logarithms
 
 import Math.NumberTheory.Logarithms
+import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
@@ -182,9 +191,11 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
             | count < 0 = return ([],[(m,1)])
             | otherwise = do
                 s <- rndR m
-                case montgomeryFactorisation m b1 b2 s of
-                  Nothing -> workFact m b1 b2 (count-1)
-                  Just d  -> do
+                case s `modulo` fromInteger m of
+                  InfMod{} -> error "impossible case"
+                  SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
+                    Nothing -> workFact m b1 b2 (count-1)
+                    Just d  -> do
                       let !cof = m `quot` d
                       case gcd cof d of
                         1 -> do
@@ -226,15 +237,15 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
 --   It is assumed that @n@ has no small prime factors.
 --
 --   The result is maybe a nontrivial divisor of @n@.
-montgomeryFactorisation :: Integer -> Word -> Word -> Integer -> Maybe Integer
-montgomeryFactorisation n b1 b2 s = go p5 (list primeStore)
+montgomeryFactorisation :: KnownNat n => Word -> Word -> Mod n -> Maybe Integer
+montgomeryFactorisation b1 b2 s = fromIntegral <$> go p5 (list primeStore)
   where
     l2 = wordLog2' b1
     b1i = toInteger b1
     (^~) :: Word -> Int -> Word
     w ^~ i = w ^ i
-    (e, p0) = montgomeryData n s
-    dbl pt = double n e pt
+    (e, p0) = montgomeryData s
+    dbl pt = double e pt
     dbln 0 !pt = pt
     dbln k pt = dbln (k-1) (dbl pt)
     p2 = dbln l2 p0
@@ -249,28 +260,28 @@ montgomeryFactorisation n b1 b2 s = go p5 (list primeStore)
     l3 = mul l2 190537 301994
     w3 = 3 ^~ l3
     pw3 = adjust (b1 `quot` 3) 3 w3
-    p3 = multiply n e pw3 p2
+    p3 = multiply e pw3 p2
     l5 = mul l2 1936274 4495889
     w5 = 5 ^~ l5
     pw5 = adjust (b1 `quot` 5) 5 w5
-    p5 = multiply n e pw5 p3
+    p5 = multiply e pw5 p3
     go (P _ 0) _ = Nothing
     go !pt@(P _ z) (pr:prs)
       | pr <= b1    = let !lp = integerLogBase' (fromIntegral pr) b1i
-                      in go (multiply n e (pr ^~ lp) pt) prs
-      | otherwise   = case gcd n z of
-                        1 -> lgo (multiply n e pr pt) prs
+                      in go (multiply e (pr ^~ lp) pt) prs
+      | otherwise   = case gcd (fromIntegral $ getMod z) (getVal z) of
+                        1 -> lgo (multiply e pr pt) prs
                         g -> Just g
-    go (P _ z) _    = case gcd n z of
+    go (P _ z) _    = case gcd (fromIntegral $ getMod z) (getVal z) of
                         1 -> Nothing
                         g -> Just g
     lgo (P _ 0) _ = Nothing
     lgo !pt@(P _ z) (pr:prs)
-      | pr <= b2    = lgo (multiply n e pr pt) prs
-      | otherwise   = case gcd n z of
+      | pr <= b2    = lgo (multiply e pr pt) prs
+      | otherwise   = case gcd (fromIntegral $ getMod z) (getVal z) of
                         1 -> Nothing
                         g -> Just g
-    lgo (P _ z) _   = case gcd n z of
+    lgo (P _ z) _   = case gcd (fromIntegral $ getMod z) (getVal z) of
                         1 -> Nothing
                         g -> Just g
 
@@ -280,78 +291,65 @@ montgomeryFactorisation n b1 b2 s = go p5 (list primeStore)
 
 -- A Montgomery curve is given by y^2 = x^3 + (A_n / A_d - 2)*x^2 + x (mod n).
 -- We store A_n and 4*A_d, since A_n occurs with the factor 4 in all formulae.
-data Curve = C !Integer !Integer
+data Curve (m :: Nat) = C !(Mod m) !(Mod m)
 
 -- Point in the projective plane, will be on the curve
 -- A coordinate transformation eliminates the y-coordinate, hence
 -- we store only x and z
-data Point = P !Integer !Integer
+data Point (m :: Nat) = P !(Mod m) !(Mod m)
 
 -- Get curve and point to start
 -- Input should satisfy 6 <= s < n-1
-montgomeryData :: Integer -> Integer -> (Curve, Point)
-montgomeryData n s = (C an ad4, P x z)
+montgomeryData :: KnownNat n => Mod n -> (Curve n, Point n)
+montgomeryData s = (C an ad4, P x z)
   where
-    u = (s*s-5) `mod` n
-    v = (4*s) `mod` n
-    d = (v-u)
-    x = (u*u*u) `mod` n
-    z = (v*v*v) `mod` n
-    an = ((d*d)*(d*(3*u+v))) `mod` n
-    ad4 = (16*x*v) `mod` n
+    u = s ^/ 2 - 5
+    v = 4 * s
+    d = v - u
+    x = u ^/ 3
+    z = v ^/ 3
+    an = d ^/ 3 * (3 * u + v)
+    ad4 = 16 * x * v
 
 -- Addition on the curve, given the modulus n and three points,
 -- p0, p1 and p2, with p0 = p2 - p1, calculate the point p1 + p2.
 -- Note that the addition does not depend on the curve.
-add :: Integer -> Point -> Point -> Point -> Point
-add n (P x0 z0) (P x1 z1) (P x2 z2) = P x3 z3
+add :: KnownNat n => Point n -> Point n -> Point n -> Point n
+add (P x0 z0) (P x1 z1) (P x2 z2) = P x3 z3
   where
-    a = (x1-z1)*(x2+z2)
-    b = (x1+z1)*(x2-z2)
-    c = a+b
-    d = a-b
-    x3 = (c*c*z0) `rem` n
-    z3 = (d*d*x0) `rem` n
+    a = (x1 - z1) * (x2 + z2)
+    b = (x1 + z1) * (x2 - z2)
+    c = a + b
+    d = a - b
+    x3 = c ^/ 2 * z0
+    z3 = d ^/ 2 * x0
 
 -- Double a point on the curve.
-double :: Integer -> Curve -> Point -> Point
-double n (C an ad4) (P x z) = P x' z'
+double :: KnownNat n => Curve n -> Point n -> Point n
+double (C an ad4) (P x z) = P x' z'
   where
-    r = x+z
-    s = x-z
-    u = r*r
-    v = s*s
-    t = u-v
-    x' = (ad4*u*v) `rem` n
-    z' = ((ad4*v+t*an)*t) `rem` n
+    r = x + z
+    s = x - z
+    u = r ^/ 2
+    v = s ^/ 2
+    t = u - v
+    x' = ad4 * u * v
+    z' = (ad4 * v + t * an) * t
 
 -- Multiply a point on the curve by a Word.
 -- Within Word range, we can use the faster variant going
 -- from high-order bits to low-order.
-multiply :: Integer -> Curve -> Word -> Point -> Point
-multiply n cve (W# w##) p =
+multiply :: KnownNat n => Curve n -> Word -> Point n -> Point n
+multiply cve (W# w##) p =
     case wordLog2# w## of
-      l# -> go (l# -# 1#) p (double n cve p)
+      l# -> go (l# -# 1#) p (double cve p)
   where
     go 0# !p0 !p1 = case w## `and#` 1## of
-                      0## -> double n cve p0
-                      _   -> add n p p0 p1
+                      0## -> double cve p0
+                      _   -> add p p0 p1
     go i# p0 p1 = case (uncheckedShiftRL# w## i#) `and#` 1## of
-                    0## -> go (i# -# 1#) (double n cve p0) (add n p p0 p1)
-                    _   -> go (i# -# 1#) (add n p p0 p1) (double n cve p1)
-
-{-  Not (yet) needed
--- Multiply a point on the curve by an Integer.
-multIgr :: Integer -> Curve -> Integer -> Point -> Point
-multIgr n cve k p = go k
-  where
-    go 1 = (p, double n cve p)
-    go m = case m `quotRem` 2 of
-             (q,r) -> let !(!s, l) = go q
-                      in case r of
-                           0 -> (double n cve s, add n p s l)
-                           _ -> (add n p s l, double n cve l)
--}
+                    0## -> go (i# -# 1#) (double cve p0) (add p p0 p1)
+                    _   -> go (i# -# 1#) (add p p0 p1) (double cve p1)
 
 -- primes, compactly stored as a bit sieve
 primeStore :: [PrimeSieve]

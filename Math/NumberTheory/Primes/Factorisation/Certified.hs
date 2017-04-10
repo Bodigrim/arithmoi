@@ -25,6 +25,7 @@ import Control.Applicative
 import Data.Maybe
 import Data.Bits
 
+import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Testing.Certificates.Internal
 import Math.NumberTheory.Primes.Testing.Probabilistic
@@ -118,9 +119,11 @@ certiFactorisation primeBound primeTest prng seed mbdigs n
             | count < 0 = return ([],[(m,1)])
             | otherwise = do
                 s <- rndR m
-                case montgomeryFactorisation m b1 b2 s of
-                  Nothing -> repFact m b1 b2 (count-1)
-                  Just d  -> do
+                case s `modulo` fromInteger m of
+                  InfMod{} -> error "impossible case"
+                  SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
+                    Nothing -> repFact m b1 b2 (count-1)
+                    Just d  -> do
                       let !cof = m `quot` d
                       case gcd cof d of
                         1 -> do

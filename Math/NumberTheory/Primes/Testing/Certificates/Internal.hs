@@ -37,6 +37,7 @@ import Data.Bits
 import Data.Maybe
 import GHC.Integer.GMP.Internals
 
+import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
@@ -331,9 +332,11 @@ findLoop :: Integer -> Word -> Word -> Int -> Integer -> Either Integer Integer
 findLoop _ _  _  0  s = Left s
 findLoop n lo hi ct s
     | n <= s+2  = Left 6
-    | otherwise = case montgomeryFactorisation n lo hi s of
-                    Nothing -> findLoop n lo hi (ct-1) (s+1)
-                    Just fct
+    | otherwise = case s `modulo` fromInteger n of
+                    InfMod{}   -> error "impossible case"
+                    SomeMod sn -> case montgomeryFactorisation lo hi sn of
+                      Nothing -> findLoop n lo hi (ct-1) (s+1)
+                      Just fct
                         | bailliePSW fct -> Right fct
                         | otherwise -> Right (findFactor fct 8 (s+1))
 

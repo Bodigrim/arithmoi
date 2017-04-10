@@ -29,6 +29,7 @@ module Math.NumberTheory.Moduli.Class
   , invertSomeMod
   , powSomeMod
 
+  , Nat
   , KnownNat
   ) where
 
