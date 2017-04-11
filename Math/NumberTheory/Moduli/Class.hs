@@ -9,6 +9,7 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
@@ -36,6 +37,9 @@ module Math.NumberTheory.Moduli.Class
 import Data.Proxy
 import Data.Ratio
 import Data.Type.Equality
+#if __GLASGOW_HASKELL__ < 709
+import Data.Word
+#endif
 import GHC.Integer.GMP.Internals
 import GHC.TypeLits
 import Numeric.Natural
@@ -103,8 +107,7 @@ powMod mx@(Mod x) a
 "powMod/2/Integer"     forall x. powMod x (2 :: Integer) = let u = x in u*u
 "powMod/3/Integer"     forall x. powMod x (3 :: Integer) = let u = x in u*u*u
 "powMod/2/Int"         forall x. powMod x (2 :: Int)     = let u = x in u*u
-"powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u
-#-}
+"powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u #-}
 
 (^/) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 (^/) = powMod
