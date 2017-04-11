@@ -9,7 +9,6 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
@@ -22,10 +21,13 @@ module Math.NumberTheory.Moduli.Class
   ( Mod(..)
   , getMod
   , invertMod
+  , powMod
+  , (^/)
 
   , SomeMod(..)
   , modulo
   , invertSomeMod
+  , powSomeMod
 
   , KnownNat
   ) where
@@ -84,18 +86,34 @@ invertMod mx@(Mod x) = case recipModInteger x (natVal mx) of
   0 -> Nothing
   y -> Just (Mod y)
 
-#if __GLASGOW_HASKELL__ >= 800
-
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx@(Mod x) a
   | a < 0     = error $ "^{Mod}: negative exponent"
   | otherwise = Mod $ powModInteger x (toInteger a) (natVal mx)
+{-# INLINABLE [1] powMod #-}
+
+{-# SPECIALISE [1] powMod ::
+  KnownNat m => Mod m -> Integer -> Mod m,
+  KnownNat m => Mod m -> Natural -> Mod m,
+  KnownNat m => Mod m -> Int     -> Mod m,
+  KnownNat m => Mod m -> Word    -> Mod m #-}
 
 {-# RULES
-"^/Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = powMod x p
+"powMod/2/Integer"     forall x. powMod x (2 :: Integer) = let u = x in u*u
+"powMod/3/Integer"     forall x. powMod x (3 :: Integer) = let u = x in u*u*u
+"powMod/2/Int"         forall x. powMod x (2 :: Int)     = let u = x in u*u
+"powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u
 #-}
 
-#endif
+(^/) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
+(^/) = powMod
+{-# INLINE (^/) #-}
+
+infixr 8 ^/
+
+-- Unfortunately, such rule never fires due to technical details
+-- of type class implementation is Core.
+-- {-# RULES "^/Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^/ p #-}
 
 data SomeMod where
   SomeMod :: KnownNat m => Mod m -> SomeMod
@@ -178,14 +196,15 @@ invertSomeMod = \case
   SomeMod m -> fmap SomeMod (invertMod m)
   InfMod  r -> Just (InfMod (recip r))
 
-#if __GLASGOW_HASKELL__ >= 800
+{-# SPECIALISE [1] powSomeMod ::
+  SomeMod -> Integer -> SomeMod,
+  SomeMod -> Natural -> SomeMod,
+  SomeMod -> Int     -> SomeMod,
+  SomeMod -> Word    -> SomeMod #-}
 
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
-powSomeMod (SomeMod m) a = SomeMod (powMod m a)
-powSomeMod (InfMod  r) a = InfMod  (r ^ a)
+powSomeMod (SomeMod m) a = SomeMod (m ^/ a)
+powSomeMod (InfMod  r) a = InfMod  (r ^  a)
+{-# INLINABLE [1] powSomeMod #-}
 
-{-# RULES
-"^/SomeMod" forall (x :: SomeMod) p. x ^ p = powSomeMod x p
-#-}
-
-#endif
+{-# RULES "^/SomeMod" forall x p. x ^ p = powSomeMod x p #-}
