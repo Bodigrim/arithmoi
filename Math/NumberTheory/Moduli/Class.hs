@@ -58,19 +58,26 @@ instance KnownNat m => Num (Mod m) where
     where
       xy = x + y
       m = natVal mx
+  {-# INLINE (+) #-}
   mx@(Mod x) - Mod y =
     Mod $ if x >= y then x - y else m + x - y
     where
       m = natVal mx
+  {-# INLINE (-) #-}
   negate mx@(Mod x) =
     Mod $ if x == 0 then 0 else natVal mx - x
+  {-# INLINE negate #-}
   mx@(Mod x) * Mod y =
     Mod $ x * y `mod` natVal mx
+  {-# INLINE (*) #-}
   abs = id
+  {-# INLINE abs #-}
   signum = const $ Mod 1
+  {-# INLINE signum #-}
   fromInteger x = mx
     where
       mx = Mod $ fromInteger $ x `mod` natVal mx
+  {-# INLINE fromInteger #-}
 
 instance KnownNat m => Fractional (Mod m) where
   fromRational r = case denominator r of
@@ -78,18 +85,22 @@ instance KnownNat m => Fractional (Mod m) where
     den -> num / fromInteger den
     where
       num = fromInteger (numerator r)
+  {-# INLINE fromRational #-}
   recip mx = case invertMod mx of
     Nothing -> error $ "recip{Mod}: residue is not coprime with modulo"
     Just y  -> y
+  {-# INLINE recip #-}
 
 -- | Linking type and value level: extract modulo @m@ as a value.
 getMod :: KnownNat m => Mod m -> Natural
 getMod = fromInteger . natVal
+{-# INLINE getMod #-}
 
 invertMod :: KnownNat m => Mod m -> Maybe (Mod m)
 invertMod mx@(Mod x) = case recipModInteger x (natVal mx) of
   0 -> Nothing
   y -> Just (Mod y)
+{-# INLINABLE invertMod #-}
 
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx@(Mod x) a
@@ -140,6 +151,7 @@ modulo n m = case someNatVal m' of
   where
     m' = fromIntegral m
     r = fromInteger $ n `mod` m'
+{-# INLINABLE modulo #-}
 
 liftUnOp
   :: (forall k. KnownNat k => Mod k -> Mod k)
@@ -149,6 +161,7 @@ liftUnOp
 liftUnOp fm fr = \case
   SomeMod m -> SomeMod (fm m)
   InfMod  r -> InfMod  (fr r)
+{-# INLINEABLE liftUnOp #-}
 
 liftBinOpMod
   :: (KnownNat m, KnownNat n)
@@ -182,15 +195,20 @@ instance Num SomeMod where
   (+)    = liftBinOp (+) (+)
   (-)    = liftBinOp (-) (+)
   negate = liftUnOp negate negate
+  {-# INLINE negate #-}
   (*)    = liftBinOp (*) (*)
   abs    = id
+  {-# INLINE abs #-}
   signum = const 1
+  {-# INLINE signum #-}
   fromInteger = InfMod . fromInteger
+  {-# INLINE fromInteger #-}
 
 -- | 'fromRational' implementation does not make much sense,
 -- it is present for the sake of completeness.
 instance Fractional SomeMod where
   fromRational = InfMod
+  {-# INLINE fromRational #-}
   recip x = case invertSomeMod x of
     Nothing -> error $ "recip{SomeMod}: residue is not coprime with modulo"
     Just y  -> y
@@ -199,6 +217,7 @@ invertSomeMod :: SomeMod -> Maybe SomeMod
 invertSomeMod = \case
   SomeMod m -> fmap SomeMod (invertMod m)
   InfMod  r -> Just (InfMod (recip r))
+{-# INLINABLE [1] invertSomeMod #-}
 
 {-# SPECIALISE [1] powSomeMod ::
   SomeMod -> Integer -> SomeMod,
