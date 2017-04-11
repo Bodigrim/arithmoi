@@ -41,4 +41,15 @@ comparePrimalityTests bits = bgroup ("primality" ++ show bits)
   where
     ns = take bits [genInteger 0 bits ..]
 
-benchSuite = bgroup "Primes" $ map comparePrimalityTests [50, 100, 200, 500, 1000, 2000]
+compareFactorisation :: Int -> Benchmark
+compareFactorisation bits =
+  bench ("factorise" ++ show bits) $ nf (map factorise) ns
+  where
+    ns = take (bits `div` 10) [genInteger 0 bits ..]
+
+benchSuite :: Benchmark
+benchSuite = bgroup "Primes" $
+  map comparePrimalityTests [50, 100, 200, 500, 1000, 2000]
+  ++
+  map compareFactorisation [50, 60, 70, 80, 90, 100]
+
