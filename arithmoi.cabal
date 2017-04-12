@@ -51,8 +51,10 @@ library
                           Math.NumberTheory.ArithmeticFunctions.Class
                           Math.NumberTheory.ArithmeticFunctions.Standard
                           Math.NumberTheory.Moduli
+                          Math.NumberTheory.Moduli.Chinese
                           Math.NumberTheory.Moduli.Class
                           Math.NumberTheory.Moduli.Jacobi
+                          Math.NumberTheory.Moduli.Sqrt
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
                           Math.NumberTheory.Recurrencies.Bilinear
