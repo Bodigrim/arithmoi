@@ -61,6 +61,7 @@ import Data.Bits
 import Data.Maybe
 
 import GHC.Integer.Logarithms
+import GHC.TypeLits
 
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Moduli.Class
