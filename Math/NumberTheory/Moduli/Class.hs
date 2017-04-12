@@ -19,18 +19,18 @@
 {-# LANGUAGE StandaloneDeriving  #-}
 
 module Math.NumberTheory.Moduli.Class
-  ( Mod(..)
+  ( -- * Known modulo
+    Mod(..)
   , getMod
   , invertMod
   , powMod
   , (^/)
-
+  -- * Unknown modulo
   , SomeMod(..)
   , modulo
   , invertSomeMod
   , powSomeMod
-
-  , Nat
+  -- * Re-exported from GHC.TypeLits
   , KnownNat
   ) where
 
@@ -45,8 +45,19 @@ import GHC.TypeLits
 import Numeric.Natural
 
 -- | Wrapper for residues modulo @m@.
+--
+-- @Mod 3 :: Mod 10@ stands for the class of integers, congruent to 3 modulo 10 (…−17, −7, 3, 13, 23…).
+-- The modulo is stored on type level, so it is impossible, for example, to add up by mistake
+-- residues with different moduli.
+--
+-- > > (3 :: Mod 10) + (4 :: Mod 12)
+-- > error: Couldn't match type ‘12’ with ‘10’...
+-- > > (3 :: Mod 10) + 8
+-- > (1 `modulo` 10)
+--
+-- Note that modulo cannot be negative.
 newtype Mod (m :: Nat) = Mod
-  { getVal :: Integer -- ^ Extract residue.
+  { getVal :: Integer -- ^ The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
   } deriving (Eq, Ord)
 
 instance KnownNat m => Show (Mod m) where
@@ -79,6 +90,8 @@ instance KnownNat m => Num (Mod m) where
       mx = Mod $ fromInteger $ x `mod` natVal mx
   {-# INLINE fromInteger #-}
 
+-- | Beware that division by residue, which is not coprime with the modulo,
+-- will result in runtime error. Consider using 'invertMod' instead.
 instance KnownNat m => Fractional (Mod m) where
   fromRational r = case denominator r of
     1   -> num
@@ -91,17 +104,27 @@ instance KnownNat m => Fractional (Mod m) where
     Just y  -> y
   {-# INLINE recip #-}
 
--- | Linking type and value level: extract modulo @m@ as a value.
+-- | Linking type and value levels: extract modulo @m@ as a value.
 getMod :: KnownNat m => Mod m -> Natural
 getMod = fromInteger . natVal
 {-# INLINE getMod #-}
 
+-- | Computes the modular inverse, if the residue is coprime with the modulo.
+--
+-- > > invertMod (3 :: Mod 10)
+-- > Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- > > invertMod (4 :: Mod 10)
+-- > Nothing
 invertMod :: KnownNat m => Mod m -> Maybe (Mod m)
 invertMod mx@(Mod x) = case recipModInteger x (natVal mx) of
   0 -> Nothing
   y -> Just (Mod y)
 {-# INLINABLE invertMod #-}
 
+-- | Drop-in replacement for '^', with much better performance.
+--
+-- > > powMod (3 :: Mod 10) 4
+-- > (1 `modulo` 10)
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx@(Mod x) a
   | a < 0     = error $ "^{Mod}: negative exponent"
@@ -120,6 +143,7 @@ powMod mx@(Mod x) a
 "powMod/2/Int"         forall x. powMod x (2 :: Int)     = let u = x in u*u
 "powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u #-}
 
+-- | Infix synonym of 'powMod'.
 (^/) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 (^/) = powMod
 {-# INLINE (^/) #-}
@@ -127,9 +151,28 @@ powMod mx@(Mod x) a
 infixr 8 ^/
 
 -- Unfortunately, such rule never fires due to technical details
--- of type class implementation is Core.
+-- of type classes in Core.
 -- {-# RULES "^/Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^/ p #-}
 
+-- | This type represents residues with unknown modulo and rational numbers.
+-- One can freely combine them in arithmetic expressions, but each operation
+-- will spend time on modulo's recalculation:
+--
+-- > > 2 `modulo` 10 + 4 `modulo` 15
+-- > (1 `modulo` 5)
+-- > > 2 `modulo` 10 * 4 `modulo` 15
+-- > (3 `modulo` 5)
+-- > > 2 `modulo` 10 + fromRational (3 % 7)
+-- > (1 `modulo` 10)
+-- > > 2 `modulo` 10 * fromRational (3 % 7)
+-- > (8 `modulo` 10)
+--
+-- If performance is crucial, it is recommended to extract @Mod m@ for further processing
+-- by pattern matching. E. g.,
+--
+-- > case modulo n m of
+-- >   SomeMod k -> process k -- Here k has type Mod m
+-- >   InfMod{}  -> error "impossible"
 data SomeMod where
   SomeMod :: KnownNat m => Mod m -> SomeMod
   InfMod  :: Rational -> SomeMod
@@ -144,6 +187,9 @@ instance Show SomeMod where
     SomeMod m -> show m
     InfMod  r -> show r
 
+-- | Create modular value by representative of residue class and modulo.
+-- One can use the result either directly (via functions from 'Num' and 'Fractional'),
+-- or deconstruct it by pattern matching. Note that 'modulo' never returns 'InfMod'.
 modulo :: Integer -> Natural -> SomeMod
 modulo n m = case someNatVal m' of
   Nothing                       -> error "modulo: negative modulo"
@@ -189,8 +235,6 @@ liftBinOp fm _ (SomeMod (mx :: Mod m)) (SomeMod (my :: Mod n))
     Nothing   -> liftBinOpMod fm mx my
     Just Refl -> SomeMod (mx `fm` my)
 
--- | 'fromInteger' implementation does not make much sense,
--- it is present for the sake of completeness.
 instance Num SomeMod where
   (+)    = liftBinOp (+) (+)
   (-)    = liftBinOp (-) (+)
@@ -204,8 +248,8 @@ instance Num SomeMod where
   fromInteger = InfMod . fromInteger
   {-# INLINE fromInteger #-}
 
--- | 'fromRational' implementation does not make much sense,
--- it is present for the sake of completeness.
+-- | Beware that division by residue, which is not coprime with the modulo,
+-- will result in runtime error. Consider using 'invertSomeMod' instead.
 instance Fractional SomeMod where
   fromRational = InfMod
   {-# INLINE fromRational #-}
@@ -213,6 +257,14 @@ instance Fractional SomeMod where
     Nothing -> error $ "recip{SomeMod}: residue is not coprime with modulo"
     Just y  -> y
 
+-- | Computes the inverse value, if it exists.
+--
+-- > > invertSomeMod (3 `modulo` 10)
+-- > Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- > > invertMod (4 `modulo` 10)
+-- > Nothing
+-- > > invertSomeMod (fromRational (2 % 5))
+-- > Just 5 % 2
 invertSomeMod :: SomeMod -> Maybe SomeMod
 invertSomeMod = \case
   SomeMod m -> fmap SomeMod (invertMod m)
@@ -225,6 +277,11 @@ invertSomeMod = \case
   SomeMod -> Int     -> SomeMod,
   SomeMod -> Word    -> SomeMod #-}
 
+-- | Drop-in replacement for '^', with much better performance.
+-- When -O is enabled, there is a rewrite rule, which specialises '^' to 'powSomeMod'.
+--
+-- > > powSomeMod (3 `modulo` 10) 4
+-- > (1 `modulo` 10)
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
 powSomeMod (SomeMod m) a = SomeMod (m ^/ a)
 powSomeMod (InfMod  r) a = InfMod  (r ^  a)

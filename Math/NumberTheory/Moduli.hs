@@ -10,11 +10,8 @@
 --
 {-# LANGUAGE CPP, BangPatterns #-}
 module Math.NumberTheory.Moduli
-    ( -- * Wrapper for modular arithmetic
-      module Math.NumberTheory.Moduli.Class
-      -- * Functions with input check
-    , JacobiSymbol(..)
-    , jacobi
+    ( module Math.NumberTheory.Moduli.Class
+    , module Math.NumberTheory.Moduli.Jacobi
     , chineseRemainder
       -- ** Partially checked input
     , sqrtModP

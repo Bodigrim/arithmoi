@@ -51,6 +51,8 @@ library
                           Math.NumberTheory.ArithmeticFunctions.Class
                           Math.NumberTheory.ArithmeticFunctions.Standard
                           Math.NumberTheory.Moduli
+                          Math.NumberTheory.Moduli.Class
+                          Math.NumberTheory.Moduli.Jacobi
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
                           Math.NumberTheory.Recurrencies.Bilinear
@@ -87,8 +89,6 @@ library
                           Math.NumberTheory.Primes.Testing.Probabilistic
                           Math.NumberTheory.Primes.Testing.Certified
                           Math.NumberTheory.Primes.Testing.Certificates.Internal
-                          Math.NumberTheory.Moduli.Class
-                          Math.NumberTheory.Moduli.Jacobi
     other-extensions          : BangPatterns
 
     ghc-options         : -O2 -Wall
