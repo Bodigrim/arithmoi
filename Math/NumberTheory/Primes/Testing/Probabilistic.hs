@@ -94,7 +94,7 @@ isStrongFermatPPMod b = b == 0 || a == 1 || go t a
   where
     m = -1
     (t, u) = shiftToOddCount $ getVal m
-    a = b ^/ u
+    a = b ^% u
 
     go 0 _ = False
     go k x = x == m || go (k - 1) (x * x)
@@ -117,7 +117,7 @@ isStrongFermatPPMod b = b == 0 || a == 1 || go t a
 --   effort to undertake the prime factorisation).
 isFermatPP :: Integer -> Integer -> Bool
 isFermatPP n b = case b `modulo` fromInteger n of
-  SomeMod b' -> b' ^/ (n-1) == 1
+  SomeMod b' -> b' ^% (n-1) == 1
   InfMod{}   -> True
 
 -- | Primality test after Baillie, Pomerance, Selfridge and Wagstaff.

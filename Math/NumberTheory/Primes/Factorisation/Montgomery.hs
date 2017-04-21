@@ -304,12 +304,12 @@ data Point (m :: Nat) = P !(Mod m) !(Mod m)
 montgomeryData :: KnownNat n => Mod n -> (Curve n, Point n)
 montgomeryData s = (C an ad4, P x z)
   where
-    u = s ^/ 2 - 5
+    u = s ^% 2 - 5
     v = 4 * s
     d = v - u
-    x = u ^/ 3
-    z = v ^/ 3
-    an = d ^/ 3 * (3 * u + v)
+    x = u ^% 3
+    z = v ^% 3
+    an = d ^% 3 * (3 * u + v)
     ad4 = 16 * x * v
 
 -- Addition on the curve, given the modulus n and three points,
@@ -322,8 +322,8 @@ add (P x0 z0) (P x1 z1) (P x2 z2) = P x3 z3
     b = (x1 + z1) * (x2 - z2)
     c = a + b
     d = a - b
-    x3 = c ^/ 2 * z0
-    z3 = d ^/ 2 * x0
+    x3 = c ^% 2 * z0
+    z3 = d ^% 2 * x0
 
 -- Double a point on the curve.
 double :: KnownNat n => Curve n -> Point n -> Point n
@@ -331,8 +331,8 @@ double (C an ad4) (P x z) = P x' z'
   where
     r = x + z
     s = x - z
-    u = r ^/ 2
-    v = s ^/ 2
+    u = r ^% 2
+    v = s ^% 2
     t = u - v
     x' = ad4 * u * v
     z' = (ad4 * v + t * an) * t

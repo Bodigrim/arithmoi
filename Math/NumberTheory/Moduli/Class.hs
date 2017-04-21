@@ -24,7 +24,7 @@ module Math.NumberTheory.Moduli.Class
   , getMod
   , invertMod
   , powMod
-  , (^/)
+  , (^%)
   -- * Unknown modulo
   , SomeMod(..)
   , modulo
@@ -144,15 +144,15 @@ powMod mx@(Mod x) a
 "powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u #-}
 
 -- | Infix synonym of 'powMod'.
-(^/) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
-(^/) = powMod
-{-# INLINE (^/) #-}
+(^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
+(^%) = powMod
+{-# INLINE (^%) #-}
 
-infixr 8 ^/
+infixr 8 ^%
 
 -- Unfortunately, such rule never fires due to technical details
 -- of type classes in Core.
--- {-# RULES "^/Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^/ p #-}
+-- {-# RULES "^%Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^% p #-}
 
 -- | This type represents residues with unknown modulo and rational numbers.
 -- One can freely combine them in arithmetic expressions, but each operation
@@ -283,8 +283,8 @@ invertSomeMod = \case
 -- > > powSomeMod (3 `modulo` 10) 4
 -- > (1 `modulo` 10)
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
-powSomeMod (SomeMod m) a = SomeMod (m ^/ a)
+powSomeMod (SomeMod m) a = SomeMod (m ^% a)
 powSomeMod (InfMod  r) a = InfMod  (r ^  a)
 {-# INLINABLE [1] powSomeMod #-}
 
-{-# RULES "^/SomeMod" forall x p. x ^ p = powSomeMod x p #-}
+{-# RULES "^%SomeMod" forall x p. x ^ p = powSomeMod x p #-}
