@@ -149,7 +149,10 @@ test-suite spec
                   , Math.NumberTheory.GCD.LowLevelTests
                   , Math.NumberTheory.Recurrencies.LinearTests
                   , Math.NumberTheory.Recurrencies.BilinearTests
-                  , Math.NumberTheory.ModuliTests
+                  , Math.NumberTheory.Moduli.ChineseTests
+                  , Math.NumberTheory.Moduli.ClassTests
+                  , Math.NumberTheory.Moduli.JacobiTests
+                  , Math.NumberTheory.Moduli.SqrtTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.MoebiusInversionTests
                   , Math.NumberTheory.MoebiusInversion.IntTests
