@@ -54,14 +54,15 @@ import System.Random
 import Control.Monad.State.Strict
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+import Data.Word
 #endif
 import Data.Bits
+import Data.List (foldl')
 import Data.Maybe
 
 import GHC.TypeLits
 
 import Math.NumberTheory.Curves.Montgomery
-import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
@@ -177,7 +178,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                            then return pfs
                            else do
                                nfs <- forM cfs $ \(k,j) ->
-                                   mult j <$> fact k (if null pfs then digs+4 else digs)
+                                   mult j <$> fact k (if null pfs then digs+5 else digs)
                                return (mergeAll $ pfs:nfs)
         repFact m b1 b2 count = case perfPw m of
                                   (_,1) -> workFact m b1 b2 count
@@ -240,52 +241,67 @@ montgomeryFactorisation :: KnownNat n => Word -> Word -> Mod n -> Maybe Integer
 montgomeryFactorisation b1 b2 s = case newPoint (getVal s) n of
   Nothing             -> Nothing
   Just (SomePoint p0) -> do
-    let p2 = dbln l2 p0
-        p3 = multiply pw3 p2
-        p5 = multiply pw5 p3
-    fromIntegral <$> go p5 (list primeStore)
+    -- Small step: for each prime p <= b1
+    -- multiply point 'p0' by the highest power p^k <= b1.
+    let q = foldl (flip multiply) p0 smallPowers
+        z = pointZ q
+
+    fromIntegral <$> case gcd n z of
+      -- If small step did not succeed, perform a big step.
+      1 -> case gcd n (bigStep q b1 b2) of
+        1 -> Nothing
+        g -> Just g
+      g -> Just g
   where
     n = getMod s
-    l2 = wordLog2' b1
-    b1i = toInteger b1
-    (^~) :: Word -> Int -> Word
-    w ^~ i = w ^ i
-    dbl pt = double pt
-    dbln 0 !pt = pt
-    dbln k pt = dbln (k-1) (dbl pt)
-#if WORD_SIZE_IN_BITS == 64
-    mul a b c = (a*b) `quot` c       -- can't overflow, work on Int
-#else
-    mul a b c = fromInteger ((toInteger a * b) `quot` c) -- might overflow if Int is used
-#endif
-    adjust bd ml w
-      | w <= bd     = adjust bd ml (w*ml)
-      | otherwise   = w
-    l3 = mul l2 190537 301994
-    w3 = 3 ^~ l3
-    pw3 = adjust (b1 `quot` 3) 3 w3
-    l5 = mul l2 1936274 4495889
-    w5 = 5 ^~ l5
-    pw5 = adjust (b1 `quot` 5) 5 w5
-    go pt = case pointZ pt of
-      0 -> const Nothing
-      z -> \case
-        [] -> Nothing
-        (pr : prs)
-          | pr <= b1   -> let !lp = integerLogBase' (fromIntegral pr) b1i
-                          in go (multiply (pr ^~ lp) pt) prs
-          | otherwise  -> case gcd n z of
-                            1 -> lgo (multiply pr pt) prs
-                            g -> Just g
-    lgo pt = case pointZ pt of
-      0 -> const Nothing
-      z -> \case
-        [] -> Nothing
-        (pr:prs)
-          | pr <= b2   -> lgo (multiply pr pt) prs
-          | otherwise  -> case gcd n z of
-                            1 -> Nothing
-                            g -> Just g
+    smallPrimes = takeWhile (<= b1) (2 : 3 : 5 : list primeStore)
+    smallPowers = map findPower smallPrimes
+    findPower p = go p
+      where
+        go acc
+          | acc <= b1 `quot` p = go (acc * p)
+          | otherwise          = acc
+
+-- | The implementation follows the algorithm at p. 6-7
+-- of <http://www.hyperelliptic.org/tanja/SHARCS/talks06/Gaj.pdf Implementing the Elliptic Curve Method of Factoring in Reconfigurable Hardware>
+-- by K. Gaj, S. Kwon et al.
+bigStep :: (KnownNat a24, KnownNat n) => Point a24 n -> Word -> Word -> Integer
+bigStep q b1 b2 = rs
+  where
+    n = pointN q
+
+    b0 = b1 - b1 `rem` wheel
+    qks = zip [0..] $ map (\k -> multiply k q) wheelCoprimes
+    qs = enumAndMultiplyFromThenTo q b0 (b0 + wheel) b2
+
+    rs = foldl' (\ts (_cHi, p) -> foldl' (\us (_cLo, pq) ->
+        us * (pointZ p * pointX pq - pointX p * pointZ pq) `rem` n
+        ) ts qks) 1 qs
+
+wheel :: Word
+wheel = 210
+
+wheelCoprimes :: [Word]
+wheelCoprimes = [ k | k <- [1 .. wheel `div` 2], k `gcd` wheel == 1 ]
+
+-- | Same as map (id *** flip multiply p) [from, thn .. to],
+-- but calculated in more efficient way.
+enumAndMultiplyFromThenTo
+  :: (KnownNat a24, KnownNat n)
+  => Point a24 n
+  -> Word
+  -> Word
+  -> Word
+  -> [(Word, Point a24 n)]
+enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
+  where
+    step = thn - from
+
+    pFrom = multiply from p
+    pThen = multiply thn  p
+    pStep = multiply step p
+
+    progression = pFrom : pThen : zipWith (\x0 x1 -> add x0 pStep x1) progression (tail progression)
 
 -- primes, compactly stored as a bit sieve
 primeStore :: [PrimeSieve]
@@ -315,18 +331,20 @@ smallFactors bd n = case shiftToOddCount n of
     go m [] = ([(m,1)], Nothing)
 
 -- helpers: merge sorted lists
-merge :: [(Integer,Int)] -> [(Integer,Int)] -> [(Integer,Int)]
-merge xxs@(x@(p,k):xs) yys@(y@(q,m):ys) = case compare p q of
-                                            LT -> x : merge xs yys
-                                            EQ -> (p,k+m) : merge xs ys
-                                            GT -> y : merge xxs ys
+merge :: (Ord a, Num b) => [(a, b)] -> [(a, b)] -> [(a, b)]
 merge xs [] = xs
-merge _ ys = ys
+merge [] ys = ys
+merge xxs@(x@(p, k) : xs) yys@(y@(q, m) : ys)
+  = case p `compare` q of
+    LT -> x          : merge xs yys
+    EQ -> (p, k + m) : merge xs  ys
+    GT -> y          : merge xxs ys
 
-mergeAll :: [[(Integer,Int)]] -> [(Integer,Int)]
-mergeAll [] = []
-mergeAll [xs] = xs
-mergeAll (xs:ys:zss) = merge (merge xs ys) (mergeAll zss)
+mergeAll :: (Ord a, Num b) => [[(a, b)]] -> [(a, b)]
+mergeAll = \case
+  []              -> []
+  [xs]            -> xs
+  (xs : ys : zss) -> merge (merge xs ys) (mergeAll zss)
 
 -- Parameters for the factorisation, the two b-parameters for montgomery and the number of tries
 -- to use these, depending on the size of the factor we are looking for.
@@ -340,7 +358,7 @@ testParms = [ (12, 400, 10000, 10), (15, 2000, 50000, 25), (20, 11000, 150000, 9
             ]
 
 findParms :: Int -> (Word, Word, Int)
-findParms digs = go (100, 1000, 7) testParms
+findParms digs = go (wheel, 1000, 7) testParms
   where
     go p ((d,b1,b2,ct):rest)
       | digs < d    = p
