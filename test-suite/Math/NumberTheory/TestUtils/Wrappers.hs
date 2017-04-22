@@ -35,7 +35,7 @@ import Data.Traversable (Traversable)
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
-import Math.NumberTheory.Primes (isPrime)
+import Math.NumberTheory.Primes (isPrime, nthPrime)
 
 -------------------------------------------------------------------------------
 -- AnySign
@@ -171,10 +171,12 @@ newtype Prime = Prime { getPrime :: Integer }
   deriving (Eq, Ord, Show)
 
 instance Arbitrary Prime where
-  arbitrary = Prime <$> arbitrary `suchThat` (\p -> p > 0 && isPrime p)
+  arbitrary = do
+    n <- arbitrary
+    return $ Prime $ head $ filter isPrime [abs n ..]
 
 instance Monad m => Serial m Prime where
-  series = Prime <$> series `suchThatSerial` (\p -> p > 0 && isPrime p)
+  series = Prime . nthPrime <$> series `suchThatSerial` (> 0)
 
 -------------------------------------------------------------------------------
 -- Utils

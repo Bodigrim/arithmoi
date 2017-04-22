@@ -131,7 +131,6 @@ sqM2P :: Integer -> Int -> Maybe Integer
 sqM2P n e
     | e < 2     = Just (n `mod` 2)
     | n' == 0   = Just 0
-    | e <= k    = Just 0
     | odd k     = Nothing
     | otherwise = fmap ((`mod` mdl) . (`shiftL` k2)) $ solve s e2
       where
@@ -142,9 +141,8 @@ sqM2P n e
         e2 = e-k
         solve _ 1 = Just 1
         solve 1 _ = Just 1
-        solve r p
+        solve r _
             | rem4 r == 3   = Nothing  -- otherwise r ≡ 1 (mod 4)
-            | p == 2        = Just 1   -- otherwise p >= 3
             | rem8 r == 5   = Nothing  -- otherwise r ≡ 1 (mod 8)
             | otherwise     = fixup r (fst $ shiftToOddCount (r-1))
               where
