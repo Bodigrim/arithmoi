@@ -20,8 +20,11 @@
 
 module Math.NumberTheory.Moduli.Class
   ( -- * Known modulo
-    Mod(..)
+    Mod
+  , getVal
+  , getNatVal
   , getMod
+  , getNatMod
   , invertMod
   , powMod
   , (^%)
@@ -56,12 +59,11 @@ import Numeric.Natural
 -- > (1 `modulo` 10)
 --
 -- Note that modulo cannot be negative.
-newtype Mod (m :: Nat) = Mod
-  { getVal :: Integer -- ^ The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-  } deriving (Eq, Ord)
+newtype Mod (m :: Nat) = Mod Integer
+  deriving (Eq, Ord)
 
 instance KnownNat m => Show (Mod m) where
-  show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (natVal m) ++ ")"
+  show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (getMod m) ++ ")"
 
 instance KnownNat m => Num (Mod m) where
   mx@(Mod x) + Mod y =
@@ -105,9 +107,24 @@ instance KnownNat m => Fractional (Mod m) where
   {-# INLINE recip #-}
 
 -- | Linking type and value levels: extract modulo @m@ as a value.
-getMod :: KnownNat m => Mod m -> Natural
-getMod = fromInteger . natVal
+getMod :: KnownNat m => Mod m -> Integer
+getMod = natVal
 {-# INLINE getMod #-}
+
+-- | Linking type and value levels: extract modulo @m@ as a value.
+getNatMod :: KnownNat m => Mod m -> Natural
+getNatMod = fromInteger . getMod
+{-# INLINE getNatMod #-}
+
+-- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
+getVal :: KnownNat m => Mod m -> Integer
+getVal (Mod x) = x
+{-# INLINE getVal #-}
+
+-- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
+getNatVal :: KnownNat m => Mod m -> Natural
+getNatVal = fromInteger . getVal
+{-# INLINE getNatVal #-}
 
 -- | Computes the modular inverse, if the residue is coprime with the modulo.
 --
