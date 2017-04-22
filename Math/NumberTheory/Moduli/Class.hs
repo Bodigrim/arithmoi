@@ -215,6 +215,7 @@ modulo n m = case someNatVal m' of
     m' = fromIntegral m
     r = fromInteger $ n `mod` m'
 {-# INLINABLE modulo #-}
+infixl 7 `modulo`
 
 liftUnOp
   :: (forall k. KnownNat k => Mod k -> Mod k)

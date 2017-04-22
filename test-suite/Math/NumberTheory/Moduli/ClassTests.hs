@@ -21,6 +21,7 @@ import Test.Tasty
 
 import Data.Bits
 import Data.Maybe
+import Numeric.Natural
 
 import Math.NumberTheory.Moduli hiding (invertMod)
 import Math.NumberTheory.TestUtils
@@ -70,6 +71,74 @@ powerModProperty2_Integer = powerModProperty2
 powerModProperty3_Integer :: NonNegative Integer -> NonNegative Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty3_Integer = powerModProperty3
 
+someModAddProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool
+someModAddProperty x1 (Positive m1) x2 (Positive m2) = case x1 `modulo` m1 + x2 `modulo` m2 of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger $ m1 `gcd` m2
+    x3 = (x1 + x2) `mod` m3
+
+someModSubProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool
+someModSubProperty x1 (Positive m1) x2 (Positive m2) = case x1 `modulo` m1 - x2 `modulo` m2 of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger $ m1 `gcd` m2
+    x3 = (x1 - x2) `mod` m3
+
+someModMulProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool
+someModMulProperty x1 (Positive m1) x2 (Positive m2) = case (x1 `modulo` m1) * (x2 `modulo` m2) of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger $ m1 `gcd` m2
+    x3 = (x1 * x2) `mod` m3
+
+someModNegProperty :: Integer -> Positive Natural -> Bool
+someModNegProperty x1 (Positive m1) = case negate (x1 `modulo` m1) of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger m1
+    x3 = negate x1 `mod` m3
+
+someModAbsSignumProperty :: Integer -> Positive Natural -> Bool
+someModAbsSignumProperty x (Positive m) = z == abs z * signum z
+  where
+    z = x `modulo` m
+
+infModAddProperty :: Integer -> Positive Natural -> Integer -> Bool
+infModAddProperty x1 (Positive m1) x2 = case x1 `modulo` m1 + fromInteger x2 of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger m1
+    x3 = (x1 + x2) `mod` m3
+
+infModSubProperty :: Integer -> Positive Natural -> Integer -> Bool
+infModSubProperty x1 (Positive m1) x2 = case x1 `modulo` m1 - fromInteger x2 of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger m1
+    x3 = (x1 - x2) `mod` m3
+
+infModMulProperty :: Integer -> Positive Natural -> Integer -> Bool
+infModMulProperty x1 (Positive m1) x2 = case x1 `modulo` m1 * fromInteger x2 of
+  SomeMod z -> getMod z == m3 && getVal z == x3
+  InfMod{}  -> False
+  where
+    m3 = toInteger m1
+    x3 = (x1 * x2) `mod` m3
+
+getValModProperty :: Integer -> Positive Natural -> Bool
+getValModProperty x (Positive m) = case z of
+  SomeMod t -> z == getVal t `modulo` getNatMod t && z == toInteger (getNatVal t) `modulo` fromInteger (getMod t)
+  InfMod{} -> False
+  where
+    z = x `modulo` m
+
 testSuite :: TestTree
 testSuite = testGroup "Class"
   [ testSmallAndQuick "invertMod" invertModProperty
@@ -83,4 +152,17 @@ testSuite = testGroup "Class"
       , testSmallAndQuick "additive by exponent"    powerModProperty3_Integer
       ]
     ]
+  , testGroup "SomeMod"
+    [ testSmallAndQuick "add" someModAddProperty
+    , testSmallAndQuick "sub" someModSubProperty
+    , testSmallAndQuick "mul" someModMulProperty
+    , testSmallAndQuick "neg" someModNegProperty
+    , testSmallAndQuick "abs" someModAbsSignumProperty
+    ]
+  , testGroup "InfMod"
+    [ testSmallAndQuick "add" infModAddProperty
+    , testSmallAndQuick "sub" infModSubProperty
+    , testSmallAndQuick "mul" infModMulProperty
+    ]
+  , testSmallAndQuick "getVal/getMod" getValModProperty
   ]
