@@ -81,7 +81,7 @@ instance KnownNat m => Num (Mod m) where
     Mod $ if x == 0 then 0 else natVal mx - x
   {-# INLINE negate #-}
   mx@(Mod x) * Mod y =
-    Mod $ x * y `mod` natVal mx
+    Mod $ x * y `rem` natVal mx -- `rem` is slightly faster than `mod`
   {-# INLINE (*) #-}
   abs = id
   {-# INLINE abs #-}
@@ -208,12 +208,9 @@ instance Show SomeMod where
 -- One can use the result either directly (via functions from 'Num' and 'Fractional'),
 -- or deconstruct it by pattern matching. Note that 'modulo' never returns 'InfMod'.
 modulo :: Integer -> Natural -> SomeMod
-modulo n m = case someNatVal m' of
+modulo n m = case someNatVal (toInteger m) of
   Nothing                       -> error "modulo: negative modulo"
-  Just (SomeNat (_ :: Proxy t)) -> SomeMod (Mod r :: Mod t)
-  where
-    m' = fromIntegral m
-    r = fromInteger $ n `mod` m'
+  Just (SomeNat (_ :: Proxy t)) -> SomeMod (fromInteger n :: Mod t)
 {-# INLINABLE modulo #-}
 infixl 7 `modulo`
 
