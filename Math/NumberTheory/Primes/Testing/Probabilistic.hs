@@ -23,8 +23,10 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
 import Data.Bits
 import GHC.Base
 import GHC.Integer.GMP.Internals
+import GHC.TypeLits
 
-import Math.NumberTheory.Moduli
+import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Powers.Squares
 
@@ -83,14 +85,19 @@ isStrongFermatPP n b
   | n < 0          = error "isStrongFermatPP: negative argument"
   | n <= 1         = False
   | n == 2         = True
-  | b `mod` n == 0 = True
-  | otherwise      = a == 1 || go t a
+  | otherwise      = case b `modulo` fromInteger n of
+                       SomeMod b' -> isStrongFermatPPMod b'
+                       InfMod{}   -> True
+
+isStrongFermatPPMod :: KnownNat n => Mod n -> Bool
+isStrongFermatPPMod b = b == 0 || a == 1 || go t a
   where
-    m = n-1
-    (t,u) = shiftToOddCount m
-    a = powerModInteger' (b `mod` n) u n
+    m = -1
+    (t, u) = shiftToOddCount $ getVal m
+    a = b ^% u
+
     go 0 _ = False
-    go k x = x == m || go (k-1) ((x*x) `rem` n)
+    go k x = x == m || go (k - 1) (x * x)
 
 -- | @'isFermatPP' n b@ tests whether @n@ is a Fermat probable prime
 --   for the base @b@, that is, whether @b^(n-1) `mod` n == 1@.
@@ -109,7 +116,9 @@ isStrongFermatPP n b
 --   of prime bases is reasonable to find out whether it's worth the
 --   effort to undertake the prime factorisation).
 isFermatPP :: Integer -> Integer -> Bool
-isFermatPP n b = powerModInteger' b (n-1) n == 1
+isFermatPP n b = case b `modulo` fromInteger n of
+  SomeMod b' -> b' ^% (n-1) == 1
+  InfMod{}   -> True
 
 -- | Primality test after Baillie, Pomerance, Selfridge and Wagstaff.
 --   The Baillie-PSW test consists of a strong Fermat probable primality
@@ -148,9 +157,9 @@ lucasTest n
       r = integerSquareRoot n
       d = find True 5
       find !pos cd = case jacobi' (n `rem` cd) cd of
-                       0 -> if cd == n then 1 else 0
-                       1 -> find (not pos) (cd+2)
-                       _ -> if pos then cd else (-cd)
+                       MinusOne -> if pos then cd else (-cd)
+                       Zero     -> if cd == n then 1 else 0
+                       One      -> find (not pos) (cd+2)
       q = (1-d) `quot` 4
       (t,o) = shiftToOddCount (n+1)
       (uo, vo, qo) = testLucas n q o

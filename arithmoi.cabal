@@ -51,6 +51,10 @@ library
                           Math.NumberTheory.ArithmeticFunctions.Class
                           Math.NumberTheory.ArithmeticFunctions.Standard
                           Math.NumberTheory.Moduli
+                          Math.NumberTheory.Moduli.Chinese
+                          Math.NumberTheory.Moduli.Class
+                          Math.NumberTheory.Moduli.Jacobi
+                          Math.NumberTheory.Moduli.Sqrt
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
                           Math.NumberTheory.Recurrencies.Bilinear
@@ -136,6 +140,8 @@ test-suite spec
                       , integer-gmp < 1.1
   if impl(ghc < 7.10)
     build-depends     : nats >= 1 && <1.2
+  if impl(ghc < 8.0)
+    build-depends     : semigroups >= 0.8
 
   other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
                   , Math.NumberTheory.GaussianIntegersTests
@@ -143,7 +149,10 @@ test-suite spec
                   , Math.NumberTheory.GCD.LowLevelTests
                   , Math.NumberTheory.Recurrencies.LinearTests
                   , Math.NumberTheory.Recurrencies.BilinearTests
-                  , Math.NumberTheory.ModuliTests
+                  , Math.NumberTheory.Moduli.ChineseTests
+                  , Math.NumberTheory.Moduli.ClassTests
+                  , Math.NumberTheory.Moduli.JacobiTests
+                  , Math.NumberTheory.Moduli.SqrtTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.MoebiusInversionTests
                   , Math.NumberTheory.MoebiusInversion.IntTests

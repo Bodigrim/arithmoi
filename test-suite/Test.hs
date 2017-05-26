@@ -6,7 +6,10 @@ import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
 import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
 
-import qualified Math.NumberTheory.ModuliTests as Moduli
+import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
+import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
+import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
+import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
 import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversionInt
@@ -49,7 +52,10 @@ tests = testGroup "All"
     , RecurrenciesBilinear.testSuite
     ]
   , testGroup "Moduli"
-    [ Moduli.testSuite
+    [ ModuliChinese.testSuite
+    , ModuliClass.testSuite
+    , ModuliJacobi.testSuite
+    , ModuliSqrt.testSuite
     ]
   , testGroup "MoebiusInversion"
     [ MoebiusInversion.testSuite

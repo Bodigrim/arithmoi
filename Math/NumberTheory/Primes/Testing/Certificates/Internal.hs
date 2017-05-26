@@ -35,8 +35,9 @@ import Data.Word
 #endif
 import Data.Bits
 import Data.Maybe
+import GHC.Integer.GMP.Internals
 
-import Math.NumberTheory.Moduli
+import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
@@ -201,8 +202,8 @@ checkPrimalityProof (Pocklington p a b fcts) = b > 0 && a > b && a*b == pm1 && a
     verify (pf,_,base,proof) = pf == cprime proof && crit pf base && checkPrimalityProof proof
     crit pf base = gcd p (x-1) == 1 && y == 1
       where
-        x = powerModInteger' base (pm1 `quot` pf) p
-        y = powerModInteger' x pf p
+        x = powModInteger base (pm1 `quot` pf) p
+        y = powModInteger x pf p
 
 -- | @'trivial'@ records a trivially known prime.
 --   If the argument is not one of them, an error is raised.
@@ -290,8 +291,8 @@ certifyBPSW n = Pocklington n a b kfcts
                             Prime ppr ->(p,e,bs,ppr)
               where
                 q = nm1 `quot` p
-                x = powerModInteger' bs q n
-                y = powerModInteger' x p n
+                x = powModInteger bs q n
+                y = powModInteger x p n
                 g = gcd n (x-1)
 
 -- | Find a decomposition of p-1 for the pocklington certificate.
@@ -331,9 +332,11 @@ findLoop :: Integer -> Word -> Word -> Int -> Integer -> Either Integer Integer
 findLoop _ _  _  0  s = Left s
 findLoop n lo hi ct s
     | n <= s+2  = Left 6
-    | otherwise = case montgomeryFactorisation n lo hi s of
-                    Nothing -> findLoop n lo hi (ct-1) (s+1)
-                    Just fct
+    | otherwise = case s `modulo` fromInteger n of
+                    InfMod{}   -> error "impossible case"
+                    SomeMod sn -> case montgomeryFactorisation lo hi sn of
+                      Nothing -> findLoop n lo hi (ct-1) (s+1)
+                      Just fct
                         | bailliePSW fct -> Right fct
                         | otherwise -> Right (findFactor fct 8 (s+1))
 
