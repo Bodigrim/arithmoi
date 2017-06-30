@@ -13,9 +13,10 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.Curves.Montgomery
   ( Point
@@ -70,9 +71,9 @@ instance KnownNat n => Eq (Point a24 n) where
 
 -- | For debugging.
 instance (KnownNat a24, KnownNat n) => Show (Point a24 n) where
-  show p = "(" ++ show (pointX p) ++ ", " ++ show (pointZ p) ++ ") (mod "
-    ++ show (pointN p) ++ ", a24 "
-    ++ show (pointA24 p) ++ ")"
+  show p = "(" ++ show (pointX p) ++ ", " ++ show (pointZ p) ++ ") (a24 "
+    ++ show (pointA24 p) ++ ", mod "
+    ++ show (pointN p) ++ ")"
 
 -- | Point on unknown curve.
 data SomePoint where
@@ -81,19 +82,23 @@ data SomePoint where
 instance Show SomePoint where
   show (SomePoint p) = show p
 
--- | 'newPoint' @n@ @s@ creates a point on an elliptic curve modulo @n@, uniquely determined by seed @s@.
--- Some choices of @n@ and @s@ produce ill-parametrized curves, which is reflected by return value 'Nothing'.
+-- | 'newPoint' @s@ @n@ creates a point on an elliptic curve modulo @n@, uniquely determined by seed @s@.
+-- Some choices of @s@ and @n@ produce ill-parametrized curves, which is reflected by return value 'Nothing'.
 --
 -- We choose a curve by Suyama's parametrization. See Eq. (3)-(4) at p. 4
 -- of <http://www.hyperelliptic.org/tanja/SHARCS/talks06/Gaj.pdf Implementing the Elliptic Curve Method of Factoring in Reconfigurable Hardware>
 -- by K. Gaj, S. Kwon et al.
 newPoint :: Integer -> Integer -> Maybe SomePoint
-newPoint n s = do
-    a24 <- case a24num of
+newPoint s n = do
+    a24denRecip <- case recipModInteger a24den n of
       0 -> Nothing
-      _ -> case recipModInteger a24den n of
-        0 -> Nothing
-        t -> Just $ a24num * t `rem` n
+      t -> Just t
+    a24 <- case a24num * a24denRecip `rem` n of
+      -- (a+2)/4 = 0 corresponds to singular curve with A = -2
+      0 -> Nothing
+      -- (a+2)/4 = 1 corresponds to singular curve with A = 2
+      1 -> Nothing
+      t -> Just t
     SomeNat (_ :: Proxy a24Ty) <- someNatVal a24
     SomeNat (_ :: Proxy nTy)   <- someNatVal n
     return $ SomePoint (Point x z :: Point a24Ty nTy)
@@ -103,11 +108,14 @@ newPoint n s = do
     d = v - u
     x = u * u * u `mod` n
     z = v * v * v `mod` n
-    a24num = d * d * d * (3 * u + v) `rem` n
+    a24num = d * d * d * (3 * u + v) `mod` n
     a24den = 16 * x * v `rem` n
 
 -- | If @p0@ + @p1@ = @p2@, then 'add' @p0@ @p1@ @p2@ equals to @p1@ + @p2@.
--- If the precondition does not hold, return value is undefined.
+-- It is also required that z-coordinates of @p0@, @p1@ and @p2@ are coprime with modulo
+-- of elliptic curve; and x-coordinate of @p0@ is non-zero.
+-- If preconditions do not hold, return value is undefined.
+--
 -- Remarkably such addition does not require 'KnownNat' @a24@ constraint.
 --
 -- Computations follow Algorithm 3 at p. 4
@@ -131,7 +139,7 @@ add p0@(Point x0 z0) (Point x1 z1) (Point x2 z2) = Point x3 z3
 -- Computations follow Algorithm 3 at p. 4
 -- of <http://www.hyperelliptic.org/tanja/SHARCS/talks06/Gaj.pdf Implementing the Elliptic Curve Method of Factoring in Reconfigurable Hardware>
 -- by K. Gaj, S. Kwon et al.
-double :: forall a24 n. (KnownNat a24, KnownNat n) => Point a24 n -> Point a24 n
+double :: (KnownNat a24, KnownNat n) => Point a24 n -> Point a24 n
 double p@(Point x z) = Point x' z'
   where
     n = pointN p
@@ -155,6 +163,6 @@ multiply (W# w##) p =
     go 0# !p0 !p1 = case w## `and#` 1## of
                       0## -> double p0
                       _   -> add p p0 p1
-    go i# p0 p1 = case (uncheckedShiftRL# w## i#) `and#` 1## of
+    go i# p0 p1 = case uncheckedShiftRL# w## i# `and#` 1## of
                     0## -> go (i# -# 1#) (double p0) (add p p0 p1)
                     _   -> go (i# -# 1#) (add p p0 p1) (double p1)

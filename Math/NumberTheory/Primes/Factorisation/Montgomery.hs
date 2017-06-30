@@ -237,7 +237,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
 --
 --   The result is maybe a nontrivial divisor of @n@.
 montgomeryFactorisation :: KnownNat n => Word -> Word -> Mod n -> Maybe Integer
-montgomeryFactorisation b1 b2 s = case newPoint n (getVal s) of
+montgomeryFactorisation b1 b2 s = case newPoint (getVal s) n of
   Nothing             -> Nothing
   Just (SomePoint p0) -> do
     let p2 = dbln l2 p0
