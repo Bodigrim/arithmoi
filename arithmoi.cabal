@@ -132,9 +132,9 @@ test-suite spec
                       , arithmoi >= 0.5 && < 0.6
                       , tasty >= 0.10 && < 0.12
                       , tasty-smallcheck >= 0.8 && < 0.9
-                      , tasty-quickcheck >= 0.8 && < 0.9
+                      , tasty-quickcheck >= 0.9 && < 0.10
                       , tasty-hunit >= 0.9 && < 0.10
-                      , QuickCheck >= 2.7.6 && < 2.10
+                      , QuickCheck >= 2.10 && < 2.11
                       , smallcheck >= 1.1 && < 1.2
                       , transformers >= 0.5
                       , integer-gmp < 1.1
@@ -167,6 +167,6 @@ test-suite spec
                   , Math.NumberTheory.Primes.TestingTests
                   , Math.NumberTheory.TestUtils
                   , Math.NumberTheory.TestUtils.Wrappers
-                  , Math.NumberTheory.TestUtils.Compose
+                  , Math.NumberTheory.TestUtils.MyCompose
                   , Math.NumberTheory.UniqueFactorisationTests
                   , Math.NumberTheory.ZetaTests
