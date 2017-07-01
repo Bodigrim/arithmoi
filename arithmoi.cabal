@@ -1,5 +1,5 @@
 name                : arithmoi
-version             : 0.5.0.0
+version             : 0.5.0.1
 cabal-version       : >= 1.10
 author              : Daniel Fischer
 copyright           : (c) 2011 Daniel Fischer, 2016-2017 Andrew Lelechenko, Carter Schonwald
