@@ -33,6 +33,7 @@
 
 module Math.NumberTheory.TestUtils
   ( module Math.NumberTheory.TestUtils.Wrappers
+  , module Math.NumberTheory.TestUtils.MyCompose
   , module Test.SmallCheck.Series
   , Large(..)
   , testIntegralProperty
@@ -58,7 +59,7 @@ import Numeric.Natural
 
 import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
 
-import Math.NumberTheory.TestUtils.Compose ()
+import Math.NumberTheory.TestUtils.MyCompose
 import Math.NumberTheory.TestUtils.Wrappers
 
 instance Monad m => Serial m Word where
@@ -67,11 +68,9 @@ instance Monad m => Serial m Word where
     where
       nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
 
-#if !(MIN_VERSION_base(4,8,0)) && !(MIN_VERSION_QuickCheck(2,9,0))
 instance Arbitrary Natural where
   arbitrary = fromInteger <$> (arbitrary `suchThat` (>= 0))
   shrink = map fromInteger . filter (>= 0) . shrink . toInteger
-#endif
 
 instance Monad m => Serial m Natural where
   series =
