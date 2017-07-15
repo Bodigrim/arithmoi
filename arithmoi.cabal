@@ -145,6 +145,7 @@ test-suite spec
     build-depends     : semigroups >= 0.8
 
   other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
+                  , Math.NumberTheory.CurvesTests
                   , Math.NumberTheory.GaussianIntegersTests
                   , Math.NumberTheory.GCDTests
                   , Math.NumberTheory.GCD.LowLevelTests
