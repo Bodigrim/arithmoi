@@ -50,6 +50,7 @@ library
     exposed-modules     : Math.NumberTheory.ArithmeticFunctions
                           Math.NumberTheory.ArithmeticFunctions.Class
                           Math.NumberTheory.ArithmeticFunctions.Standard
+                          Math.NumberTheory.Curves.Montgomery
                           Math.NumberTheory.Moduli
                           Math.NumberTheory.Moduli.Chinese
                           Math.NumberTheory.Moduli.Class
