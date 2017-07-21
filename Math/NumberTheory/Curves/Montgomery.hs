@@ -10,6 +10,7 @@
 
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -20,7 +21,8 @@
 {-# OPTIONS_HADDOCK hide #-}
 
 module Math.NumberTheory.Curves.Montgomery
-  ( Point
+  ( Point(..)
+  , LuChain(..)
   , pointX
   , pointZ
   , pointN
@@ -169,13 +171,41 @@ double p@(Point x z) = Point x' z'
 triple :: (KnownNat a24, KnownNat n) => Point a24 n -> Point a24 n
 triple p = add p p (double p)
 
+class LucasChain a where
+  lucasInfinite :: a
+  lucasAdd :: a -> a -> a -> a
+  lucasDouble :: a -> a
+
+instance (KnownNat a24, KnownNat n) => LucasChain (Point a24 n) where
+  lucasInfinite = infinitePoint
+  lucasAdd = add
+  lucasDouble = double
+
+data LuChain a
+  = Var a
+  | LuInfinite
+  | LuAdd (LuChain a) (LuChain a) (LuChain a)
+  | LuDouble (LuChain a)
+
+instance Show (LuChain ()) where
+  showsPrec d = \case
+    Var _       -> showString "i"
+    LuInfinite  -> showString "O"
+    LuDouble x  -> showParen (d > 5) $ showString "2 * " . showsPrec 6 x
+    LuAdd x y z -> showParen (d > 7) $ showString "add " . showsPrec 8 x . showString " " . showsPrec 8 y . showString " " . showsPrec 8 z
+
+instance LucasChain (LuChain a) where
+  lucasInfinite = LuInfinite
+  lucasAdd = LuAdd
+  lucasDouble = LuDouble
+
 -- | Multiply by given number, using PRAC algorithm from
 -- <https://cr.yp.to/bib/1992/montgomery-lucas.pdf Evaluating recurrences of form X_{m+n} = f(X_m, X_n, X_{m-n}) via Lucas chains>
 -- by P. L. Montgomery.
-multiplyNew :: (KnownNat a24, KnownNat n) => Word -> Point a24 n -> Point a24 n
-multiplyNew 0 _ = infinitePoint
+multiplyNew :: LucasChain a => Word -> a -> a
+multiplyNew 0 _ = lucasInfinite
 multiplyNew 1 a = a
-multiplyNew d a = uncurry multiplyNew $ go (r, d - r, a, a, infinitePoint)
+multiplyNew d a = uncurry multiplyNew $ go (r, d - r, a, a, lucasInfinite)
   where
     phi :: Double
     phi = (1 + sqrt 5) / 2
@@ -184,20 +214,20 @@ multiplyNew d a = uncurry multiplyNew $ go (r, d - r, a, a, infinitePoint)
 
 
 go
-  :: (KnownNat a24, KnownNat n)
-  => (Word, Word, Point a24 n, Point a24 n, Point a24 n)
-  -> (Word, Point a24 n)
+  :: LucasChain a
+  => (Word, Word, a, a, a)
+  -> (Word, a)
 go (d, e, a, b, c)
-  | d == e    = (d, add c b a)
+  | d == e    = (d, lucasAdd c b a)
   | otherwise = go $ table4 $
                 if d < e
                   then (e, d, b, a, applyx_1 c)
                   else (d, e, a, b, c)
 
 table4
-  :: (KnownNat a24, KnownNat n)
-  => (Word, Word, Point a24 n, Point a24 n, Point a24 n)
-  -> (Word, Word, Point a24 n, Point a24 n, Point a24 n)
+  :: LucasChain a
+  => (Word, Word, a, a, a)
+  -> (Word, Word, a, a, a)
 table4 (d, e, a, b, c)
   -- | 4 * d <= 5 * e && (d + e) `rem` 3 == 0
   --   = let t = add c b a in
@@ -210,10 +240,10 @@ table4 (d, e, a, b, c)
   --   = (d - e, e, a, add c b a, applyx_1 b)
 
   | d `rem` 2 == e `rem` 2
-    = ((d - e) `quot` 2, e, double a, add c b a, c)
+    = ((d - e) `quot` 2, e, lucasDouble a, lucasAdd c b a, c)
 
   | d `rem` 2 == 0
-    = (d `quot` 2, e, double a, b, add b c a)
+    = (d `quot` 2, e, lucasDouble a, b, lucasAdd b c a)
 
   -- | d `rem` 3 == 0
   --   = let t1 = double a in
@@ -230,10 +260,10 @@ table4 (d, e, a, b, c)
   --     ((d - e) `quot` 3, e, triple a, t1, t2)
 
   | e `rem` 2 == 0
-    = (d, e `quot` 2, a, double b, add a (applyx_1 b) c)
+    = (d, e `quot` 2, a, lucasDouble b, lucasAdd a (applyx_1 b) c)
 
-applyx_1 :: Point a24 n -> Point a24 n
-applyx_1 (Point x z) = Point x z
+applyx_1 :: a -> a
+applyx_1 = id
 
 multiply :: (KnownNat a24, KnownNat n) => Word -> Point a24 n -> Point a24 n
 multiply 0 _ = infinitePoint
