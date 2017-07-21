@@ -24,11 +24,14 @@ import Math.NumberTheory.Unsafe
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
 --   computed via generalised Moebius inversion.
---   Arguments less than 1 cause an error to be raised.
+--   See <http://mathworld.wolfram.com/TotientSummatoryFunction.html> for the
+--   formula used for @totientSum@.
 totientSum :: Int -> Int
-totientSum = (+1) . generalInversion triangle
+totientSum n
+  | n < 1 = 0
+  | otherwise = generalInversion (triangle . fromIntegral) n
   where
-    triangle n = (n*(n-1)) `quot` 2
+    triangle k = (k*(k+1)) `quot` 2
 
 -- | @generalInversion g n@ evaluates the generalised Moebius inversion of @g@
 --   at the argument @n@.
