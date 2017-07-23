@@ -137,6 +137,7 @@ infinitePoint = Point 0 0
 add :: (KnownNat a24, KnownNat n) => Point a24 n -> Point a24 n -> Point a24 n -> Point a24 n
 add (Point 0 0) _ p2 = double p2
 add _ (Point 0 0) p2 = p2
+add _ p1 (Point 0 0) = p1
 add p0@(Point x0 z0) (Point x1 z1) (Point x2 z2) = Point x3 z3
   where
     n = pointN p0
@@ -168,8 +169,8 @@ double p@(Point x z) = Point x' z'
     z' = (v + a24 * t `rem` n) * t `mod` n
 
 -- | Multiply by 3.
-triple :: (KnownNat a24, KnownNat n) => Point a24 n -> Point a24 n
-triple p = add p p (double p)
+triple :: LucasChain a => a -> a
+triple p = lucasAdd p p (lucasDouble p)
 
 class LucasChain a where
   lucasInfinite :: a
@@ -196,7 +197,10 @@ instance Show (LuChain ()) where
 
 instance LucasChain (LuChain a) where
   lucasInfinite = LuInfinite
-  lucasAdd = LuAdd
+  lucasAdd _ LuInfinite c = c
+  lucasAdd _ b LuInfinite = b
+  lucasAdd LuInfinite _ c = lucasDouble c
+  lucasAdd a b c = LuAdd a b c
   lucasDouble = LuDouble
 
 -- | Multiply by given number, using PRAC algorithm from
@@ -229,15 +233,15 @@ table4
   => (Word, Word, a, a, a)
   -> (Word, Word, a, a, a)
 table4 (d, e, a, b, c)
-  -- | 4 * d <= 5 * e && (d + e) `rem` 3 == 0
-  --   = let t = add c b a in
-  --     ((2 * d - e) `quot` 3, (2 * e - d) `quot` 3, add b a t, add a b t, c)
+  | 4 * d <= 5 * e && (d + e) `rem` 3 == 0
+    = let t = lucasAdd c b a in
+      ((2 * d - e) `quot` 3, (2 * e - d) `quot` 3, lucasAdd b a t, lucasAdd a b t, c)
 
-  -- | 4 * d <= 5 * e && d `rem` 6 == e `rem` 6
-  --   = ((d - e) `quot` 2, e, double a, add c b a, c)
+  | 4 * d <= 5 * e && d `rem` 6 == e `rem` 6
+    = ((d - e) `quot` 2, e, lucasDouble a, lucasAdd c b a, c)
 
-  -- | d <= 4 * e
-  --   = (d - e, e, a, add c b a, applyx_1 b)
+  | d <= 4 * e
+    = (d - e, e, a, lucasAdd c b a, applyx_1 b)
 
   | d `rem` 2 == e `rem` 2
     = ((d - e) `quot` 2, e, lucasDouble a, lucasAdd c b a, c)
@@ -245,19 +249,19 @@ table4 (d, e, a, b, c)
   | d `rem` 2 == 0
     = (d `quot` 2, e, lucasDouble a, b, lucasAdd b c a)
 
-  -- | d `rem` 3 == 0
-  --   = let t1 = double a in
-  --     let t2 = add c b a in
-  --     (d `quot` 3 - e, e, add a a t1, add c t2 t1, applyx_1 b)
+  | d `rem` 3 == 0
+    = let t1 = lucasDouble a in
+      let t2 = lucasAdd c b a in
+      (d `quot` 3 - e, e, lucasAdd a a t1, lucasAdd c t2 t1, applyx_1 b)
 
-  -- | (d + e) `rem` 3 == 0
-  --   = let t1 = add c b a in
-  --     ((d - 2 * e) `quot` 3, e, triple a, add b a t1, c)
+  | (d + e) `rem` 3 == 0
+    = let t1 = lucasAdd c b a in
+      ((d - 2 * e) `quot` 3, e, triple a, lucasAdd b a t1, c)
 
-  -- | d `rem` 3 == e `rem` 3
-  --   = let t1 = add c b a in
-  --     let t2 = add b c a in
-  --     ((d - e) `quot` 3, e, triple a, t1, t2)
+  | d `rem` 3 == e `rem` 3
+    = let t1 = lucasAdd c b a in
+      let t2 = lucasAdd b c a in
+      ((d - e) `quot` 3, e, triple a, t1, t2)
 
   | e `rem` 2 == 0
     = (d, e `quot` 2, a, lucasDouble b, lucasAdd a (applyx_1 b) c)
