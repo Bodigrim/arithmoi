@@ -49,15 +49,19 @@ factorial = scanl (*) 1 [1..]
 --   close proximity, it is better to use the simple addition
 --   formula starting from an appropriate pair of successive
 --   Fibonacci numbers.
-fibonacci :: Int -> Integer
+fibonacci :: Num a => Int -> a
 fibonacci = fst . fibonacciPair
+{-# SPECIALIZE fibonacci :: Int -> Int     #-}
+{-# SPECIALIZE fibonacci :: Int -> Word    #-}
+{-# SPECIALIZE fibonacci :: Int -> Integer #-}
+{-# SPECIALIZE fibonacci :: Int -> Natural #-}
 
 -- | @'fibonacciPair' k@ returns the pair @(F(k), F(k+1))@ of the @k@-th
 --   Fibonacci number and its successor, thus it can be used to calculate
 --   the Fibonacci numbers from some index on without needing to compute
 --   the previous. The pair is efficiently calculated
 --   in /O/(@log (abs k)@) steps. The index may be negative.
-fibonacciPair :: Int -> (Integer, Integer)
+fibonacciPair :: Num a => Int -> (a, a)
 fibonacciPair n
   | n < 0     = let (f,g) = fibonacciPair (-(n+1)) in if testBit n 0 then (g, -f) else (-g, f)
   | n == 0    = (0, 1)
@@ -68,17 +72,25 @@ fibonacciPair n
         | otherwise   = look (k-1)
       go k g f
         | k < 0       = (f, f+g)
-        | testBit n k = go (k-1) (f*(f+shiftL g 1)) ((f+g)*shiftL f 1 + g*g)
-        | otherwise   = go (k-1) (f*f+g*g) (f*(f+shiftL g 1))
+        | testBit n k = go (k-1) (f*(f+shiftL1 g)) ((f+g)*shiftL1 f + g*g)
+        | otherwise   = go (k-1) (f*f+g*g) (f*(f+shiftL1 g))
+{-# SPECIALIZE fibonacciPair :: Int -> (Int, Int)         #-}
+{-# SPECIALIZE fibonacciPair :: Int -> (Word, Word)       #-}
+{-# SPECIALIZE fibonacciPair :: Int -> (Integer, Integer) #-}
+{-# SPECIALIZE fibonacciPair :: Int -> (Natural, Natural) #-}
 
 -- | @'lucas' k@ computes the @k@-th Lucas number. Very similar
 --   to @'fibonacci'@.
-lucas :: Int -> Integer
+lucas :: Num a => Int -> a
 lucas = fst . lucasPair
+{-# SPECIALIZE lucas :: Int -> Int     #-}
+{-# SPECIALIZE lucas :: Int -> Word    #-}
+{-# SPECIALIZE lucas :: Int -> Integer #-}
+{-# SPECIALIZE lucas :: Int -> Natural #-}
 
 -- | @'lucasPair' k@ computes the pair @(L(k), L(k+1))@ of the @k@-th
 --   Lucas number and its successor. Very similar to @'fibonacciPair'@.
-lucasPair :: Int -> (Integer, Integer)
+lucasPair :: Num a => Int -> (a, a)
 lucasPair n
   | n < 0     = let (f,g) = lucasPair (-(n+1)) in if testBit n 0 then (-g, f) else (g, -f)
   | n == 0    = (2, 1)
@@ -88,13 +100,16 @@ lucasPair n
         | testBit n k = go (k-1) 0 1
         | otherwise   = look (k-1)
       go k g f
-        | k < 0       = (shiftL g 1 + f,g+3*f)
+        | k < 0       = (shiftL1 g + f,g+3*f)
         | otherwise   = go (k-1) g' f'
           where
             (f',g')
-              | testBit n k = (shiftL (f*(f+g)) 1 + g*g,f*(shiftL g 1 + f))
-              | otherwise   = (f*(shiftL g 1 + f),f*f+g*g)
-
+              | testBit n k = (shiftL1 (f*(f+g)) + g*g,f*(shiftL1 g + f))
+              | otherwise   = (f*(shiftL1 g + f),f*f+g*g)
+{-# SPECIALIZE lucasPair :: Int -> (Int, Int)         #-}
+{-# SPECIALIZE lucasPair :: Int -> (Word, Word)       #-}
+{-# SPECIALIZE lucasPair :: Int -> (Integer, Integer) #-}
+{-# SPECIALIZE lucasPair :: Int -> (Natural, Natural) #-}
 
 -- | @'generalLucas' p q k@ calculates the quadruple @(U(k), U(k+1), V(k), V(k+1))@
 --   where @U(i)@ is the Lucas sequence of the first kind and @V(i)@ the Lucas
@@ -106,7 +121,7 @@ lucasPair n
 --   the second kind for these parameters.
 --   Here, the index must be non-negative, since the terms of the sequence for
 --   negative indices are in general not integers.
-generalLucas :: Integer -> Integer -> Int -> (Integer, Integer, Integer, Integer)
+generalLucas :: Num a => a -> a -> Int -> (a, a, a, a)
 generalLucas p q k
   | k < 0       = error "generalLucas: negative index"
   | k == 0      = (0,1,2,p)
@@ -116,6 +131,13 @@ generalLucas p q k
         | testBit k i   = go (i-1) 1 p p q
         | otherwise     = look (i-1)
       go i un un1 vn qn
-        | i < 0         = (un, un1, vn, p*un1 - shiftL (q*un) 1)
+        | i < 0         = (un, un1, vn, p*un1 - shiftL1 (q*un))
         | testBit k i   = go (i-1) (un1*vn-qn) ((p*un1-q*un)*vn - p*qn) ((p*un1 - (2*q)*un)*vn - p*qn) (qn*qn*q)
         | otherwise     = go (i-1) (un*vn) (un1*vn-qn) (vn*vn - 2*qn) (qn*qn)
+{-# SPECIALIZE generalLucas :: Int     -> Int     -> Int -> (Int, Int, Int, Int)                 #-}
+{-# SPECIALIZE generalLucas :: Word    -> Word    -> Int -> (Word, Word, Word, Word)             #-}
+{-# SPECIALIZE generalLucas :: Integer -> Integer -> Int -> (Integer, Integer, Integer, Integer) #-}
+{-# SPECIALIZE generalLucas :: Natural -> Natural -> Int -> (Natural, Natural, Natural, Natural) #-}
+
+shiftL1 :: Num a => a -> a
+shiftL1 n = n + n
