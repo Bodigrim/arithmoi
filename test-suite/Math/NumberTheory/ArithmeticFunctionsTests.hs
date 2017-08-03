@@ -25,6 +25,7 @@ import Prelude hiding (sum, all, elem)
 import Data.Foldable
 #endif
 
+import Data.List (sort)
 import qualified Data.Set as S
 import qualified Data.IntSet as IS
 
@@ -49,9 +50,13 @@ divisorsProperty2 n = sum (runFunction divisorsA n) == runFunction (sigmaA 1) n
 divisorsProperty3 :: Natural -> Bool
 divisorsProperty3 n = all (\d -> n `mod` d == 0) (runFunction divisorsA n)
 
--- | All divisors of n truly divides n.
+-- | 'divisorsA' matches 'divisorsSmallA'
 divisorsProperty4 :: Int -> Bool
 divisorsProperty4 n = S.toAscList (runFunction divisorsA n) == IS.toAscList (runFunction divisorsSmallA n)
+
+-- | 'divisorsA' matches 'divisorsListA'
+divisorsProperty5 :: Int -> Bool
+divisorsProperty5 n = S.toAscList (runFunction divisorsA n) == sort (runFunction divisorsListA n)
 
 -- | tau matches baseline from OEIS.
 tauOeis :: Assertion
@@ -232,6 +237,7 @@ testSuite = testGroup "ArithmeticFunctions"
     , testSmallAndQuick "sum . divisors = sigma_1" divisorsProperty2
     , testSmallAndQuick "matches definition"       divisorsProperty3
     , testSmallAndQuick "divisors = divisorsSmall" divisorsProperty4
+    , testSmallAndQuick "divisors = divisorsList"  divisorsProperty5
     ]
   , testGroup "Tau"
     [ testCase "OEIS" tauOeis
