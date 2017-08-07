@@ -77,11 +77,11 @@ divisorsHelper p 1 = S.singleton p
 divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelper #-}
 
-divisorsList :: (UniqueFactorisation n, Num n, Ord n) => n -> [n]
+divisorsList :: (UniqueFactorisation n, Num n) => n -> [n]
 divisorsList = runFunction divisorsListA
 
 -- | The unsorted list of all (positive) divisors of an argument, produced in lazy fashion.
-divisorsListA :: forall n. (UniqueFactorisation n, Num n, Ord n) => ArithmeticFunction n [n]
+divisorsListA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n [n]
 divisorsListA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> ListProduct $ divisorsListHelper p k) ((1 :) . getListProduct)
 
 divisorsListHelper :: Num n => n -> Word -> [n]
@@ -297,10 +297,10 @@ instance (Num a, Ord a) => Monoid (SetProduct a) where
 
 newtype ListProduct a = ListProduct { getListProduct :: [a] }
 
-instance (Num a, Ord a) => Semigroup (ListProduct a) where
+instance Num a => Semigroup (ListProduct a) where
   ListProduct s1 <> ListProduct s2 = ListProduct $ s1 <> s2 <> foldMap (\n -> map (* n) s2) s1
 
-instance (Num a, Ord a) => Monoid (ListProduct a) where
+instance Num a => Monoid (ListProduct a) where
   mempty  = ListProduct mempty
   mappend = (<>)
 
