@@ -22,6 +22,9 @@ matrix:
     - env: CABALVER=1.24 GHCVER=8.0.2 BENCH=enable
       compiler: "GHC 8.0.2"
       addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.2], sources: [hvr-ghc]}}
+    - env: CABALVER=2.0 GHCVER=8.2.1 BENCH=enable
+      compiler: "GHC 8.2.1"
+      addons: {apt: {packages: [cabal-install-2.0,ghc-8.2.1], sources: [hvr-ghc]}}
     - env: CABALVER=head GHCVER=head BENCH=enable
       compiler: "GHC HEAD"
       addons: {apt: {packages: [cabal-install-head,ghc-head],  sources: [hvr-ghc]}}
