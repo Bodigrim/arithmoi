@@ -57,6 +57,8 @@ import Control.Applicative
 import Data.Word
 #endif
 import Data.Bits
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as IM
 import Data.List (foldl')
 import Data.Maybe
 
@@ -188,7 +190,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                                       (as,bs) <- workFact b b1 b2 count
                                       return $ (mult e as, mult e bs)
         workFact m b1 b2 count
-            | count < 0 = return ([],[(m,1)])
+            | count == 0 = return ([],[(m,1)])
             | otherwise = do
                 s <- rndR m
                 case s `modulo` fromInteger m of
@@ -346,21 +348,26 @@ mergeAll = \case
   [xs]            -> xs
   (xs : ys : zss) -> merge (merge xs ys) (mergeAll zss)
 
--- Parameters for the factorisation, the two b-parameters for montgomery and the number of tries
--- to use these, depending on the size of the factor we are looking for.
--- The numbers are roughly based on the parameters listed on Dario Alpern's ECM site.
-testParms :: [(Int,Word,Word,Int)]
-testParms = [ (12, 400, 10000, 10), (15, 2000, 50000, 25), (20, 11000, 150000, 90)
-            , (25, 50000, 500000, 300), (30, 250000, 1500000, 700)
-            , (35, 1000000, 4000000, 1800), (40, 3000000, 12000000, 5100)
-            , (45, 11000000, 45000000, 10600), (50, 43000000, 200000000, 19300)
-            , (55, 80000000, 400000000,30000), (60, 120000000, 700000000, 50000)
-            ]
+-- | For a given estimated decimal length of the smallest prime factor
+-- ("tier") return parameters B1, B2 and the number of curves to try
+-- before next "tier".
+-- Roughly based on http://www.mersennewiki.org/index.php/Elliptic_Curve_Method#Choosing_the_best_parameters_for_ECM
+testParms :: IntMap (Word, Word, Word)
+testParms = IM.fromList
+  [ (12, (       400,        40000,     10))
+  , (15, (      2000,       200000,     25))
+  , (20, (     11000,      1100000,     90))
+  , (25, (     50000,      5000000,    300))
+  , (30, (    250000,     25000000,    700))
+  , (35, (   1000000,    100000000,   1800))
+  , (40, (   3000000,    300000000,   5100))
+  , (45, (  11000000,   1100000000,  10600))
+  , (50, (  43000000,   4300000000,  19300))
+  , (55, ( 110000000,  11000000000,  49000))
+  , (60, ( 260000000,  26000000000, 124000))
+  , (65, ( 850000000,  85000000000, 210000))
+  , (70, (2900000000, 290000000000, 340000))
+  ]
 
-findParms :: Int -> (Word, Word, Int)
-findParms digs = go (wheel, 1000, 7) testParms
-  where
-    go p ((d,b1,b2,ct):rest)
-      | digs < d    = p
-      | otherwise   = go (b1,b2,ct) rest
-    go p [] = p
+findParms :: Int -> (Word, Word, Word)
+findParms digs = maybe (wheel, 1000, 7) snd (IM.lookupLT digs testParms)
