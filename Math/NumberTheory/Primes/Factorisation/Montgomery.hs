@@ -45,6 +45,7 @@ import Control.Arrow
 import Control.Monad.Trans.State.Lazy
 import System.Random
 import Data.Bits
+import Data.BitStream
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
@@ -320,8 +321,10 @@ bigStep q b1 b2 = rs
     qks = zip [0..] $ map (\k -> multiply k q) wheelCoprimes
     qs = enumAndMultiplyFromThenTo q b0 (b0 + wheel) b2
 
-    rs = foldl' (\ts (_cHi, p) -> foldl' (\us (_cLo, pq) ->
-        us * (pointZ p * pointX pq - pointX p * pointZ pq) `rem` n
+    rs = foldl' (\ts (cHi, p) -> foldl' (\us (cLo, pq) ->
+      if isPrime2 cHi cLo
+        then us * (pointZ p * pointX pq - pointX p * pointZ pq) `rem` n
+        else us
         ) ts qks) 1 qs
 
 wheel :: Word
@@ -348,6 +351,19 @@ enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
     pStep = multiply step p
 
     progression = pFrom : pThen : zipWith (\x0 x1 -> add x0 pStep x1) progression (tail progression)
+
+isPrime2 :: Word -> Word -> Bool
+isPrime2 hi lo = index primeBS (hi `div` 210 * 24 + lo)
+
+primeBS :: BitStream
+primeBS = tabulate f
+  where
+    f :: Word -> Bool
+    f n = millerRabinV 0 (fromIntegral $ hi + lo) || millerRabinV 0 (fromIntegral $ hi - lo)
+      where
+        (q, r) = n `quotRem` 24
+        hi = q * 210
+        lo = wheelCoprimes !! fromIntegral r
 
 -- primes, compactly stored as a bit sieve
 primeStore :: [PrimeSieve]
