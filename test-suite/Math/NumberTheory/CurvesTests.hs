@@ -82,6 +82,10 @@ addAndMultiplyProperty (Shrink2 (Positive s)) (Shrink2 (Positive n)) (Shrink2 k)
       klp  = multiply (k + l)     p
       k2lp = multiply (k + 2 * l) p
 
+multiplyPracProperty :: Shrink2 (Positive Integer) -> Shrink2 (Positive Integer) -> Word -> Property
+multiplyPracProperty (Shrink2 (Positive s)) (Shrink2 (Positive n)) k = newPoint s n ==>? \case
+  SomePoint p -> multiplyNew k p === multiply k p
+
 testSuite :: TestTree
 testSuite = localOption (QuickCheckMaxRatio 100) $
   localOption (QuickCheckTests 1000) $ testGroup "Montgomery"
@@ -91,4 +95,5 @@ testSuite = localOption (QuickCheckMaxRatio 100) $
   , QC.testProperty "range of multiply"        multiplyRangeProperty
   , QC.testProperty "double matches multiply"  doubleAndMultiplyProperty
   , QC.testProperty "add matches multiply"     addAndMultiplyProperty
+  , QC.testProperty "correctness of multiply"        multiplyPracProperty
   ]
