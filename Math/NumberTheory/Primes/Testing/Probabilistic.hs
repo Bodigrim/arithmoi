@@ -23,7 +23,7 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
 import Data.Bits
 import GHC.Base
 import GHC.Integer.GMP.Internals
-import GHC.TypeLits
+import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Jacobi

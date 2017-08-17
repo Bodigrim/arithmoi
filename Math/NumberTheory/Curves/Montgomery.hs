@@ -35,7 +35,7 @@ import Data.Proxy
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms
-import GHC.TypeLits
+import GHC.TypeNats.Compat
 
 -- | We use the Montgomery form of elliptic curve:
 -- b Y² = X³ + a X² + X (mod n).
@@ -56,10 +56,10 @@ data Point (a24 :: Nat) (n :: Nat) = Point
   }
 
 pointA24 :: forall a24 n. KnownNat a24 => Point a24 n -> Integer
-pointA24 _ = natVal (Proxy :: Proxy a24)
+pointA24 _ = toInteger $ natVal (Proxy :: Proxy a24)
 
 pointN :: forall a24 n. KnownNat n => Point a24 n -> Integer
-pointN _ = natVal (Proxy :: Proxy n)
+pointN _ = toInteger $ natVal (Proxy :: Proxy n)
 
 -- | In projective space 'Point's are equal, if they are both at infinity
 -- or if respective ratios 'pointX' \/ 'pointZ' are equal.
@@ -99,8 +99,12 @@ newPoint s n = do
       -- (a+2)/4 = 1 corresponds to singular curve with A = 2
       1 -> Nothing
       t -> Just t
-    SomeNat (_ :: Proxy a24Ty) <- someNatVal a24
-    SomeNat (_ :: Proxy nTy)   <- someNatVal n
+    SomeNat (_ :: Proxy a24Ty) <- if a24 < 0
+                                  then Nothing
+                                  else Just $ someNatVal $ fromInteger a24
+    SomeNat (_ :: Proxy nTy)   <- if n < 0
+                                  then Nothing
+                                  else Just $ someNatVal $ fromInteger n
     return $ SomePoint (Point x z :: Point a24Ty nTy)
   where
     u = s * s `rem` n - 5

@@ -62,7 +62,7 @@ import qualified Data.IntMap as IM
 import Data.List (foldl')
 import Data.Maybe
 
-import GHC.TypeLits
+import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Moduli.Class
