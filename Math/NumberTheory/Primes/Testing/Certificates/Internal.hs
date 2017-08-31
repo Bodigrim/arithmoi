@@ -328,7 +328,7 @@ findFactor n digits s = case findLoop n lo hi count s of
     (lo,hi,count) = findParms digits
 
 -- | Find a factor or say with which curve to continue.
-findLoop :: Integer -> Word -> Word -> Int -> Integer -> Either Integer Integer
+findLoop :: Integer -> Word -> Word -> Word -> Integer -> Either Integer Integer
 findLoop _ _  _  0  s = Left s
 findLoop n lo hi ct s
     | n <= s+2  = Left 6

@@ -25,7 +25,7 @@
 {-# LANGUAGE CPP            #-}
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MagicHash      #-}
+{-# LANGUAGE LambdaCase     #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -50,20 +50,21 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 
 #include "MachDeps.h"
 
-import GHC.Base
-
 import System.Random
 import Control.Monad.State.Strict
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
+import Data.Word
 #endif
 import Data.Bits
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as IM
+import Data.List (foldl')
 import Data.Maybe
 
-import GHC.Integer.Logarithms
 import GHC.TypeLits
 
-import Math.NumberTheory.Logarithms
+import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
@@ -179,7 +180,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                            then return pfs
                            else do
                                nfs <- forM cfs $ \(k,j) ->
-                                   mult j <$> fact k (if null pfs then digs+4 else digs)
+                                   mult j <$> fact k (if null pfs then digs+5 else digs)
                                return (mergeAll $ pfs:nfs)
         repFact m b1 b2 count = case perfPw m of
                                   (_,1) -> workFact m b1 b2 count
@@ -189,7 +190,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                                       (as,bs) <- workFact b b1 b2 count
                                       return $ (mult e as, mult e bs)
         workFact m b1 b2 count
-            | count < 0 = return ([],[(m,1)])
+            | count == 0 = return ([],[(m,1)])
             | otherwise = do
                 s <- rndR m
                 case s `modulo` fromInteger m of
@@ -239,118 +240,70 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
 --
 --   The result is maybe a nontrivial divisor of @n@.
 montgomeryFactorisation :: KnownNat n => Word -> Word -> Mod n -> Maybe Integer
-montgomeryFactorisation b1 b2 s = fromIntegral <$> go p5 (list primeStore)
+montgomeryFactorisation b1 b2 s = case newPoint (getVal s) n of
+  Nothing             -> Nothing
+  Just (SomePoint p0) -> do
+    -- Small step: for each prime p <= b1
+    -- multiply point 'p0' by the highest power p^k <= b1.
+    let q = foldl (flip multiply) p0 smallPowers
+        z = pointZ q
+
+    fromIntegral <$> case gcd n z of
+      -- If small step did not succeed, perform a big step.
+      1 -> case gcd n (bigStep q b1 b2) of
+        1 -> Nothing
+        g -> Just g
+      g -> Just g
   where
-    l2 = wordLog2' b1
-    b1i = toInteger b1
-    (^~) :: Word -> Int -> Word
-    w ^~ i = w ^ i
-    (e, p0) = montgomeryData s
-    dbl pt = double e pt
-    dbln 0 !pt = pt
-    dbln k pt = dbln (k-1) (dbl pt)
-    p2 = dbln l2 p0
-#if WORD_SIZE_IN_BITS == 64
-    mul a b c = (a*b) `quot` c       -- can't overflow, work on Int
-#else
-    mul a b c = fromInteger ((toInteger a * b) `quot` c) -- might overflow if Int is used
-#endif
-    adjust bd ml w
-      | w <= bd     = adjust bd ml (w*ml)
-      | otherwise   = w
-    l3 = mul l2 190537 301994
-    w3 = 3 ^~ l3
-    pw3 = adjust (b1 `quot` 3) 3 w3
-    p3 = multiply e pw3 p2
-    l5 = mul l2 1936274 4495889
-    w5 = 5 ^~ l5
-    pw5 = adjust (b1 `quot` 5) 5 w5
-    p5 = multiply e pw5 p3
-    go (P _ 0) _ = Nothing
-    go !pt@(P _ z) (pr:prs)
-      | pr <= b1    = let !lp = integerLogBase' (fromIntegral pr) b1i
-                      in go (multiply e (pr ^~ lp) pt) prs
-      | otherwise   = case gcd (fromIntegral $ getMod z) (getVal z) of
-                        1 -> lgo (multiply e pr pt) prs
-                        g -> Just g
-    go (P _ z) _    = case gcd (fromIntegral $ getMod z) (getVal z) of
-                        1 -> Nothing
-                        g -> Just g
-    lgo (P _ 0) _ = Nothing
-    lgo !pt@(P _ z) (pr:prs)
-      | pr <= b2    = lgo (multiply e pr pt) prs
-      | otherwise   = case gcd (fromIntegral $ getMod z) (getVal z) of
-                        1 -> Nothing
-                        g -> Just g
-    lgo (P _ z) _   = case gcd (fromIntegral $ getMod z) (getVal z) of
-                        1 -> Nothing
-                        g -> Just g
+    n = getMod s
+    smallPrimes = takeWhile (<= b1) (2 : 3 : 5 : list primeStore)
+    smallPowers = map findPower smallPrimes
+    findPower p = go p
+      where
+        go acc
+          | acc <= b1 `quot` p = go (acc * p)
+          | otherwise          = acc
 
-----------------------------------------------------------------------------------------------------
---                            Helpers, Curves and elliptic arithmetics                            --
-----------------------------------------------------------------------------------------------------
-
--- A Montgomery curve is given by y^2 = x^3 + (A_n / A_d - 2)*x^2 + x (mod n).
--- We store A_n and 4*A_d, since A_n occurs with the factor 4 in all formulae.
-data Curve (m :: Nat) = C !(Mod m) !(Mod m)
-
--- Point in the projective plane, will be on the curve
--- A coordinate transformation eliminates the y-coordinate, hence
--- we store only x and z
-data Point (m :: Nat) = P !(Mod m) !(Mod m)
-
--- Get curve and point to start
--- Input should satisfy 6 <= s < n-1
-montgomeryData :: KnownNat n => Mod n -> (Curve n, Point n)
-montgomeryData s = (C an ad4, P x z)
+-- | The implementation follows the algorithm at p. 6-7
+-- of <http://www.hyperelliptic.org/tanja/SHARCS/talks06/Gaj.pdf Implementing the Elliptic Curve Method of Factoring in Reconfigurable Hardware>
+-- by K. Gaj, S. Kwon et al.
+bigStep :: (KnownNat a24, KnownNat n) => Point a24 n -> Word -> Word -> Integer
+bigStep q b1 b2 = rs
   where
-    u = s ^% 2 - 5
-    v = 4 * s
-    d = v - u
-    x = u ^% 3
-    z = v ^% 3
-    an = d ^% 3 * (3 * u + v)
-    ad4 = 16 * x * v
+    n = pointN q
 
--- Addition on the curve, given the modulus n and three points,
--- p0, p1 and p2, with p0 = p2 - p1, calculate the point p1 + p2.
--- Note that the addition does not depend on the curve.
-add :: KnownNat n => Point n -> Point n -> Point n -> Point n
-add (P x0 z0) (P x1 z1) (P x2 z2) = P x3 z3
-  where
-    a = (x1 - z1) * (x2 + z2)
-    b = (x1 + z1) * (x2 - z2)
-    c = a + b
-    d = a - b
-    x3 = c ^% 2 * z0
-    z3 = d ^% 2 * x0
+    b0 = b1 - b1 `rem` wheel
+    qks = zip [0..] $ map (\k -> multiply k q) wheelCoprimes
+    qs = enumAndMultiplyFromThenTo q b0 (b0 + wheel) b2
 
--- Double a point on the curve.
-double :: KnownNat n => Curve n -> Point n -> Point n
-double (C an ad4) (P x z) = P x' z'
-  where
-    r = x + z
-    s = x - z
-    u = r ^% 2
-    v = s ^% 2
-    t = u - v
-    x' = ad4 * u * v
-    z' = (ad4 * v + t * an) * t
+    rs = foldl' (\ts (_cHi, p) -> foldl' (\us (_cLo, pq) ->
+        us * (pointZ p * pointX pq - pointX p * pointZ pq) `rem` n
+        ) ts qks) 1 qs
 
--- Multiply a point on the curve by a Word.
--- Within Word range, we can use the faster variant going
--- from high-order bits to low-order.
-multiply :: KnownNat n => Curve n -> Word -> Point n -> Point n
-multiply cve (W# w##) p =
-    case wordLog2# w## of
-      l# -> go (l# -# 1#) p (double cve p)
+wheel :: Word
+wheel = 210
+
+wheelCoprimes :: [Word]
+wheelCoprimes = [ k | k <- [1 .. wheel `div` 2], k `gcd` wheel == 1 ]
+
+-- | Same as map (id *** flip multiply p) [from, thn .. to],
+-- but calculated in more efficient way.
+enumAndMultiplyFromThenTo
+  :: (KnownNat a24, KnownNat n)
+  => Point a24 n
+  -> Word
+  -> Word
+  -> Word
+  -> [(Word, Point a24 n)]
+enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
   where
-    go 0# !p0 !p1 = case w## `and#` 1## of
-                      0## -> double cve p0
-                      _   -> add p p0 p1
-    go i# p0 p1 = case (uncheckedShiftRL# w## i#) `and#` 1## of
-                    0## -> go (i# -# 1#) (double cve p0) (add p p0 p1)
-                    _   -> go (i# -# 1#) (add p p0 p1) (double cve p1)
+    step = thn - from
+
+    pFrom = multiply from p
+    pThen = multiply thn  p
+    pStep = multiply step p
+
+    progression = pFrom : pThen : zipWith (\x0 x1 -> add x0 pStep x1) progression (tail progression)
 
 -- primes, compactly stored as a bit sieve
 primeStore :: [PrimeSieve]
@@ -380,34 +333,41 @@ smallFactors bd n = case shiftToOddCount n of
     go m [] = ([(m,1)], Nothing)
 
 -- helpers: merge sorted lists
-merge :: [(Integer,Int)] -> [(Integer,Int)] -> [(Integer,Int)]
-merge xxs@(x@(p,k):xs) yys@(y@(q,m):ys) = case compare p q of
-                                            LT -> x : merge xs yys
-                                            EQ -> (p,k+m) : merge xs ys
-                                            GT -> y : merge xxs ys
+merge :: (Ord a, Num b) => [(a, b)] -> [(a, b)] -> [(a, b)]
 merge xs [] = xs
-merge _ ys = ys
+merge [] ys = ys
+merge xxs@(x@(p, k) : xs) yys@(y@(q, m) : ys)
+  = case p `compare` q of
+    LT -> x          : merge xs yys
+    EQ -> (p, k + m) : merge xs  ys
+    GT -> y          : merge xxs ys
 
-mergeAll :: [[(Integer,Int)]] -> [(Integer,Int)]
-mergeAll [] = []
-mergeAll [xs] = xs
-mergeAll (xs:ys:zss) = merge (merge xs ys) (mergeAll zss)
+mergeAll :: (Ord a, Num b) => [[(a, b)]] -> [(a, b)]
+mergeAll = \case
+  []              -> []
+  [xs]            -> xs
+  (xs : ys : zss) -> merge (merge xs ys) (mergeAll zss)
 
--- Parameters for the factorisation, the two b-parameters for montgomery and the number of tries
--- to use these, depending on the size of the factor we are looking for.
--- The numbers are roughly based on the parameters listed on Dario Alpern's ECM site.
-testParms :: [(Int,Word,Word,Int)]
-testParms = [ (12, 400, 10000, 10), (15, 2000, 50000, 25), (20, 11000, 150000, 90)
-            , (25, 50000, 500000, 300), (30, 250000, 1500000, 700)
-            , (35, 1000000, 4000000, 1800), (40, 3000000, 12000000, 5100)
-            , (45, 11000000, 45000000, 10600), (50, 43000000, 200000000, 19300)
-            , (55, 80000000, 400000000,30000), (60, 120000000, 700000000, 50000)
-            ]
+-- | For a given estimated decimal length of the smallest prime factor
+-- ("tier") return parameters B1, B2 and the number of curves to try
+-- before next "tier".
+-- Roughly based on http://www.mersennewiki.org/index.php/Elliptic_Curve_Method#Choosing_the_best_parameters_for_ECM
+testParms :: IntMap (Word, Word, Word)
+testParms = IM.fromList
+  [ (12, (       400,        40000,     10))
+  , (15, (      2000,       200000,     25))
+  , (20, (     11000,      1100000,     90))
+  , (25, (     50000,      5000000,    300))
+  , (30, (    250000,     25000000,    700))
+  , (35, (   1000000,    100000000,   1800))
+  , (40, (   3000000,    300000000,   5100))
+  , (45, (  11000000,   1100000000,  10600))
+  , (50, (  43000000,   4300000000,  19300))
+  , (55, ( 110000000,  11000000000,  49000))
+  , (60, ( 260000000,  26000000000, 124000))
+  , (65, ( 850000000,  85000000000, 210000))
+  , (70, (2900000000, 290000000000, 340000))
+  ]
 
-findParms :: Int -> (Word, Word, Int)
-findParms digs = go (100, 1000, 7) testParms
-  where
-    go p ((d,b1,b2,ct):rest)
-      | digs < d    = p
-      | otherwise   = go (b1,b2,ct) rest
-    go p [] = p
+findParms :: Int -> (Word, Word, Word)
+findParms digs = maybe (wheel, 1000, 7) snd (IM.lookupLT digs testParms)
