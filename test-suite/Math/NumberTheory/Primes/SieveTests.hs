@@ -58,6 +58,7 @@ psieveFromProperty1 (AnySign lowBound)
   where
     trim = take 1000
 
+
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
   [ testCase          "primes"     primesProperty1
