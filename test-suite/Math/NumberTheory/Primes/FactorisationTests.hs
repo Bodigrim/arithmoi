@@ -17,7 +17,7 @@ module Math.NumberTheory.Primes.FactorisationTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.List (nub, sort)
+import Data.List (nub, sort, find)
 
 import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
@@ -66,6 +66,26 @@ factoriseProperty5 (Positive n) = product (map (uncurry (^)) (factorise n)) == n
 factoriseProperty6 :: (Integer, [(Integer, Int)]) -> Assertion
 factoriseProperty6 (n, fs) = assertEqual (show n) fs (factorise n)
 
+sieveSmallestFactorProperty1 :: Assertion
+sieveSmallestFactorProperty1 = assertEqual "" (f `fmap` [-2, -1, 0, 1, 2])
+                                              [Just (-1), Just (-1), Just 2, Nothing, Just 2]
+  where
+    f = sieveSmallestFactor (factorSieve 2)
+
+sieveSmallestFactorProperty2 :: Positive Integer -> AnySign Integer -> Bool
+sieveSmallestFactorProperty2 (Positive highBound) (AnySign x)
+  = case (abs x, signum x) of
+     -- factorise error case
+     (0, _) -> sieveSmallestFactor (factorSieve highBound) 0 == Just 2
+     -- sieveSmallestFactor error case
+     (a, s) | a > highBound -> sieveSmallestFactorProperty2 (Positive a) (AnySign $ s * highBound)
+     -- general case
+     _ -> computed == expected
+       where
+         computed = sieveSmallestFactor (factorSieve highBound) x
+         expected = headMay . fmap fst $ factorise x
+         headMay = find (const True)
+
 testSuite :: TestTree
 testSuite = testGroup "Factorisation"
   [ testGroup "factorise" $
@@ -76,4 +96,8 @@ testSuite = testGroup "Factorisation"
     , testSmallAndQuick "factorback"                     factoriseProperty5
     ] ++
     map (\x -> testCase ("special case " ++ show (fst x)) (factoriseProperty6 x)) specialCases
+  , testGroup "sieveSmallestFactor" $
+    [ testCase          "edge cases"            sieveSmallestFactorProperty1
+    , testSmallAndQuick "relation to factorise" sieveSmallestFactorProperty2
+    ]
   ]
