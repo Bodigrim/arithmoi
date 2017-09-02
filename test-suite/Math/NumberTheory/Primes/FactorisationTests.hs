@@ -67,7 +67,7 @@ factoriseProperty6 :: (Integer, [(Integer, Int)]) -> Assertion
 factoriseProperty6 (n, fs) = assertEqual (show n) fs (factorise n)
 
 sieveSmallestFactorProperty1 :: Assertion
-sieveSmallestFactorProperty1 = assertEqual "" (f <$> [-2, -1, 0, 1, 2])
+sieveSmallestFactorProperty1 = assertEqual "" (f `fmap` [-2, -1, 0, 1, 2])
                                               [Just (-1), Just (-1), Just 2, Nothing, Just 2]
   where
     f = sieveSmallestFactor (factorSieve 2)
