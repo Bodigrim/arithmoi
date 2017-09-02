@@ -27,6 +27,7 @@ module Math.NumberTheory.Primes.Factorisation
     , FactorSieve
     , factorSieve
     , sieveFactor
+    , sieveSmallestFactor
       -- *** Trial division
     , trialDivisionTo
       -- ** Partial factorisation

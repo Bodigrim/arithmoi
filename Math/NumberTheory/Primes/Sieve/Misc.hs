@@ -21,9 +21,9 @@ module Math.NumberTheory.Primes.Sieve.Misc
       -- ** Smallest prime factors
     , factorSieve
     , sieveFactor
+    , sieveSmallestFactor
     , fsBound
     , fsPrimeTest
-    , fsLookup
       -- ** Totients
     , totientSieve
     , sieveTotient
@@ -121,12 +121,12 @@ fsPrimeTest fs@(FS bnd sve) n
     | n <= fromIntegral bnd = sve `unsafeAt` (fromInteger (n `shiftR` 1) - 1) == 0
     | otherwise = error "Out of bounds"
 
--- | @'lookupFactor' fs n@ looks up the smallest prime factor of @n@ in a factor sieve.
+-- | @'sieveSmallestFactor' fs n@ looks up the smallest prime factor of @n@ in a factor sieve.
 --   If @n@ is larger than the sieve can handle, an error is raised.
---   Returns @None@ for @n=1@, which has no prime factors, and @Some 2@ for @n=0@.
-fsLookup :: FactorSieve -> Integer -> Maybe Integer
-fsLookup fs@(FS bnd sve) n
-    | n < 0     = fsLookup fs (-n)
+--   Returns @Just (-1)@ for negative @n@, @Just 2@ for @n == 0@, and @Nothing@ for @n == 1@.
+sieveSmallestFactor :: FactorSieve -> Integer -> Maybe Integer
+sieveSmallestFactor (FS bnd sve) n
+    | n < 0     = Just (-1)
     | n == 1    = Nothing
     | fromInteger n .&. (1 :: Int) == 0 = Just 2
     | n <= fromIntegral bnd = Just $
