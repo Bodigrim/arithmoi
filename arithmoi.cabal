@@ -80,6 +80,7 @@ library
                           Math.NumberTheory.Primes.Heap
                           Math.NumberTheory.UniqueFactorisation
                           Math.NumberTheory.Zeta
+                          GHC.TypeNats.Compat
     other-modules       : Math.NumberTheory.Utils
                           Math.NumberTheory.Unsafe
                           Math.NumberTheory.Primes.Counting.Impl

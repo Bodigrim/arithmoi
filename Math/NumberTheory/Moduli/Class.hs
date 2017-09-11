@@ -33,7 +33,7 @@ module Math.NumberTheory.Moduli.Class
   , modulo
   , invertSomeMod
   , powSomeMod
-  -- * Re-exported from GHC.TypeLits
+  -- * Re-exported from GHC.TypeNats.Compat
   , KnownNat
   ) where
 
@@ -44,7 +44,7 @@ import Data.Type.Equality
 import Data.Word
 #endif
 import GHC.Integer.GMP.Internals
-import GHC.TypeLits
+import GHC.TypeNats.Compat
 import Numeric.Natural
 
 -- | Wrapper for residues modulo @m@.
@@ -59,7 +59,7 @@ import Numeric.Natural
 -- > (1 `modulo` 10)
 --
 -- Note that modulo cannot be negative.
-newtype Mod (m :: Nat) = Mod Integer
+newtype Mod (m :: Nat) = Mod Natural
   deriving (Eq, Ord)
 
 instance KnownNat m => Show (Mod m) where
@@ -70,18 +70,18 @@ instance KnownNat m => Num (Mod m) where
     Mod $ if xy >= m then xy - m else xy
     where
       xy = x + y
-      m = natVal mx
+      m = getNatMod mx
   {-# INLINE (+) #-}
   mx@(Mod x) - Mod y =
     Mod $ if x >= y then x - y else m + x - y
     where
-      m = natVal mx
+      m = getNatMod mx
   {-# INLINE (-) #-}
   negate mx@(Mod x) =
-    Mod $ if x == 0 then 0 else natVal mx - x
+    Mod $ if x == 0 then 0 else getNatMod mx - x
   {-# INLINE negate #-}
   mx@(Mod x) * Mod y =
-    Mod $ x * y `rem` natVal mx -- `rem` is slightly faster than `mod`
+    Mod $ x * y `rem` getNatMod mx -- `rem` is slightly faster than `mod`
   {-# INLINE (*) #-}
   abs = id
   {-# INLINE abs #-}
@@ -89,7 +89,7 @@ instance KnownNat m => Num (Mod m) where
   {-# INLINE signum #-}
   fromInteger x = mx
     where
-      mx = Mod $ fromInteger $ x `mod` natVal mx
+      mx = Mod $ fromInteger $ x `mod` getMod mx
   {-# INLINE fromInteger #-}
 
 -- | Beware that division by residue, which is not coprime with the modulo,
@@ -108,22 +108,22 @@ instance KnownNat m => Fractional (Mod m) where
 
 -- | Linking type and value levels: extract modulo @m@ as a value.
 getMod :: KnownNat m => Mod m -> Integer
-getMod = natVal
+getMod = toInteger . natVal
 {-# INLINE getMod #-}
 
 -- | Linking type and value levels: extract modulo @m@ as a value.
 getNatMod :: KnownNat m => Mod m -> Natural
-getNatMod = fromInteger . getMod
+getNatMod = natVal
 {-# INLINE getNatMod #-}
 
 -- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
 getVal :: KnownNat m => Mod m -> Integer
-getVal (Mod x) = x
+getVal (Mod x) = toInteger x
 {-# INLINE getVal #-}
 
 -- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
 getNatVal :: KnownNat m => Mod m -> Natural
-getNatVal = fromInteger . getVal
+getNatVal (Mod x) = x
 {-# INLINE getNatVal #-}
 
 -- | Computes the modular inverse, if the residue is coprime with the modulo.
@@ -133,9 +133,12 @@ getNatVal = fromInteger . getVal
 -- > > invertMod (4 :: Mod 10)
 -- > Nothing
 invertMod :: KnownNat m => Mod m -> Maybe (Mod m)
-invertMod mx@(Mod x) = case recipModInteger x (natVal mx) of
-  0 -> Nothing
-  y -> Just (Mod y)
+invertMod mx
+  = if y <= 0
+    then Nothing
+    else Just $ Mod $ fromInteger y
+  where
+    y = recipModInteger (getVal mx) (getMod mx)
 {-# INLINABLE invertMod #-}
 
 -- | Drop-in replacement for '^', with much better performance.
@@ -143,9 +146,9 @@ invertMod mx@(Mod x) = case recipModInteger x (natVal mx) of
 -- > > powMod (3 :: Mod 10) 4
 -- > (1 `modulo` 10)
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
-powMod mx@(Mod x) a
+powMod mx a
   | a < 0     = error $ "^{Mod}: negative exponent"
-  | otherwise = Mod $ powModInteger x (toInteger a) (natVal mx)
+  | otherwise = Mod $ fromInteger $ powModInteger (getVal mx) (toInteger a) (getMod mx)
 {-# INLINABLE [1] powMod #-}
 
 {-# SPECIALISE [1] powMod ::
@@ -208,9 +211,8 @@ instance Show SomeMod where
 -- One can use the result either directly (via functions from 'Num' and 'Fractional'),
 -- or deconstruct it by pattern matching. Note that 'modulo' never returns 'InfMod'.
 modulo :: Integer -> Natural -> SomeMod
-modulo n m = case someNatVal (toInteger m) of
-  Nothing                       -> error "modulo: negative modulo"
-  Just (SomeNat (_ :: Proxy t)) -> SomeMod (fromInteger n :: Mod t)
+modulo n m = case someNatVal m of
+  SomeNat (_ :: Proxy t) -> SomeMod (fromInteger n :: Mod t)
 {-# INLINABLE modulo #-}
 infixl 7 `modulo`
 
@@ -231,8 +233,7 @@ liftBinOpMod
   -> Mod n
   -> SomeMod
 liftBinOpMod f mx@(Mod x) my@(Mod y) = case someNatVal m of
-  Nothing                       -> error "modulo: negative modulo"
-  Just (SomeNat (_ :: Proxy t)) -> SomeMod (Mod (x `mod` m) `f` Mod (y `mod` m) :: Mod t)
+  SomeNat (_ :: Proxy t) -> SomeMod (Mod (x `mod` m) `f` Mod (y `mod` m) :: Mod t)
   where
     m = natVal mx `gcd` natVal my
 
