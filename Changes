@@ -1,3 +1,38 @@
+0.6.0.0:
+    This release supports GHC 7.8, 7.10, 8.0 and 8.2.
+
+    Breaking changes:
+
+        'Math.NumberTheory.Moduli' was split into
+        'Math.NumberTheory.Moduli.{Chinese,Class,Jacobi,Sqrt}'.
+
+        Functions 'jacobi' and 'jacobi'' return 'JacobiSymbol'
+        instead of 'Int'.
+
+        Functions 'invertMod', 'powerMod' and 'powerModInteger' were removed,
+        as well as their unchecked counterparts. Use new interface to
+        modular computations, provided by 'Math.NumberTheory.Moduli.Class'.
+
+    New functions:
+
+        Brand new 'Math.NumberTheory.Moduli.Class' (#56), providing
+        flexible and type safe modular arithmetic. Due to use of GMP built-ins
+        it is also significantly faster.
+
+        New function 'divisorsList', which is lazier than 'divisors' and
+        does not require 'Ord' constraint (#64). Thus, it can be used
+        for 'GaussianInteger'.
+
+    Improvements:
+
+        Speed up factorisation over elliptic curve up to 15x (#65).
+
+        Polymorphic 'fibonacci' and 'lucas' functions, which previously
+        were restricted to 'Integer' only (#63). This is especially useful
+        for modular computations, e. g., 'map fibonacci [1..10] :: [Mod 7]'.
+
+        Make 'totientSum' more robust and idiomatic (#58).
+
 0.5.0.1:
     Switch to QuickCheck 2.10.
 
