@@ -130,27 +130,27 @@ sigmaHelper pa 2 = pa * pa + pa + 1
 sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
-totient :: (UniqueFactorisation n, Integral n) => n -> n
+totient :: (UniqueFactorisation n, Num n) => n -> n
 totient = runFunction totientA
 
 -- | Calculates the totient of a positive number @n@, i.e.
 --   the number of @k@ with @1 <= k <= n@ and @'gcd' n k == 1@,
 --   in other words, the order of the group of units in @&#8484;/(n)@.
-totientA :: forall n. (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
+totientA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
 totientA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper p
 
-jordan :: (UniqueFactorisation n, Integral n) => Word -> n -> n
+jordan :: (UniqueFactorisation n, Num n) => Word -> n -> n
 jordan = runFunction . jordanA
 
 -- | Calculates the k-th Jordan function of an argument.
 --
 -- > jordanA 1 = totientA
-jordanA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
+jordanA :: forall n. (UniqueFactorisation n, Num n) => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
 jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ wordToInt a)
 
-jordanHelper :: Integral n => n -> Word -> n
+jordanHelper :: Num n => n -> Word -> n
 jordanHelper pa 1 = pa - 1
 jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
