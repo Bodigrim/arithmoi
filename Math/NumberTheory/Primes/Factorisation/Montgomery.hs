@@ -21,11 +21,12 @@
 -- Given enough time, the algorithm should be able to factor numbers of 100-120 digits, but it
 -- is best suited for numbers of up to 50-60 digits.
 
-{-# LANGUAGE BangPatterns   #-}
-{-# LANGUAGE CPP            #-}
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase     #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -48,8 +49,7 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
   , findParms
   ) where
 
-#include "MachDeps.h"
-
+import Control.Arrow
 import System.Random
 import Control.Monad.State.Strict
 #if __GLASGOW_HASKELL__ < 709
@@ -152,75 +152,90 @@ stdGenFactorisation primeBound sg digits n
 --
 --   @'curveFactorisation'@ requires that small prime factors have been stripped before. Also, it is
 --   unlikely to succeed if @n@ has more than one (really) large prime factor.
-curveFactorisation :: Maybe Integer                 -- ^ Lower bound for composite divisors
-                   -> (Integer -> Bool)             -- ^ A primality test
-                   -> (Integer -> g -> (Integer,g)) -- ^ A PRNG
-                   -> g                             -- ^ Initial PRNG state
-                   -> Maybe Int                     -- ^ Estimated number of digits of the smallest prime factor
-                   -> Integer                       -- ^ The number to factorise
-                   -> [(Integer,Int)]               -- ^ List of prime factors and exponents
+curveFactorisation
+  :: forall g.
+     Maybe Integer                  -- ^ Lower bound for composite divisors
+  -> (Integer -> Bool)              -- ^ A primality test
+  -> (Integer -> g -> (Integer, g)) -- ^ A PRNG
+  -> g                              -- ^ Initial PRNG state
+  -> Maybe Int                      -- ^ Estimated number of digits of the smallest prime factor
+  -> Integer                        -- ^ The number to factorise
+  -> [(Integer, Int)]               -- ^ List of prime factors and exponents
 curveFactorisation primeBound primeTest prng seed mbdigs n
-    | ptest n   = [(n,1)]
+    | ptest n   = [(n, 1)]
     | otherwise = evalState (fact n digits) seed
       where
+        digits :: Int
         digits = fromMaybe 8 mbdigs
-        mult 1 xs = xs
-        mult j xs = [(p,j*k) | (p,k) <- xs]
-        dbl (u,v) = (mult 2 u, mult 2 v)
-        ptest = case primeBound of
-                  Just bd -> \k -> k <= bd || primeTest k
-                  Nothing -> primeTest
-        rndR k = state (\gen -> prng k gen)
-        perfPw = case primeBound of
-                   Nothing -> highestPower
-                   Just bd -> largePFPower (integerSquareRoot' bd)
-        fact m digs = do let (b1,b2,ct) = findParms digs
-                         (pfs,cfs) <- repFact m b1 b2 ct
-                         if null cfs
-                           then return pfs
-                           else do
-                               nfs <- forM cfs $ \(k,j) ->
-                                   mult j <$> fact k (if null pfs then digs+5 else digs)
-                               return (mergeAll $ pfs:nfs)
-        repFact m b1 b2 count = case perfPw m of
-                                  (_,1) -> workFact m b1 b2 count
-                                  (b,e)
-                                    | ptest b -> return ([(b,e)],[])
-                                    | otherwise -> do
-                                      (as,bs) <- workFact b b1 b2 count
-                                      return $ (mult e as, mult e bs)
-        workFact m b1 b2 count
-            | count == 0 = return ([],[(m,1)])
-            | otherwise = do
-                s <- rndR m
-                case s `modulo` fromInteger m of
-                  InfMod{} -> error "impossible case"
-                  SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
-                    Nothing -> workFact m b1 b2 (count-1)
-                    Just d  -> do
-                      let !cof = m `quot` d
-                      case gcd cof d of
-                        1 -> do
-                            (dp,dc) <- if ptest d
-                                         then return ([(d,1)],[])
-                                         else repFact d b1 b2 (count-1)
-                            (cp,cc) <- if ptest cof
-                                         then return ([(cof,1)],[])
-                                         else repFact cof b1 b2 (count-1)
-                            return (merge dp cp, dc ++ cc)
-                        g -> do
-                            let d' = d `quot` g
-                                c' = cof `quot` g
-                            (dp,dc) <- if ptest d'
-                                         then return ([(d',1)],[])
-                                         else repFact d' b1 b2 (count-1)
-                            (cp,cc) <- if ptest c'
-                                         then return ([(c',1)],[])
-                                         else repFact c' b1 b2 (count-1)
-                            (gp,gc) <- if ptest g
-                                         then return ([(g,2)],[])
-                                         else dbl <$> repFact g b1 b2 (count-1)
-                            return  (mergeAll [dp,cp,gp], dc ++ cc ++ gc)
+
+        mult :: Int -> [(Integer, Int)] -> [(Integer, Int)]
+        mult j = map (second (* j))
+
+        dbl :: ([(Integer, Int)], [(Integer, Int)]) -> ([(Integer, Int)], [(Integer, Int)])
+        dbl (u, v) = (mult 2 u, mult 2 v)
+
+        ptest :: Integer -> Bool
+        ptest = maybe primeTest (\bd k -> k <= bd || primeTest k) primeBound
+
+        rndR :: Integer -> State g Integer
+        rndR k = state (prng k)
+
+        perfPw :: Integer -> (Integer, Int)
+        perfPw = maybe highestPower (largePFPower . integerSquareRoot') primeBound
+
+        fact :: Integer -> Int -> State g [(Integer, Int)]
+        fact m digs = do
+          let (b1, b2, ct) = findParms digs
+          (pfs, cfs) <- repFact m b1 b2 ct
+          case cfs of
+            [] -> return pfs
+            _  -> do
+              nfs <- forM cfs $ \(k, j) ->
+                  mult j <$> fact k (if null pfs then digs + 5 else digs)
+              return (mergeAll $ pfs : nfs)
+
+        repFact :: Integer -> Word -> Word -> Word -> State g ([(Integer, Int)], [(Integer, Int)])
+        repFact m b1 b2 count =
+          case perfPw m of
+            (_, 1) -> workFact m b1 b2 count
+            (b, e)
+              | ptest b -> return ([(b, e)], [])
+              | otherwise -> do
+                (as, bs) <- workFact b b1 b2 count
+                return (mult e as, mult e bs)
+
+        workFact :: Integer -> Word -> Word -> Word -> State g ([(Integer, Int)], [(Integer, Int)])
+        workFact m _ _ 0 = return ([], [(m, 1)])
+        workFact m b1 b2 count = do
+          s <- rndR m
+          case s `modulo` fromInteger m of
+            InfMod{} -> error "impossible case"
+            SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
+              Nothing -> workFact m b1 b2 (count - 1)
+              Just d  -> do
+                let !cof = m `quot` d
+                case gcd cof d of
+                  1 -> do
+                    (dp, dc) <- if ptest d
+                                  then return ([(d, 1)], [])
+                                  else repFact d b1 b2 (count - 1)
+                    (cp, cc) <- if ptest cof
+                                  then return ([(cof, 1)], [])
+                                  else repFact cof b1 b2 (count - 1)
+                    return (merge dp cp, dc ++ cc)
+                  g -> do
+                    let d' = d `quot` g
+                        c' = cof `quot` g
+                    (dp, dc) <- if ptest d'
+                                  then return ([(d', 1)], [])
+                                  else repFact d' b1 b2 (count - 1)
+                    (cp, cc) <- if ptest c'
+                                  then return ([(c', 1)], [])
+                                  else repFact c' b1 b2 (count - 1)
+                    (gp, gc) <- if ptest g
+                                  then return ([(g, 2)], [])
+                                  else dbl <$> repFact g b1 b2 (count - 1)
+                    return  (mergeAll [dp, cp, gp], dc ++ cc ++ gc)
 
 ----------------------------------------------------------------------------------------------------
 --                                         The workhorse                                          --
