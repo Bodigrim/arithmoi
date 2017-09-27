@@ -60,7 +60,9 @@ import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe
+import Data.Semigroup
 
 import GHC.TypeNats.Compat
 
@@ -168,12 +170,6 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         digits :: Int
         digits = fromMaybe 8 mbdigs
 
-        mult :: Int -> [(Integer, Int)] -> [(Integer, Int)]
-        mult j = map (second (* j))
-
-        dbl :: ([(Integer, Int)], [(Integer, Int)]) -> ([(Integer, Int)], [(Integer, Int)])
-        dbl (u, v) = (mult 2 u, mult 2 v)
-
         ptest :: Integer -> Bool
         ptest = maybe primeTest (\bd k -> k <= bd || primeTest k) primeBound
 
@@ -186,26 +182,24 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         fact :: Integer -> Int -> State g [(Integer, Int)]
         fact m digs = do
           let (b1, b2, ct) = findParms digs
-          (pfs, cfs) <- repFact m b1 b2 ct
+          Factors pfs cfs <- repFact m b1 b2 ct
           case cfs of
             [] -> return pfs
             _  -> do
               nfs <- forM cfs $ \(k, j) ->
-                  mult j <$> fact k (if null pfs then digs + 5 else digs)
-              return (mergeAll $ pfs : nfs)
+                  map (second (* j)) <$> fact k (if null pfs then digs + 5 else digs)
+              return $ sconcat $ pfs :| nfs
 
-        repFact :: Integer -> Word -> Word -> Word -> State g ([(Integer, Int)], [(Integer, Int)])
+        repFact :: Integer -> Word -> Word -> Word -> State g Factors
         repFact m b1 b2 count =
           case perfPw m of
             (_, 1) -> workFact m b1 b2 count
             (b, e)
-              | ptest b -> return ([(b, e)], [])
-              | otherwise -> do
-                (as, bs) <- workFact b b1 b2 count
-                return (mult e as, mult e bs)
+              | ptest b   -> return $ Factors [(b, e)] []
+              | otherwise -> modifyPowers (* e) <$> workFact b b1 b2 count
 
-        workFact :: Integer -> Word -> Word -> Word -> State g ([(Integer, Int)], [(Integer, Int)])
-        workFact m _ _ 0 = return ([], [(m, 1)])
+        workFact :: Integer -> Word -> Word -> Word -> State g Factors
+        workFact m _ _ 0 = return $ Factors [] [(m, 1)]
         workFact m b1 b2 count = do
           s <- rndR m
           case s `modulo` fromInteger m of
@@ -216,26 +210,39 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                 let !cof = m `quot` d
                 case gcd cof d of
                   1 -> do
-                    (dp, dc) <- if ptest d
-                                  then return ([(d, 1)], [])
-                                  else repFact d b1 b2 (count - 1)
-                    (cp, cc) <- if ptest cof
-                                  then return ([(cof, 1)], [])
-                                  else repFact cof b1 b2 (count - 1)
-                    return (merge dp cp, dc ++ cc)
+                    df <- if ptest d
+                          then return $ Factors [(d, 1)] []
+                          else repFact d b1 b2 (count - 1)
+                    cf <- if ptest cof
+                          then return $ Factors [(cof, 1)] []
+                          else repFact cof b1 b2 (count - 1)
+                    return $ df <> cf
                   g -> do
                     let d' = d `quot` g
                         c' = cof `quot` g
-                    (dp, dc) <- if ptest d'
-                                  then return ([(d', 1)], [])
-                                  else repFact d' b1 b2 (count - 1)
-                    (cp, cc) <- if ptest c'
-                                  then return ([(c', 1)], [])
-                                  else repFact c' b1 b2 (count - 1)
-                    (gp, gc) <- if ptest g
-                                  then return ([(g, 2)], [])
-                                  else dbl <$> repFact g b1 b2 (count - 1)
-                    return  (mergeAll [dp, cp, gp], dc ++ cc ++ gc)
+                    df <- if ptest d'
+                          then return $ Factors [(d', 1)] []
+                          else repFact d' b1 b2 (count - 1)
+                    cf <- if ptest c'
+                          then return $ Factors [(c', 1)] []
+                          else repFact c' b1 b2 (count - 1)
+                    gf <- if ptest g
+                          then return $ Factors [(g, 2)] []
+                          else modifyPowers (* 2) <$> repFact g b1 b2 (count - 1)
+                    return $ df <> cf <> gf
+
+data Factors = Factors
+  { _primeFactors     :: [(Integer, Int)]
+  , _compositeFactors :: [(Integer, Int)]
+  }
+
+instance Semigroup Factors where
+  Factors pfs1 cfs1 <> Factors pfs2 cfs2
+    = Factors (pfs1 `merge` pfs2) (cfs1 <> cfs2)
+
+modifyPowers :: (Int -> Int) -> Factors -> Factors
+modifyPowers f (Factors pfs cfs)
+  = Factors (map (second f) pfs) (map (second f) cfs)
 
 ----------------------------------------------------------------------------------------------------
 --                                         The workhorse                                          --
@@ -356,12 +363,6 @@ merge xxs@(x@(p, k) : xs) yys@(y@(q, m) : ys)
     LT -> x          : merge xs yys
     EQ -> (p, k + m) : merge xs  ys
     GT -> y          : merge xxs ys
-
-mergeAll :: (Ord a, Num b) => [[(a, b)]] -> [(a, b)]
-mergeAll = \case
-  []              -> []
-  [xs]            -> xs
-  (xs : ys : zss) -> merge (merge xs ys) (mergeAll zss)
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try
