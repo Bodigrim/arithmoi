@@ -67,6 +67,7 @@ import Data.Semigroup
 import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
+import Math.NumberTheory.GCD (splitIntoCoprimes)
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
@@ -193,7 +194,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
               return $ sconcat $ pfs :| nfs
 
         repFact :: Integer -> Word -> Word -> Word -> State g Factors
-        repFact 1 _ _ _ = return $ Factors [] []
+        repFact 1 _ _ _ = return mempty
         repFact m b1 b2 count =
           case perfPw m of
             (_, 1) -> workFact m b1 b2 count
@@ -202,7 +203,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
               | otherwise -> modifyPowers (* e) <$> workFact b b1 b2 count
 
         workFact :: Integer -> Word -> Word -> Word -> State g Factors
-        workFact 1 _ _ _ = return $ Factors [] []
+        workFact 1 _ _ _ = return mempty
         workFact m _ _ 0 = return $ Factors [] [(m, 1)]
         workFact m b1 b2 count = do
           s <- rndR m
@@ -211,29 +212,11 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
             SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
               Nothing -> workFact m b1 b2 (count - 1)
               Just d  -> do
-                let !cof = m `quot` d
-                case gcd cof d of
-                  1 -> do
-                    df <- if ptest d
-                          then return $ Factors [(d, 1)] []
-                          else repFact d b1 b2 (count - 1)
-                    cf <- if ptest cof
-                          then return $ Factors [(cof, 1)] []
-                          else repFact cof b1 b2 (count - 1)
-                    return $ df <> cf
-                  g -> do
-                    let d' = d `quot` g
-                        c' = cof `quot` g
-                    df <- if ptest d'
-                          then return $ Factors [(d', 1)] []
-                          else repFact d' b1 b2 (count - 1)
-                    cf <- if ptest c'
-                          then return $ Factors [(c', 1)] []
-                          else repFact c' b1 b2 (count - 1)
-                    gf <- if ptest g
-                          then return $ Factors [(g, 2)] []
-                          else modifyPowers (* 2) <$> repFact g b1 b2 (count - 1)
-                    return $ df <> cf <> gf
+                let cs = splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
+                fmap mconcat $ flip mapM cs $
+                  \(x, xm) -> if ptest x
+                              then pure (Factors [(x, xm)] [])
+                              else repFact x b1 b2 (count - 1)
 
 data Factors = Factors
   { _primeFactors     :: [(Integer, Int)]
@@ -243,6 +226,10 @@ data Factors = Factors
 instance Semigroup Factors where
   Factors pfs1 cfs1 <> Factors pfs2 cfs2
     = Factors (pfs1 `merge` pfs2) (cfs1 <> cfs2)
+
+instance Monoid Factors where
+  mempty = Factors [] []
+  mappend = (<>)
 
 modifyPowers :: (Int -> Int) -> Factors -> Factors
 modifyPowers f (Factors pfs cfs)
