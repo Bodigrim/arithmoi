@@ -223,9 +223,12 @@ data Factors = Factors
   , _compositeFactors :: [(Integer, Int)]
   }
 
+-- This instance is valid only if:
+-- 1) for each argument no prime factor divides any composite factor.
+-- 2) numbers, represented by arguments, are coprime.
 instance Semigroup Factors where
   Factors pfs1 cfs1 <> Factors pfs2 cfs2
-    = Factors (pfs1 `merge` pfs2) (cfs1 <> cfs2)
+    = Factors (pfs1 <> pfs2) (cfs1 <> cfs2)
 
 instance Monoid Factors where
   mempty = Factors [] []
@@ -344,16 +347,6 @@ smallFactors bd n = case shiftToOddCount n of
                         (k,r) | r == 1 -> ([(p,k)], Nothing)
                               | otherwise -> (p,k) <: go r ps
     go m [] = ([(m,1)], Nothing)
-
--- helpers: merge sorted lists
-merge :: (Ord a, Num b) => [(a, b)] -> [(a, b)] -> [(a, b)]
-merge xs [] = xs
-merge [] ys = ys
-merge xxs@(x@(p, k) : xs) yys@(y@(q, m) : ys)
-  = case p `compare` q of
-    LT -> x          : merge xs yys
-    EQ -> (p, k + m) : merge xs  ys
-    GT -> y          : merge xxs ys
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try

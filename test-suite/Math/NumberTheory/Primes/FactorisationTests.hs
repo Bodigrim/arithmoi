@@ -64,7 +64,7 @@ factoriseProperty5 :: Positive Integer -> Bool
 factoriseProperty5 (Positive n) = product (map (uncurry (^)) (factorise n)) == n
 
 factoriseProperty6 :: (Integer, [(Integer, Int)]) -> Assertion
-factoriseProperty6 (n, fs) = assertEqual (show n) fs (factorise n)
+factoriseProperty6 (n, fs) = assertEqual (show n) (sort fs) (sort (factorise n))
 
 testSuite :: TestTree
 testSuite = testGroup "Factorisation"
