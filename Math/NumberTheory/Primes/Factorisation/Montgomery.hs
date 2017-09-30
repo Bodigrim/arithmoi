@@ -51,7 +51,7 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 
 import Control.Arrow
 import System.Random
-import Control.Monad.State.Strict
+import Control.Monad.State.Lazy
 #if __GLASGOW_HASKELL__ < 709
 import Control.Applicative
 import Data.Word
