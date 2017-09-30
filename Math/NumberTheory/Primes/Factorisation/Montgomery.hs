@@ -164,6 +164,7 @@ curveFactorisation
   -> Integer                        -- ^ The number to factorise
   -> [(Integer, Int)]               -- ^ List of prime factors and exponents
 curveFactorisation primeBound primeTest prng seed mbdigs n
+    | n == 1    = []
     | ptest n   = [(n, 1)]
     | otherwise = evalState (fact n digits) seed
       where
@@ -180,6 +181,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         perfPw = maybe highestPower (largePFPower . integerSquareRoot') primeBound
 
         fact :: Integer -> Int -> State g [(Integer, Int)]
+        fact 1 _ = return mempty
         fact m digs = do
           let (b1, b2, ct) = findParms digs
           Factors pfs cfs <- repFact m b1 b2 ct
@@ -191,6 +193,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
               return $ sconcat $ pfs :| nfs
 
         repFact :: Integer -> Word -> Word -> Word -> State g Factors
+        repFact 1 _ _ _ = return $ Factors [] []
         repFact m b1 b2 count =
           case perfPw m of
             (_, 1) -> workFact m b1 b2 count
@@ -199,6 +202,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
               | otherwise -> modifyPowers (* e) <$> workFact b b1 b2 count
 
         workFact :: Integer -> Word -> Word -> Word -> State g Factors
+        workFact 1 _ _ _ = return $ Factors [] []
         workFact m _ _ 0 = return $ Factors [] [(m, 1)]
         workFact m b1 b2 count = do
           s <- rndR m
