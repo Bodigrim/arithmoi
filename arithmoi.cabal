@@ -82,6 +82,7 @@ library
                           Math.NumberTheory.Primes.Heap
                           Math.NumberTheory.UniqueFactorisation
                           Math.NumberTheory.Zeta
+                          Math.NumberTheory.Prefactored
                           GHC.TypeNats.Compat
     other-modules       : Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
                           Math.NumberTheory.Utils
@@ -174,6 +175,7 @@ test-suite spec
                   , Math.NumberTheory.Powers.GeneralTests
                   , Math.NumberTheory.Powers.ModularTests
                   , Math.NumberTheory.Powers.SquaresTests
+                  , Math.NumberTheory.PrefactoredTests
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests
                   , Math.NumberTheory.Primes.FactorisationTests

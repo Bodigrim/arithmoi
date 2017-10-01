@@ -20,6 +20,8 @@ import qualified Math.NumberTheory.Powers.GeneralTests as General
 import qualified Math.NumberTheory.Powers.ModularTests as Modular
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
+import qualified Math.NumberTheory.PrefactoredTests as Prefactored
+
 import qualified Math.NumberTheory.PrimesTests as Primes
 import qualified Math.NumberTheory.Primes.CountingTests as Counting
 import qualified Math.NumberTheory.Primes.FactorisationTests as Factorisation
@@ -63,6 +65,9 @@ tests = testGroup "All"
   , testGroup "MoebiusInversion"
     [ MoebiusInversion.testSuite
     , MoebiusInversionInt.testSuite
+    ]
+  , testGroup "Prefactored"
+    [ Prefactored.testSuite
     ]
   , testGroup "Primes"
     [ Primes.testSuite
