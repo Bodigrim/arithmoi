@@ -69,7 +69,6 @@ library
                           Math.NumberTheory.Powers.Cubes
                           Math.NumberTheory.Powers.Fourth
                           Math.NumberTheory.Powers.General
-                          Math.NumberTheory.Powers.Integer
                           Math.NumberTheory.Primes
                           Math.NumberTheory.Primes.Sieve
                           Math.NumberTheory.Primes.Factorisation
