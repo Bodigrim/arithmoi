@@ -9,6 +9,7 @@ import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinea
 import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
 import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
 import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
+import qualified Math.NumberTheory.Moduli.PrimitiveRootTests as ModuliPrimitiveRoot
 import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
@@ -60,6 +61,7 @@ tests = testGroup "All"
     [ ModuliChinese.testSuite
     , ModuliClass.testSuite
     , ModuliJacobi.testSuite
+    , ModuliPrimitiveRoot.testSuite
     , ModuliSqrt.testSuite
     ]
   , testGroup "MoebiusInversion"

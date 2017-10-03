@@ -47,7 +47,7 @@ import Test.Tasty
 import Test.Tasty.SmallCheck as SC
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative)
 
-import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate)
+import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/))
 
 #if !(MIN_VERSION_base(4,8,0))
 import Control.Applicative
@@ -59,6 +59,8 @@ import GHC.Exts
 import Numeric.Natural
 
 import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
+import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
+import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, Prime, unPrime)
 
 import Math.NumberTheory.TestUtils.MyCompose
 import Math.NumberTheory.TestUtils.Wrappers
@@ -88,6 +90,39 @@ instance Monad m => Serial m Natural where
 instance Monad m => Serial m GaussianInteger where
   series = cons2 (:+)
 
+-------------------------------------------------------------------------------
+-- Cyclic group
+
+instance (Eq a, Num a, UniqueFactorisation a, Arbitrary a) => Arbitrary (CyclicGroup a) where
+  arbitrary = frequency
+    [ (1, pure CG2)
+    , (1, pure CG4)
+    , (9, CGOddPrimePower
+      <$> (arbitrary :: Gen (PrimeWrapper a)) `suchThatMap` isOddPrime
+      <*> (getPower <$> arbitrary))
+    , (9, CGDoubleOddPrimePower
+      <$> (arbitrary :: Gen (PrimeWrapper a)) `suchThatMap` isOddPrime
+      <*> (getPower <$> arbitrary))
+    ]
+
+instance (Monad m, Eq a, Num a, UniqueFactorisation a, Serial m a) => Serial m (CyclicGroup a) where
+  series = pure CG2
+        \/ pure CG4
+        \/ (CGOddPrimePower
+           <$> (series :: Series m (PrimeWrapper a)) `suchThatMapSerial` isOddPrime
+           <*> (getPower <$> series))
+        \/ (CGDoubleOddPrimePower
+           <$> (series :: Series m (PrimeWrapper a)) `suchThatMapSerial` isOddPrime
+           <*> (getPower <$> series))
+
+isOddPrime
+  :: forall a. (Eq a, Num a, UniqueFactorisation a)
+  => PrimeWrapper a
+  -> Maybe (Prime a)
+isOddPrime (PrimeWrapper p) = if (unPrime p :: a) == 2 then Nothing else Just p
+
+-------------------------------------------------------------------------------
+
 -- https://www.cs.ox.ac.uk/projects/utgp/school/andres.pdf, p. 21
 -- :k Compose = (k1 -> Constraint) -> (k2 -> k1) -> (k2 -> Constraint)
 class    (f (g x)) => (f `Compose` g) x
@@ -114,7 +149,7 @@ type TestableIntegral wrapper =
 
 testIntegralProperty
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Integral a, Bits a) => wrapper a -> bool) -> TestTree
+  => String -> (forall a. (Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
 testIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> bool)
@@ -129,7 +164,7 @@ testIntegralProperty name f = testGroup name
 
 testSameIntegralProperty
   :: forall wrapper1 wrapper2 bool. (TestableIntegral wrapper1, TestableIntegral wrapper2, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Integral a, Bits a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
+  => String -> (forall a. (Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
 testSameIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
@@ -144,7 +179,7 @@ testSameIntegralProperty name f = testGroup name
 
 testIntegral2Property
   :: forall wrapper1 wrapper2 bool. (TestableIntegral wrapper1, TestableIntegral wrapper2, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a1 a2. (Integral a1, Integral a2, Bits a1, Bits a2) => wrapper1 a1 -> wrapper2 a2 -> bool) -> TestTree
+  => String -> (forall a1 a2. (Integral a1, Integral a2, Bits a1, Bits a2, UniqueFactorisation a1, UniqueFactorisation a2, Show a1, Show a2) => wrapper1 a1 -> wrapper2 a2 -> bool) -> TestTree
 testIntegral2Property name f = testGroup name
   [ SC.testProperty "smallcheck Int Int"         (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
   , SC.testProperty "smallcheck Int Word"        (f :: wrapper1 Int     -> wrapper2 Word    -> bool)

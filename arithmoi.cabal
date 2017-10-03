@@ -57,6 +57,7 @@ library
                           Math.NumberTheory.Moduli.Chinese
                           Math.NumberTheory.Moduli.Class
                           Math.NumberTheory.Moduli.Jacobi
+                          Math.NumberTheory.Moduli.PrimitiveRoot
                           Math.NumberTheory.Moduli.Sqrt
                           Math.NumberTheory.MoebiusInversion
                           Math.NumberTheory.MoebiusInversion.Int
@@ -167,6 +168,7 @@ test-suite spec
                   , Math.NumberTheory.Moduli.ChineseTests
                   , Math.NumberTheory.Moduli.ClassTests
                   , Math.NumberTheory.Moduli.JacobiTests
+                  , Math.NumberTheory.Moduli.PrimitiveRootTests
                   , Math.NumberTheory.Moduli.SqrtTests
                   , Math.NumberTheory.Powers.CubesTests
                   , Math.NumberTheory.MoebiusInversionTests
