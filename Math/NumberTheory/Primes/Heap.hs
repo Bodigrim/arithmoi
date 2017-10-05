@@ -17,7 +17,7 @@
 {-# LANGUAGE BangPatterns, CPP, MonoLocalBinds #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 {-# OPTIONS_GHC -fno-float-in -fno-spec-constr -fno-full-laziness #-}
-module Math.NumberTheory.Primes.Heap (primes, sieveFrom) where
+module Math.NumberTheory.Primes.Heap {-# DEPRECATED "Use Math.NumberTheory.Primes.Sieve instead" #-} (primes, sieveFrom) where
 
 import Data.Array.Unboxed
 import Data.Array.ST
