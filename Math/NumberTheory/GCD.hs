@@ -260,6 +260,8 @@ cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
 -- having to merge multiplicities of primes, which occurs more than in one
 -- composite factor.
 --
+-- > > splitIntoCoprimes [(140, 1), (165, 1)]
+-- > [(5,2),(28,1),(33,1)]
 -- > > splitIntoCoprimes [(360, 1), (210, 1)]
 -- > [(2,4),(3,3),(5,2),(7,1)]
 splitIntoCoprimes :: (Integral a, Num b) => [(a, b)] -> [(a, b)]

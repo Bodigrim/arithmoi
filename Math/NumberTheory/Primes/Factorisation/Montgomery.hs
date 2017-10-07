@@ -141,7 +141,7 @@ stdGenFactorisation :: Maybe Integer    -- ^ Lower bound for composite divisors
 stdGenFactorisation primeBound sg digits n
     = curveFactorisation primeBound bailliePSW (\m -> randomR (6,m-2)) sg digits n
 
--- | @'curveFactorisation'@ is the driver for the factorisation. Its performance (and success)
+-- | 'curveFactorisation' is the driver for the factorisation. Its performance (and success)
 --   can be influenced by passing appropriate arguments. If you know that @n@ has no prime divisors
 --   below @b@, any divisor found less than @b*b@ must be prime, thus giving @Just (b*b)@ as the
 --   first argument allows skipping the comparatively expensive primality test for those.
@@ -153,8 +153,12 @@ stdGenFactorisation primeBound sg digits n
 --   make a huge difference. So, if the default takes too long, try another one; or you can improve your
 --   chances for a quick result by running several instances in parallel.
 --
---   @'curveFactorisation'@ requires that small prime factors have been stripped before. Also, it is
---   unlikely to succeed if @n@ has more than one (really) large prime factor.
+--   'curveFactorisation' @n@ requires that small (< 100000) prime factors of @n@
+--   have been stripped before. Otherwise it is likely to cycle forever. When in doubt,
+--   use 'defaultStdGenFactorisation'.
+--
+--   'curveFactorisation' is unlikely to succeed if @n@ has more than one (really) large prime factor.
+--
 curveFactorisation
   :: forall g.
      Maybe Integer                  -- ^ Lower bound for composite divisors
@@ -185,13 +189,17 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         fact 1 _ = return mempty
         fact m digs = do
           let (b1, b2, ct) = findParms digs
+          -- All factors (both @pfs@ and @cfs@), are pairwise coprime. This is
+          -- because 'repFact' returns either a single factor, or output of 'workFact'.
+          -- In its turn, 'workFact' returns either a single factor,
+          -- or concats 'repFact's over coprime integers. Induction completes the proof.
           Factors pfs cfs <- repFact m b1 b2 ct
           case cfs of
             [] -> return pfs
             _  -> do
               nfs <- forM cfs $ \(k, j) ->
                   map (second (* j)) <$> fact k (if null pfs then digs + 5 else digs)
-              return $ sconcat $ pfs :| nfs
+              return $ mconcat (pfs : nfs)
 
         repFact :: Integer -> Word -> Word -> Word -> State g Factors
         repFact 1 _ _ _ = return mempty
@@ -199,12 +207,12 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
           case perfPw m of
             (_, 1) -> workFact m b1 b2 count
             (b, e)
-              | ptest b   -> return $ Factors [(b, e)] []
+              | ptest b   -> return $ singlePrimeFactor b e
               | otherwise -> modifyPowers (* e) <$> workFact b b1 b2 count
 
         workFact :: Integer -> Word -> Word -> Word -> State g Factors
         workFact 1 _ _ _ = return mempty
-        workFact m _ _ 0 = return $ Factors [] [(m, 1)]
+        workFact m _ _ 0 = return $ singleCompositeFactor m 1
         workFact m b1 b2 count = do
           s <- rndR m
           case s `modulo` fromInteger m of
@@ -213,9 +221,12 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
               Nothing -> workFact m b1 b2 (count - 1)
               Just d  -> do
                 let cs = splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
+                -- Since all @cs@ are coprime, we can factor each of
+                -- them and just concat results, without summing up
+                -- powers of the same primes in different elements.
                 fmap mconcat $ flip mapM cs $
                   \(x, xm) -> if ptest x
-                              then pure (Factors [(x, xm)] [])
+                              then pure $ singlePrimeFactor x xm
                               else repFact x b1 b2 (count - 1)
 
 data Factors = Factors
@@ -223,9 +234,12 @@ data Factors = Factors
   , _compositeFactors :: [(Integer, Int)]
   }
 
--- This instance is valid only if:
--- 1) for each argument no prime factor divides any composite factor.
--- 2) numbers, represented by arguments, are coprime.
+singlePrimeFactor :: Integer -> Int -> Factors
+singlePrimeFactor a b = Factors [(a, b)] []
+
+singleCompositeFactor :: Integer -> Int -> Factors
+singleCompositeFactor a b = Factors [] [(a, b)]
+
 instance Semigroup Factors where
   Factors pfs1 cfs1 <> Factors pfs2 cfs2
     = Factors (pfs1 <> pfs2) (cfs1 <> cfs2)
