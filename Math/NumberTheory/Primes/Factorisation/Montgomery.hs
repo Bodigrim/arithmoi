@@ -60,7 +60,6 @@ import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
-import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 
