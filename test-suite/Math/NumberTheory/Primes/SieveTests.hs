@@ -11,6 +11,7 @@
 {-# LANGUAGE CPP #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
 
 module Math.NumberTheory.Primes.SieveTests
   ( testSuite
