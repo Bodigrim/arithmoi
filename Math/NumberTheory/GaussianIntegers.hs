@@ -190,31 +190,27 @@ a .^ e
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
-factorise g
-    | g == 0    = error "0 has no prime factorisation"
-    | g == 1    = []
-    | otherwise =
-        let helper :: [(Integer, Int)] -> GaussianInteger -> [(GaussianInteger, Int)]
-            helper [] g' = (if g' == 1 then [] else [(g', 1)]) -- include the unit, if it isn't 1
-            helper ((!p, !e) : pt) g'
-                | p `mod` 4 == 3 =
-                    -- prime factors congruent to 3 mod 4 are simple.
-                    let pow = div e 2
-                        gp = fromInteger p
-                    in (gp, pow) : helper pt (g' `divG` (gp .^ pow))
-                | otherwise      =
-                    -- general case: for every prime factor of the magnitude
-                    -- squared, find a Gaussian prime whose magnitude squared
-                    -- is that prime. Then find out how many times the original
-                    -- number is divisible by that Gaussian prime and its
-                    -- conjugate. The order that the prime factors are
-                    -- processed doesn't really matter, but it is reversed so
-                    -- that the Gaussian primes will be in order of increasing
-                    -- magnitude.
-                    let gp = findPrime' p
-                        (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp]
-                    in facs ++ helper pt gNext
-        in helper (Factorisation.factorise $ norm g) g
+factorise g = helper (Factorisation.factorise $ norm g) g
+    where
+    helper [] g' = if g' == 1 then [] else [(g', 1)] -- include the unit, if it isn't 1
+    helper ((!p, !e) : pt) g'
+        | p `mod` 4 == 3 =
+            -- prime factors congruent to 3 mod 4 are simple.
+            let pow = div e 2
+                gp = fromInteger p
+            in (gp, pow) : helper pt (g' `divG` (gp .^ pow))
+        | otherwise      =
+            -- general case: for every prime factor of the magnitude
+            -- squared, find a Gaussian prime whose magnitude squared
+            -- is that prime. Then find out how many times the original
+            -- number is divisible by that Gaussian prime and its
+            -- conjugate. The order that the prime factors are
+            -- processed doesn't really matter, but it is reversed so
+            -- that the Gaussian primes will be in order of increasing
+            -- magnitude.
+            let gp = findPrime' p
+                (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp]
+            in facs ++ helper pt gNext
 
 -- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
 -- as many times as possible, and return the final quotient as well as a count
