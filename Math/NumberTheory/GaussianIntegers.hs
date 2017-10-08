@@ -194,14 +194,14 @@ factorise g
     | g == 0    = error "0 has no prime factorisation"
     | g == 1    = []
     | otherwise =
-        let helper :: [(Integer, Int)] -> GaussianInteger -> [(GaussianInteger, Int)] -> [(GaussianInteger, Int)]
-            helper [] g' fs = (if g' == 1 then [] else [(g', 1)]) ++ fs    -- include the unit, if it isn't 1
-            helper ((!p, !e) : pt) g' fs
+        let helper :: [(Integer, Int)] -> GaussianInteger -> [(GaussianInteger, Int)]
+            helper [] g' = (if g' == 1 then [] else [(g', 1)]) -- include the unit, if it isn't 1
+            helper ((!p, !e) : pt) g'
                 | p `mod` 4 == 3 =
                     -- prime factors congruent to 3 mod 4 are simple.
                     let pow = div e 2
                         gp = fromInteger p
-                    in helper pt (g' `divG` (gp .^ pow)) ((gp, pow) : fs)
+                    in (gp, pow) : helper pt (g' `divG` (gp .^ pow))
                 | otherwise      =
                     -- general case: for every prime factor of the magnitude
                     -- squared, find a Gaussian prime whose magnitude squared
@@ -213,8 +213,8 @@ factorise g
                     -- magnitude.
                     let gp = findPrime' p
                         (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
-                    in helper pt gNext (facs ++ fs)
-        in helper (reverse . Factorisation.factorise $ norm g) g []
+                    in facs ++ helper pt gNext
+        in helper (Factorisation.factorise $ norm g) g
 
 -- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
 -- as many times as possible, and return the final quotient as well as a count
