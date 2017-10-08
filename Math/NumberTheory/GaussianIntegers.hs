@@ -193,24 +193,22 @@ factorise :: GaussianInteger -> [(GaussianInteger, Int)]
 factorise g = helper (Factorisation.factorise $ norm g) g
     where
     helper [] g' = if g' == 1 then [] else [(g', 1)] -- include the unit, if it isn't 1
-    helper ((!p, !e) : pt) g'
-        | p `mod` 4 == 3 =
-            -- prime factors congruent to 3 mod 4 are simple.
-            let pow = div e 2
-                gp = fromInteger p
-            in (gp, pow) : helper pt (g' `divG` (gp .^ pow))
-        | otherwise      =
-            -- general case: for every prime factor of the magnitude
-            -- squared, find a Gaussian prime whose magnitude squared
-            -- is that prime. Then find out how many times the original
-            -- number is divisible by that Gaussian prime and its
-            -- conjugate. The order that the prime factors are
-            -- processed doesn't really matter, but it is reversed so
-            -- that the Gaussian primes will be in order of increasing
-            -- magnitude.
-            let gp = findPrime' p
-                (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp]
-            in facs ++ helper pt gNext
+    helper ((!p, !e) : pt) g' =
+        -- For a given prime factor p of the magnitude squared...
+        let (!g'', !facs) = if p `mod` 4 == 3
+            then
+                -- if the p is congruent to 3 (mod 4), then g' is divisible by
+                -- p^(e/2).
+                let pow = div e 2
+                    gp = fromInteger p
+                in (g' `divG` (gp .^ pow), [(gp, pow)])
+            else
+                -- otherwise: find a Gaussian prime gp for which `norm gp ==
+                -- p`. Then do trial divisions to find out how many times g' is
+                -- divisible by gp or its conjugate.
+                let gp = findPrime' p
+                in trialDivide g' [gp, abs $ conjugate gp]
+        in facs ++ helper pt g''
 
 -- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
 -- as many times as possible, and return the final quotient as well as a count
