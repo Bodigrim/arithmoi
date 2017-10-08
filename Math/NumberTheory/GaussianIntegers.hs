@@ -212,20 +212,22 @@ factorise g
                     -- that the Gaussian primes will be in order of increasing
                     -- magnitude.
                     let gp = findPrime' p
-                        (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
+                        (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp]
                     in facs ++ helper pt gNext
         in helper (Factorisation.factorise $ norm g) g
 
 -- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
 -- as many times as possible, and return the final quotient as well as a count
 -- of how many times each factor divided the original.
-trialDivide :: GaussianInteger -> [GaussianInteger] -> [(GaussianInteger, Int)] -> (GaussianInteger, [(GaussianInteger, Int)])
-trialDivide g [] fs = (g, fs)
-trialDivide g (pf : pft) fs
-    | g `modG` pf == 0 =
-        let (cnt, g') = countEvenDivisions g pf
-        in trialDivide g' pft ((pf, cnt) : fs)
-    | otherwise    = trialDivide g pft fs
+trialDivide :: GaussianInteger -> [GaussianInteger] -> (GaussianInteger, [(GaussianInteger, Int)])
+trialDivide = helper []
+    where
+    helper fs g [] = (g, fs)
+    helper fs g (pf : pft)
+        | g `modG` pf == 0 =
+            let (cnt, g') = countEvenDivisions g pf
+            in helper ((pf, cnt) : fs) g' pft
+        | otherwise        = helper fs g pft
 
 -- Divide a Gaussian integer by a possible factor, and return how many times
 -- the factor divided it evenly, as well as the result of dividing the original
