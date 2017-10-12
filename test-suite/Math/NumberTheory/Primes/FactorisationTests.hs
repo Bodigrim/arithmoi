@@ -17,6 +17,7 @@ module Math.NumberTheory.Primes.FactorisationTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Monad (zipWithM_)
 import Data.List (nub, sort)
 
 import Math.NumberTheory.Primes.Factorisation
@@ -46,6 +47,15 @@ specialCases =
   , (16757651897802863152387219654541878166,[(2,1),(23,1),(277,1),(505353699591289,1),(2602436338718275457,1)])
   ]
 
+lazyCases :: [(Integer, [(Integer, Int)])]
+lazyCases =
+  [ ( 14145130711
+    * 10000000000000000000000000000000000000121
+    * 100000000000000000000000000000000000000000000000447
+    , [(14145130711, 1)]
+    )
+  ]
+
 factoriseProperty1 :: Assertion
 factoriseProperty1 = assertEqual "0" [] (factorise 1)
 
@@ -64,7 +74,10 @@ factoriseProperty5 :: Positive Integer -> Bool
 factoriseProperty5 (Positive n) = product (map (uncurry (^)) (factorise n)) == n
 
 factoriseProperty6 :: (Integer, [(Integer, Int)]) -> Assertion
-factoriseProperty6 (n, fs) = assertEqual (show n) fs (factorise n)
+factoriseProperty6 (n, fs) = assertEqual (show n) (sort fs) (sort (factorise n))
+
+factoriseProperty7 :: (Integer, [(Integer, Int)]) -> Assertion
+factoriseProperty7 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 testSuite :: TestTree
 testSuite = testGroup "Factorisation"
@@ -76,4 +89,6 @@ testSuite = testGroup "Factorisation"
     , testSmallAndQuick "factorback"                     factoriseProperty5
     ] ++
     map (\x -> testCase ("special case " ++ show (fst x)) (factoriseProperty6 x)) specialCases
+    ++
+    map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseProperty7 x)) lazyCases
   ]

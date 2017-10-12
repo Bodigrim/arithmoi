@@ -20,11 +20,17 @@
 --
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops and the rewrite rules.
-{-# LANGUAGE CPP, BangPatterns, MagicHash #-}
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP          #-}
+{-# LANGUAGE LambdaCase   #-}
+{-# LANGUAGE MagicHash    #-}
+
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
     , coprime
+    , splitIntoCoprimes
     ) where
 
 import Data.Bits
@@ -245,3 +251,33 @@ cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
 
 cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
+
+-- | The input list is assumed to be a factorisation of some number
+-- into a list of powers of (possibly, composite) non-zero factors. The output
+-- list is a factorisation of the same number such that all factors
+-- are coprime. Such transformation is crucial to continue factorisation
+-- (lazily, in parallel or concurrent fashion) without
+-- having to merge multiplicities of primes, which occurs more than in one
+-- composite factor.
+--
+-- > > splitIntoCoprimes [(140, 1), (165, 1)]
+-- > [(5,2),(28,1),(33,1)]
+-- > > splitIntoCoprimes [(360, 1), (210, 1)]
+-- > [(2,4),(3,3),(5,2),(7,1)]
+splitIntoCoprimes :: (Integral a, Num b) => [(a, b)] -> [(a, b)]
+splitIntoCoprimes = \case
+  [] -> []
+  ((1,  _) : rest) -> splitIntoCoprimes rest
+  ((x, xm) : rest) -> case popSuchThat (\(r, _) -> gcd x r /= 1) rest of
+    Nothing            -> (x, xm) : splitIntoCoprimes rest
+    Just ((y, ym), zs) -> let g = gcd x y in splitIntoCoprimes
+      ((g, xm + ym) : (x `quot` g, xm) : (y `quot` g, ym) : zs)
+
+popSuchThat :: (a -> Bool) -> [a] -> Maybe (a, [a])
+popSuchThat predicate = go
+  where
+    go = \case
+      [] -> Nothing
+      (x : xs)
+        | predicate x -> Just (x, xs)
+        | otherwise   -> fmap (fmap (x :)) (go xs)
