@@ -1,6 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.GaussianIntegers
--- Copyright:   (c) 2016 Chris Fredrickson
+-- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
 -- Licence:     MIT
 -- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
 -- Stability:   Provisional
