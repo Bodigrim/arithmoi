@@ -81,6 +81,7 @@ library
                           Math.NumberTheory.Zeta
                           GHC.TypeNats.Compat
     other-modules       : Math.NumberTheory.Utils
+                          Math.NumberTheory.Utils.FromIntegral
                           Math.NumberTheory.Unsafe
                           Math.NumberTheory.Primes.Counting.Impl
                           Math.NumberTheory.Primes.Counting.Approximate

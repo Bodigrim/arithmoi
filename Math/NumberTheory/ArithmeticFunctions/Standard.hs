@@ -46,6 +46,7 @@ import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
 
@@ -54,9 +55,6 @@ import Numeric.Natural
 import Data.Foldable
 import Data.Word
 #endif
-
-wordToInt :: Word -> Int
-wordToInt = fromIntegral
 
 -- | Create a multiplicative function from the function on prime's powers. See examples below.
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a

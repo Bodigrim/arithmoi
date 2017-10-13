@@ -27,6 +27,7 @@ import Data.Word
 
 import Math.NumberTheory.Primes.Factorisation as F (factorise')
 import Math.NumberTheory.GaussianIntegers as G
+import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
 
@@ -97,27 +98,3 @@ instance UniqueFactorisation G.GaussianInteger where
 
   factorise 0 = []
   factorise g = map (coerce *** intToWord) $ filter (\(h, _) -> abs h /= 1) $ G.factorise g
-
------------
--- Utils
-
-wordToInt :: Word -> Int
-wordToInt = fromIntegral
-
-wordToInteger :: Word -> Integer
-wordToInteger = fromIntegral
-
-intToWord :: Int -> Word
-intToWord = fromIntegral
-
-intToInteger :: Int -> Integer
-intToInteger = fromIntegral
-
-naturalToInteger :: Natural -> Integer
-naturalToInteger = fromIntegral
-
-integerToNatural :: Integer -> Natural
-integerToNatural = fromIntegral
-
-integerToWord :: Integer -> Word
-integerToWord = fromIntegral
