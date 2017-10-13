@@ -191,14 +191,11 @@ trailZeros# w =
                 case (v2 `plusWord#` uncheckedShiftRL# v2 4#) `and#` mf## of
                   v3 -> word2Int# (uncheckedShiftRL# (v3 `timesWord#` m1##) sd#)
 
--- {-# SPECIALISE splitOff :: Integer -> Integer -> (Int, Integer),
---                            Int -> Int -> (Int, Int),
---                            Word -> Word -> (Int, Word)
---   #-}
-{-# INLINABLE splitOff #-}
-splitOff :: Integral a => a -> a -> (Int, a)
+splitOff :: Integer -> Integer -> (Int, Integer)
+splitOff _ 0 = (0, 0) -- prevent infinite loop
 splitOff p n = go 0 n
   where
     go !k m = case m `quotRem` p of
-                (q,r) | r == 0 -> go (k+1) q
-                      | otherwise -> (k,m)
+      (q, 0) -> go (k + 1) q
+      _      -> (k, m)
+{-# INLINABLE splitOff #-}
