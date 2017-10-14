@@ -20,6 +20,7 @@ module Math.NumberTheory.Utils
     , bitCountWord#
     , uncheckedShiftR
     , splitOff
+    , splitOff#
     ) where
 
 #include "MachDeps.h"
@@ -199,3 +200,14 @@ splitOff p n = go 0 n
       (q, 0) -> go (k + 1) q
       _      -> (k, m)
 {-# INLINABLE splitOff #-}
+
+-- | It is difficult to convince GHC to unbox output of 'splitOff' and 'splitOff.go',
+-- so we fallback to a specialized unboxed version to minimize allocations.
+splitOff# :: Word# -> Word# -> (# Int#, Word# #)
+splitOff# _ 0## = (# 0#, 0## #)
+splitOff# p n = go 0# n
+  where
+    go k m = case m `quotRemWord#` p of
+      (# q, 0## #) -> go (k +# 1#) q
+      _            -> (# k, m #)
+{-# INLINABLE splitOff# #-}
