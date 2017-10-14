@@ -93,6 +93,7 @@ library
                           Math.NumberTheory.Primes.Testing.Probabilistic
                           Math.NumberTheory.Primes.Testing.Certified
                           Math.NumberTheory.Primes.Testing.Certificates.Internal
+                          Math.NumberTheory.Primes.Types
     other-extensions          : BangPatterns
 
     ghc-options         : -O2 -Wall
