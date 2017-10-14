@@ -42,6 +42,7 @@ library
                         , mtl >= 2.0 && < 2.3
                         , exact-pi >= 0.4.1.1
                         , integer-logarithms >= 1.0
+                        , vector >= 0.12
     if impl(ghc < 7.10)
       build-depends     : nats >= 1 && <1.2
     if impl(ghc < 8.0)
@@ -49,6 +50,7 @@ library
 
     exposed-modules     : Math.NumberTheory.ArithmeticFunctions
                           Math.NumberTheory.ArithmeticFunctions.Class
+                          Math.NumberTheory.ArithmeticFunctions.SieveBlock
                           Math.NumberTheory.ArithmeticFunctions.Standard
                           Math.NumberTheory.Curves.Montgomery
                           Math.NumberTheory.Moduli
@@ -80,7 +82,8 @@ library
                           Math.NumberTheory.UniqueFactorisation
                           Math.NumberTheory.Zeta
                           GHC.TypeNats.Compat
-    other-modules       : Math.NumberTheory.Utils
+    other-modules       : Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
+                          Math.NumberTheory.Utils
                           Math.NumberTheory.Utils.FromIntegral
                           Math.NumberTheory.Unsafe
                           Math.NumberTheory.Primes.Counting.Impl
