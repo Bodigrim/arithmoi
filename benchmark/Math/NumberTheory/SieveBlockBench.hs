@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP #-}
 
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
+
 module Math.NumberTheory.SieveBlockBench
   ( benchSuite
   ) where

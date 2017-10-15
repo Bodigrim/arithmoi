@@ -8,6 +8,7 @@
 -- Tests for Math.NumberTheory.Primes
 --
 
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.PrimesTests
