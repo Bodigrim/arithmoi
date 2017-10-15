@@ -31,14 +31,40 @@ import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Utils (splitOff#)
 import Math.NumberTheory.Utils.FromIntegral
 
+-- | A record of arguments, which specifies both a function to evaluate
+-- and block's bounds.
+--
+-- For example, here is a configuration for the totient function on block [1..1000]:
+--
+-- > SieveBlockConfig
+-- >   { sbcEmpty                = 1
+-- >   , sbcAppend               = (*)
+-- >   , sbcFunctionOnPrimePower = (\p a -> (p - 1) * p ^ (a - 1)
+-- >   , sbcBlockLowBound        = 1
+-- >   , sbcBlockLength          = 1000
+-- >   }
 data SieveBlockConfig a = SieveBlockConfig
   { sbcEmpty                :: a
+    -- ^ value of a function on 1
   , sbcAppend               :: a -> a -> a
+    -- ^ how to combine values of a function on coprime arguments
   , sbcFunctionOnPrimePower :: Word -> Word -> a
+    -- ^ how to evaluate a function on prime powers
   , sbcBlockLowBound        :: Word
+    -- ^ lower bound of the block
   , sbcBlockLength          :: Word
+    -- ^ length of the block
   }
 
+-- | Evaluate a function over a block in accordance to provided configuration.
+-- Value of @f@ at 0, if zero falls into block, is undefined.
+--
+-- Based on Algorithm M of <https://arxiv.org/pdf/1305.1639.pdf Parity of the number of primes in a given interval and algorithms of the sublinear summation> by A. V. Lelechenko. See Lemma 2 on p. 5 on its algorithmic complexity. For the majority of use-cases its time complexity is O(x^(1+ε)).
+--
+-- For example, here is an analogue of divisor function 'tau':
+--
+-- > > sieveBlockUnboxed (SieveBlockConfig 1 (*) (\_ a -> a + 1) 1 10)
+-- > [1,2,2,3,2,4,2,4,3,4]
 sieveBlockUnboxed
   :: V.Unbox a
   => SieveBlockConfig a

@@ -6,7 +6,8 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Bulk evaluation of arithmetic functions.
+-- Bulk evaluation of arithmetic functions over continuous intervals
+-- without factorisation.
 --
 
 {-# LANGUAGE BangPatterns        #-}
@@ -40,6 +41,20 @@ import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Utils (splitOff#)
 import Math.NumberTheory.Utils.FromIntegral
 
+-- | 'runFunctionOverBlock' @f@ @x@ @l@ evaluates an arithmetic function
+-- for integers between @x@ and @x+l-1@ and returns a vector of length @l@.
+-- It completely avoids factorisation, so it is asymptotically faster than
+-- pointwise evaluation of @f@.
+--
+-- Value of @f@ at 0, if zero falls into block, is undefined.
+--
+-- Beware that for underlying non-commutative monoids the results may potentially
+-- differ from pointwise application via 'runFunction'.
+--
+-- This is a thin wrapper over 'sieveBlock', read more details there.
+--
+-- > > runFunctionOverBlock carmichaelA 1 10
+-- > [1,1,2,2,4,2,6,2,6,4]
 runFunctionOverBlock
   :: ArithmeticFunction Word a
   -> Word
@@ -53,7 +68,19 @@ runFunctionOverBlock (ArithmeticFunction f g) lowIndex len = V.map g $ sieveBloc
   , sbcBlockLength          = len
   }
 
--- | Similar to 'sieveBlockUnboxed' up to flavour of 'Data.Vector'.
+-- | Evaluate a function over a block in accordance to provided configuration.
+-- Value of @f@ at 0, if zero falls into block, is undefined.
+--
+-- Based on Algorithm M of <https://arxiv.org/pdf/1305.1639.pdf Parity of the number of primes in a given interval and algorithms of the sublinear summation> by A. V. Lelechenko. See Lemma 2 on p. 5 on its algorithmic complexity. For the majority of use-cases its time complexity is O(x^(1+ε)).
+--
+-- 'sieveBlock' is similar to 'sieveBlockUnboxed' up to flavour of 'Data.Vector',
+-- it is typically 7x-10x slower and consumes 3x memory.
+-- Use unboxed version whenever possible.
+--
+-- For example, following code lists smallest prime factors:
+--
+-- > > sieveBlock (SieveBlockConfig maxBound min (\p _ -> p) 2 10)
+-- > [2,3,2,5,2,7,2,3,2,11]
 sieveBlock
   :: SieveBlockConfig a
   -> V.Vector a
