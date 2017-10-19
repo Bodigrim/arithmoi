@@ -1,6 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.GaussianIntegers
--- Copyright:   (c) 2016 Chris Fredrickson
+-- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
 -- Licence:     MIT
 -- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
 -- Stability:   Provisional
@@ -190,42 +190,38 @@ a .^ e
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
-factorise g
-    | g == 0    = error "0 has no prime factorisation"
-    | g == 1    = []
-    | otherwise =
-        let helper :: [(Integer, Int)] -> GaussianInteger -> [(GaussianInteger, Int)] -> [(GaussianInteger, Int)]
-            helper [] g' fs = (if g' == 1 then [] else [(g', 1)]) ++ fs    -- include the unit, if it isn't 1
-            helper ((!p, !e) : pt) g' fs
-                | p `mod` 4 == 3 =
-                    -- prime factors congruent to 3 mod 4 are simple.
-                    let pow = div e 2
-                        gp = fromInteger p
-                    in helper pt (g' `divG` (gp .^ pow)) ((gp, pow) : fs)
-                | otherwise      =
-                    -- general case: for every prime factor of the magnitude
-                    -- squared, find a Gaussian prime whose magnitude squared
-                    -- is that prime. Then find out how many times the original
-                    -- number is divisible by that Gaussian prime and its
-                    -- conjugate. The order that the prime factors are
-                    -- processed doesn't really matter, but it is reversed so
-                    -- that the Gaussian primes will be in order of increasing
-                    -- magnitude.
-                    let gp = findPrime' p
-                        (!gNext, !facs) = trialDivide g' [gp, abs $ conjugate gp] []
-                    in helper pt gNext (facs ++ fs)
-        in helper (reverse . Factorisation.factorise $ norm g) g []
+factorise g = helper (Factorisation.factorise $ norm g) g
+    where
+    helper [] g' = if g' == 1 then [] else [(g', 1)] -- include the unit, if it isn't 1
+    helper ((!p, !e) : pt) g' =
+        -- For a given prime factor p of the magnitude squared...
+        let (!g'', !facs) = if p `mod` 4 == 3
+            then
+                -- if the p is congruent to 3 (mod 4), then g' is divisible by
+                -- p^(e/2).
+                let pow = div e 2
+                    gp = fromInteger p
+                in (g' `divG` (gp .^ pow), [(gp, pow)])
+            else
+                -- otherwise: find a Gaussian prime gp for which `norm gp ==
+                -- p`. Then do trial divisions to find out how many times g' is
+                -- divisible by gp or its conjugate.
+                let gp = findPrime' p
+                in trialDivide g' [gp, abs $ conjugate gp]
+        in facs ++ helper pt g''
 
 -- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
 -- as many times as possible, and return the final quotient as well as a count
 -- of how many times each factor divided the original.
-trialDivide :: GaussianInteger -> [GaussianInteger] -> [(GaussianInteger, Int)] -> (GaussianInteger, [(GaussianInteger, Int)])
-trialDivide g [] fs = (g, fs)
-trialDivide g (pf : pft) fs
-    | g `modG` pf == 0 =
-        let (cnt, g') = countEvenDivisions g pf
-        in trialDivide g' pft ((pf, cnt) : fs)
-    | otherwise    = trialDivide g pft fs
+trialDivide :: GaussianInteger -> [GaussianInteger] -> (GaussianInteger, [(GaussianInteger, Int)])
+trialDivide = helper []
+    where
+    helper fs g [] = (g, fs)
+    helper fs g (pf : pft)
+        | g `modG` pf == 0 =
+            let (cnt, g') = countEvenDivisions g pf
+            in helper ((pf, cnt) : fs) g' pft
+        | otherwise        = helper fs g pft
 
 -- Divide a Gaussian integer by a possible factor, and return how many times
 -- the factor divided it evenly, as well as the result of dividing the original

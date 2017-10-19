@@ -2,7 +2,7 @@
 
 -- |
 -- Module:      Math.NumberTheory.GaussianIntegersTests
--- Copyright:   (c) 2016 Chris Fredrickson
+-- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
 -- Licence:     MIT
 -- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
 -- Stability:   Provisional
@@ -14,21 +14,34 @@ module Math.NumberTheory.GaussianIntegersTests
   ( testSuite
   ) where
 
+import Control.Monad (zipWithM_)
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import Math.NumberTheory.GaussianIntegers
 import Math.NumberTheory.TestUtils
 
+lazyCases :: [(GaussianInteger, [(GaussianInteger, Int)])]
+lazyCases =
+  [ ( 14145130733
+    * 10000000000000000000000000000000000000121
+    * 100000000000000000000000000000000000000000000000447
+    , [(21037 :+ 117058, 1), (117058 :+ 21037, 1)]
+    )
+  ]
+
 -- | Number is zero or is equal to the product of its factors.
-factoriseProperty :: Integer -> Integer -> Bool
-factoriseProperty x y
+factoriseProperty1 :: Integer -> Integer -> Bool
+factoriseProperty1 x y
   =  x == 0 && y == 0
   || g == g'
   where
     g = x :+ y
     factors = factorise g
     g' = product $ map (uncurry (.^)) factors
+
+factoriseProperty2 :: (GaussianInteger, [(GaussianInteger, Int)]) -> Assertion
+factoriseProperty2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.
@@ -69,11 +82,13 @@ gcdGSpecialCase1 :: Assertion
 gcdGSpecialCase1 = assertEqual "gcdG" 1 $ gcdG (12 :+ 23) (23 :+ 34)
 
 testSuite :: TestTree
-testSuite = testGroup "GaussianIntegers"
-  [ testSmallAndQuick "factorise"         factoriseProperty
+testSuite = testGroup "GaussianIntegers" $
+  [ testSmallAndQuick "factorise"         factoriseProperty1
   , testSmallAndQuick "isPrime"           isPrimeProperty
   , testSmallAndQuick "primes"            primesGeneratesPrimesProperty
   , testSmallAndQuick "signumAbsProperty" signumAbsProperty
   , testSmallAndQuick "absProperty"       absProperty
   , testCase          "gcdG (12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
   ]
+  ++
+  map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseProperty2 x)) lazyCases
