@@ -29,8 +29,6 @@ totientBlockConfig = SieveBlockConfig
   { sbcEmpty                = 1
   , sbcAppend               = (*)
   , sbcFunctionOnPrimePower = totientHelper
-  , sbcBlockLowBound        = 1
-  , sbcBlockLength          = blockLen
   }
 
 sumOldTotientSieve :: Word -> Word
@@ -53,8 +51,6 @@ carmichaelBlockConfig = SieveBlockConfig
   -- There is a specialized 'gcd' for Word, but not 'lcm'.
   , sbcAppend               = (\x y -> (x `quot` (gcd x y)) * y)
   , sbcFunctionOnPrimePower = carmichaelHelper
-  , sbcBlockLowBound        = 1
-  , sbcBlockLength          = blockLen
   }
 
 sumOldCarmichaelSieve :: Word -> Word
@@ -66,12 +62,12 @@ sumOldCarmichaelSieve len' = sum $ map (fromInteger . sieveCarmichael sieve) [1 
 benchSuite = bgroup "SieveBlock"
   [ bgroup "totient"
     [ bench "old"     $ nf sumOldTotientSieve blockLen
-    , bench "boxed"   $ nf (V.sum . sieveBlock) totientBlockConfig
-    , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed) totientBlockConfig
+    , bench "boxed"   $ nf (V.sum . sieveBlock        totientBlockConfig 1) blockLen
+    , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed totientBlockConfig 1) blockLen
     ]
   , bgroup "carmichael"
     [ bench "old"     $ nf sumOldCarmichaelSieve blockLen
-    , bench "boxed"   $ nf (V.sum . sieveBlock)        carmichaelBlockConfig
-    , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed) carmichaelBlockConfig
+    , bench "boxed"   $ nf (V.sum . sieveBlock        carmichaelBlockConfig 1) blockLen
+    , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed carmichaelBlockConfig 1) blockLen
     ]
   ]

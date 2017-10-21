@@ -35,16 +35,14 @@ pointwiseTest f lowIndex len = assertEqual "pointwise"
 
 unboxedTest :: (Eq a, U.Unbox a, Show a) => SieveBlockConfig a -> IO ()
 unboxedTest config = assertEqual "unboxed"
-    (U.convert $ sieveBlock config)
-    (sieveBlockUnboxed config)
+    (U.convert $ sieveBlock config 1 1000)
+    (sieveBlockUnboxed config 1 1000)
 
 multiplicativeConfig :: (Word -> Word -> Word) -> SieveBlockConfig Word
 multiplicativeConfig f = SieveBlockConfig
   { sbcEmpty                = 1
   , sbcAppend               = (*)
   , sbcFunctionOnPrimePower = f
-  , sbcBlockLowBound        = 1
-  , sbcBlockLength          = 1000
   }
 
 testSuite :: TestTree

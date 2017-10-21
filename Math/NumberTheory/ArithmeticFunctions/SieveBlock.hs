@@ -19,6 +19,8 @@
 module Math.NumberTheory.ArithmeticFunctions.SieveBlock
   ( runFunctionOverBlock
   , SieveBlockConfig(..)
+  , multiplicativeSieveBlockConfig
+  , additiveSieveBlockConfig
   , sieveBlock
   , sieveBlockUnboxed
   ) where
@@ -35,6 +37,7 @@ import Data.Monoid
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
+import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Powers.Squares
@@ -60,12 +63,10 @@ runFunctionOverBlock
   -> Word
   -> Word
   -> V.Vector a
-runFunctionOverBlock (ArithmeticFunction f g) lowIndex len = V.map g $ sieveBlock $ SieveBlockConfig
+runFunctionOverBlock (ArithmeticFunction f g) = (V.map g .) . sieveBlock SieveBlockConfig
   { sbcEmpty                = mempty
   , sbcAppend               = mappend
   , sbcFunctionOnPrimePower = coerce f
-  , sbcBlockLowBound        = lowIndex
-  , sbcBlockLength          = len
   }
 
 -- | Evaluate a function over a block in accordance to provided configuration.
@@ -74,7 +75,7 @@ runFunctionOverBlock (ArithmeticFunction f g) lowIndex len = V.map g $ sieveBloc
 -- Based on Algorithm M of <https://arxiv.org/pdf/1305.1639.pdf Parity of the number of primes in a given interval and algorithms of the sublinear summation> by A. V. Lelechenko. See Lemma 2 on p. 5 on its algorithmic complexity. For the majority of use-cases its time complexity is O(x^(1+ε)).
 --
 -- 'sieveBlock' is similar to 'sieveBlockUnboxed' up to flavour of 'Data.Vector',
--- it is typically 7x-10x slower and consumes 3x memory.
+-- but is typically 7x-10x slower and consumes 3x memory.
 -- Use unboxed version whenever possible.
 --
 -- For example, following code lists smallest prime factors:
@@ -83,8 +84,10 @@ runFunctionOverBlock (ArithmeticFunction f g) lowIndex len = V.map g $ sieveBloc
 -- > [2,3,2,5,2,7,2,3,2,11]
 sieveBlock
   :: SieveBlockConfig a
+  -> Word
+  -> Word
   -> V.Vector a
-sieveBlock (SieveBlockConfig empty append f lowIndex' len') = runST $ do
+sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
     let lowIndex :: Int
         lowIndex = wordToInt lowIndex'
@@ -101,16 +104,13 @@ sieveBlock (SieveBlockConfig empty append f lowIndex' len') = runST $ do
         ps :: [Int]
         ps = takeWhile (<= integerSquareRoot highIndex) $ map fromInteger primes
 
-        logToIx :: Double
-        logToIx = log (fromIntegral highIndex)
-
     forM_ ps $ \p -> do
 
       let p# :: Word#
           !p'@(W# p#) = intToWord p
 
           fs = V.generate
-            (floor (logToIx / log (fromIntegral p) + 0.001))
+            (integerLogBase' (toInteger p) (toInteger highIndex))
             (\k -> f p' (intToWord k + 1))
 
           offset :: Int
