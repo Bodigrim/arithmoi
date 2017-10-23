@@ -46,6 +46,8 @@ import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
+{-# DEPRECATED FactorSieve, TotientSieve, CarmichaelSieve, factorSieve, sieveFactor, fsBound, fsPrimeTest, totientSieve, sieveTotient, carmichaelSieve, sieveCarmichael "Use new interface for sieves, provided by \"Math.NumberTheory.ArithmeticFunctions.SieveBlock\"" #-}
+
 {-
 IMPORTANT NOTICE: Not all sieves use the same layout!
 

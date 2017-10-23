@@ -26,28 +26,11 @@ import Data.Word
 #endif
 
 import Math.NumberTheory.Primes.Factorisation as F (factorise')
+import Math.NumberTheory.Primes.Types (Prime, Prm(..), PrimeNat(..))
 import Math.NumberTheory.GaussianIntegers as G
+import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
-
-newtype SmallPrime = SmallPrime { _unSmallPrime :: Word }
-  deriving (Eq, Ord, Show)
-
-newtype BigPrime = BigPrime { _unBigPrime :: Natural }
-  deriving (Eq, Ord, Show)
-
--- | Type of primes of a given unique factorisation domain.
--- When the domain has exactly one unit, @Prime t = t@,
--- but when units are multiple more restricted types
--- (or at least newtypes) should be specified.
---
--- @abs (unPrime n) == unPrime n@ must hold for all @n@ of type @Prime t@
-type family Prime (f :: *) :: *
-
-type instance Prime Int     = SmallPrime
-type instance Prime Word    = SmallPrime
-type instance Prime Integer = BigPrime
-type instance Prime Natural = BigPrime
 
 type instance Prime G.GaussianInteger = GaussianPrime
 
@@ -97,27 +80,3 @@ instance UniqueFactorisation G.GaussianInteger where
 
   factorise 0 = []
   factorise g = map (coerce *** intToWord) $ filter (\(h, _) -> abs h /= 1) $ G.factorise g
-
------------
--- Utils
-
-wordToInt :: Word -> Int
-wordToInt = fromIntegral
-
-wordToInteger :: Word -> Integer
-wordToInteger = fromIntegral
-
-intToWord :: Int -> Word
-intToWord = fromIntegral
-
-intToInteger :: Int -> Integer
-intToInteger = fromIntegral
-
-naturalToInteger :: Natural -> Integer
-naturalToInteger = fromIntegral
-
-integerToNatural :: Integer -> Natural
-integerToNatural = fromIntegral
-
-integerToWord :: Integer -> Word
-integerToWord = fromIntegral

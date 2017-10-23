@@ -10,6 +10,7 @@
 
 {-# LANGUAGE CPP       #-}
 
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.ArithmeticFunctionsTests
