@@ -122,7 +122,7 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         MV.unsafeWrite as ix (W# a'#)
         MV.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (I# pow#)) ix
 
-    forM_ [0 .. MV.length as] $ \k -> do
+    forM_ [0 .. MV.length as - 1] $ \k -> do
       a <- MV.unsafeRead as k
       MV.unsafeModify bs (\b -> if a /= 1 then b `append` f a 1 else b) k
 
