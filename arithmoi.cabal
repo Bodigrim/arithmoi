@@ -78,6 +78,7 @@ library
                           Math.NumberTheory.Primes.Testing
                           Math.NumberTheory.Primes.Testing.Certificates
                           Math.NumberTheory.Primes.Heap
+                          Math.NumberTheory.QuadraticIntegers                      
                           Math.NumberTheory.UniqueFactorisation
                           Math.NumberTheory.Zeta
                           GHC.TypeNats.Compat
