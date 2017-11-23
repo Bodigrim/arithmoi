@@ -71,6 +71,7 @@ library
                           Math.NumberTheory.Powers.Cubes
                           Math.NumberTheory.Powers.Fourth
                           Math.NumberTheory.Powers.General
+                          Math.NumberTheory.Powers.Modular
                           Math.NumberTheory.Primes
                           Math.NumberTheory.Primes.Sieve
                           Math.NumberTheory.Primes.Factorisation
@@ -171,6 +172,7 @@ test-suite spec
                   , Math.NumberTheory.MoebiusInversion.IntTests
                   , Math.NumberTheory.Powers.FourthTests
                   , Math.NumberTheory.Powers.GeneralTests
+                  , Math.NumberTheory.Powers.ModularTests
                   , Math.NumberTheory.Powers.SquaresTests
                   , Math.NumberTheory.PrimesTests
                   , Math.NumberTheory.Primes.CountingTests

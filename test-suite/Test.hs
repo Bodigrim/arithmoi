@@ -17,6 +17,7 @@ import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversion
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
+import qualified Math.NumberTheory.Powers.ModularTests as Modular
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
 import qualified Math.NumberTheory.PrimesTests as Primes
@@ -42,6 +43,7 @@ tests = testGroup "All"
     [ Cubes.testSuite
     , Fourth.testSuite
     , General.testSuite
+    , Modular.testSuite
     , Squares.testSuite
     ]
   , testGroup "GCD"

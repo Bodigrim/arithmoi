@@ -40,12 +40,18 @@ module Math.NumberTheory.Moduli.Class
 import Data.Proxy
 import Data.Ratio
 import Data.Type.Equality
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
-import Numeric.Natural
+
+#if __GLASGOW_HASKELL__ < 709
+import Data.Word
+import Numeric.Natural (Natural)
+
+powModNatural :: Natural -> Natural -> Natural -> Natural
+powModNatural b e m = fromInteger $ powModInteger (toInteger b) (toInteger e) (toInteger m)
+#else
+import GHC.Natural (Natural, powModNatural)
+#endif
 
 -- | Wrapper for residues modulo @m@.
 --
@@ -148,7 +154,7 @@ invertMod mx
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx a
   | a < 0     = error $ "^{Mod}: negative exponent"
-  | otherwise = Mod $ fromInteger $ powModInteger (getVal mx) (toInteger a) (getMod mx)
+  | otherwise = Mod $ powModNatural (getNatVal mx) (fromIntegral a) (getNatMod mx)
 {-# INLINABLE [1] powMod #-}
 
 {-# SPECIALISE [1] powMod ::
