@@ -49,11 +49,12 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getN
 
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate)
 
-import Control.Applicative
-import Data.Bits
 #if !(MIN_VERSION_base(4,8,0))
+import Control.Applicative
 import Data.Word
 #endif
+
+import Data.Bits
 import GHC.Exts
 import Numeric.Natural
 
@@ -62,25 +63,27 @@ import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.TestUtils.MyCompose
 import Math.NumberTheory.TestUtils.Wrappers
 
+instance Arbitrary Natural where
+  arbitrary = fromInteger <$> (arbitrary `suchThat` (>= 0))
+  shrink = map fromInteger . filter (>= 0) . shrink . toInteger
+
+instance Arbitrary GaussianInteger where
+  arbitrary = (:+) <$> arbitrary <*> arbitrary
+  shrink (x :+ y) = (:+) <$> shrink x <*> shrink y
+
+#if !(MIN_VERSION_smallcheck(1,1,3))
 instance Monad m => Serial m Word where
   series =
     generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
     where
       nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
 
-instance Arbitrary Natural where
-  arbitrary = fromInteger <$> (arbitrary `suchThat` (>= 0))
-  shrink = map fromInteger . filter (>= 0) . shrink . toInteger
-
 instance Monad m => Serial m Natural where
   series =
     generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
     where
       nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
-
-instance Arbitrary GaussianInteger where
-  arbitrary = (:+) <$> arbitrary <*> arbitrary
-  shrink (x :+ y) = (:+) <$> shrink x <*> shrink y
+#endif
 
 instance Monad m => Serial m GaussianInteger where
   series = cons2 (:+)
