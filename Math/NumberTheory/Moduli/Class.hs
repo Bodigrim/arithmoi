@@ -9,14 +9,15 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module Math.NumberTheory.Moduli.Class
   ( -- * Known modulo
@@ -66,10 +67,14 @@ import GHC.Natural (Natural, powModNatural)
 --
 -- Note that modulo cannot be negative.
 newtype Mod (m :: Nat) = Mod Natural
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Enum)
 
 instance KnownNat m => Show (Mod m) where
   show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (getMod m) ++ ")"
+
+instance KnownNat m => Bounded (Mod m) where
+  minBound = Mod 0
+  maxBound = let mx = Mod (getNatMod mx - 1) in mx
 
 instance KnownNat m => Num (Mod m) where
   mx@(Mod x) + Mod y =
