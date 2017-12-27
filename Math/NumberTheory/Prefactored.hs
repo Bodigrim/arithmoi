@@ -125,3 +125,6 @@ instance UniqueFactorisation a => UniqueFactorisation (Prefactored a) where
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) f
+  isPrime (Prefactored _ f) = case f of
+    [(n, 1)] -> isPrime n
+    _        -> Nothing

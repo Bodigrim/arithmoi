@@ -26,8 +26,9 @@ import Data.Word
 #endif
 
 import Math.NumberTheory.Primes.Factorisation as F (factorise')
+import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types (Prime, Prm(..), PrimeNat(..))
-import Math.NumberTheory.GaussianIntegers as G
+import qualified Math.NumberTheory.GaussianIntegers as G
 import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
@@ -43,6 +44,13 @@ class UniqueFactorisation a where
   unPrime   :: Prime a -> a
   factorise :: a -> [(Prime a, Word)]
 
+  isPrime   :: a -> Maybe (Prime a)
+  isPrime n = case factorise n of
+    [(p, 1)] -> Just p
+    _        -> Nothing
+
+  {-# MINIMAL unPrime, factorise #-}
+
 instance UniqueFactorisation Int where
   unPrime   = coerce wordToInt
   factorise m' = if m <= 1
@@ -50,13 +58,14 @@ instance UniqueFactorisation Int where
                 else map (coerce integerToWord *** intToWord) . F.factorise' . intToInteger $ m
                   where
                     m = abs m'
+  isPrime n = if T.isPrime (toInteger n) then Just (coerce $ intToWord $ abs n) else Nothing
 
 instance UniqueFactorisation Word where
   unPrime     = coerce
   factorise m = if m <= 1
                   then []
                   else map (coerce integerToWord *** intToWord) . F.factorise' . wordToInteger $ m
-
+  isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
 
 instance UniqueFactorisation Integer where
   unPrime      = coerce naturalToInteger
@@ -65,12 +74,14 @@ instance UniqueFactorisation Integer where
                 else map (coerce integerToNatural *** intToWord) . F.factorise' $ m
                   where
                     m = abs m'
+  isPrime n = if T.isPrime n then Just (coerce $ integerToNatural $ abs n) else Nothing
 
 instance UniqueFactorisation Natural where
   unPrime   = coerce
   factorise m = if m <= 1
                   then []
                   else map (coerce integerToNatural *** intToWord) . F.factorise' . naturalToInteger $ m
+  isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
 
 newtype GaussianPrime = GaussianPrime { _unGaussianPrime :: G.GaussianInteger }
   deriving (Eq, Show)
