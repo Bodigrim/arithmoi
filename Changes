@@ -96,7 +96,7 @@
     Add new cabal flag check-bounds, which replaces all unsafe array functions with safe ones.
 
     Add basic functions on Gaussian integers.
-    Add Moebius mu-function.
+    Add Möbius mu-function.
 
     Forbid non-positive moduli in Math.NumberTheory.Moduli.
 
@@ -123,7 +123,7 @@
 0.4.0.1:
     Fixed Haddock bug
 0.4.0.0:
-    Added generalised Moebius inversion, to be continued
+    Added generalised Möbius inversion, to be continued
 0.3.0.0:
     Added modular square roots and Chinese remainder theorem
 0.2.0.6:
