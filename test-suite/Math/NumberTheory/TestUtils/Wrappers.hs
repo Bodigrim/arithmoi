@@ -19,6 +19,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans       #-}
@@ -180,6 +181,23 @@ instance (Arbitrary a, UniqueFactorisation a) => Arbitrary (PrimeWrapper a) wher
 
 instance (Monad m, Serial m a, UniqueFactorisation a) => Serial m (PrimeWrapper a) where
   series = PrimeWrapper <$> (series :: Series m a) `suchThatMapSerial` isPrime
+
+-------------------------------------------------------------------------------
+-- UniqueFactorisation
+
+type instance Prime (Large a) = Prime a
+
+instance UniqueFactorisation a => UniqueFactorisation (Large a) where
+  unPrime p = Large (unPrime p)
+  factorise (Large x) = factorise x
+  isPrime (Large x) = isPrime x
+
+type instance Prime (Huge a) = Prime a
+
+instance UniqueFactorisation a => UniqueFactorisation (Huge a) where
+  unPrime p = Huge (unPrime p)
+  factorise (Huge x) = factorise x
+  isPrime (Huge x) = isPrime x
 
 -------------------------------------------------------------------------------
 -- Utils
