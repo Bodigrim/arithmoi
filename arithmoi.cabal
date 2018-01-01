@@ -50,6 +50,7 @@ library
 
     exposed-modules     : Math.NumberTheory.ArithmeticFunctions
                           Math.NumberTheory.ArithmeticFunctions.Class
+                          Math.NumberTheory.ArithmeticFunctions.Moebius
                           Math.NumberTheory.ArithmeticFunctions.SieveBlock
                           Math.NumberTheory.ArithmeticFunctions.Standard
                           Math.NumberTheory.Curves.Montgomery

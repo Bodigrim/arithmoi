@@ -26,7 +26,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , sigma, sigmaA
   , totient, totientA
   , jordan, jordanA
-  , moebius, moebiusA
+  , moebius, moebiusA, Moebius(..), runMoebius
   , liouville, liouvilleA
     -- * Additive functions
   , additive
@@ -45,6 +45,7 @@ import qualified Data.Set as S
 import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
+import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -154,12 +155,12 @@ jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
 
-moebius :: (UniqueFactorisation n, Num a) => n -> a
+moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
 
--- | Calculates the Moebius function of an argument.
-moebiusA :: Num a => ArithmeticFunction n a
-moebiusA = ArithmeticFunction (const f) runMoebius
+-- | Calculates the Möbius function of an argument.
+moebiusA :: ArithmeticFunction n Moebius
+moebiusA = ArithmeticFunction (const f) id
   where
     f 1 = MoebiusN
     f 0 = MoebiusP
@@ -218,28 +219,6 @@ expMangoldt = runFunction expMangoldtA
 -- | The exponent of von Mangoldt function. Use @log expMangoldtA@ to recover von Mangoldt function itself.
 expMangoldtA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
 expMangoldtA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
-
-data Moebius
-  = MoebiusZ
-  | MoebiusP
-  | MoebiusN
-
-runMoebius :: Num a => Moebius -> a
-runMoebius m = case m of
-  MoebiusZ ->  0
-  MoebiusP ->  1
-  MoebiusN -> -1
-
-instance Semigroup Moebius where
-  MoebiusZ <> _ = MoebiusZ
-  _ <> MoebiusZ = MoebiusZ
-  MoebiusP <> a = a
-  a <> MoebiusP = a
-  _ <> _ = MoebiusP
-
-instance Monoid Moebius where
-  mempty = MoebiusP
-  mappend = (<>)
 
 data Mangoldt a
   = MangoldtZero

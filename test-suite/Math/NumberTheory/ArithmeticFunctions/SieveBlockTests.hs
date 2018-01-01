@@ -8,7 +8,8 @@
 -- Tests for Math.NumberTheory.ArithmeticFunctions.SieveBlock
 --
 
-{-# LANGUAGE CPP       #-}
+{-# LANGUAGE CPP        #-}
+{-# LANGUAGE LambdaCase #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -19,6 +20,7 @@ module Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Semigroup
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 #if __GLASGOW_HASKELL__ < 709
@@ -35,14 +37,24 @@ pointwiseTest f lowIndex len = assertEqual "pointwise"
 
 unboxedTest :: (Eq a, U.Unbox a, Show a) => SieveBlockConfig a -> IO ()
 unboxedTest config = assertEqual "unboxed"
-    (U.convert $ sieveBlock config 1 1000)
-    (sieveBlockUnboxed config 1 1000)
+    (sieveBlock config 1 1000)
+    (U.convert $ sieveBlockUnboxed config 1 1000)
 
 multiplicativeConfig :: (Word -> Word -> Word) -> SieveBlockConfig Word
 multiplicativeConfig f = SieveBlockConfig
   { sbcEmpty                = 1
   , sbcAppend               = (*)
   , sbcFunctionOnPrimePower = f
+  }
+
+moebiusConfig :: SieveBlockConfig Moebius
+moebiusConfig = SieveBlockConfig
+  { sbcEmpty = MoebiusP
+  , sbcAppend = (<>)
+  , sbcFunctionOnPrimePower = const $ \case
+      0 -> MoebiusP
+      1 -> MoebiusN
+      _ -> MoebiusZ
   }
 
 testSuite :: TestTree
@@ -59,6 +71,7 @@ testSuite = testGroup "SieveBlock"
   , testGroup "unboxed"
     [ testCase "id"      $ unboxedTest $ multiplicativeConfig (^)
     , testCase "tau"     $ unboxedTest $ multiplicativeConfig (const id)
+    , testCase "moebius" $ unboxedTest moebiusConfig
     , testCase "totient" $ unboxedTest $ multiplicativeConfig (\p a -> (p - 1) * p ^ (a - 1))
     ]
   ]
