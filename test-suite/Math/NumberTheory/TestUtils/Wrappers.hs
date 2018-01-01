@@ -13,11 +13,13 @@
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -35,7 +37,7 @@ import Data.Traversable (Traversable)
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
-import Math.NumberTheory.Primes (isPrime, nthPrime)
+import Math.NumberTheory.UniqueFactorisation
 
 -------------------------------------------------------------------------------
 -- AnySign
@@ -167,19 +169,23 @@ instance Show1 Odd where
 -------------------------------------------------------------------------------
 -- Prime
 
-newtype Prime = Prime { getPrime :: Integer }
-  deriving (Eq, Ord, Show)
+newtype PrimeWrapper a = PrimeWrapper { getPrime :: Prime a }
 
-instance Arbitrary Prime where
-  arbitrary = do
-    n <- arbitrary
-    return $ Prime $ head $ filter isPrime [abs n ..]
+deriving instance Eq   (Prime a) => Eq   (PrimeWrapper a)
+deriving instance Ord  (Prime a) => Ord  (PrimeWrapper a)
+deriving instance Show (Prime a) => Show (PrimeWrapper a)
 
-instance Monad m => Serial m Prime where
-  series = Prime . nthPrime <$> series `suchThatSerial` (> 0)
+instance (Arbitrary a, UniqueFactorisation a) => Arbitrary (PrimeWrapper a) where
+  arbitrary = PrimeWrapper <$> (arbitrary :: Gen a) `suchThatMap` isPrime
+
+instance (Monad m, Serial m a, UniqueFactorisation a) => Serial m (PrimeWrapper a) where
+  series = PrimeWrapper <$> (series :: Series m a) `suchThatMapSerial` isPrime
 
 -------------------------------------------------------------------------------
 -- Utils
 
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty
+
+suchThatMapSerial :: Series m a -> (a -> Maybe b) -> Series m b
+suchThatMapSerial s p = s >>= maybe empty pure . p
