@@ -129,3 +129,4 @@ sieveBlockUnboxed (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 {-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Int  -> Word -> Word -> V.Vector Int  #-}
 {-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Word -> Word -> Word -> V.Vector Word #-}
 {-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Bool -> Word -> Word -> V.Vector Bool #-}
+{-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Moebius -> Word -> Word -> V.Vector Moebius #-}

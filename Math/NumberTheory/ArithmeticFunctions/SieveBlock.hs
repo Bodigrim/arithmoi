@@ -23,6 +23,7 @@ module Math.NumberTheory.ArithmeticFunctions.SieveBlock
   , additiveSieveBlockConfig
   , sieveBlock
   , sieveBlockUnboxed
+  , sieveBlockMoebius
   ) where
 
 import Control.Monad (forM_)
@@ -36,6 +37,7 @@ import Data.Monoid
 #endif
 
 import Math.NumberTheory.ArithmeticFunctions.Class
+import Math.NumberTheory.ArithmeticFunctions.Moebius (sieveBlockMoebius)
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
 import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Primes (primes)

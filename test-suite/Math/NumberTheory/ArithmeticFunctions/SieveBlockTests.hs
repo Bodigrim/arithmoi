@@ -29,6 +29,7 @@ import Data.Word
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
+import Math.NumberTheory.ArithmeticFunctions.Moebius (sieveBlockMoebius)
 
 pointwiseTest :: (Eq a, Show a) => ArithmeticFunction Word a -> Word -> Word -> IO ()
 pointwiseTest f lowIndex len = assertEqual "pointwise"
@@ -39,6 +40,11 @@ unboxedTest :: (Eq a, U.Unbox a, Show a) => SieveBlockConfig a -> IO ()
 unboxedTest config = assertEqual "unboxed"
     (sieveBlock config 1 1000)
     (U.convert $ sieveBlockUnboxed config 1 1000)
+
+moebiusTest :: IO ()
+moebiusTest = assertEqual "special"
+    (sieveBlock moebiusConfig 1 1000)
+    (U.convert $ sieveBlockMoebius 1 1000)
 
 multiplicativeConfig :: (Word -> Word -> Word) -> SieveBlockConfig Word
 multiplicativeConfig f = SieveBlockConfig
@@ -74,4 +80,5 @@ testSuite = testGroup "SieveBlock"
     , testCase "moebius" $ unboxedTest moebiusConfig
     , testCase "totient" $ unboxedTest $ multiplicativeConfig (\p a -> (p - 1) * p ^ (a - 1))
     ]
+  , testCase "special moebius" moebiusTest
   ]
