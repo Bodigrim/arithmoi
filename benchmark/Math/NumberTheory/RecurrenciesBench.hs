@@ -5,8 +5,6 @@ module Math.NumberTheory.RecurrenciesBench
   ) where
 
 import Criterion.Main
-import Numeric.Natural
-import System.Random
 
 import Math.NumberTheory.Recurrencies.Bilinear
 
@@ -21,6 +19,7 @@ benchTriangle name triangle n = bgroup name
     benchAt i j = bench ("!! " ++ show i ++ " !! " ++ show j)
                 $ nf (\(x, y) -> triangle !! x !! y :: Integer) (i, j)
 
+benchSuite :: Benchmark
 benchSuite = bgroup "Bilinear"
   [ benchTriangle "binomial"  binomial 1000
   , benchTriangle "stirling1" stirling1 100

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 
-{-# OPTIONS_GHC -fno-warn-deprecations #-}
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.SieveBlockBench
   ( benchSuite
@@ -59,6 +60,7 @@ sumOldCarmichaelSieve len' = sum $ map (fromInteger . sieveCarmichael sieve) [1 
     len = toInteger len'
     sieve = carmichaelSieve len
 
+benchSuite :: Benchmark
 benchSuite = bgroup "SieveBlock"
   [ bgroup "totient"
     [ bench "old"     $ nf sumOldTotientSieve blockLen

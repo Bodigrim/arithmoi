@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.PowersBench
   ( benchSuite
   ) where
@@ -25,4 +27,5 @@ compareRoots bits = bgroup ("sqrt" ++ show bits)
   where
     n = genInteger 0 bits
 
+benchSuite :: Benchmark
 benchSuite = bgroup "Powers" $ map compareRoots [2300, 2400 .. 2600]
