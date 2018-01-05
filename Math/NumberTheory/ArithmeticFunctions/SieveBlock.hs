@@ -25,8 +25,8 @@ module Math.NumberTheory.ArithmeticFunctions.SieveBlock
   , sieveBlockUnboxed
   ) where
 
-import Control.Monad
-import Control.Monad.ST
+import Control.Monad (forM_)
+import Control.Monad.ST (runST)
 import Data.Coerce
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
@@ -38,11 +38,11 @@ import Data.Monoid
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Primes
+import Math.NumberTheory.Primes (primes)
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils (splitOff#)
-import Math.NumberTheory.Utils.FromIntegral
+import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 
 -- | 'runFunctionOverBlock' @f@ @x@ @l@ evaluates an arithmetic function
 -- for integers between @x@ and @x+l-1@ and returns a vector of length @l@.
@@ -87,6 +87,7 @@ sieveBlock
   -> Word
   -> Word
   -> V.Vector a
+sieveBlock _ _ 0 = V.empty
 sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
     let lowIndex :: Int
@@ -122,7 +123,7 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         MV.unsafeWrite as ix (W# a'#)
         MV.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (I# pow#)) ix
 
-    forM_ [0 .. MV.length as - 1] $ \k -> do
+    forM_ [0 .. len - 1] $ \k -> do
       a <- MV.unsafeRead as k
       MV.unsafeModify bs (\b -> if a /= 1 then b `append` f a 1 else b) k
 
