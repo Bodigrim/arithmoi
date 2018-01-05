@@ -50,6 +50,7 @@ library
 
     exposed-modules     : Math.NumberTheory.ArithmeticFunctions
                           Math.NumberTheory.ArithmeticFunctions.Class
+                          Math.NumberTheory.ArithmeticFunctions.Mertens
                           Math.NumberTheory.ArithmeticFunctions.Moebius
                           Math.NumberTheory.ArithmeticFunctions.SieveBlock
                           Math.NumberTheory.ArithmeticFunctions.Standard
@@ -126,6 +127,7 @@ benchmark criterion
   if impl(ghc < 8.0)
     build-depends     : semigroups >= 0.8
   other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
+                  , Math.NumberTheory.MertensBench
                   , Math.NumberTheory.PowersBench
                   , Math.NumberTheory.PrimesBench
                   , Math.NumberTheory.RecurrenciesBench
@@ -161,6 +163,7 @@ test-suite spec
     build-depends     : semigroups >= 0.8
 
   other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
+                  , Math.NumberTheory.ArithmeticFunctions.MertensTests
                   , Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
                   , Math.NumberTheory.CurvesTests
                   , Math.NumberTheory.GaussianIntegersTests
