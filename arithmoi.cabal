@@ -90,6 +90,7 @@ library
     other-modules       : Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
                           Math.NumberTheory.Utils
                           Math.NumberTheory.Utils.FromIntegral
+                          Math.NumberTheory.Utils.Hyperbola
                           Math.NumberTheory.Unsafe
                           Math.NumberTheory.Primes.Counting.Impl
                           Math.NumberTheory.Primes.Counting.Approximate
