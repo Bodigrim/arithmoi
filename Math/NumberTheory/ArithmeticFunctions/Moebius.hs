@@ -22,7 +22,9 @@ module Math.NumberTheory.ArithmeticFunctions.Moebius
 
 import Control.Monad (forM_, liftM)
 import Control.Monad.ST (runST)
+import Data.Bits
 import Data.Int
+import Data.Word
 import Data.Semigroup
 import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
@@ -31,10 +33,13 @@ import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Exts
 import GHC.Integer.GMP.Internals
+import Unsafe.Coerce
 
 import Math.NumberTheory.Primes (primes)
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt)
+
+import Math.NumberTheory.Logarithms
 
 -- | Represents three possible values of <https://en.wikipedia.org/wiki/Möbius_function Möbius function>.
 data Moebius
@@ -116,7 +121,7 @@ instance Monoid Moebius where
 -- | Evaluate the Möbius function over a block.
 -- Value of @f@ at 0, if zero falls into block, is undefined.
 --
--- Based on the sieving algorithm from p. 2 of <https://arxiv.org/pdf/1610.08551.pdf Computations of the Mertens function and improved bounds on the Mertens conjecture> by G. Hurst. It is approximately 5x faster than 'Math.NumberTheory.ArithmeticFunctions.SieveBlock.sieveBlockUnboxed'.
+-- Based on the sieving algorithm from p. 3 of <https://arxiv.org/pdf/1610.08551.pdf Computations of the Mertens function and improved bounds on the Mertens conjecture> by G. Hurst. It is approximately 5x faster than 'Math.NumberTheory.ArithmeticFunctions.SieveBlock.sieveBlockUnboxed'.
 --
 -- > > sieveBlockMoebius 1 10
 -- > [MoebiusP, MoebiusN, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusN, MoebiusZ, MoebiusZ, MoebiusP]
@@ -124,17 +129,21 @@ sieveBlockMoebius
   :: Word
   -> Word
   -> U.Vector Moebius
--- It is tempting to implement the sieving algorithm from p. 3 of the same paper,
--- but it is correct only for n < 10^16.
-sieveBlockMoebius lowIndex' len' = U.imap mapper $ runST $ do
-    as <- MU.replicate len 1
+sieveBlockMoebius _ 0 = U.empty
+sieveBlockMoebius lowIndex' len'
+  = (unsafeCoerce :: U.Vector Word8 -> U.Vector Moebius) $ runST $ do
+    as <- MU.replicate len (0x80 :: Word8)
     forM_ ps $ \p -> do
-      let offset = negate lowIndex `mod` p
+      let offset  = negate lowIndex `mod` p
           offset2 = negate lowIndex `mod` (p * p)
+          l :: Word8
+          l = fromIntegral $ intLog2 p .|. 1
       forM_ [offset, offset + p .. len - 1] $ \ix -> do
-        MU.unsafeModify as (\y -> negate y * p) ix
+        MU.unsafeModify as (\y -> y + l) ix
       forM_ [offset2, offset2 + p * p .. len - 1] $ \ix -> do
         MU.unsafeWrite as ix 0
+    forM_ [0 .. len - 1] $ \ix -> do
+      MU.unsafeModify as (mapper ix) ix
     U.unsafeFreeze as
 
   where
@@ -147,13 +156,18 @@ sieveBlockMoebius lowIndex' len' = U.imap mapper $ runST $ do
     highIndex :: Int
     highIndex = lowIndex + len - 1
 
+    -- Bit fiddling in 'mapper' is correct only
+    -- if all sufficiently small (<= 191) primes has been sieved out.
     ps :: [Int]
-    ps = takeWhile (<= integerSquareRoot highIndex) $ map fromInteger primes
+    ps = takeWhile (<= (191 `max` integerSquareRoot highIndex)) $ map fromInteger primes
 
-    mapper :: Int -> Int -> Moebius
-    mapper _ 0 = MoebiusZ
+    mapper :: Int -> Word8 -> Word8
     mapper ix val
-      | val > 0, val == ix + lowIndex = MoebiusP
-      | val > 0                       = MoebiusN
-      | negate val == ix + lowIndex   = MoebiusN
-      | otherwise                     = MoebiusP
+      | val .&. 0x80 == 0x00
+      = 1
+      | fromIntegral (val .&. 0x7F) < intLog2 (ix + lowIndex) - 5
+        - (if ix + lowIndex >= 0x100000   then 2 else 0)
+        - (if ix + lowIndex >= 0x10000000 then 1 else 0)
+      = (val .&. 1) `shiftL` 1
+      | otherwise
+      = ((val .&. 1) `xor` 1) `shiftL` 1

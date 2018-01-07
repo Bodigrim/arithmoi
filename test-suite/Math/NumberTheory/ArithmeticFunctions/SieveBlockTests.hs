@@ -41,10 +41,33 @@ unboxedTest config = assertEqual "unboxed"
     (sieveBlock config 1 1000)
     (U.convert $ sieveBlockUnboxed config 1 1000)
 
-moebiusTest :: IO ()
-moebiusTest = assertEqual "special"
-    (sieveBlock moebiusConfig 1 1000)
-    (U.convert $ sieveBlockMoebius 1 1000)
+moebiusTest :: Word -> Word -> Bool
+moebiusTest m n
+  = m == 0
+  || sieveBlockUnboxed moebiusConfig m n
+  == sieveBlockMoebius m n
+
+moebiusSpecialCases :: [TestTree]
+moebiusSpecialCases = map (uncurry pairToTest)
+  [ (1, 1)
+  , (208, 298)
+  , (1, 12835)
+  , (10956, 4430)
+  , (65, 16171)
+  , (120906, 19456)
+  , (33800000, 27002)
+  , (17266222643, 5051)
+  , (1000158, 48758)
+  , (1307265, 3725)
+  , (2600000, 14686)
+  , (4516141422507 - 100000, 100001)
+  , (1133551497049257 - 100000, 100001)
+  -- too long for regular runs
+  -- , (1157562178759482171 - 100000, 100001)
+  ]
+  where
+    pairToTest :: Word -> Word -> TestTree
+    pairToTest m n = testCase (show m ++ "," ++ show n) $ assertBool "should be equal" $ moebiusTest m n
 
 multiplicativeConfig :: (Word -> Word -> Word) -> SieveBlockConfig Word
 multiplicativeConfig f = SieveBlockConfig
@@ -80,5 +103,5 @@ testSuite = testGroup "SieveBlock"
     , testCase "moebius" $ unboxedTest moebiusConfig
     , testCase "totient" $ unboxedTest $ multiplicativeConfig (\p a -> (p - 1) * p ^ (a - 1))
     ]
-  , testCase "special moebius" moebiusTest
+  , testGroup "special moebius" moebiusSpecialCases
   ]
