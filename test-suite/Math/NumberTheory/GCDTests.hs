@@ -18,6 +18,7 @@ module Math.NumberTheory.GCDTests
   ) where
 
 import Test.Tasty
+import Test.Tasty.HUnit
 
 import Control.Arrow
 import Data.Bits
@@ -67,6 +68,24 @@ splitIntoCoprimesProperty3 fs' = and [ coprime x y | (x : xs) <- tails fs, y <- 
   where
     fs = map fst $ splitIntoCoprimes $ map (getPositive *** getPower) fs'
 
+-- | Check that evaluation never freezes.
+splitIntoCoprimesProperty4 :: [(Integer, Word)] -> Bool
+splitIntoCoprimesProperty4 fs' = fs == fs
+  where
+    fs = splitIntoCoprimes fs'
+
+-- | This is an undefined behaviour, but at least it should not
+-- throw exceptions or loop forever.
+splitIntoCoprimesSpecialCase1 :: Assertion
+splitIntoCoprimesSpecialCase1 =
+  assertBool "should not fail" $ splitIntoCoprimesProperty4 [(0, 0), (0, 0)]
+
+-- | This is an undefined behaviour, but at least it should not
+-- throw exceptions or loop forever.
+splitIntoCoprimesSpecialCase2 :: Assertion
+splitIntoCoprimesSpecialCase2 =
+  assertBool "should not fail" $ splitIntoCoprimesProperty4 [(0, 1), (-2, 0)]
+
 testSuite :: TestTree
 testSuite = testGroup "GCD"
   [ testSameIntegralProperty "binaryGCD"   binaryGCDProperty
@@ -76,5 +95,9 @@ testSuite = testGroup "GCD"
     [ testSmallAndQuick "preserves product of factors"        splitIntoCoprimesProperty1
     , testSmallAndQuick "number of factors is non-decreasing" splitIntoCoprimesProperty2
     , testSmallAndQuick "output factors are coprime"          splitIntoCoprimesProperty3
+
+    , testCase          "does not freeze 1"                   splitIntoCoprimesSpecialCase1
+    , testCase          "does not freeze 2"                   splitIntoCoprimesSpecialCase2
+    , testSmallAndQuick "does not freeze random"              splitIntoCoprimesProperty4
     ]
   ]

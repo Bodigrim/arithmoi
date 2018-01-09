@@ -264,14 +264,18 @@ cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
 -- > [(5,2),(28,1),(33,1)]
 -- > > splitIntoCoprimes [(360, 1), (210, 1)]
 -- > [(2,4),(3,3),(5,2),(7,1)]
-splitIntoCoprimes :: (Integral a, Num b) => [(a, b)] -> [(a, b)]
-splitIntoCoprimes = \case
-  [] -> []
-  ((1,  _) : rest) -> splitIntoCoprimes rest
-  ((x, xm) : rest) -> case popSuchThat (\(r, _) -> gcd x r /= 1) rest of
-    Nothing            -> (x, xm) : splitIntoCoprimes rest
-    Just ((y, ym), zs) -> let g = gcd x y in splitIntoCoprimes
-      ((g, xm + ym) : (x `quot` g, xm) : (y `quot` g, ym) : zs)
+splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> [(a, b)]
+splitIntoCoprimes xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
+  where
+    ys = filter (/= (0, 0)) xs
+
+    go = \case
+      [] -> []
+      ((1,  _) : rest) -> go rest
+      ((x, xm) : rest) -> case popSuchThat (\(r, _) -> gcd x r /= 1) rest of
+        Nothing            -> (x, xm) : go rest
+        Just ((y, ym), zs) -> let g = gcd x y in
+          go ((g, xm + ym) : (x `quot` g, xm) : (y `quot` g, ym) : zs)
 
 popSuchThat :: (a -> Bool) -> [a] -> Maybe (a, [a])
 popSuchThat predicate = go

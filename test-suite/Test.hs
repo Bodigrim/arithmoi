@@ -9,6 +9,7 @@ import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinea
 import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
 import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
 import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
+import qualified Math.NumberTheory.Moduli.PrimitiveRootTests as ModuliPrimitiveRoot
 import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
@@ -17,7 +18,10 @@ import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversion
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
 import qualified Math.NumberTheory.Powers.GeneralTests as General
+import qualified Math.NumberTheory.Powers.ModularTests as Modular
 import qualified Math.NumberTheory.Powers.SquaresTests as Squares
+
+import qualified Math.NumberTheory.PrefactoredTests as Prefactored
 
 import qualified Math.NumberTheory.PrimesTests as Primes
 import qualified Math.NumberTheory.Primes.CountingTests as Counting
@@ -42,6 +46,7 @@ tests = testGroup "All"
     [ Cubes.testSuite
     , Fourth.testSuite
     , General.testSuite
+    , Modular.testSuite
     , Squares.testSuite
     ]
   , testGroup "GCD"
@@ -56,11 +61,15 @@ tests = testGroup "All"
     [ ModuliChinese.testSuite
     , ModuliClass.testSuite
     , ModuliJacobi.testSuite
+    , ModuliPrimitiveRoot.testSuite
     , ModuliSqrt.testSuite
     ]
   , testGroup "MoebiusInversion"
     [ MoebiusInversion.testSuite
     , MoebiusInversionInt.testSuite
+    ]
+  , testGroup "Prefactored"
+    [ Prefactored.testSuite
     ]
   , testGroup "Primes"
     [ Primes.testSuite

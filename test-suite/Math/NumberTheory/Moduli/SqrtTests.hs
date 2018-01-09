@@ -21,35 +21,40 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.List (nub)
+import Data.Maybe (fromJust)
 
 import Math.NumberTheory.Moduli hiding (invertMod)
+import Math.NumberTheory.UniqueFactorisation (unPrime, isPrime)
 import Math.NumberTheory.TestUtils
 
-unwrapPP :: (Prime, Power Int) -> (Integer, Int)
-unwrapPP (Prime p, Power e) = (p, e)
+unwrapP :: PrimeWrapper Integer -> Integer
+unwrapP (PrimeWrapper p) = unPrime p
+
+unwrapPP :: (PrimeWrapper Integer, Power Int) -> (Integer, Int)
+unwrapPP (p, Power e) = (unwrapP p, e)
 
 -- | Check that 'sqrtMod' is defined iff a quadratic residue exists.
 --   Also check that the result is a solution of input modular equation.
-sqrtModPProperty :: AnySign Integer -> Prime -> Bool
-sqrtModPProperty (AnySign n) (Prime p) = case sqrtModP n p of
+sqrtModPProperty :: AnySign Integer -> PrimeWrapper Integer -> Bool
+sqrtModPProperty (AnySign n) (unwrapP -> p) = case sqrtModP n p of
   Nothing -> jacobi n p == MinusOne
   Just rt -> (p == 2 || jacobi n p /= MinusOne) && rt ^ 2 `mod` p == n `mod` p
 
-sqrtModPListProperty :: AnySign Integer -> Prime -> Bool
-sqrtModPListProperty (AnySign n) (Prime p) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtModPList n p)
+sqrtModPListProperty :: AnySign Integer -> PrimeWrapper Integer -> Bool
+sqrtModPListProperty (AnySign n) (unwrapP -> p) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtModPList n p)
 
-sqrtModP'Property :: Positive Integer -> Prime -> Bool
-sqrtModP'Property (Positive n) (Prime p) = (p /= 2 && jacobi n p /= One) || rt ^ 2 `mod` p == n `mod` p
+sqrtModP'Property :: Positive Integer -> PrimeWrapper Integer -> Bool
+sqrtModP'Property (Positive n) (unwrapP -> p) = (p /= 2 && jacobi n p /= One) || rt ^ 2 `mod` p == n `mod` p
   where
     rt = sqrtModP' n p
 
-tonelliShanksProperty1 :: Positive Integer -> Prime -> Bool
-tonelliShanksProperty1 (Positive n) (Prime p) = p `mod` 4 /= 1 || jacobi n p /= One || rt ^ 2 `mod` p == n `mod` p
+tonelliShanksProperty1 :: Positive Integer -> PrimeWrapper Integer -> Bool
+tonelliShanksProperty1 (Positive n) (unwrapP -> p) = p `mod` 4 /= 1 || jacobi n p /= One || rt ^ 2 `mod` p == n `mod` p
   where
     rt = tonelliShanks n p
 
-tonelliShanksProperty2 :: Prime -> Bool
-tonelliShanksProperty2 (Prime p) = p `mod` 4 /= 1 || rt ^ 2 `mod` p == n `mod` p
+tonelliShanksProperty2 :: PrimeWrapper Integer -> Bool
+tonelliShanksProperty2 (unwrapP -> p) = p `mod` 4 /= 1 || rt ^ 2 `mod` p == n `mod` p
   where
     n  = head $ filter (\s -> jacobi s p == One) [2..p-1]
     rt = tonelliShanks n p
@@ -61,13 +66,13 @@ tonelliShanksSpecialCases =
     ps = [17, 73, 241, 1009, 2689, 8089, 33049, 53881, 87481, 483289, 515761, 1083289, 3818929, 9257329, 22000801, 48473881, 175244281, 427733329, 898716289, 8114538721, 9176747449, 23616331489]
     rts = map (\p -> tonelliShanks 2 p) ps
 
-sqrtModPPProperty :: AnySign Integer -> (Prime, Power Int) -> Bool
-sqrtModPPProperty (AnySign n) (Prime p, Power e) = gcd n p > 1 || case sqrtModPP n (p, e) of
+sqrtModPPProperty :: AnySign Integer -> (PrimeWrapper Integer, Power Int) -> Bool
+sqrtModPPProperty (AnySign n) (unwrapP -> p, Power e) = gcd n p > 1 || case sqrtModPP n (p, e) of
   Nothing -> True
   Just rt -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)
 
 sqrtModPPBase2Property :: AnySign Integer -> Power Int -> Bool
-sqrtModPPBase2Property n e = sqrtModPPProperty n (Prime 2, e)
+sqrtModPPBase2Property n e = sqrtModPPProperty n (PrimeWrapper $ fromJust $ isPrime (2 :: Integer), e)
 
 sqrtModPPSpecialCase1 :: Assertion
 sqrtModPPSpecialCase1 =
@@ -77,16 +82,16 @@ sqrtModPPSpecialCase2 :: Assertion
 sqrtModPPSpecialCase2 =
   assertEqual "sqrtModPP 16 3 2 = 4" (Just 4) (sqrtModPP 16 (3, 2))
 
-sqrtModPPListProperty :: AnySign Integer -> (Prime, Power Int) -> Bool
-sqrtModPPListProperty (AnySign n) (Prime p, Power e) = gcd n p > 1
+sqrtModPPListProperty :: AnySign Integer -> (PrimeWrapper Integer, Power Int) -> Bool
+sqrtModPPListProperty (AnySign n) (unwrapP -> p, Power e) = gcd n p > 1
   || all (\rt -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) (sqrtModPPList n (p, e))
 
-sqrtModFProperty :: AnySign Integer -> [(Prime, Power Int)] -> Bool
+sqrtModFProperty :: AnySign Integer -> [(PrimeWrapper Integer, Power Int)] -> Bool
 sqrtModFProperty (AnySign n) (map unwrapPP -> pes) = case sqrtModF n pes of
   Nothing -> True
   Just rt -> all (\(p, e) -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) pes
 
-sqrtModFListProperty :: AnySign Integer -> [(Prime, Power Int)] -> Bool
+sqrtModFListProperty :: AnySign Integer -> [(PrimeWrapper Integer, Power Int)] -> Bool
 sqrtModFListProperty (AnySign n) (map unwrapPP -> pes)
   = nub ps /= ps || all
     (\rt -> all (\(p, e) -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) pes)

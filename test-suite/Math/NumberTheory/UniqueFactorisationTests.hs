@@ -26,7 +26,7 @@ import Data.Word
 
 import Math.NumberTheory.GaussianIntegers hiding (factorise)
 import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.TestUtils hiding (Prime)
+import Math.NumberTheory.TestUtils
 
 import Numeric.Natural
 

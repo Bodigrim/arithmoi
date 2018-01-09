@@ -30,13 +30,17 @@ newtype Prm = Prm { unPrm :: Word }
   deriving (Eq, Ord)
 
 instance Show Prm where
-  show (Prm p) = "Prm " ++ show p
+  showsPrec d (Prm p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
+    where
+      s = "Prm " ++ show p
 
 newtype PrimeNat = PrimeNat { unPrimeNat :: Natural }
   deriving (Eq, Ord)
 
 instance Show PrimeNat where
-  show (PrimeNat p) = "PrimeNat " ++ show p
+  showsPrec d (PrimeNat p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
+    where
+      s = "PrimeNat " ++ show p
 
 -- | Type of primes of a given unique factorisation domain.
 --

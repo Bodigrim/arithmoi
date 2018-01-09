@@ -9,14 +9,15 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module Math.NumberTheory.Moduli.Class
   ( -- * Known modulo
@@ -40,12 +41,18 @@ module Math.NumberTheory.Moduli.Class
 import Data.Proxy
 import Data.Ratio
 import Data.Type.Equality
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
-import Numeric.Natural
+
+#if __GLASGOW_HASKELL__ < 709
+import Data.Word
+import Numeric.Natural (Natural)
+
+powModNatural :: Natural -> Natural -> Natural -> Natural
+powModNatural b e m = fromInteger $ powModInteger (toInteger b) (toInteger e) (toInteger m)
+#else
+import GHC.Natural (Natural, powModNatural)
+#endif
 
 -- | Wrapper for residues modulo @m@.
 --
@@ -60,10 +67,14 @@ import Numeric.Natural
 --
 -- Note that modulo cannot be negative.
 newtype Mod (m :: Nat) = Mod Natural
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Enum)
 
 instance KnownNat m => Show (Mod m) where
   show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (getMod m) ++ ")"
+
+instance KnownNat m => Bounded (Mod m) where
+  minBound = Mod 0
+  maxBound = let mx = Mod (getNatMod mx - 1) in mx
 
 instance KnownNat m => Num (Mod m) where
   mx@(Mod x) + Mod y =
@@ -148,7 +159,7 @@ invertMod mx
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx a
   | a < 0     = error $ "^{Mod}: negative exponent"
-  | otherwise = Mod $ fromInteger $ powModInteger (getVal mx) (toInteger a) (getMod mx)
+  | otherwise = Mod $ powModNatural (getNatVal mx) (fromIntegral a) (getNatMod mx)
 {-# INLINABLE [1] powMod #-}
 
 {-# SPECIALISE [1] powMod ::
