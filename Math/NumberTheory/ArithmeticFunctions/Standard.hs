@@ -51,12 +51,6 @@ import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Foldable
-import Data.Word
-#endif
-
 -- | Create a multiplicative function from the function on prime's powers. See examples below.
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct

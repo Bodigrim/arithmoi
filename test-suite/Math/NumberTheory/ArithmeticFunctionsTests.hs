@@ -20,12 +20,6 @@ module Math.NumberTheory.ArithmeticFunctionsTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Prelude hiding (sum, all, elem)
-import Data.Foldable
-#endif
-
 import Data.List (sort)
 import qualified Data.Set as S
 import qualified Data.IntSet as IS

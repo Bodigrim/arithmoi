@@ -19,11 +19,6 @@ module Math.NumberTheory.Primes.Types
   , PrimeNat(..)
   ) where
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 import Numeric.Natural
 
 newtype Prm = Prm { unPrm :: Word }

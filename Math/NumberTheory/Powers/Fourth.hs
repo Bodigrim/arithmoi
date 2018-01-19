@@ -138,24 +138,17 @@ approxBiSqrt = fromInteger . appBiSqrt . fromIntegral
 -- About 48 bits should be correct for large Integers.
 appBiSqrt :: Integer -> Integer
 appBiSqrt (S# i#) = S# (double2Int# (sqrtDouble# (sqrtDouble# (int2Double# i#))))
-#if __GLASGOW_HASKELL__ < 709
-appBiSqrt n@(J# s# _)
-    | isTrue# (s# <# THRESH#)   = floor (sqrt . sqrt $ fromInteger n :: Double)
-#else
 appBiSqrt n@(Jp# bn#)
     | isTrue# ((sizeofBigNat# bn#) <# THRESH#) =
           floor (sqrt . sqrt $ fromInteger n :: Double)
-#endif
     | otherwise = case integerLog2# n of
                     l# -> case uncheckedIShiftRA# l# 2# -# 47# of
                             h# -> case shiftRInteger n (4# *# h#) of
                                     m -> case floor (sqrt $ sqrt $ fromInteger m :: Double) of
                                             r -> shiftLInteger r h#
-#if __GLASGOW_HASKELL__ >= 709
 -- There's already a check for negative in integerFourthRoot,
 -- but integerFourthRoot' is exported directly too.
 appBiSqrt _ = error "integerFourthRoot': negative argument"
-#endif
 
 
 biSqRes256 :: UArray Int Bool

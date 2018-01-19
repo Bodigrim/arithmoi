@@ -19,9 +19,6 @@ module Math.NumberTheory.Primes.Factorisation.Certified
 
 import System.Random
 import Control.Monad.State.Strict
-#if __GLASGOW_HASKELL__ < 709
-import Control.Applicative
-#endif
 import Data.Maybe
 import Data.Bits
 

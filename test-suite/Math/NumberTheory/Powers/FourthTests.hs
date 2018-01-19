@@ -20,10 +20,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Maybe
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
 
 import Math.NumberTheory.Powers.Fourth
 import Math.NumberTheory.TestUtils

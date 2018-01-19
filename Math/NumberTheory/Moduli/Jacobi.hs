@@ -23,9 +23,6 @@ import Data.Bits
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils

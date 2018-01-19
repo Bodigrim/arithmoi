@@ -37,7 +37,7 @@ import Data.Array.ST
 import Data.Array.Unboxed
 import Control.Monad (when)
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32
+#if WORD_SIZE_IN_BITS == 32
 import Data.Word
 #endif
 

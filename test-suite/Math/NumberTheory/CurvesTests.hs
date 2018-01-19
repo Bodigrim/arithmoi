@@ -22,10 +22,6 @@ import GHC.TypeNats.Compat
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.TestUtils
 
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
-
 (==>?) :: Maybe a -> (a -> Property) -> Property
 x ==>? f = case x of
   Nothing -> discard

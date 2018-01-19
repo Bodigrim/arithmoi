@@ -23,10 +23,6 @@ import Test.Tasty.HUnit
 import Control.Arrow
 import Data.Bits
 import Data.List (tails)
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
 import Numeric.Natural
 
 import Math.NumberTheory.GCD

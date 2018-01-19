@@ -44,15 +44,7 @@ import Data.Type.Equality
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-import Numeric.Natural (Natural)
-
-powModNatural :: Natural -> Natural -> Natural -> Natural
-powModNatural b e m = fromInteger $ powModInteger (toInteger b) (toInteger e) (toInteger m)
-#else
 import GHC.Natural (Natural, powModNatural)
-#endif
 
 -- | Wrapper for residues modulo @m@.
 --

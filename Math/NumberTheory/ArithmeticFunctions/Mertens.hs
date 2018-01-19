@@ -17,9 +17,6 @@ module Math.NumberTheory.ArithmeticFunctions.Mertens
   ) where
 
 import qualified Data.Vector.Unboxed as U
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Powers.Squares

@@ -14,20 +14,16 @@
 
 module Math.NumberTheory.Powers.Modular
   ( powMod
-#if __GLASGOW_HASKELL__ > 709
   , powModWord
   , powModInt
-#endif
   ) where
 
 import qualified GHC.Integer.GMP.Internals as GMP (powModInteger)
 
-#if __GLASGOW_HASKELL__ > 709
 import GHC.Exts (Word(..))
 import GHC.Natural (powModNatural)
 import qualified GHC.Integer.GMP.Internals as GMP (powModWord)
 import Math.NumberTheory.Utils.FromIntegral
-#endif
 
 -- | @powMod@ @b@ @e@ @m@ computes (@b^e@) \`mod\` @m@ in effective way.
 -- An exponent @e@ must be non-negative, a modulo @m@ must be positive.
@@ -71,7 +67,6 @@ powMod x y m
 powModInteger :: Integer -> Integer -> Integer -> Integer
 powModInteger b e m = GMP.powModInteger (b `mod` m) e m
 
-#if __GLASGOW_HASKELL__ > 709
 {-# RULES
 "powMod/Natural" powMod = powModNatural
 "powMod/Word"    powMod = powModWord
@@ -94,4 +89,3 @@ powModInt x y m
   | m <= 0 = error "powModInt: non-positive modulo"
   | y <  0 = error "powModInt: negative exponent"
   | otherwise = wordToInt $ powModWord (intToWord (x `mod` m)) (intToWord y) (intToWord m)
-#endif

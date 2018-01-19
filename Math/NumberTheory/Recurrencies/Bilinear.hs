@@ -48,11 +48,6 @@ import Data.List
 import Data.Ratio
 import Numeric.Natural
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 import Math.NumberTheory.Recurrencies.Linear (factorial)
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle):

@@ -32,9 +32,6 @@ import Data.Coerce
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import GHC.Exts
-#if __GLASGOW_HASKELL__ < 709
-import Data.Monoid
-#endif
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius (sieveBlockMoebius)

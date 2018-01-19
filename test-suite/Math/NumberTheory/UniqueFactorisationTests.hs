@@ -19,11 +19,6 @@ module Math.NumberTheory.UniqueFactorisationTests
 
 import Test.Tasty
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 import Math.NumberTheory.GaussianIntegers hiding (factorise)
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.TestUtils
