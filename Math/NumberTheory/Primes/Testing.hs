@@ -19,9 +19,6 @@ module Math.NumberTheory.Primes.Testing
     , millerRabinV
     , isStrongFermatPP
     , isFermatPP
-      -- * Using a sieve
-    , FactorSieve
-    , fsIsPrime
       -- * Trial division
     , trialDivisionPrimeTo
     ) where
@@ -29,15 +26,3 @@ module Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Primes.Testing.Certified
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
-import Math.NumberTheory.Primes.Sieve.Misc
-
-{-# DEPRECATED fsIsPrime "Use new interface for sieves, provided by Math.NumberTheory.ArithmeticFunctions.SieveBlock" #-}
-
--- | Test primality using a 'FactorSieve'. If @n@ is out of bounds
---   of the sieve, fall back to 'isPrime'.
-fsIsPrime :: FactorSieve -> Integer -> Bool
-fsIsPrime fs n
-    | n < 0     = fsIsPrime fs (-n)
-    | n <= fromIntegral (fsBound fs)    = fsPrimeTest fs n
-    | otherwise = isPrime n
-
