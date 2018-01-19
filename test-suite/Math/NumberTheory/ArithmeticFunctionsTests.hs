@@ -138,21 +138,17 @@ jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
   , 1728, 1584, 2208, 1536
   ]
 
--- | moebius values are [-1, 0, 1]
-moebiusProperty1 :: Natural -> Bool
-moebiusProperty1 n = runFunction moebiusA n `elem` [-1, 0, 1]
-
 -- | moebius does not require full factorisation
 moebiusLazy :: Assertion
-moebiusLazy = assertEqual "moebius" 0 (runFunction moebiusA (2^2 * (2^100000-1) :: Natural))
+moebiusLazy = assertEqual "moebius" MoebiusZ (runFunction moebiusA (2^2 * (2^100000-1) :: Natural))
 
 -- | moebius matches baseline from OEIS.
 moebiusOeis :: Assertion
 moebiusOeis = oeisAssertion "A008683" moebiusA
-  [ 1, -1, -1, 0, -1, 1, -1, 0, 0, 1, -1, 0, -1, 1, 1, 0, -1, 0, -1, 0, 1, 1, -1
-  , 0, 0, 1, 0, 0, -1, -1, -1, 0, 1, 1, 1, 0, -1, 1, 1, 0, -1, -1, -1, 0, 0, 1
-  , -1, 0, 0, 0, 1, 0, -1, 0, 1, 0, 1, 1, -1, 0, -1, 1, 0, 0, 1, -1, -1, 0, 1
-  , -1, -1, 0, -1, 1, 0, 0, 1
+  [ MoebiusP, MoebiusN, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusN, MoebiusZ, MoebiusZ, MoebiusP, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusP, MoebiusZ, MoebiusN, MoebiusZ, MoebiusN, MoebiusZ, MoebiusP, MoebiusP, MoebiusN
+  , MoebiusZ, MoebiusZ, MoebiusP, MoebiusZ, MoebiusZ, MoebiusN, MoebiusN, MoebiusN, MoebiusZ, MoebiusP, MoebiusP, MoebiusP, MoebiusZ, MoebiusN, MoebiusP, MoebiusP, MoebiusZ, MoebiusN, MoebiusN, MoebiusN, MoebiusZ, MoebiusZ, MoebiusP
+  , MoebiusN, MoebiusZ, MoebiusZ, MoebiusZ, MoebiusP, MoebiusZ, MoebiusN, MoebiusZ, MoebiusP, MoebiusZ, MoebiusP, MoebiusP, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusZ, MoebiusZ, MoebiusP, MoebiusN, MoebiusN, MoebiusZ, MoebiusP
+  , MoebiusN, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusZ, MoebiusZ, MoebiusP
   ]
 
 -- | liouville values are [-1, 1]
@@ -161,7 +157,7 @@ liouvilleProperty1 n = runFunction liouvilleA n `elem` [-1, 1]
 
 -- | moebius is zero or equal to liouville
 liouvilleProperty2 :: Natural -> Bool
-liouvilleProperty2 n = m == 0 || l == m
+liouvilleProperty2 n = m == MoebiusZ || l == runMoebius m
   where
     l = runFunction liouvilleA n
     m = runFunction moebiusA   n
@@ -261,8 +257,7 @@ testSuite = testGroup "ArithmeticFunctions"
     , testCase          "OEIS jordan_2"      jordan2Oeis
     ]
   , testGroup "Moebius"
-    [ testSmallAndQuick "moebius values" moebiusProperty1
-    , testCase          "OEIS"           moebiusOeis
+    [ testCase          "OEIS"           moebiusOeis
     , testCase          "Lazy"           moebiusLazy
     ]
   , testGroup "Liouville"

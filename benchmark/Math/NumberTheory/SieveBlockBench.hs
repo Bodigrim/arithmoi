@@ -1,18 +1,22 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP        #-}
+{-# LANGUAGE LambdaCase #-}
 
-{-# OPTIONS_GHC -fno-warn-deprecations #-}
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.SieveBlockBench
   ( benchSuite
   ) where
 
 import Criterion.Main
+import Data.Semigroup
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 #if __GLASGOW_HASKELL__ < 709
 import Data.Word
 #endif
 
+import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
 import Math.NumberTheory.Primes.Factorisation (totientSieve, sieveTotient, carmichaelSieve, sieveCarmichael)
 
@@ -59,6 +63,17 @@ sumOldCarmichaelSieve len' = sum $ map (fromInteger . sieveCarmichael sieve) [1 
     len = toInteger len'
     sieve = carmichaelSieve len
 
+moebiusConfig :: SieveBlockConfig Moebius
+moebiusConfig = SieveBlockConfig
+  { sbcEmpty                = MoebiusP
+  , sbcAppend               = (<>)
+  , sbcFunctionOnPrimePower = const $ \case
+      0 -> MoebiusP
+      1 -> MoebiusN
+      _ -> MoebiusZ
+  }
+
+benchSuite :: Benchmark
 benchSuite = bgroup "SieveBlock"
   [ bgroup "totient"
     [ bench "old"     $ nf sumOldTotientSieve blockLen
@@ -69,5 +84,10 @@ benchSuite = bgroup "SieveBlock"
     [ bench "old"     $ nf sumOldCarmichaelSieve blockLen
     , bench "boxed"   $ nf (V.sum . sieveBlock        carmichaelBlockConfig 1) blockLen
     , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed carmichaelBlockConfig 1) blockLen
+    ]
+  , bgroup "moebius"
+    [ bench "boxed"   $ nf (V.sum . V.map runMoebius . sieveBlock        moebiusConfig 1 :: Word -> Int) blockLen
+    , bench "unboxed" $ nf (U.sum . U.map runMoebius . sieveBlockUnboxed moebiusConfig 1 :: Word -> Int) blockLen
+    , bench "special" $ nf (U.sum . U.map runMoebius . sieveBlockMoebius 1 :: Word -> Int) blockLen
     ]
   ]

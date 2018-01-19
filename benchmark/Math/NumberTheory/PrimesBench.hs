@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.PrimesBench
   ( benchSuite

@@ -32,6 +32,7 @@ import qualified Math.NumberTheory.Primes.TestingTests as Testing
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
 import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctions
+import qualified Math.NumberTheory.ArithmeticFunctions.MertensTests as Mertens
 import qualified Math.NumberTheory.ArithmeticFunctions.SieveBlockTests as SieveBlock
 import qualified Math.NumberTheory.UniqueFactorisationTests as UniqueFactorisation
 import qualified Math.NumberTheory.ZetaTests as Zeta
@@ -83,6 +84,7 @@ tests = testGroup "All"
     ]
   , testGroup "ArithmeticFunctions"
     [ ArithmeticFunctions.testSuite
+    , Mertens.testSuite
     , SieveBlock.testSuite
     ]
   , testGroup "UniqueFactorisation"
