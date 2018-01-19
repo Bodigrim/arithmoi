@@ -28,7 +28,6 @@ import Data.Word
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.Mertens
-import Math.NumberTheory.ArithmeticFunctions.Moebius (sieveBlockMoebius)
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
 import Math.NumberTheory.TestUtils
 

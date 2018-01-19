@@ -29,7 +29,6 @@ import Data.Word
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
-import Math.NumberTheory.ArithmeticFunctions.Moebius (sieveBlockMoebius)
 
 pointwiseTest :: (Eq a, Show a) => ArithmeticFunction Word a -> Word -> Word -> IO ()
 pointwiseTest f lowIndex len = assertEqual "pointwise"
