@@ -20,7 +20,9 @@ module Math.NumberTheory.Moduli.JacobiTests
 import Test.Tasty
 
 import Data.Bits
+#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
+#endif
 
 import Math.NumberTheory.Moduli hiding (invertMod)
 import Math.NumberTheory.TestUtils

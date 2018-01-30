@@ -21,7 +21,9 @@ module Math.NumberTheory.ArithmeticFunctions.Class
   ) where
 
 import Control.Applicative
+#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
+#endif
 
 #if MIN_VERSION_base(4,8,0)
 #else
