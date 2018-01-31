@@ -7,7 +7,7 @@ module Math.NumberTheory.MertensBench
   ( benchSuite
   ) where
 
-import Criterion.Main
+import Gauge.Main
 #if __GLASGOW_HASKELL__ < 709
 import Data.Word
 #endif

@@ -4,7 +4,7 @@ module Math.NumberTheory.RecurrenciesBench
   ( benchSuite
   ) where
 
-import Criterion.Main
+import Gauge.Main
 
 import Math.NumberTheory.Recurrencies.Bilinear
 

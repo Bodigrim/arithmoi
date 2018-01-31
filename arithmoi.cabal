@@ -120,7 +120,7 @@ source-repository head
 benchmark criterion
   build-depends:    base
                     , arithmoi
-                    , criterion
+                    , gauge
                     , containers
                     , random
                     , integer-logarithms
