@@ -32,20 +32,6 @@ import GHC.Integer.GMP.Internals
 
 import Data.Bits
 
-#if WORD_SIZE_IN_BITS == 64
-#define m5 0x5555555555555555
-#define m3 0x3333333333333333
-#define mf 0x0F0F0F0F0F0F0F0F
-#define m1 0x0101010101010101
-#define sd 56
-#else
-#define m5 0x55555555
-#define m3 0x33333333
-#define mf 0x0F0F0F0F
-#define m1 0x01010101
-#define sd 24
-#endif
-
 uncheckedShiftR :: Word -> Int -> Word
 uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 
@@ -97,7 +83,7 @@ bigNatZeroCount bn# = count 0# 0#
     count a# i# =
           case indexBigNat# bn# i# of
             0## -> count (a# +# WORD_SIZE_IN_BITS#) (i# +# 1#)
-            w#  -> a# +# trailZeros# w#
+            w#  -> a# +# word2Int# (ctz# w#)
 
 -- | Remove factors of @2@. If @n = 2^k*m@ with @m@ odd, the result is @m@.
 --   Precondition: argument not @0@ (not checked).
@@ -134,12 +120,11 @@ shiftOInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
 -- | Shift argument right until the result is odd.
 --   Precondition: argument not @0@, not checked.
 shiftToOdd# :: Word# -> Word#
-shiftToOdd# w# = case trailZeros# w# of
-                   k# -> uncheckedShiftRL# w# k#
+shiftToOdd# w# = uncheckedShiftRL# w# (word2Int# (ctz# w#))
 
 -- | Like @'shiftToOdd#'@, but count the number of places to shift too.
 shiftToOddCount# :: Word# -> (# Int#, Word# #)
-shiftToOddCount# w# = case trailZeros# w# of
+shiftToOddCount# w# = case word2Int# (ctz# w#) of
                         k# -> (# k#, uncheckedShiftRL# w# k# #)
 
 -- | Number of 1-bits in a @'Word#'@.
@@ -154,19 +139,6 @@ bitCountWord = popCount
 -- | Number of 1-bits in an @'Int'@.
 bitCountInt :: Int -> Int
 bitCountInt = popCount
-
--- | Number of trailing zeros in a @'Word#'@, wrong for @0@.
-{-# INLINE trailZeros# #-}
-trailZeros# :: Word# -> Int#
-trailZeros# w =
-    case xor# w (w `minusWord#` 1##) `uncheckedShiftRL#` 1# of
-      v0 ->
-        case v0 `minusWord#` (uncheckedShiftRL# v0 1# `and#` m5##) of
-          v1 ->
-            case (v1 `and#` m3##) `plusWord#` (uncheckedShiftRL# v1 2# `and#` m3##) of
-              v2 ->
-                case (v2 `plusWord#` uncheckedShiftRL# v2 4#) `and#` mf## of
-                  v3 -> word2Int# (uncheckedShiftRL# (v3 `timesWord#` m1##) sd#)
 
 splitOff :: Integer -> Integer -> (Int, Integer)
 splitOff _ 0 = (0, 0) -- prevent infinite loop
