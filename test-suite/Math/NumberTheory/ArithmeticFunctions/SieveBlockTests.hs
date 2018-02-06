@@ -51,6 +51,7 @@ moebiusTest m n
 moebiusSpecialCases :: [TestTree]
 moebiusSpecialCases = map (uncurry pairToTest)
   [ (1, 1)
+  , (1, 2)
   , (208, 298)
   , (1, 12835)
   , (10956, 4430)
