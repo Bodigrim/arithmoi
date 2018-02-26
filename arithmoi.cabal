@@ -128,6 +128,7 @@ benchmark criterion
   if impl(ghc < 8.0)
     build-depends     : semigroups >= 0.8
   other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
+                  , Math.NumberTheory.GCDBench
                   , Math.NumberTheory.MertensBench
                   , Math.NumberTheory.PowersBench
                   , Math.NumberTheory.PrimesBench
