@@ -87,6 +87,8 @@ library
                           Math.NumberTheory.Zeta
                           Math.NumberTheory.Prefactored
                           GHC.TypeNats.Compat
+                          Math.NumberTheory.SmoothNumbers
+
     other-modules       : Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
                           Math.NumberTheory.Utils
                           Math.NumberTheory.Utils.FromIntegral
@@ -103,7 +105,7 @@ library
                           Math.NumberTheory.Primes.Testing.Certified
                           Math.NumberTheory.Primes.Testing.Certificates.Internal
                           Math.NumberTheory.Primes.Types
-    other-extensions          : BangPatterns
+    other-extensions    : BangPatterns
 
     ghc-options         : -O2 -Wall
     ghc-prof-options    : -O2 -auto
