@@ -1,8 +1,8 @@
 name                : arithmoi
-version             : 0.6.0.1
+version             : 0.7.0.0
 cabal-version       : >= 1.10
 author              : Daniel Fischer
-copyright           : (c) 2011 Daniel Fischer, 2016-2017 Andrew Lelechenko, Carter Schonwald
+copyright           : (c) 2011 Daniel Fischer, 2016-2018 Andrew Lelechenko, Carter Schonwald
 license             : MIT
 license-file        : LICENSE
 maintainer          : Carter Schonwald  carter at wellposed dot com,
