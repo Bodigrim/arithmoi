@@ -10,7 +10,8 @@
 --
 
 module Math.NumberTheory.SmoothNumbers
-  ( smoothOver
+  ( SmoothBasis
+  , smoothOver
   , smoothOverInRange
   , smoothOverInRangeBF
   , fromSet
