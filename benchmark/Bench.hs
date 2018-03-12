@@ -3,6 +3,7 @@ module Main where
 import Criterion.Main
 
 import Math.NumberTheory.ArithmeticFunctionsBench as ArithmeticFunctions
+import Math.NumberTheory.GCDBench as GCD
 import Math.NumberTheory.MertensBench as Mertens
 import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
@@ -11,6 +12,7 @@ import Math.NumberTheory.SieveBlockBench as SieveBlock
 
 main = defaultMain
   [ ArithmeticFunctions.benchSuite
+  , GCD.benchSuite
   , Mertens.benchSuite
   , Powers.benchSuite
   , Primes.benchSuite
