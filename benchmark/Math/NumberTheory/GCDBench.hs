@@ -2,11 +2,11 @@ module Math.NumberTheory.GCDBench
   ( benchSuite
   ) where
 
-import Criterion.Main
+import Gauge.Main
 
 import Math.NumberTheory.GCD as A
 import Prelude as P
-  
+
 benchSuite = bgroup "GCD"
   [ subSuite "large coprimes" 1073741823 100003
   , subSuite "powers of 2" (2^12) (2^19)

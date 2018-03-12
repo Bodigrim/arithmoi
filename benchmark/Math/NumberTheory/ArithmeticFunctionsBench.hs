@@ -2,7 +2,7 @@ module Math.NumberTheory.ArithmeticFunctionsBench
   ( benchSuite
   ) where
 
-import Criterion.Main
+import Gauge.Main
 import Data.Set (Set)
 
 import Math.NumberTheory.ArithmeticFunctions as A

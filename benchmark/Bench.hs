@@ -1,6 +1,6 @@
 module Main where
 
-import Criterion.Main
+import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctionsBench as ArithmeticFunctions
 import Math.NumberTheory.GCDBench as GCD

@@ -61,7 +61,9 @@ import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
 import Data.Maybe
+#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
+#endif
 
 import GHC.TypeNats.Compat
 
