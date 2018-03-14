@@ -1,3 +1,45 @@
+0.7.0.0
+    This release supports GHC 7.8, 7.10, 8.0, 8.2 and 8.4.
+
+    Breaking changes:
+
+        Remove 'Math.NumberTheory.Powers.Integer', deprecated in 0.5.0.0.
+
+        Deprecate 'Math.NumberTheory.Primes.Heap'.
+        Use 'Math.NumberTheory.Primes.Sieve' instead.
+
+        Deprecate 'FactorSieve', 'TotientSieve', 'CarmichaelSieve' and
+        accompanying functions. Use new general approach for bulk evaluation
+        of arithmetic functions instead (#77).
+
+        Now 'moebius' returns not a number, but a value of 'Moebius' type (#90).
+
+    New functions:
+
+        A general framework for bulk evaluation of arithmetic functions (#77):
+
+        > runFunctionOverBlock carmichaelA 1 10
+        [1,1,2,2,4,2,6,2,6,4]
+
+        Implement a sublinear algorithm for Mertens function (#90):
+
+        > map (mertens . (10 ^)) [0..9]
+        [1,-1,1,2,-23,-48,212,1037,1928,-222]
+
+        Add basic support for cyclic groups and primitive roots (#86).
+
+        Implement an efficient modular exponentiation (#86).
+
+        Write routines for lazy generation of smooth numbers (#91).
+
+        > smoothOverInRange (fromJust (fromList [3,5,7])) 1000 2000
+        [1029,1125,1215,1225,1323,1575,1701,1715,1875]
+
+    Improvements:
+
+        Now factorisation of large integers and Gaussian integers produces
+        factors as lazy as possible (#72, #76).
+
 0.6.0.1:
     Switch to smallcheck 1.1.3.
 
