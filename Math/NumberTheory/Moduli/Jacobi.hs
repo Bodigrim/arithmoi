@@ -1,12 +1,14 @@
 -- |
 -- Module:      Math.NumberTheory.Moduli.Jacobi
--- Copyright:   (c) 2011 Daniel Fischer, 2017 Andrew Lelechenko
+-- Copyright:   (c) 2011 Daniel Fischer, 2017-2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Jacobi symbol.
+-- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>
+-- is a generalization of the Legendre symbol, useful for primality
+-- testing and integer factorization.
 --
 
 {-# LANGUAGE CPP        #-}
@@ -27,7 +29,8 @@ import Data.Semigroup
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
--- | Type for result of 'jacobi'.
+-- | Represents three possible values of
+-- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.
 data JacobiSymbol = MinusOne | Zero | One
   deriving (Eq, Ord, Show)
 
@@ -47,11 +50,17 @@ negJS = \case
   Zero     -> Zero
   One      -> MinusOne
 
--- | Jacobi symbol of two numbers.
---   The \"denominator\" must be odd and positive, this condition is checked.
+-- | <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol> of two arguments.
+-- The lower argument (\"denominator\") must be odd and positive,
+-- this condition is checked.
 --
---   If both numbers have a common prime factor, the result
---   is @0@, otherwise it is &#177;1.
+-- If arguments have a common factor, the result
+-- is 'Zero', otherwise it is 'MinusOne' or 'One'.
+--
+-- > > jacobi 1001 9911
+-- > Zero -- arguments have a common factor 11
+-- > > jacobi 1001 9907
+-- > MinusOne
 {-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
                          Int -> Int -> JacobiSymbol,
                          Word -> Word -> JacobiSymbol
@@ -63,9 +72,8 @@ jacobi a b
   | b == 1      = One
   | otherwise   = jacobi' a b   -- b odd, > 1
 
--- Invariant: b > 1 and odd
--- | Jacobi symbol of two numbers without validity check of
---   the \"denominator\".
+-- | Similar to 'jacobi', but the condition on the lower argument
+-- (\"denominator\") is __not__ checked.
 {-# SPECIALISE jacobi' :: Integer -> Integer -> JacobiSymbol,
                           Int -> Int -> JacobiSymbol,
                           Word -> Word -> JacobiSymbol
