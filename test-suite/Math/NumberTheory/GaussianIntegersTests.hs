@@ -34,7 +34,7 @@ lazyCases =
 factoriseProperty1 :: Integer -> Integer -> Bool
 factoriseProperty1 x y
   =  x == 0 && y == 0
-  || g == g'
+  || abs g == abs g'
   where
     g = x :+ y
     factors = factorise g

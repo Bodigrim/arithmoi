@@ -189,10 +189,11 @@ a .^ e
     s = a .^ div e 2
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
+-- Unit factors are not included in the result.
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
 factorise g = helper (Factorisation.factorise $ norm g) g
     where
-    helper [] g' = if g' == 1 then [] else [(g', 1)] -- include the unit, if it isn't 1
+    helper [] _ = []
     helper ((!p, !e) : pt) g' =
         -- For a given prime factor p of the magnitude squared...
         let (!g'', !facs) = if p `mod` 4 == 3

@@ -9,8 +9,9 @@
 -- An abstract type class for unique factorisation domains.
 --
 
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DefaultSignatures #-}
 
 module Math.NumberTheory.UniqueFactorisation
   ( Prime
@@ -25,7 +26,7 @@ import Data.Coerce
 import Data.Word
 #endif
 
-import Math.NumberTheory.Primes.Factorisation as F (factorise')
+import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types (Prime, Prm(..), PrimeNat(..))
 import qualified Math.NumberTheory.GaussianIntegers as G
@@ -43,8 +44,10 @@ type instance Prime G.GaussianInteger = GaussianPrime
 class UniqueFactorisation a where
   unPrime   :: Prime a -> a
   factorise :: a -> [(Prime a, Word)]
-
   isPrime   :: a -> Maybe (Prime a)
+
+  default isPrime :: (Eq a, Num a) => a -> Maybe (Prime a)
+  isPrime 0 = Nothing
   isPrime n = case factorise n of
     [(p, 1)] -> Just p
     _        -> Nothing
@@ -53,34 +56,21 @@ class UniqueFactorisation a where
 
 instance UniqueFactorisation Int where
   unPrime   = coerce wordToInt
-  factorise m' = if m <= 1
-                then []
-                else map (coerce integerToWord *** intToWord) . F.factorise' . intToInteger $ m
-                  where
-                    m = abs m'
-  isPrime n = if T.isPrime (toInteger n) then Just (coerce $ intToWord $ abs n) else Nothing
+  factorise = map (coerce integerToWord *** intToWord) . F.factorise . intToInteger
 
 instance UniqueFactorisation Word where
-  unPrime     = coerce
-  factorise m = if m <= 1
-                  then []
-                  else map (coerce integerToWord *** intToWord) . F.factorise' . wordToInteger $ m
+  unPrime   = coerce
+  factorise = map (coerce integerToWord *** intToWord) . F.factorise . wordToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
 
 instance UniqueFactorisation Integer where
-  unPrime      = coerce naturalToInteger
-  factorise m' = if m <= 1
-                then []
-                else map (coerce integerToNatural *** intToWord) . F.factorise' $ m
-                  where
-                    m = abs m'
+  unPrime   = coerce naturalToInteger
+  factorise = map (coerce integerToNatural *** intToWord) . F.factorise
   isPrime n = if T.isPrime n then Just (coerce $ integerToNatural $ abs n) else Nothing
 
 instance UniqueFactorisation Natural where
   unPrime   = coerce
-  factorise m = if m <= 1
-                  then []
-                  else map (coerce integerToNatural *** intToWord) . F.factorise' . naturalToInteger $ m
+  factorise = map (coerce integerToNatural *** intToWord) . F.factorise . naturalToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
 
 newtype GaussianPrime = GaussianPrime { _unGaussianPrime :: G.GaussianInteger }
@@ -90,4 +80,4 @@ instance UniqueFactorisation G.GaussianInteger where
   unPrime = coerce
 
   factorise 0 = []
-  factorise g = map (coerce *** intToWord) $ filter (\(h, _) -> abs h /= 1) $ G.factorise g
+  factorise g = map (coerce *** intToWord) $ G.factorise g
