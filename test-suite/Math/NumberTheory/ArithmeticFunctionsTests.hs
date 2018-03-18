@@ -40,24 +40,24 @@ oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a]
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])
 
 -- | tau(n) equals to a number of divisors.
-divisorsProperty1 :: Natural -> Bool
-divisorsProperty1 n = S.size (runFunction divisorsA n) == runFunction tauA n
+divisorsProperty1 :: NonZero Natural -> Bool
+divisorsProperty1 (NonZero n) = S.size (runFunction divisorsA n) == runFunction tauA n
 
 -- | sigma(n) equals to a number of divisors.
-divisorsProperty2 :: Natural -> Bool
-divisorsProperty2 n = sum (runFunction divisorsA n) == runFunction (sigmaA 1) n
+divisorsProperty2 :: NonZero Natural -> Bool
+divisorsProperty2 (NonZero n) = sum (runFunction divisorsA n) == runFunction (sigmaA 1) n
 
 -- | All divisors of n truly divides n.
-divisorsProperty3 :: Natural -> Bool
-divisorsProperty3 n = all (\d -> n `mod` d == 0) (runFunction divisorsA n)
+divisorsProperty3 :: NonZero Natural -> Bool
+divisorsProperty3 (NonZero n) = all (\d -> n `mod` d == 0) (runFunction divisorsA n)
 
 -- | 'divisorsA' matches 'divisorsSmallA'
-divisorsProperty4 :: Int -> Bool
-divisorsProperty4 n = S.toAscList (runFunction divisorsA n) == IS.toAscList (runFunction divisorsSmallA n)
+divisorsProperty4 :: NonZero Int -> Bool
+divisorsProperty4 (NonZero n) = S.toAscList (runFunction divisorsA n) == IS.toAscList (runFunction divisorsSmallA n)
 
 -- | 'divisorsA' matches 'divisorsListA'
-divisorsProperty5 :: Int -> Bool
-divisorsProperty5 n = S.toAscList (runFunction divisorsA n) == sort (runFunction divisorsListA n)
+divisorsProperty5 :: NonZero Int -> Bool
+divisorsProperty5 (NonZero n) = S.toAscList (runFunction divisorsA n) == sort (runFunction divisorsListA n)
 
 -- | tau matches baseline from OEIS.
 tauOeis :: Assertion
@@ -70,12 +70,12 @@ tauOeis = oeisAssertion "A000005" tauA
   ]
 
 -- | sigma_0 coincides with tau by definition
-sigmaProperty1 :: Natural -> Bool
-sigmaProperty1 n = runFunction tauA n == runFunction (sigmaA 0) n
+sigmaProperty1 :: NonZero Natural -> Bool
+sigmaProperty1 (NonZero n) = runFunction tauA n == runFunction (sigmaA 0) n
 
 -- | value of totient is bigger than argument
-sigmaProperty2 :: Natural -> Bool
-sigmaProperty2 n = n <= 1 || runFunction (sigmaA 1) n > n
+sigmaProperty2 :: NonZero Natural -> Bool
+sigmaProperty2 (NonZero n) = n <= 1 || runFunction (sigmaA 1) n > n
 
 -- | sigma_1 matches baseline from OEIS.
 sigma1Oeis :: Assertion
@@ -96,21 +96,20 @@ sigma2Oeis = oeisAssertion "A001157" (sigmaA 2)
   ]
 
 -- | value of totient if even, except totient(1) and totient(2)
-totientProperty1 :: Natural -> Bool
-totientProperty1 n = n <= 2 || even (runFunction totientA n)
+totientProperty1 :: NonZero Natural -> Bool
+totientProperty1 (NonZero n) = n <= 2 || even (runFunction totientA n)
 
 -- | value of totient is smaller than argument
-totientProperty2 :: Natural -> Bool
-totientProperty2 n = n <= 1 || runFunction totientA n < n
+totientProperty2 :: NonZero Natural -> Bool
+totientProperty2 (NonZero n) = n <= 1 || runFunction totientA n < n
 
 totientSieve100 :: TotientSieve
 totientSieve100 = totientSieve 100
 
 -- | totient matches sieveTotient
-totientProperty3 :: Natural -> Bool
-totientProperty3 n = n < 1
-  || fromIntegral (runFunction totientA n)
-    == sieveTotient totientSieve100 (fromIntegral n)
+totientProperty3 :: NonZero Natural -> Bool
+totientProperty3 (NonZero n) = fromIntegral (runFunction totientA n)
+  == sieveTotient totientSieve100 (fromIntegral n)
 
 -- | totient matches baseline from OEIS.
 totientOeis :: Assertion
@@ -122,12 +121,12 @@ totientOeis = oeisAssertion "A000010" totientA
   ]
 
 -- | jordan_0 is zero for argument > 1
-jordanProperty1 :: Natural -> Bool
-jordanProperty1 n = n <= 1 || runFunction (jordanA 0) n == 0
+jordanProperty1 :: NonZero Natural -> Bool
+jordanProperty1 (NonZero n) = n <= 1 || runFunction (jordanA 0) n == 0
 
 -- | jordan_1 coincides with totient by definition
-jordanProperty2 :: Natural -> Bool
-jordanProperty2 n = runFunction totientA n == runFunction (jordanA 1) n
+jordanProperty2 :: NonZero Natural -> Bool
+jordanProperty2 (NonZero n) = runFunction totientA n == runFunction (jordanA 1) n
 
 -- | jordan_2 matches baseline from OEIS.
 jordan2Oeis :: Assertion
@@ -152,12 +151,12 @@ moebiusOeis = oeisAssertion "A008683" moebiusA
   ]
 
 -- | liouville values are [-1, 1]
-liouvilleProperty1 :: Natural -> Bool
-liouvilleProperty1 n = runFunction liouvilleA n `elem` [-1, 1]
+liouvilleProperty1 :: NonZero Natural -> Bool
+liouvilleProperty1 (NonZero n) = runFunction liouvilleA n `elem` [-1, 1]
 
 -- | moebius is zero or equal to liouville
-liouvilleProperty2 :: Natural -> Bool
-liouvilleProperty2 n = m == MoebiusZ || l == runMoebius m
+liouvilleProperty2 :: NonZero Natural -> Bool
+liouvilleProperty2 (NonZero n) = m == MoebiusZ || l == runMoebius m
   where
     l = runFunction liouvilleA n
     m = runFunction moebiusA   n
@@ -173,17 +172,16 @@ liouvilleOeis = oeisAssertion "A008836" liouvilleA
   ]
 
 -- | carmichaeil divides totient
-carmichaelProperty1 :: Natural -> Bool
-carmichaelProperty1 n = runFunction totientA n `mod` runFunction carmichaelA n == 0
+carmichaelProperty1 :: NonZero Natural -> Bool
+carmichaelProperty1 (NonZero n) = runFunction totientA n `mod` runFunction carmichaelA n == 0
 
 carmichaelSieve100 :: CarmichaelSieve
 carmichaelSieve100 = carmichaelSieve 100
 
 -- | carmichael matches sieveCarmichael
-carmichaelProperty2 :: Natural -> Bool
-carmichaelProperty2 n = n < 1
-  || fromIntegral (runFunction carmichaelA n)
-    == sieveCarmichael carmichaelSieve100 (fromIntegral n)
+carmichaelProperty2 :: NonZero Natural -> Bool
+carmichaelProperty2 (NonZero n) = fromIntegral (runFunction carmichaelA n)
+  == sieveCarmichael carmichaelSieve100 (fromIntegral n)
 
 -- | carmichael matches baseline from OEIS.
 carmichaelOeis :: Assertion
@@ -195,8 +193,8 @@ carmichaelOeis = oeisAssertion "A002322" carmichaelA
   ]
 
 -- | smallOmega is smaller than bigOmega
-omegaProperty1 :: Natural -> Bool
-omegaProperty1 n = runFunction smallOmegaA n <= runFunction bigOmegaA n
+omegaProperty1 :: NonZero Natural -> Bool
+omegaProperty1 (NonZero n) = runFunction smallOmegaA n <= runFunction bigOmegaA n
 
 -- | smallOmega matches baseline from OEIS.
 smallOmegaOeis :: Assertion

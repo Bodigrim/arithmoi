@@ -36,6 +36,7 @@ module Math.NumberTheory.TestUtils
   , module Math.NumberTheory.TestUtils.MyCompose
   , module Test.SmallCheck.Series
   , Large(..)
+  , NonZero(..)
   , testIntegralProperty
   , testSameIntegralProperty
   , testIntegral2Property

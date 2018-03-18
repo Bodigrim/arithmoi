@@ -103,6 +103,12 @@ instance Show1 NonNegative where
   liftShowsPrec shw _ p (NonNegative a) = shw p a
 
 -------------------------------------------------------------------------------
+-- NonZero from QuickCheck
+
+instance (Monad m, Num a, Eq a, Serial m a) => Serial m (NonZero a) where
+  series = NonZero <$> series `suchThatSerial` (/= 0)
+
+-------------------------------------------------------------------------------
 -- Huge
 
 newtype Huge a = Huge { getHuge :: a }
