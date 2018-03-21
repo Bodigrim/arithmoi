@@ -123,7 +123,6 @@ fsPrimeTest fs@(FS bnd sve) n
     | otherwise = error "Out of bounds"
 
 -- | @'sieveFactor' fs n@ finds the prime factorisation of @n@ using the 'FactorSieve' @fs@.
---   For negative @n@, a factor of @-1@ is included with multiplicity @1@.
 --   After stripping any present factors @2@, the remaining cofactor @c@ (if larger
 --   than @1@) is factorised with @fs@. This is most efficient of course if @c@ does not
 --   exceed the bound with which @fs@ was constructed. If it does, trial division is performed
@@ -136,7 +135,7 @@ sieveFactor (FS bnd sve) = check
     check 0 = error "0 has no prime factorisation"
     check 1 = []
     check n
-      | n < 0       = (-1,1) : check (-n)
+      | n < 0       = check (-n)
       | n <= bound  = go2w (fromIntegral n)     -- avoid expensive Integer ops if possible
       | fromInteger n .&. (1 :: Int) == 1 = sieveLoop n
       | otherwise   = go2 n

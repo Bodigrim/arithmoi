@@ -78,16 +78,15 @@ import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
--- | @'factorise' n@ produces the prime factorisation of @n@, including
---   a factor of @(-1)@ if @n < 0@. @'factorise' 0@ is an error and the
---   factorisation of @1@ is empty. Uses a 'StdGen' produced in an arbitrary
---   manner from the bit-pattern of @n@.
+-- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
+--   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
+--   an arbitrary manner from the bit-pattern of @n@.
 factorise :: Integer -> [(Integer,Int)]
 factorise n
-    | n < 0     = (-1,1):factorise (-n)
-    | n == 0    = error "0 has no prime factorisation"
-    | n == 1    = []
-    | otherwise = factorise' n
+    | abs n == 1 = []
+    | n < 0      = factorise (-n)
+    | n == 0     = error "0 has no prime factorisation"
+    | otherwise  = factorise' n
 
 -- | Like 'factorise', but without input checking, hence @n > 1@ is required.
 factorise' :: Integer -> [(Integer,Int)]

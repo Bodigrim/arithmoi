@@ -60,7 +60,7 @@ factoriseProperty1 :: Assertion
 factoriseProperty1 = assertEqual "0" [] (factorise 1)
 
 factoriseProperty2 :: Positive Integer -> Bool
-factoriseProperty2 (Positive n) = (-1, 1) : factorise n == factorise (negate n)
+factoriseProperty2 (Positive n) = factorise n == factorise (negate n)
 
 factoriseProperty3 :: Positive Integer -> Bool
 factoriseProperty3 (Positive n) = all (isPrime . fst) (factorise n)
