@@ -106,10 +106,6 @@ jacobi' a b
                     _ -> jacOL One      b a
 
 -- numerator positive and smaller than denominator
-{-# SPECIALISE jacPS :: JacobiSymbol -> Integer -> Integer -> JacobiSymbol,
-                        JacobiSymbol -> Int -> Int -> JacobiSymbol,
-                        JacobiSymbol -> Word -> Word -> JacobiSymbol
-  #-}
 jacPS :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
 jacPS j a b
   | evenI a     = case shiftToOddCount a of
@@ -120,10 +116,6 @@ jacPS j a b
   | otherwise   = jacOL (if rem4 a .&. rem4 b == 3 then (negJS j) else j) b a
 
 -- numerator odd, positive and larger than denominator
-{-# SPECIALISE jacOL :: JacobiSymbol -> Integer -> Integer -> JacobiSymbol,
-                        JacobiSymbol -> Int -> Int -> JacobiSymbol,
-                        JacobiSymbol -> Word -> Word -> JacobiSymbol
-  #-}
 jacOL :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
 jacOL j a b
   | b == 1    = j
@@ -135,24 +127,12 @@ jacOL j a b
 
 -- For large Integers, going via Int is much faster than bit-fiddling
 -- on the Integer, so we do that.
-{-# SPECIALISE evenI :: Integer -> Bool,
-                        Int -> Bool,
-                        Word -> Bool
-  #-}
 evenI :: Integral a => a -> Bool
 evenI n = fromIntegral n .&. 1 == (0 :: Int)
 
-{-# SPECIALISE rem4 :: Integer -> Int,
-                       Int -> Int,
-                       Word -> Int
-  #-}
 rem4 :: Integral a => a -> Int
 rem4 n = fromIntegral n .&. 3
 
-{-# SPECIALISE rem8 :: Integer -> Int,
-                       Int -> Int,
-                       Word -> Int
-  #-}
 rem8 :: Integral a => a -> Int
 rem8 n = fromIntegral n .&. 7
 
