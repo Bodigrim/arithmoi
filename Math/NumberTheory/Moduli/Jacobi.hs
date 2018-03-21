@@ -25,6 +25,7 @@ import Data.Bits
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import Numeric.Natural
 
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
@@ -62,6 +63,7 @@ negJS = \case
 -- > > jacobi 1001 9907
 -- > MinusOne
 {-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
+                         Natural -> Natural -> JacobiSymbol,
                          Int -> Int -> JacobiSymbol,
                          Word -> Word -> JacobiSymbol
   #-}
@@ -75,6 +77,7 @@ jacobi a b
 -- | Similar to 'jacobi', but the condition on the lower argument
 -- (\"denominator\") is __not__ checked.
 {-# SPECIALISE jacobi' :: Integer -> Integer -> JacobiSymbol,
+                          Natural -> Natural -> JacobiSymbol,
                           Int -> Int -> JacobiSymbol,
                           Word -> Word -> JacobiSymbol
   #-}

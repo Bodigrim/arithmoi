@@ -4,6 +4,7 @@ import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctionsBench as ArithmeticFunctions
 import Math.NumberTheory.GCDBench as GCD
+import Math.NumberTheory.JacobiBench as Jacobi
 import Math.NumberTheory.MertensBench as Mertens
 import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
@@ -13,6 +14,7 @@ import Math.NumberTheory.SieveBlockBench as SieveBlock
 main = defaultMain
   [ ArithmeticFunctions.benchSuite
   , GCD.benchSuite
+  , Jacobi.benchSuite
   , Mertens.benchSuite
   , Powers.benchSuite
   , Primes.benchSuite

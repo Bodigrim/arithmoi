@@ -180,6 +180,7 @@ benchmark criterion
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.GCDBench
+    Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench
     Math.NumberTheory.PowersBench
     Math.NumberTheory.PrimesBench
