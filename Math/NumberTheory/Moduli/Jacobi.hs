@@ -20,14 +20,12 @@ module Math.NumberTheory.Moduli.Jacobi
   , jacobi'
   ) where
 
-import Data.Array.Unboxed
 import Data.Bits
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
 import Numeric.Natural
 
-import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
 -- | Represents three possible values of
@@ -68,11 +66,11 @@ negJS = \case
                          Word -> Word -> JacobiSymbol
   #-}
 jacobi :: (Integral a, Bits a) => a -> a -> JacobiSymbol
+jacobi _ 1 = One
 jacobi a b
-  | b < 0       = error "Math.NumberTheory.Moduli.jacobi: negative denominator"
-  | evenI b     = error "Math.NumberTheory.Moduli.jacobi: even denominator"
-  | b == 1      = One
-  | otherwise   = jacobi' a b   -- b odd, > 1
+  | b < 0     = error "Math.NumberTheory.Moduli.jacobi: negative denominator"
+  | evenI b   = error "Math.NumberTheory.Moduli.jacobi: even denominator"
+  | otherwise = jacobi' a b   -- b odd, > 1
 
 -- | Similar to 'jacobi', but the condition on the lower argument
 -- (\"denominator\") is __not__ checked.
@@ -82,59 +80,49 @@ jacobi a b
                           Word -> Word -> JacobiSymbol
   #-}
 jacobi' :: (Integral a, Bits a) => a -> a -> JacobiSymbol
+jacobi' 0 _ = Zero
+jacobi' 1 _ = One
 jacobi' a b
-  | a == 0      = Zero
-  | a == 1      = One
-  | a < 0       = let n | rem4 b == 1 = One
-                        | otherwise   = MinusOne
-                      -- Blech, minBound may pose problems
-                      (z,o) = shiftToOddCount (abs $ toInteger a)
-                      s | evenI z || unsafeAt jac2 (rem8 b) == 1 = n
-                        | otherwise                              = negJS n
-                  in s <> jacobi' (fromInteger o) b
-  | a >= b      = case a `rem` b of
-                    0 -> Zero
-                    r -> jacPS One r b
-  | evenI a     = case shiftToOddCount a of
-                    (z,o) -> let r | rem4 o .&. rem4 b == 1 = One
-                                   | otherwise              = MinusOne
-                                 s | evenI z || unsafeAt jac2 (rem8 b) == 1 = r
-                                   | otherwise                              = negJS r
-                             in jacOL s b o
-  | otherwise   = case rem4 a .&. rem4 b of
-                    3 -> jacOL MinusOne b a
-                    _ -> jacOL One      b a
+  | a < 0     = let n = if rem4is3 b then MinusOne else One
+                    -- Blech, minBound may pose problems
+                    (z, o) = shiftToOddCount (abs $ toInteger a)
+                    s = if evenI z || rem8is1or7 b then n else negJS n
+                in s <> jacobi' (fromInteger o) b
+  | a >= b    = case a `rem` b of
+                  0 -> Zero
+                  r -> jacPS One r b
+  | evenI a   = case shiftToOddCount a of
+                  (z, o) -> let r = if rem4is3 o && rem4is3 b then MinusOne else One
+                                s = if evenI z || rem8is1or7 b then r else negJS r
+                            in jacOL s b o
+  | otherwise = jacOL (if rem4is3 a && rem4is3 b then MinusOne else One) b a
 
 -- numerator positive and smaller than denominator
 jacPS :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
-jacPS j a b
-  | evenI a     = case shiftToOddCount a of
-                    (z,o) | evenI z || unsafeAt jac2 (rem8 b) == 1 ->
-                              jacOL (if rem4 o .&. rem4 b == 3 then (negJS j) else j) b o
-                          | otherwise ->
-                              jacOL (if rem4 o .&. rem4 b == 3 then j else (negJS j)) b o
-  | otherwise   = jacOL (if rem4 a .&. rem4 b == 3 then (negJS j) else j) b a
+jacPS acc a b
+  | evenI a = case shiftToOddCount a of
+    (z, o)
+      | evenI z || rem8is1or7 b -> jacOL (if rem4is3 o && rem4is3 b then negJS acc else acc) b o
+      | otherwise               -> jacOL (if rem4is3 o && rem4is3 b then acc else negJS acc) b o
+  | otherwise = jacOL (if rem4is3 a && rem4is3 b then negJS acc else acc) b a
 
 -- numerator odd, positive and larger than denominator
 jacOL :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
-jacOL j a b
-  | b == 1    = j
-  | otherwise = case a `rem` b of
-                 0 -> Zero
-                 r -> jacPS j r b
+jacOL acc _ 1 = acc
+jacOL acc a b = case a `rem` b of
+  0 -> Zero
+  r -> jacPS acc r b
 
 -- Utilities
 
--- For large Integers, going via Int is much faster than bit-fiddling
--- on the Integer, so we do that.
-evenI :: Integral a => a -> Bool
-evenI n = fromIntegral n .&. 1 == (0 :: Int)
+-- Sadly, GHC do not optimise `Prelude.even` to a bit test automatically.
+evenI :: Bits a => a -> Bool
+evenI n = not (n `testBit` 0)
 
-rem4 :: Integral a => a -> Int
-rem4 n = fromIntegral n .&. 3
+-- For an odd input @n@ test whether n `rem` 4 == 1
+rem4is3 :: Bits a => a -> Bool
+rem4is3 n = n `testBit` 1
 
-rem8 :: Integral a => a -> Int
-rem8 n = fromIntegral n .&. 7
-
-jac2 :: UArray Int Int
-jac2 = array (0,7) [(0,0),(1,1),(2,0),(3,-1),(4,0),(5,-1),(6,0),(7,1)]
+-- For an odd input @n@ test whether (n `rem` 8) `elem` [1, 7]
+rem8is1or7 :: Bits a => a -> Bool
+rem8is1or7 n = n `testBit` 1 == n `testBit` 2
