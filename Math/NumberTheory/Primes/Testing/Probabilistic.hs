@@ -156,7 +156,7 @@ lucasTest n
       square = isPossibleSquare2 n && r*r == n
       r = integerSquareRoot n
       d = find True 5
-      find !pos cd = case jacobi' (n `rem` cd) cd of
+      find !pos cd = case jacobi (n `rem` cd) cd of
                        MinusOne -> if pos then cd else (-cd)
                        Zero     -> if cd == n then 1 else 0
                        One      -> find (not pos) (cd+2)

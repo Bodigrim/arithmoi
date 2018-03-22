@@ -43,7 +43,7 @@ import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 --   the result is @Nothing@.
 sqrtModP :: Integer -> Integer -> Maybe Integer
 sqrtModP n 2 = Just (n `mod` 2)
-sqrtModP n prime = case jacobi' n prime of
+sqrtModP n prime = case jacobi n prime of
                      MinusOne -> Nothing
                      Zero     -> Just 0
                      One      -> Just (sqrtModP' (n `mod` prime) prime)
@@ -215,7 +215,7 @@ findNonSquare n
       where
         primelist = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67]
                         ++ sieveFrom (68 + n `rem` 4) -- prevent sharing
-        search (p:ps) = case jacobi' p n of
+        search (p:ps) = case jacobi p n of
           MinusOne -> p
           _        -> search ps
         search _ = error "Should never have happened, prime list exhausted."

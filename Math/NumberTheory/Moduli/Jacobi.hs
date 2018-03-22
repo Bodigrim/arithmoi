@@ -18,7 +18,6 @@
 module Math.NumberTheory.Moduli.Jacobi
   ( JacobiSymbol(..)
   , jacobi
-  , jacobi'
   ) where
 
 import Data.Bits
@@ -73,13 +72,6 @@ jacobi a b
   | evenI b   = error "Math.NumberTheory.Moduli.jacobi: even denominator"
   | otherwise = jacobi' a b   -- b odd, > 1
 
--- | Similar to 'jacobi', but the condition on the lower argument
--- (\"denominator\") is __not__ checked.
-{-# SPECIALISE jacobi' :: Integer -> Integer -> JacobiSymbol,
-                          Natural -> Natural -> JacobiSymbol,
-                          Int -> Int -> JacobiSymbol,
-                          Word -> Word -> JacobiSymbol
-  #-}
 jacobi' :: (Integral a, Bits a) => a -> a -> JacobiSymbol
 jacobi' 0 _ = Zero
 jacobi' 1 _ = One
