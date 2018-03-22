@@ -11,8 +11,9 @@
 -- testing and integer factorization.
 --
 
-{-# LANGUAGE CPP        #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP          #-}
+{-# LANGUAGE LambdaCase   #-}
 
 module Math.NumberTheory.Moduli.Jacobi
   ( JacobiSymbol(..)
@@ -99,7 +100,7 @@ jacobi' a b
 
 -- numerator positive and smaller than denominator
 jacPS :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
-jacPS acc a b
+jacPS !acc a b
   | evenI a = case shiftToOddCount a of
     (z, o)
       | evenI z || rem8is1or7 b -> jacOL (if rem4is3 o && rem4is3 b then negJS acc else acc) b o
@@ -108,8 +109,8 @@ jacPS acc a b
 
 -- numerator odd, positive and larger than denominator
 jacOL :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol
-jacOL acc _ 1 = acc
-jacOL acc a b = case a `rem` b of
+jacOL !acc _ 1 = acc
+jacOL !acc a b = case a `rem` b of
   0 -> Zero
   r -> jacPS acc r b
 
