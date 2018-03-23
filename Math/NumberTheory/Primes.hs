@@ -15,5 +15,5 @@ module Math.NumberTheory.Primes
 
 import Math.NumberTheory.Primes.Sieve
 import Math.NumberTheory.Primes.Counting
-import Math.NumberTheory.Primes.Testing hiding (FactorSieve)
+import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.Primes.Factorisation

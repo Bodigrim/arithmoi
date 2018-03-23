@@ -14,16 +14,12 @@ import Data.Semigroup
 #endif
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
-import Math.NumberTheory.Primes.Factorisation (totientSieve, sieveTotient, carmichaelSieve, sieveCarmichael)
 
 blockLen :: Word
-blockLen = 10^6
+blockLen = 1000000
 
 totientHelper :: Word -> Word -> Word
 totientHelper p 1 = p - 1
@@ -36,12 +32,6 @@ totientBlockConfig = SieveBlockConfig
   , sbcAppend               = (*)
   , sbcFunctionOnPrimePower = totientHelper
   }
-
-sumOldTotientSieve :: Word -> Word
-sumOldTotientSieve len' = sum $ map (fromInteger . sieveTotient sieve) [1 .. len]
-  where
-    len = toInteger len'
-    sieve = totientSieve len
 
 carmichaelHelper :: Word -> Word -> Word
 carmichaelHelper 2 1 = 1
@@ -59,12 +49,6 @@ carmichaelBlockConfig = SieveBlockConfig
   , sbcFunctionOnPrimePower = carmichaelHelper
   }
 
-sumOldCarmichaelSieve :: Word -> Word
-sumOldCarmichaelSieve len' = sum $ map (fromInteger . sieveCarmichael sieve) [1 .. len]
-  where
-    len = toInteger len'
-    sieve = carmichaelSieve len
-
 moebiusConfig :: SieveBlockConfig Moebius
 moebiusConfig = SieveBlockConfig
   { sbcEmpty                = MoebiusP
@@ -78,13 +62,11 @@ moebiusConfig = SieveBlockConfig
 benchSuite :: Benchmark
 benchSuite = bgroup "SieveBlock"
   [ bgroup "totient"
-    [ bench "old"     $ nf sumOldTotientSieve blockLen
-    , bench "boxed"   $ nf (V.sum . sieveBlock        totientBlockConfig 1) blockLen
+    [ bench "boxed"   $ nf (V.sum . sieveBlock        totientBlockConfig 1) blockLen
     , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed totientBlockConfig 1) blockLen
     ]
   , bgroup "carmichael"
-    [ bench "old"     $ nf sumOldCarmichaelSieve blockLen
-    , bench "boxed"   $ nf (V.sum . sieveBlock        carmichaelBlockConfig 1) blockLen
+    [ bench "boxed"   $ nf (V.sum . sieveBlock        carmichaelBlockConfig 1) blockLen
     , bench "unboxed" $ nf (U.sum . sieveBlockUnboxed carmichaelBlockConfig 1) blockLen
     ]
   , bgroup "moebius"

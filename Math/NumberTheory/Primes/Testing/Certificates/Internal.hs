@@ -30,9 +30,6 @@ module Math.NumberTheory.Primes.Testing.Certificates.Internal
     ) where
 
 import Data.List
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 import Data.Bits
 import Data.Maybe
 import GHC.Integer.GMP.Internals

@@ -21,11 +21,6 @@ module Math.NumberTheory.UniqueFactorisation
 import Control.Arrow
 import Data.Coerce
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types (Prime, Prm(..), PrimeNat(..))

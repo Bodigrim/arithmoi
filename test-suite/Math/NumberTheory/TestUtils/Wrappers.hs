@@ -29,11 +29,6 @@ module Math.NumberTheory.TestUtils.Wrappers where
 
 import Control.Applicative
 import Data.Functor.Classes
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable)
-#endif
 
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)

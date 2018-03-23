@@ -34,9 +34,10 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 import Control.Monad.ST
 import Data.Array.ST
+import Data.Array.Unboxed
 import Control.Monad (when)
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 709 || WORD_SIZE_IN_BITS == 32
+#if WORD_SIZE_IN_BITS == 32
 import Data.Word
 #endif
 
@@ -456,3 +457,72 @@ top w j bc = go 0 TOPB TOPM bn w
              | otherwise ->
                let !na = a `shiftR` 1
                in go bs na (msk `uncheckedShiftR` na) ix wd
+
+{-# INLINE delta #-}
+delta :: Int -> Int
+delta i = unsafeAt deltas i
+
+deltas :: UArray Int Int
+deltas = listArray (0,7) [4,2,4,2,4,6,2,6]
+
+{-# INLINE tau #-}
+tau :: Int -> Int
+tau i = unsafeAt taus i
+
+taus :: UArray Int Int
+taus = listArray (0,63)
+        [  7,  4,  7,  4,  7, 12,  3, 12
+        , 12,  6, 11,  6, 12, 18,  5, 18
+        , 14,  7, 13,  7, 14, 21,  7, 21
+        , 18,  9, 19,  9, 18, 27,  9, 27
+        , 20, 10, 21, 10, 20, 30, 11, 30
+        , 25, 12, 25, 12, 25, 36, 13, 36
+        , 31, 15, 31, 15, 31, 47, 15, 47
+        , 33, 17, 33, 17, 33, 49, 17, 49
+        ]
+
+{-# INLINE byte #-}
+byte :: Int -> Int
+byte i = unsafeAt startByte i
+
+startByte :: UArray Int Int
+startByte = listArray (0,7) [1,3,5,9,11,17,27,31]
+
+{-# INLINE idx #-}
+idx :: Int -> Int
+idx i = unsafeAt startIdx i
+
+startIdx :: UArray Int Int
+startIdx = listArray (0,7) [4,7,4,4,7,4,7,7]
+
+{-# INLINE mu #-}
+mu :: Int -> Int
+mu i = unsafeAt mArr i
+
+{-# INLINE nu #-}
+nu :: Int -> Int
+nu i = unsafeAt nArr i
+
+mArr :: UArray Int Int
+mArr = listArray (0,63)
+        [ 1,  2,  2,  3,  4,  5,  6,  7
+        , 2,  3,  4,  6,  6,  8, 10, 11
+        , 2,  4,  5,  7,  8,  9, 12, 13
+        , 3,  6,  7,  9, 10, 12, 16, 17
+        , 4,  6,  8, 10, 11, 14, 18, 19
+        , 5,  8,  9, 12, 14, 17, 22, 23
+        , 6, 10, 12, 16, 18, 22, 27, 29
+        , 7, 11, 13, 17, 19, 23, 29, 31
+        ]
+
+nArr :: UArray Int Int
+nArr = listArray (0,63)
+        [ 4, 3, 7, 6, 2, 1, 5, 0
+        , 3, 7, 5, 0, 6, 2, 4, 1
+        , 7, 5, 4, 1, 0, 6, 3, 2
+        , 6, 0, 1, 4, 5, 7, 2, 3
+        , 2, 6, 0, 5, 7, 3, 1, 4
+        , 1, 2, 6, 7, 3, 4, 0, 5
+        , 5, 4, 3, 2, 1, 0, 7, 6
+        , 0, 1, 2, 3, 4, 5, 6, 7
+        ]

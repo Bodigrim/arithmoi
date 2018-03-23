@@ -25,11 +25,6 @@ import Control.Applicative
 import Data.Semigroup
 #endif
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 import Math.NumberTheory.UniqueFactorisation
 
 -- | A typical arithmetic function operates on the canonical factorisation of

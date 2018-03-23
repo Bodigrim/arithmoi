@@ -23,11 +23,6 @@ module Math.NumberTheory.Recurrencies.Linear
 import Data.Bits
 import Numeric.Natural
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 -- | Infinite zero-based table of factorials.
 --
 -- > > take 5 factorial

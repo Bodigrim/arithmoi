@@ -25,9 +25,6 @@ import Data.Semigroup
 #endif
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock

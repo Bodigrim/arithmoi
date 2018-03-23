@@ -23,11 +23,6 @@ import Control.Arrow
 import Math.NumberTheory.GCD (splitIntoCoprimes)
 import Math.NumberTheory.UniqueFactorisation
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
 -- factorisation.
 -- It is designed to preserve information about factors under multiplication.

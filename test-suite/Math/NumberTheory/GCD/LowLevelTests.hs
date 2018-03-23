@@ -19,11 +19,6 @@ module Math.NumberTheory.GCD.LowLevelTests
 
 import Test.Tasty
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 import GHC.Exts
 
 import Math.NumberTheory.GCD.LowLevel

@@ -24,10 +24,6 @@ import Data.List (genericTake)
 import Data.Maybe
 import Numeric.Natural
 
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Word
-#endif
-
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot

@@ -8,9 +8,6 @@ module Math.NumberTheory.MertensBench
   ) where
 
 import Gauge.Main
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 import Math.NumberTheory.ArithmeticFunctions.Mertens
 

@@ -52,10 +52,6 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 import Control.Arrow
 import System.Random
 import Control.Monad.State.Lazy
-#if __GLASGOW_HASKELL__ < 709
-import Control.Applicative
-import Data.Word
-#endif
 import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM

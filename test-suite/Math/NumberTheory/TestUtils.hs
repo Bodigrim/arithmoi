@@ -50,11 +50,6 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getN
 
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/))
 
-#if !(MIN_VERSION_base(4,8,0))
-import Control.Applicative
-import Data.Word
-#endif
-
 import Data.Bits
 import GHC.Exts
 import Numeric.Natural
@@ -73,20 +68,6 @@ instance Arbitrary Natural where
 instance Arbitrary GaussianInteger where
   arbitrary = (:+) <$> arbitrary <*> arbitrary
   shrink (x :+ y) = (:+) <$> shrink x <*> shrink y
-
-#if !(MIN_VERSION_smallcheck(1,1,3))
-instance Monad m => Serial m Word where
-  series =
-    generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
-    where
-      nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
-
-instance Monad m => Serial m Natural where
-  series =
-    generate (\d -> if d >= 0 then pure 0 else empty) <|> nats
-    where
-      nats = generate $ \d -> if d > 0 then [1 .. fromInteger (toInteger d)] else empty
-#endif
 
 instance Monad m => Serial m GaussianInteger where
   series = cons2 (:+)

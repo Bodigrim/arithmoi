@@ -23,10 +23,6 @@ module Math.NumberTheory.Primes.Factorisation
     , stepFactorisation
     , factorise'
     , defaultStdGenFactorisation'
-      -- *** Factor sieves
-    , FactorSieve
-    , factorSieve
-    , sieveFactor
       -- *** Trial division
     , trialDivisionTo
       -- ** Partial factorisation
@@ -35,19 +31,10 @@ module Math.NumberTheory.Primes.Factorisation
     , curveFactorisation
       -- *** Single curve worker
     , montgomeryFactorisation
-      -- * Totients
-    , TotientSieve
-    , totientSieve
-    , sieveTotient
-      -- * Carmichael function
-    , CarmichaelSieve
-    , carmichaelSieve
-    , sieveCarmichael
     ) where
 
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
-import Math.NumberTheory.Primes.Sieve.Misc
 
 -- $algorithm
 --

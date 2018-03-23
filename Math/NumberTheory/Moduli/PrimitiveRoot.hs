@@ -25,11 +25,6 @@ module Math.NumberTheory.Moduli.PrimitiveRoot
   , isPrimitiveRoot'
   ) where
 
-#if !(MIN_VERSION_base(4,8,0))
-import Control.Applicative
-import Data.Word
-#endif
-
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.Moduli (Mod, getNatMod, getNatVal, KnownNat)
 import Math.NumberTheory.Powers.General (highestPower)

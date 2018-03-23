@@ -20,18 +20,11 @@ module Math.NumberTheory.ArithmeticFunctionsTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Prelude hiding (sum, all, elem)
-import Data.Foldable
-#endif
-
 import Data.List (sort)
 import qualified Data.Set as S
 import qualified Data.IntSet as IS
 
 import Math.NumberTheory.ArithmeticFunctions
-import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.TestUtils
 
 import Numeric.Natural
@@ -103,14 +96,6 @@ totientProperty1 (NonZero n) = n <= 2 || even (runFunction totientA n)
 totientProperty2 :: NonZero Natural -> Bool
 totientProperty2 (NonZero n) = n <= 1 || runFunction totientA n < n
 
-totientSieve100 :: TotientSieve
-totientSieve100 = totientSieve 100
-
--- | totient matches sieveTotient
-totientProperty3 :: NonZero Natural -> Bool
-totientProperty3 (NonZero n) = fromIntegral (runFunction totientA n)
-  == sieveTotient totientSieve100 (fromIntegral n)
-
 -- | totient matches baseline from OEIS.
 totientOeis :: Assertion
 totientOeis = oeisAssertion "A000010" totientA
@@ -175,14 +160,6 @@ liouvilleOeis = oeisAssertion "A008836" liouvilleA
 carmichaelProperty1 :: NonZero Natural -> Bool
 carmichaelProperty1 (NonZero n) = runFunction totientA n `mod` runFunction carmichaelA n == 0
 
-carmichaelSieve100 :: CarmichaelSieve
-carmichaelSieve100 = carmichaelSieve 100
-
--- | carmichael matches sieveCarmichael
-carmichaelProperty2 :: NonZero Natural -> Bool
-carmichaelProperty2 (NonZero n) = fromIntegral (runFunction carmichaelA n)
-  == sieveCarmichael carmichaelSieve100 (fromIntegral n)
-
 -- | carmichael matches baseline from OEIS.
 carmichaelOeis :: Assertion
 carmichaelOeis = oeisAssertion "A002322" carmichaelA
@@ -246,7 +223,6 @@ testSuite = testGroup "ArithmeticFunctions"
   , testGroup "Totient"
     [ testSmallAndQuick "totient is even"      totientProperty1
     , testSmallAndQuick "totient n < n"        totientProperty2
-    , testSmallAndQuick "matches sieveTotient" totientProperty3
     , testCase          "OEIS"                 totientOeis
     ]
   , testGroup "Jordan"
@@ -265,7 +241,6 @@ testSuite = testGroup "ArithmeticFunctions"
     ]
   , testGroup "Carmichael"
     [ testSmallAndQuick "carmichael divides totient" carmichaelProperty1
-    , testSmallAndQuick "matches sieveCarmichael"    carmichaelProperty2
     , testCase          "OEIS"                       carmichaelOeis
     ]
   , testGroup "Omegas"

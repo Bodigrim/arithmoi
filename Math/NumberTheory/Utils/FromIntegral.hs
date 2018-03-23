@@ -22,9 +22,6 @@ module Math.NumberTheory.Utils.FromIntegral
   ) where
 
 import Numeric.Natural
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 wordToInt :: Word -> Int
 wordToInt = fromIntegral

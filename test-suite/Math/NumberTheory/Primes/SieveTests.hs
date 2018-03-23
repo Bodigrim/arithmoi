@@ -23,22 +23,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Math.NumberTheory.Primes.Sieve
-import qualified Math.NumberTheory.Primes.Heap as H
 import Math.NumberTheory.TestUtils
-
--- | Check that both 'primes' produce the same.
-primesProperty1 :: Assertion
-primesProperty1 = do
-  assertEqual "Sieve == Heap" (trim primes) (trim H.primes)
-  where
-    trim = take 100000
-
--- | Check that both 'sieveFrom' produce the same.
-sieveFromProperty1 :: AnySign Integer -> Bool
-sieveFromProperty1 (AnySign lowBound)
-  = trim (sieveFrom lowBound) == trim (H.sieveFrom lowBound)
-  where
-    trim = take 1000
 
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
 primeSieveProperty1 :: AnySign Integer -> Bool
@@ -62,9 +47,7 @@ psieveFromProperty1 (AnySign lowBound)
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
-  [ testCase          "primes"     primesProperty1
-  , testSmallAndQuick "sieveFrom"  sieveFromProperty1
-  , testSmallAndQuick "primeSieve" primeSieveProperty1
+  [ testSmallAndQuick "primeSieve" primeSieveProperty1
   , testCase          "psieveList" psieveListProperty1
   , testSmallAndQuick "psieveFrom" psieveFromProperty1
   ]

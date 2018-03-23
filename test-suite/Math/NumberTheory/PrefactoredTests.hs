@@ -21,10 +21,6 @@ import Test.Tasty
 import Control.Arrow (second)
 import Data.Bits (Bits)
 import Data.List (tails)
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
 import Numeric.Natural
 
 import Math.NumberTheory.GCD (coprime, splitIntoCoprimes)
