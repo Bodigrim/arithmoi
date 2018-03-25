@@ -45,7 +45,7 @@ import qualified Math.NumberTheory.Primes.Sieve         as Sieve
 import qualified Math.NumberTheory.Primes.Testing       as Testing
 import qualified Math.NumberTheory.UniqueFactorisation  as U
 import Math.NumberTheory.Utils                          (mergeBy)
-import Math.NumberTheory.Utils.FromIntegral             (integerToNatural, intToWord)
+import Math.NumberTheory.Utils.FromIntegral
 
 infix 6 :+
 
@@ -144,10 +144,10 @@ isPrime e | e == 0                     = False
 
 -- | Remove @1 - ω@ factors from an @EisensteinInteger@, and calculate that
 -- prime's multiplicity in the number's factorisation.
-divideByThree :: EisensteinInteger -> (Int, EisensteinInteger)
+divideByThree :: EisensteinInteger -> (Word, EisensteinInteger)
 divideByThree = go 0
   where
-    go :: Int -> EisensteinInteger -> (Int, EisensteinInteger)
+    go :: Word -> EisensteinInteger -> (Word, EisensteinInteger)
     go !n z@(a :+ b) | r1 == 0 && r2 == 0 = go (n + 1) (q1 :+ q2)
                       | otherwise          = (n, abs z)
       where
@@ -228,12 +228,12 @@ primes = (2 :+ 1) : mergeBy (comparing norm) l r
 -- * The reason @M >= N@ is because the prime factors of an Eisenstein integer
 -- may include a prime factor and its conjugate, meaning the number may have
 -- more Eisenstein prime factors than its norm has integer prime factors.
-factorise :: EisensteinInteger -> [(EisensteinInteger, Int)]
+factorise :: EisensteinInteger -> [(EisensteinInteger, Word)]
 factorise g = concat $
               snd $
               mapAccumL go (abs g) (Factorisation.factorise $ norm g)
   where
-    go :: EisensteinInteger -> (Integer, Int) -> (EisensteinInteger, [(EisensteinInteger, Int)])
+    go :: EisensteinInteger -> (Integer, Word) -> (EisensteinInteger, [(EisensteinInteger, Word)])
     go z (3, e) | e == n    = (q, [(2 :+ 1, e)])
                 | otherwise = error $ "3 is a prime factor of the norm of z\
                                       \ == " ++ show z ++ " with multiplicity\
@@ -266,26 +266,26 @@ divideByPrime
     :: EisensteinInteger   -- ^ Eisenstein prime @p@
     -> EisensteinInteger   -- ^ Conjugate of @p@
     -> Integer             -- ^ Precomputed norm of @p@, of form @4k + 1@
-    -> Int                 -- ^ Expected number of factors (either @p@ or @conjugate p@)
+    -> Word                -- ^ Expected number of factors (either @p@ or @conjugate p@)
                            --   in Eisenstein integer @z@
     -> EisensteinInteger   -- ^ Eisenstein integer @z@
-    -> ( Int               -- Multiplicity of factor @p@ in @z@
-       , Int               -- Multiplicity of factor @conjigate p@ in @z@
+    -> ( Word              -- Multiplicity of factor @p@ in @z@
+       , Word              -- Multiplicity of factor @conjigate p@ in @z@
        , EisensteinInteger -- Remaining Eisenstein integer
        )
 divideByPrime p p' np k = go k 0
     where
-        go :: Int -> Int -> EisensteinInteger -> (Int, Int, EisensteinInteger)
+        go :: Word -> Word -> EisensteinInteger -> (Word, Word, EisensteinInteger)
         go 0 d z = (d, d, z)
         go c d z | c >= 2, Just z' <- z `quotEvenI` np = go (c - 2) (d + 1) z'
         go c d z = (d + d1, d + d2, z'')
             where
                 (d1, z') = go1 c 0 z
                 d2 = c - d1
-                z'' = head $ drop d2
+                z'' = head $ drop (wordToInt d2)
                     $ iterate (\g -> fromMaybe err $ (g * p) `quotEvenI` np) z'
 
-        go1 :: Int -> Int -> EisensteinInteger -> (Int, EisensteinInteger)
+        go1 :: Word -> Word -> EisensteinInteger -> (Word, EisensteinInteger)
         go1 0 d z = (d, z)
         go1 c d z
             | Just z' <- (z * p') `quotEvenI` np
@@ -314,6 +314,6 @@ instance U.UniqueFactorisation EisensteinInteger where
   unPrime = coerce
 
   factorise 0 = []
-  factorise e = map (coerce *** intToWord) $ factorise e
+  factorise e = map (coerce *** id) $ factorise e
 
   isPrime e = if isPrime e then Just (EisensteinPrime e) else Nothing

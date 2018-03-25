@@ -31,7 +31,6 @@ module Math.NumberTheory.Utils
 
 import GHC.Base
 
-import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Natural
 
@@ -50,58 +49,56 @@ uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 "shiftToOddCount/Natural"   shiftToOddCount = shiftOCNatural
   #-}
 {-# INLINE [1] shiftToOddCount #-}
-shiftToOddCount :: Integral a => a -> (Int, a)
+shiftToOddCount :: Integral a => a -> (Word, a)
 shiftToOddCount n = case shiftOCInteger (fromIntegral n) of
                       (z, o) -> (z, fromInteger o)
 
 -- | Specialised version for @'Word'@.
 --   Precondition: argument strictly positive (not checked).
-shiftOCWord :: Word -> (Int, Word)
+shiftOCWord :: Word -> (Word, Word)
 shiftOCWord (W# w#) = case shiftToOddCount# w# of
-                        (# z# , u# #) -> (I# z#, W# u#)
+                        (# z# , u# #) -> (W# z#, W# u#)
 
 -- | Specialised version for @'Int'@.
 --   Precondition: argument nonzero (not checked).
-shiftOCInt :: Int -> (Int, Int)
+shiftOCInt :: Int -> (Word, Int)
 shiftOCInt (I# i#) = case shiftToOddCount# (int2Word# i#) of
-                        (# z#, u# #) -> (I# z#, I# (word2Int# u#))
+                        (# z#, u# #) -> (W# z#, I# (word2Int# u#))
 
 -- | Specialised version for @'Integer'@.
 --   Precondition: argument nonzero (not checked).
-shiftOCInteger :: Integer -> (Int, Integer)
+shiftOCInteger :: Integer -> (Word, Integer)
 shiftOCInteger n@(S# i#) =
     case shiftToOddCount# (int2Word# i#) of
-      (# z#, w# #)
-        | isTrue# (z# ==# 0#) -> (0, n)
-        | otherwise -> (I# z#, S# (word2Int# w#))
+      (# 0##, _ #) -> (0, n)
+      (# z#, w# #) -> (W# z#, wordToInteger w#)
 shiftOCInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
-                                 0#  -> (0, n)
-                                 z#  -> (I# z#, n `shiftRInteger` z#)
+                                 0## -> (0, n)
+                                 z#  -> (W# z#, bigNatToInteger (bn# `shiftRBigNat` (word2Int# z#)))
 shiftOCInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
-                                 0#  -> (0, n)
-                                 z#  -> (I# z#, n `shiftRInteger` z#)
+                                 0## -> (0, n)
+                                 z#  -> (W# z#, bigNatToNegInteger (bn# `shiftRBigNat` (word2Int# z#)))
 
 -- | Specialised version for @'Natural'@.
 --   Precondition: argument nonzero (not checked).
-shiftOCNatural :: Natural -> (Int, Natural)
+shiftOCNatural :: Natural -> (Word, Natural)
 shiftOCNatural n@(NatS# i#) =
     case shiftToOddCount# i# of
-      (# z#, w# #)
-        | isTrue# (z# ==# 0#) -> (0, n)
-        | otherwise -> (I# z#, NatS# w#)
+      (# 0##, _ #) -> (0, n)
+      (# z#, w# #) -> (W# z#, NatS# w#)
 shiftOCNatural n@(NatJ# bn#) = case bigNatZeroCount bn# of
-                                 0#  -> (0, n)
-                                 z#  -> (I# z#, NatJ# (bn# `shiftRBigNat` z#))
+                                 0## -> (0, n)
+                                 z#  -> (W# z#, bigNatToNatural (bn# `shiftRBigNat` (word2Int# z#)))
 
 -- | Count trailing zeros in a @'BigNat'@.
 --   Precondition: argument nonzero (not checked, Integer invariant).
-bigNatZeroCount :: BigNat -> Int#
-bigNatZeroCount bn# = count 0# 0#
+bigNatZeroCount :: BigNat -> Word#
+bigNatZeroCount bn# = count 0## 0#
   where
     count a# i# =
           case indexBigNat# bn# i# of
-            0## -> count (a# +# WORD_SIZE_IN_BITS#) (i# +# 1#)
-            w#  -> a# +# word2Int# (ctz# w#)
+            0## -> count (a# `plusWord#` WORD_SIZE_IN_BITS##) (i# +# 1#)
+            w#  -> a# `plusWord#` ctz# w#
 
 -- | Remove factors of @2@. If @n = 2^k*m@ with @m@ odd, the result is @m@.
 --   Precondition: argument not @0@ (not checked).
@@ -127,13 +124,13 @@ shiftOWord (W# w#) = W# (shiftToOdd# w#)
 -- | Specialised version for @'Int'@.
 --   Precondition: argument nonzero (not checked).
 shiftOInteger :: Integer -> Integer
-shiftOInteger (S# i#) = S# (word2Int# (shiftToOdd# (int2Word# i#)))
-shiftOInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
-                                 0#  -> n
-                                 z#  -> n `shiftRInteger` z#
+shiftOInteger (S# i#) = wordToInteger (shiftToOdd# (int2Word# i#))
 shiftOInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
-                                 0#  -> n
-                                 z#  -> n `shiftRInteger` z#
+                                 0## -> n
+                                 z#  -> bigNatToInteger (bn# `shiftRBigNat` (word2Int# z#))
+shiftOInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
+                                 0## -> n
+                                 z#  -> bigNatToNegInteger (bn# `shiftRBigNat` (word2Int# z#))
 
 -- | Shift argument right until the result is odd.
 --   Precondition: argument not @0@, not checked.
@@ -141,9 +138,9 @@ shiftToOdd# :: Word# -> Word#
 shiftToOdd# w# = uncheckedShiftRL# w# (word2Int# (ctz# w#))
 
 -- | Like @'shiftToOdd#'@, but count the number of places to shift too.
-shiftToOddCount# :: Word# -> (# Int#, Word# #)
-shiftToOddCount# w# = case word2Int# (ctz# w#) of
-                        k# -> (# k#, uncheckedShiftRL# w# k# #)
+shiftToOddCount# :: Word# -> (# Word#, Word# #)
+shiftToOddCount# w# = case ctz# w# of
+                        k# -> (# k#, uncheckedShiftRL# w# (word2Int# k#) #)
 
 -- | Number of 1-bits in a @'Word#'@.
 bitCountWord# :: Word# -> Int#
@@ -158,7 +155,7 @@ bitCountWord = popCount
 bitCountInt :: Int -> Int
 bitCountInt = popCount
 
-splitOff :: Integral a => a -> a -> (Int, a)
+splitOff :: Integer -> Integer -> (Word, Integer)
 splitOff _ 0 = (0, 0) -- prevent infinite loop
 splitOff p n = go 0 n
   where
@@ -169,12 +166,12 @@ splitOff p n = go 0 n
 
 -- | It is difficult to convince GHC to unbox output of 'splitOff' and 'splitOff.go',
 -- so we fallback to a specialized unboxed version to minimize allocations.
-splitOff# :: Word# -> Word# -> (# Int#, Word# #)
-splitOff# _ 0## = (# 0#, 0## #)
-splitOff# p n = go 0# n
+splitOff# :: Word# -> Word# -> (# Word#, Word# #)
+splitOff# _ 0## = (# 0##, 0## #)
+splitOff# p n = go 0## n
   where
     go k m = case m `quotRemWord#` p of
-      (# q, 0## #) -> go (k +# 1#) q
+      (# q, 0## #) -> go (k `plusWord#` 1##) q
       _            -> (# k, m #)
 {-# INLINABLE splitOff# #-}
 
@@ -195,3 +192,8 @@ recipMod :: Integer -> Integer -> Maybe Integer
 recipMod x m = case recipModInteger (x `mod` m) m of
   0 -> Nothing
   y -> Just y
+
+bigNatToNatural :: BigNat -> Natural
+bigNatToNatural bn
+  | isTrue# (sizeofBigNat# bn ==# 1#) = NatS# (bigNatToWord bn)
+  | otherwise = NatJ# bn

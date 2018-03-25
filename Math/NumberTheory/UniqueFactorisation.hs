@@ -49,23 +49,23 @@ class UniqueFactorisation a where
 instance UniqueFactorisation Int where
   type Prime Int = Prm
   unPrime   = coerce wordToInt
-  factorise = map (coerce integerToWord *** intToWord) . F.factorise . intToInteger
+  factorise = map (coerce integerToWord *** id) . F.factorise . intToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (coerce $ intToWord $ abs n) else Nothing
 
 instance UniqueFactorisation Word where
   type Prime Word = Prm
   unPrime   = coerce
-  factorise = map (coerce integerToWord *** intToWord) . F.factorise . wordToInteger
+  factorise = map (coerce integerToWord *** id) . F.factorise . wordToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
 
 instance UniqueFactorisation Integer where
   type Prime Integer = PrimeNat
   unPrime   = coerce naturalToInteger
-  factorise = map (coerce integerToNatural *** intToWord) . F.factorise
+  factorise = map (coerce integerToNatural *** id) . F.factorise
   isPrime n = if T.isPrime n then Just (coerce $ integerToNatural $ abs n) else Nothing
 
 instance UniqueFactorisation Natural where
   type Prime Natural = PrimeNat
   unPrime   = coerce
-  factorise = map (coerce integerToNatural *** intToWord) . F.factorise . naturalToInteger
+  factorise = map (coerce integerToNatural *** id) . F.factorise . naturalToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing

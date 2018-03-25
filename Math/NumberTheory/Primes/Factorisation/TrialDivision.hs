@@ -26,7 +26,7 @@ import Math.NumberTheory.Utils
 -- | Factorise an 'Integer' using a given list of numbers considered prime.
 --   If the list is not a list of primes containing all relevant primes, the
 --   result could be surprising.
-trialDivisionWith :: [Integer] -> Integer -> [(Integer,Int)]
+trialDivisionWith :: [Integer] -> Integer -> [(Integer, Word)]
 trialDivisionWith prs n
     | n < 0     = trialDivisionWith prs (-n)
     | n == 0    = error "trialDivision of 0"
@@ -47,7 +47,7 @@ trialDivisionWith prs n
 --   primes @<= bound@. If @n@ has prime divisors @> bound@, the last entry
 --   in the list is the product of all these. If @n <= bound^2@, this is a
 --   full factorisation, but very slow if @n@ has large prime divisors.
-trialDivisionTo :: Integer -> Integer -> [(Integer,Int)]
+trialDivisionTo :: Integer -> Integer -> [(Integer, Word)]
 trialDivisionTo bd
     | bd < 100      = trialDivisionTo 100
     | bd < 10000000 = trialDivisionWith (primeList $ primeSieve bd)

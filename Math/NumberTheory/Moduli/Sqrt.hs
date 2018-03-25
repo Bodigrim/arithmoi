@@ -55,7 +55,7 @@ import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 sqrtsMod :: KnownNat m => Mod m -> [Mod m]
 sqrtsMod a = map fromInteger $ sqrtsModFactorisation (getVal a) (factorise (getMod a))
   where
-    factorise = map (PrimeNat . integerToNatural *** intToWord) . F.factorise
+    factorise = map (PrimeNat . integerToNatural *** id) . F.factorise
 
 -- | List all square roots modulo a number, which factorisation is passed as a second argument.
 --
@@ -96,7 +96,7 @@ sqrtsModPrimePower nn (PrimeNat (toInteger -> prime)) expo = let primeExpo = pri
           then go rr os
           else go rr os ++ go (primeExpo - rr) os
       where
-        k = intToWord kk `quot` 2
+        k = kk `quot` 2
         t = (if prime == 2 then expo - k - 1 else expo - k) `max` ((expo + 1) `quot` 2)
         expo' = expo - 2 * k
         os = [0, prime ^ t .. primeExpo - 1]
@@ -153,7 +153,7 @@ sqrtOfMinusOne p
 tonelliShanks :: Integer -> Integer -> Integer
 tonelliShanks square prime = loop rc t1 generator log2
   where
-    (log2,q) = shiftToOddCount (prime-1)
+    (wordToInt -> log2,q) = shiftToOddCount (prime-1)
     nonSquare = findNonSquare prime
     generator = powMod nonSquare q prime
     rc = powMod square ((q+1) `quot` 2) prime
@@ -185,12 +185,12 @@ sqrtModPP' n prime expo = case sqrtsModPrime n (PrimeNat (fromInteger prime)) of
               in if diff' == 0
                    then Just r
                    else case splitOff prime diff' of
-                          (e,q) | expo <= intToWord e -> Just r
+                          (e,q) | expo <= e -> Just r
                                 | otherwise -> fmap (\inv -> hoist inv r (q `mod` prime) (prime^e)) (recipMod (2*r) prime)
 
     hoist inv root elim pp
         | diff' == 0    = root'
-        | expo <= intToWord ex    = root'
+        | expo <= ex    = root'
         | otherwise     = hoist inv root' (nelim `mod` prime) (prime^ex)
           where
             root' = (root + (inv*(prime-elim))*pp) `mod` (prime*pp)
@@ -199,13 +199,13 @@ sqrtModPP' n prime expo = case sqrtsModPrime n (PrimeNat (fromInteger prime)) of
 
 -- dirty, dirty
 sqM2P :: Integer -> Word -> Maybe Integer
-sqM2P n (wordToInt -> e)
+sqM2P n e
     | e < 2     = Just (n `mod` 2)
     | n' == 0   = Just 0
     | odd k     = Nothing
-    | otherwise = fmap ((`mod` mdl) . (`shiftL` k2)) $ solve s e2
+    | otherwise = fmap ((`mod` mdl) . (`shiftL` wordToInt k2)) $ solve s e2
       where
-        mdl = 1 `shiftL` e
+        mdl = 1 `shiftL` wordToInt e
         n' = n `mod` mdl
         (k, s) = shiftToOddCount n'
         k2 = k `quot` 2
@@ -221,7 +221,7 @@ sqM2P n (wordToInt -> e)
                     | pw >= e2  = Just x
                     | otherwise = fixup x' pw'
                       where
-                        x' = x + (1 `shiftL` (pw-1))
+                        x' = x + (1 `shiftL` (wordToInt pw - 1))
                         d = x'*x' - r
                         pw' = if d == 0 then e2 else fst (shiftToOddCount d)
 

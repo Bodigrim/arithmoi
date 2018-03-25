@@ -43,6 +43,7 @@ import GHC.Int
 
 import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.FromIntegral (wordToInt)
 
 #include "MachDeps.h"
 
@@ -98,7 +99,7 @@ binaryGCDImpl a b =
     case shiftToOddCount a' of
       (!za, !oa) ->
         case shiftToOddCount b' of
-          (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
+          (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` wordToInt (min za zb)
     where
       a' = abs a
       b' = abs b

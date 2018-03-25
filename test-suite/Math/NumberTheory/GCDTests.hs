@@ -36,6 +36,10 @@ import Math.NumberTheory.TestUtils
 binaryGCDProperty :: (Integral a, Bits a) => AnySign a -> AnySign a -> Bool
 binaryGCDProperty (AnySign a) (AnySign b) = binaryGCD a b == gcd a b
 
+binaryGCDSpecialCase1 :: Assertion
+binaryGCDSpecialCase1 = assertEqual "should be equal" (1 :: Integer) $
+  binaryGCD (-9223372036854775809) (-170141183460469231740910675752738881536)
+
 -- | Check that 'extendedGCD' is consistent with documentation.
 extendedGCDProperty :: forall a. Integral a => AnySign a -> AnySign a -> Bool
 extendedGCDProperty (AnySign a) (AnySign b) =
@@ -125,7 +129,8 @@ unionProperty1 xs ys
 
 testSuite :: TestTree
 testSuite = testGroup "GCD"
-  [ testSameIntegralProperty "binaryGCD"   binaryGCDProperty
+  [ testCase "binaryGCD special case 1"    binaryGCDSpecialCase1
+  , testSameIntegralProperty "binaryGCD"   binaryGCDProperty
   , testSameIntegralProperty "extendedGCD" extendedGCDProperty
   , testSameIntegralProperty "coprime"     coprimeProperty
   , testGroup "splitIntoCoprimes"

@@ -43,7 +43,6 @@ import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.Utils.FromIntegral
 
 import Control.DeepSeq
 import Control.Monad (guard)
@@ -97,7 +96,7 @@ isPrimePower
   :: (Integral a, UniqueFactorisation a)
   => a
   -> Maybe (Prime a, Word)
-isPrimePower n = (, intToWord k) <$> isPrime m
+isPrimePower n = (, k) <$> isPrime m
   where
     (m, k) = highestPower n
 

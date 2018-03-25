@@ -33,7 +33,7 @@ import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
 import qualified Math.NumberTheory.UniqueFactorisation  as U
 import Math.NumberTheory.Utils              (mergeBy)
-import Math.NumberTheory.Utils.FromIntegral (integerToNatural, intToWord)
+import Math.NumberTheory.Utils.FromIntegral
 
 infix 6 :+
 infixr 8 .^
@@ -166,10 +166,10 @@ a .^ e
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.
-factorise :: GaussianInteger -> [(GaussianInteger, Int)]
+factorise :: GaussianInteger -> [(GaussianInteger, Word)]
 factorise g = concat $ snd $ mapAccumL go g (Factorisation.factorise $ norm g)
     where
-        go :: GaussianInteger -> (Integer, Int) -> (GaussianInteger, [(GaussianInteger, Int)])
+        go :: GaussianInteger -> (Integer, Word) -> (GaussianInteger, [(GaussianInteger, Word)])
         go z (2, e) = (divideByTwo z, [(1 :+ 1, e)])
         go z (p, e)
             | p `mod` 4 == 3
@@ -197,16 +197,16 @@ divideByTwo z@(x :+ y)
 divideByPrime
     :: GaussianInteger   -- ^ Gaussian prime p
     -> Integer           -- ^ Precomputed norm of p, of form 4k + 1
-    -> Int               -- ^ Expected number of factors (either p or conj p)
+    -> Word              -- ^ Expected number of factors (either p or conj p)
                          --   in Gaussian integer z
     -> GaussianInteger   -- ^ Gaussian integer z
-    -> ( Int             -- Multiplicity of factor p in z
-       , Int             -- Multiplicity of factor conj p in z
-       , GaussianInteger -- Remaining Gaussian integer
+    -> ( Word            -- ^ Multiplicity of factor p in z
+       , Word            -- ^ Multiplicity of factor conj p in z
+       , GaussianInteger -- ^ Remaining Gaussian integer
        )
 divideByPrime p np k = go k 0
     where
-        go :: Int -> Int -> GaussianInteger -> (Int, Int, GaussianInteger)
+        go :: Word -> Word -> GaussianInteger -> (Word, Word, GaussianInteger)
         go 0 d z = (d, d, z)
         go c d z
             | c >= 2
@@ -216,10 +216,10 @@ divideByPrime p np k = go k 0
             where
                 (d1, z') = go1 c 0 z
                 d2 = c - d1
-                z'' = head $ drop d2
+                z'' = head $ drop (wordToInt d2)
                     $ iterate (\g -> fromMaybe err $ (g * p) `quotEvenI` np) z'
 
-        go1 :: Int -> Int -> GaussianInteger -> (Int, GaussianInteger)
+        go1 :: Word -> Word -> GaussianInteger -> (Word, GaussianInteger)
         go1 0 d z = (d, z)
         go1 c d z
             | Just z' <- (z * conjugate p) `quotEvenI` np
@@ -253,6 +253,6 @@ instance U.UniqueFactorisation GaussianInteger where
   unPrime = coerce
 
   factorise 0 = []
-  factorise g = map (coerce *** intToWord) $ factorise g
+  factorise g = map (coerce *** id) $ factorise g
 
   isPrime g = if isPrime g then Just (GaussianPrime g) else Nothing
