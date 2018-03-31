@@ -34,6 +34,9 @@ module Math.NumberTheory.GCD
     ) where
 
 import Data.Bits
+
+import qualified Data.Map.Strict as Map
+
 import GHC.Word
 import GHC.Int
 
@@ -251,6 +254,21 @@ cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
 
 cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
+
+
+newtype Coprimes a b = Coprimes { getValues :: Map.Map a b }
+
+toList :: Coprimes a b -> [(a, b)]
+toList x = Map.assocs $ getValues x
+
+insert :: (Ord a) => a -> b -> Coprimes a b -> Coprimes a b
+insert a b (Coprimes m) = Coprimes (Map.insert a b m)
+
+instance (Ord a) => Semigroup (Coprimes a b) where
+  l <> r = Coprimes (Map.union (getValues l) (getValues r))
+
+instance (Ord a) => Monoid (Coprimes a b) where
+  mempty = Coprimes Map.empty
 
 -- | The input list is assumed to be a factorisation of some number
 -- into a list of powers of (possibly, composite) non-zero factors. The output
