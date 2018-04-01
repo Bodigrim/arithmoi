@@ -82,6 +82,10 @@ splitIntoCoprimesSpecialCase2 :: Assertion
 splitIntoCoprimesSpecialCase2 =
   assertBool "should not fail" $ splitIntoCoprimesProperty4 [(0, 1), (-2, 0)]
 
+toListReturnsCorrectValues :: Assertion
+toListReturnsCorrectValues =
+  assertEqual "should be equal" (toList $ splitIntoCoprimes [(140, 1), (165, 1)]) [(5,2),(28,1),(33,1)]
+
 testSuite :: TestTree
 testSuite = testGroup "GCD"
   [ testSameIntegralProperty "binaryGCD"   binaryGCDProperty
@@ -95,5 +99,8 @@ testSuite = testGroup "GCD"
     , testCase          "does not freeze 1"                   splitIntoCoprimesSpecialCase1
     , testCase          "does not freeze 2"                   splitIntoCoprimesSpecialCase2
     , testSmallAndQuick "does not freeze random"              splitIntoCoprimesProperty4
+    ]
+  , testGroup "Coprimes"
+    [  testCase         "test equality"                       toListReturnsCorrectValues
     ]
   ]

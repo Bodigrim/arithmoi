@@ -25,7 +25,6 @@
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE MagicHash    #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Math.NumberTheory.GCD
     ( binaryGCD
@@ -285,9 +284,9 @@ splitIntoCoprimes xs = foldl (\acc (a,b) -> insert a b acc) (Coprimes Map.empty)
 -- having to merge multiplicities of primes, which occurs more than in one
 -- composite factor.
 --
--- > > splitIntoCoprimes [(140, 1), (165, 1)]
+-- > > splitIntoCoprimes' [(140, 1), (165, 1)]
 -- > [(5,2),(28,1),(33,1)]
--- > > splitIntoCoprimes [(360, 1), (210, 1)]
+-- > > splitIntoCoprimes' [(360, 1), (210, 1)]
 -- > [(2,4),(3,3),(5,2),(7,1)]
 splitIntoCoprimes' :: (Integral a, Eq b, Num b) => [(a, b)] -> [(a, b)]
 splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
