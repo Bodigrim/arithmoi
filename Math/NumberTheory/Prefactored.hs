@@ -20,7 +20,7 @@ module Math.NumberTheory.Prefactored
 
 import Control.Arrow
 
-import Math.NumberTheory.GCD (splitIntoCoprimes)
+import Math.NumberTheory.GCD (splitIntoCoprimes, toList)
 import Math.NumberTheory.UniqueFactorisation
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
@@ -100,7 +100,7 @@ fromValue a = Prefactored a [(a, 1)]
 -- > > fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
 -- > Prefactored {prefValue = 88045650000, prefFactors = [(5, 5), (28, 2), (33, 3)]}
 fromFactors :: Integral a => [(a, Word)] -> Prefactored a
-fromFactors as = Prefactored (product (map (uncurry (^)) as)) (splitIntoCoprimes as)
+fromFactors as = Prefactored (product (map (uncurry (^)) as)) (toList $ splitIntoCoprimes as)
 
 instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
@@ -108,7 +108,7 @@ instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
   Prefactored v1 _ - Prefactored v2 _
     = fromValue (v1 - v2)
   Prefactored v1 f1 * Prefactored v2 f2
-    = Prefactored (v1 * v2) (splitIntoCoprimes (f1 ++ f2))
+    = Prefactored (v1 * v2) (toList $ splitIntoCoprimes (f1 ++ f2))
   negate (Prefactored v f) = Prefactored (negate v) f
   abs (Prefactored v f)    = Prefactored (abs v) f
   signum (Prefactored v _) = Prefactored (signum v) []

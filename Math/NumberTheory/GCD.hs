@@ -33,6 +33,7 @@ module Math.NumberTheory.GCD
     , coprime
     , splitIntoCoprimes
     , Coprimes
+    , toList
     ) where
 
 import Data.Bits
@@ -258,7 +259,7 @@ cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
 
 
-newtype Coprimes a b = Coprimes { getValues :: Map.Map a b }
+newtype Coprimes a b = Coprimes { getValues :: Map.Map a b } deriving (Eq)
 
 toList :: Coprimes a b -> [(a, b)]
 toList x = Map.assocs $ getValues x

@@ -48,13 +48,13 @@ coprimeProperty :: (Integral a, Bits a) => AnySign a -> AnySign a -> Bool
 coprimeProperty (AnySign a) (AnySign b) = coprime a b == (gcd a b == 1)
 
 splitIntoCoprimesProperty1 :: [(Positive Natural, Power Word)] -> Bool
-splitIntoCoprimesProperty1 fs' = factorback fs == factorback (splitIntoCoprimes fs)
+splitIntoCoprimesProperty1 fs' = factorback fs == factorback (toList $ splitIntoCoprimes fs)
   where
     fs = map (getPositive *** getPower) fs'
     factorback = product . map (uncurry (^))
 
 splitIntoCoprimesProperty2 :: [(Positive Natural, Power Word)] -> Bool
-splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (splitIntoCoprimes fs)
+splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (toList $ splitIntoCoprimes fs)
   where
     fs = map (getPositive *** getPower) fs'
     multiplicities = sum . map snd . filter ((/= 1) . fst)
@@ -62,7 +62,7 @@ splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (splitIntoC
 splitIntoCoprimesProperty3 :: [(Positive Natural, Power Word)] -> Bool
 splitIntoCoprimesProperty3 fs' = and [ coprime x y | (x : xs) <- tails fs, y <- xs ]
   where
-    fs = map fst $ splitIntoCoprimes $ map (getPositive *** getPower) fs'
+    fs = map fst $ toList $ splitIntoCoprimes $ map (getPositive *** getPower) fs'
 
 -- | Check that evaluation never freezes.
 splitIntoCoprimesProperty4 :: [(Integer, Word)] -> Bool
