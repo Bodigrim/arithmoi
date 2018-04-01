@@ -26,6 +26,8 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE MagicHash    #-}
 
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
@@ -36,6 +38,7 @@ module Math.NumberTheory.GCD
     ) where
 
 import Data.Bits
+import Data.Semigroup
 
 import qualified Data.Map.Strict as Map
 
