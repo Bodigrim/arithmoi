@@ -26,7 +26,7 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE MagicHash    #-}
 
-{-# OPTIONS_GHC -Wno-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Math.NumberTheory.GCD
     ( binaryGCD
