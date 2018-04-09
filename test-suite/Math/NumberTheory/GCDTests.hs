@@ -86,6 +86,14 @@ toListReturnsCorrectValues :: Assertion
 toListReturnsCorrectValues =
   assertEqual "should be equal" (toList $ splitIntoCoprimes [(140, 1), (165, 1)]) [(5,2),(28,1),(33,1)]
 
+unionReturnsCorrectValues :: Assertion
+unionReturnsCorrectValues =
+  let a = splitIntoCoprimes [(700, 1), (165, 1)] -- [(5,3),(28,1),(33,1)]
+      b = splitIntoCoprimes [(360, 1), (210, 1)] -- [(2,4),(3,3),(5,2),(7,1)]
+      expected = [(2,4),(3,3),(5,3),(7,1),(28,1),(33,1)]
+      actual = toList (a <> b)
+  in assertEqual "should be equal" expected actual
+
 testSuite :: TestTree
 testSuite = testGroup "GCD"
   [ testSameIntegralProperty "binaryGCD"   binaryGCDProperty
@@ -102,5 +110,6 @@ testSuite = testGroup "GCD"
     ]
   , testGroup "Coprimes"
     [  testCase         "test equality"                       toListReturnsCorrectValues
+    ,  testCase         "test union"                          unionReturnsCorrectValues
     ]
   ]

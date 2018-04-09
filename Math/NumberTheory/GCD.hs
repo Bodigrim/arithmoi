@@ -261,18 +261,18 @@ cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
 
 
-newtype Coprimes a b = Coprimes { getValues :: Map.Map a b } deriving (Eq)
+newtype Coprimes a b = Coprimes { unCoprimes :: Map.Map a b } deriving (Eq)
 
 toList :: Coprimes a b -> [(a, b)]
-toList x = Map.assocs $ getValues x
+toList x = Map.assocs $ unCoprimes x
 
 insert :: (Ord a) => a -> b -> Coprimes a b -> Coprimes a b
 insert a b (Coprimes m) = Coprimes (Map.insert a b m)
 
-instance (Ord a) => Semigroup (Coprimes a b) where
-  (Coprimes l) <> (Coprimes r) = Coprimes (Map.union l r)
+instance (Ord a, Ord b) => Semigroup (Coprimes a b) where
+  (Coprimes l) <> (Coprimes r) = Coprimes (Map.unionWith max l r)
 
-instance (Ord a) => Monoid (Coprimes a b) where
+instance (Ord a, Ord b) => Monoid (Coprimes a b) where
   mempty = Coprimes Map.empty
 
 splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
