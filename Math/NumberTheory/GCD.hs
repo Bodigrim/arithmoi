@@ -269,11 +269,13 @@ toList x = Map.assocs $ unCoprimes x
 insert :: (Ord a) => a -> b -> Coprimes a b -> Coprimes a b
 insert a b (Coprimes m) = Coprimes (Map.insert a b m)
 
-instance (Ord a, Ord b) => Semigroup (Coprimes a b) where
-  (Coprimes l) <> (Coprimes r) = Coprimes (Map.unionWith max l r)
+instance (Ord a, Integral a, Ord b, Num b) => Semigroup (Coprimes a b) where
+  (Coprimes l) <> (Coprimes r) = splitIntoCoprimes allTuples
+    where allTuples = (Map.assocs l) ++ (Map.assocs r)
 
-instance (Ord a, Ord b) => Monoid (Coprimes a b) where
+instance (Ord a, Integral a, Ord b, Num b) => Monoid (Coprimes a b) where
   mempty = Coprimes Map.empty
+  mappend = (<>)
 
 splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
 splitIntoCoprimes xs = foldl (\acc (a,b) -> insert a b acc) (Coprimes Map.empty) tuples

@@ -90,7 +90,7 @@ unionReturnsCorrectValues :: Assertion
 unionReturnsCorrectValues =
   let a = splitIntoCoprimes [(700, 1), (165, 1)] -- [(5,3),(28,1),(33,1)]
       b = splitIntoCoprimes [(360, 1), (210, 1)] -- [(2,4),(3,3),(5,2),(7,1)]
-      expected = [(2,4),(3,3),(5,3),(7,1),(28,1),(33,1)]
+      expected = [(2,6),(3,4),(5,5),(7,2),(11,1)]
       actual = toList (a <> b)
   in assertEqual "should be equal" expected actual
 
