@@ -33,7 +33,7 @@ isValid pref
   && and [ coprime g h | ((g, _) : gs) <- tails fs, (h, _) <- gs ]
   where
     n  = prefValue   pref
-    fs = prefFactors pref
+    fs = toList $ prefFactors pref
 
 fromValueProperty :: Integer -> Bool
 fromValueProperty n = isValid pref && prefValue pref == n

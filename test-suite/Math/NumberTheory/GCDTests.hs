@@ -11,7 +11,7 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults -fno-warn-unused-imports #-}
 
 module Math.NumberTheory.GCDTests
   ( testSuite
@@ -22,6 +22,7 @@ import Test.Tasty.HUnit
 
 import Control.Arrow
 import Data.Bits
+import Data.Semigroup
 import Data.List (tails)
 import Numeric.Natural
 

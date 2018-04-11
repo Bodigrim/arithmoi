@@ -20,7 +20,7 @@ module Math.NumberTheory.Prefactored
 
 import Control.Arrow
 
-import Math.NumberTheory.GCD (splitIntoCoprimes, toList)
+import Math.NumberTheory.GCD (Coprimes, splitIntoCoprimes, toList, insert)
 import Math.NumberTheory.UniqueFactorisation
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
@@ -79,7 +79,7 @@ import Math.NumberTheory.UniqueFactorisation
 data Prefactored a = Prefactored
   { prefValue   :: a
     -- ^ Number itself.
-  , prefFactors :: [(a, Word)]
+  , prefFactors :: Coprimes a Word
     -- ^ List of pairwise coprime (but not neccesarily prime) factors,
     -- accompanied by their multiplicities.
   } deriving (Show)
@@ -88,8 +88,8 @@ data Prefactored a = Prefactored
 --
 -- > > fromValue 123
 -- > Prefactored {prefValue = 123, prefFactors = [(123, 1)]}
-fromValue :: a -> Prefactored a
-fromValue a = Prefactored a [(a, 1)]
+fromValue :: (Integral a) => a -> Prefactored a
+fromValue a = Prefactored a (insert a 1 mempty)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
 -- (but not neccesarily prime) factors with multiplicities.
@@ -100,7 +100,7 @@ fromValue a = Prefactored a [(a, 1)]
 -- > > fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
 -- > Prefactored {prefValue = 88045650000, prefFactors = [(5, 5), (28, 2), (33, 3)]}
 fromFactors :: Integral a => [(a, Word)] -> Prefactored a
-fromFactors as = Prefactored (product (map (uncurry (^)) as)) (toList $ splitIntoCoprimes as)
+fromFactors as = Prefactored (product (map (uncurry (^)) as)) (splitIntoCoprimes as)
 
 instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
@@ -108,18 +108,18 @@ instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
   Prefactored v1 _ - Prefactored v2 _
     = fromValue (v1 - v2)
   Prefactored v1 f1 * Prefactored v2 f2
-    = Prefactored (v1 * v2) (toList $ splitIntoCoprimes (f1 ++ f2))
+    = Prefactored (v1 * v2) (f1 <> f2)
   negate (Prefactored v f) = Prefactored (negate v) f
   abs (Prefactored v f)    = Prefactored (abs v) f
-  signum (Prefactored v _) = Prefactored (signum v) []
+  signum (Prefactored v _) = Prefactored (signum v) mempty
   fromInteger n = fromValue (fromInteger n)
 
 type instance Prime (Prefactored a) = Prime a
 
-instance UniqueFactorisation a => UniqueFactorisation (Prefactored a) where
+instance (Integral a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
-    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) f
-  isPrime (Prefactored _ f) = case f of
+    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (toList f)
+  isPrime (Prefactored _ f) = case toList f of
     [(n, 1)] -> isPrime n
     _        -> Nothing

@@ -35,6 +35,7 @@ module Math.NumberTheory.GCD
     , splitIntoCoprimes
     , Coprimes
     , toList
+    , insert
     ) where
 
 import Data.Bits
@@ -261,7 +262,7 @@ cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
 
 
-newtype Coprimes a b = Coprimes { unCoprimes :: Map.Map a b } deriving (Eq)
+newtype Coprimes a b = Coprimes { unCoprimes :: Map.Map a b } deriving (Eq, Show)
 
 toList :: Coprimes a b -> [(a, b)]
 toList x = Map.assocs $ unCoprimes x
@@ -277,10 +278,6 @@ instance (Ord a, Integral a, Ord b, Num b) => Monoid (Coprimes a b) where
   mempty = Coprimes Map.empty
   mappend = (<>)
 
-splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
-splitIntoCoprimes xs = foldl (\acc (a,b) -> insert a b acc) (Coprimes Map.empty) tuples
-  where tuples = splitIntoCoprimes' xs
-
 -- | The input list is assumed to be a factorisation of some number
 -- into a list of powers of (possibly, composite) non-zero factors. The output
 -- list is a factorisation of the same number such that all factors
@@ -289,10 +286,14 @@ splitIntoCoprimes xs = foldl (\acc (a,b) -> insert a b acc) (Coprimes Map.empty)
 -- having to merge multiplicities of primes, which occurs more than in one
 -- composite factor.
 --
--- > > splitIntoCoprimes' [(140, 1), (165, 1)]
+-- > > splitIntoCoprimes [(140, 1), (165, 1)]
 -- > [(5,2),(28,1),(33,1)]
--- > > splitIntoCoprimes' [(360, 1), (210, 1)]
+-- > > splitIntoCoprimes [(360, 1), (210, 1)]
 -- > [(2,4),(3,3),(5,2),(7,1)]
+splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
+splitIntoCoprimes xs = foldl (\acc (a,b) -> insert a b acc) (Coprimes Map.empty) tuples
+  where tuples = splitIntoCoprimes' xs
+
 splitIntoCoprimes' :: (Integral a, Eq b, Num b) => [(a, b)] -> [(a, b)]
 splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
   where
