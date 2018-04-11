@@ -77,10 +77,9 @@ jacobi' 0 _ = Zero
 jacobi' 1 _ = One
 jacobi' a b
   | a < 0     = let n = if rem4is3 b then MinusOne else One
-                    -- Blech, minBound may pose problems
-                    (z, o) = shiftToOddCount (abs $ toInteger a)
+                    (z, o) = shiftToOddCount (negate a)
                     s = if evenI z || rem8is1or7 b then n else negJS n
-                in s <> jacobi' (fromInteger o) b
+                in s <> jacobi' o b
   | a >= b    = case a `rem` b of
                   0 -> Zero
                   r -> jacPS One r b
