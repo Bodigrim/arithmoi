@@ -26,7 +26,7 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE MagicHash    #-}
 
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-unused-top-binds #-}
 
 module Math.NumberTheory.GCD
     ( binaryGCD
@@ -270,14 +270,16 @@ singleton a b = Coprimes (Map.singleton a b)
 toList :: Coprimes a b -> [(a, b)]
 toList x = Map.assocs $ unCoprimes x
 
-insert :: (Ord a) => a -> b -> Coprimes a b -> Coprimes a b
-insert a b (Coprimes m) = Coprimes (Map.insert a b m)
+insert :: (Integral a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
+insert a b cs = splitIntoCoprimes ps
+  where ps' = toList cs
+        ps = (a, b) : ps'
 
-instance (Ord a, Integral a, Ord b, Num b) => Semigroup (Coprimes a b) where
+instance (Integral a, Eq b, Num b) => Semigroup (Coprimes a b) where
   (Coprimes l) <> (Coprimes r) = splitIntoCoprimes allTuples
     where allTuples = (Map.assocs l) ++ (Map.assocs r)
 
-instance (Ord a, Integral a, Ord b, Num b) => Monoid (Coprimes a b) where
+instance (Integral a, Eq b, Num b) => Monoid (Coprimes a b) where
   mempty = Coprimes Map.empty
   mappend = (<>)
 
@@ -294,8 +296,7 @@ instance (Ord a, Integral a, Ord b, Num b) => Monoid (Coprimes a b) where
 -- > > splitIntoCoprimes [(360, 1), (210, 1)]
 -- > Coprimes {unCoprimes = fromList [(2,4),(3,3),(5,2),(7,1)]}
 splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
-splitIntoCoprimes xs = foldl (\acc (a,b) -> insert a b acc) (Coprimes Map.empty) tuples
-  where tuples = splitIntoCoprimes' xs
+splitIntoCoprimes xs = Coprimes (Map.fromList $ splitIntoCoprimes' xs)
 
 splitIntoCoprimes' :: (Integral a, Eq b, Num b) => [(a, b)] -> [(a, b)]
 splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
