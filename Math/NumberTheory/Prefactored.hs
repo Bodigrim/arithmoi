@@ -12,6 +12,8 @@
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE TypeFamilies #-}
 
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+
 module Math.NumberTheory.Prefactored
   ( Prefactored(prefValue, prefFactors)
   , fromValue
@@ -20,7 +22,9 @@ module Math.NumberTheory.Prefactored
 
 import Control.Arrow
 
-import Math.NumberTheory.GCD (Coprimes, splitIntoCoprimes, toList, insert)
+import Data.Semigroup
+
+import Math.NumberTheory.GCD (Coprimes, splitIntoCoprimes, toList, singleton)
 import Math.NumberTheory.UniqueFactorisation
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
@@ -88,8 +92,8 @@ data Prefactored a = Prefactored
 --
 -- > > fromValue 123
 -- > Prefactored {prefValue = 123, prefFactors = [(123, 1)]}
-fromValue :: (Integral a) => a -> Prefactored a
-fromValue a = Prefactored a (insert a 1 mempty)
+fromValue :: Ord a => a -> Prefactored a
+fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
 -- (but not neccesarily prime) factors with multiplicities.
@@ -116,7 +120,7 @@ instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
 
 type instance Prime (Prefactored a) = Prime a
 
-instance (Integral a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
+instance (Ord a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (toList f)
