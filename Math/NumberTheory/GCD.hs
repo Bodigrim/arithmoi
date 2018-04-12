@@ -270,9 +270,12 @@ singleton a b = Coprimes (Map.singleton a b)
 toList :: Coprimes a b -> [(a, b)]
 toList x = Map.assocs $ unCoprimes x
 
-insert :: (Integral a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
-insert a b cs = splitIntoCoprimes ps
-  where ps' = toList cs
+insert :: (Integral a, Bits a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
+insert a b cs@(Coprimes m) = if isCoprimeBase
+  then Coprimes (Map.fromList ps)
+  else splitIntoCoprimes ps
+  where isCoprimeBase = all (coprime a) (Map.keys m)
+        ps' = toList cs
         ps = (a, b) : ps'
 
 instance (Integral a, Eq b, Num b) => Semigroup (Coprimes a b) where
