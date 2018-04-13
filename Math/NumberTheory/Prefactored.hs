@@ -12,6 +12,8 @@
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE TypeFamilies #-}
 
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+
 module Math.NumberTheory.Prefactored
   ( Prefactored(prefValue, prefFactors)
   , fromValue
@@ -20,7 +22,9 @@ module Math.NumberTheory.Prefactored
 
 import Control.Arrow
 
-import Math.NumberTheory.GCD (splitIntoCoprimes)
+import Data.Semigroup
+
+import Math.NumberTheory.GCD (Coprimes, splitIntoCoprimes, toList, singleton)
 import Math.NumberTheory.UniqueFactorisation
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
@@ -79,7 +83,7 @@ import Math.NumberTheory.UniqueFactorisation
 data Prefactored a = Prefactored
   { prefValue   :: a
     -- ^ Number itself.
-  , prefFactors :: [(a, Word)]
+  , prefFactors :: Coprimes a Word
     -- ^ List of pairwise coprime (but not neccesarily prime) factors,
     -- accompanied by their multiplicities.
   } deriving (Show)
@@ -89,7 +93,7 @@ data Prefactored a = Prefactored
 -- > > fromValue 123
 -- > Prefactored {prefValue = 123, prefFactors = [(123, 1)]}
 fromValue :: a -> Prefactored a
-fromValue a = Prefactored a [(a, 1)]
+fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
 -- (but not neccesarily prime) factors with multiplicities.
@@ -108,10 +112,10 @@ instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
   Prefactored v1 _ - Prefactored v2 _
     = fromValue (v1 - v2)
   Prefactored v1 f1 * Prefactored v2 f2
-    = Prefactored (v1 * v2) (splitIntoCoprimes (f1 ++ f2))
+    = Prefactored (v1 * v2) (f1 <> f2)
   negate (Prefactored v f) = Prefactored (negate v) f
   abs (Prefactored v f)    = Prefactored (abs v) f
-  signum (Prefactored v _) = Prefactored (signum v) []
+  signum (Prefactored v _) = Prefactored (signum v) mempty
   fromInteger n = fromValue (fromInteger n)
 
 type instance Prime (Prefactored a) = Prime a
@@ -119,7 +123,7 @@ type instance Prime (Prefactored a) = Prime a
 instance UniqueFactorisation a => UniqueFactorisation (Prefactored a) where
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
-    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) f
-  isPrime (Prefactored _ f) = case f of
+    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (toList f)
+  isPrime (Prefactored _ f) = case toList f of
     [(n, 1)] -> isPrime n
     _        -> Nothing

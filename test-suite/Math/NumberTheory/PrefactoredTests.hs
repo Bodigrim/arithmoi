@@ -23,7 +23,7 @@ import Data.Bits (Bits)
 import Data.List (tails)
 import Numeric.Natural
 
-import Math.NumberTheory.GCD (coprime, splitIntoCoprimes)
+import Math.NumberTheory.GCD (coprime, splitIntoCoprimes, toList)
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.TestUtils
 
@@ -33,7 +33,7 @@ isValid pref
   && and [ coprime g h | ((g, _) : gs) <- tails fs, (h, _) <- gs ]
   where
     n  = prefValue   pref
-    fs = prefFactors pref
+    fs = toList $ prefFactors pref
 
 fromValueProperty :: Integer -> Bool
 fromValueProperty n = isValid pref && prefValue pref == n
@@ -44,7 +44,7 @@ fromFactorsProperty :: [(Integer, Power Word)] -> Bool
 fromFactorsProperty fs' = isValid pref && abs (prefValue pref) == abs (product (map (uncurry (^)) fs))
   where
     fs   = map (second getPower) fs'
-    pref = fromFactors (splitIntoCoprimes fs)
+    pref = fromFactors (toList $ splitIntoCoprimes fs)
 
 plusProperty :: Integer -> Integer -> Bool
 plusProperty x y = isValid z && prefValue z == x + y
