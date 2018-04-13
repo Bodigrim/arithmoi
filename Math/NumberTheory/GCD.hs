@@ -26,7 +26,7 @@
 {-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE MagicHash    #-}
 
-{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-unused-top-binds #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Math.NumberTheory.GCD
     ( binaryGCD
@@ -36,6 +36,7 @@ module Math.NumberTheory.GCD
     , Coprimes
     , toList
     , singleton
+    , insert
     ) where
 
 import Data.Bits
@@ -264,7 +265,7 @@ cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
 
 newtype Coprimes a b = Coprimes { unCoprimes :: Map.Map a b } deriving (Eq, Show)
 
-singleton :: Ord a => a -> b -> Coprimes a b
+singleton :: a -> b -> Coprimes a b
 singleton a b = Coprimes (Map.singleton a b)
 
 toList :: Coprimes a b -> [(a, b)]
@@ -272,7 +273,7 @@ toList x = Map.assocs $ unCoprimes x
 
 insert :: (Integral a, Bits a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
 insert a b cs@(Coprimes m) = if isCoprimeBase
-  then Coprimes (Map.fromList ps)
+  then Coprimes (Map.insert a b m)
   else splitIntoCoprimes ps
   where isCoprimeBase = all (coprime a) (Map.keys m)
         ps' = toList cs

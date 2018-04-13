@@ -95,6 +95,21 @@ unionReturnsCorrectValues =
       actual = toList (a <> b)
   in assertEqual "should be equal" expected actual
 
+insertReturnsCorrectValuesWhenCoprimeBase :: Assertion
+insertReturnsCorrectValuesWhenCoprimeBase =
+  let a = insert 5 2 (singleton 4 3)
+      expected = [(4,3), (5,2)]
+      actual = toList a :: [(Int, Int)]
+  in assertEqual "should be equal" expected actual
+
+insertReturnsCorrectValuesWhenNotCoprimeBase :: Assertion
+insertReturnsCorrectValuesWhenNotCoprimeBase =
+  let a = insert 2 4 (insert 7 1 (insert 5 2 (singleton 4 3)))
+      actual = toList a :: [(Int, Int)]
+      expected = [(2,10), (5,2), (7,1)]
+  in assertEqual "should be equal" expected actual
+
+
 testSuite :: TestTree
 testSuite = testGroup "GCD"
   [ testSameIntegralProperty "binaryGCD"   binaryGCDProperty
@@ -112,5 +127,7 @@ testSuite = testGroup "GCD"
   , testGroup "Coprimes"
     [  testCase         "test equality"                       toListReturnsCorrectValues
     ,  testCase         "test union"                          unionReturnsCorrectValues
+    ,  testCase         "test insert with coprime base"       insertReturnsCorrectValuesWhenCoprimeBase
+    ,  testCase         "test insert with non-coprime base"   insertReturnsCorrectValuesWhenNotCoprimeBase
     ]
   ]

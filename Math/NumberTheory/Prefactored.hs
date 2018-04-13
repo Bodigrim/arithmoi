@@ -92,7 +92,7 @@ data Prefactored a = Prefactored
 --
 -- > > fromValue 123
 -- > Prefactored {prefValue = 123, prefFactors = [(123, 1)]}
-fromValue :: Ord a => a -> Prefactored a
+fromValue :: a -> Prefactored a
 fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
@@ -120,7 +120,7 @@ instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
 
 type instance Prime (Prefactored a) = Prime a
 
-instance (Ord a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
+instance UniqueFactorisation a => UniqueFactorisation (Prefactored a) where
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (toList f)
