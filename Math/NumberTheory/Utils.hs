@@ -29,6 +29,7 @@ import GHC.Base
 
 import GHC.Integer
 import GHC.Integer.GMP.Internals
+import GHC.Natural
 
 import Data.Bits
 
@@ -42,6 +43,7 @@ uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 "shiftToOddCount/Int"       shiftToOddCount = shiftOCInt
 "shiftToOddCount/Word"      shiftToOddCount = shiftOCWord
 "shiftToOddCount/Integer"   shiftToOddCount = shiftOCInteger
+"shiftToOddCount/Natural"   shiftToOddCount = shiftOCNatural
   #-}
 {-# INLINE [1] shiftToOddCount #-}
 shiftToOddCount :: Integral a => a -> (Int, a)
@@ -74,6 +76,18 @@ shiftOCInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
 shiftOCInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
                                  0#  -> (0, n)
                                  z#  -> (I# z#, n `shiftRInteger` z#)
+
+-- | Specialised version for @'Natural'@.
+--   Precondition: argument nonzero (not checked).
+shiftOCNatural :: Natural -> (Int, Natural)
+shiftOCNatural n@(NatS# i#) =
+    case shiftToOddCount# i# of
+      (# z#, w# #)
+        | isTrue# (z# ==# 0#) -> (0, n)
+        | otherwise -> (I# z#, NatS# w#)
+shiftOCNatural n@(NatJ# bn#) = case bigNatZeroCount bn# of
+                                 0#  -> (0, n)
+                                 z#  -> (I# z#, NatJ# (bn# `shiftRBigNat` z#))
 
 -- | Count trailing zeros in a @'BigNat'@.
 --   Precondition: argument nonzero (not checked, Integer invariant).
