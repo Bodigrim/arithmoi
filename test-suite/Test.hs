@@ -69,9 +69,7 @@ tests = testGroup "All"
     [ MoebiusInversion.testSuite
     , MoebiusInversionInt.testSuite
     ]
-  , testGroup "Prefactored"
-    [ Prefactored.testSuite
-    ]
+  , Prefactored.testSuite
   , testGroup "Primes"
     [ Primes.testSuite
     , Counting.testSuite
@@ -79,21 +77,13 @@ tests = testGroup "All"
     , Sieve.testSuite
     , Testing.testSuite
     ]
-  , testGroup "Gaussian"
-    [ Gaussian.testSuite
-    ]
+  , Gaussian.testSuite
   , testGroup "ArithmeticFunctions"
     [ ArithmeticFunctions.testSuite
     , Mertens.testSuite
     , SieveBlock.testSuite
     ]
-  , testGroup "UniqueFactorisation"
-    [ UniqueFactorisation.testSuite
-    ]
-  , testGroup "Zeta"
-    [ Zeta.testSuite
-    ]
-  , testGroup "Curves"
-    [ Curves.testSuite
-    ]
+  , UniqueFactorisation.testSuite
+  , Zeta.testSuite
+  , Curves.testSuite
   ]
