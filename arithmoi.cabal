@@ -154,6 +154,7 @@ test-suite spec
     Math.NumberTheory.PrimesTests
     Math.NumberTheory.Recurrencies.BilinearTests
     Math.NumberTheory.Recurrencies.LinearTests
+    Math.NumberTheory.SmoothNumbersTests
     Math.NumberTheory.TestUtils
     Math.NumberTheory.TestUtils.MyCompose
     Math.NumberTheory.TestUtils.Wrappers

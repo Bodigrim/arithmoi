@@ -30,7 +30,7 @@ import Math.NumberTheory.Primes.Sieve (primes)
 
 -- | An abstract representation of a smooth basis.
 -- It consists of a set of coprime numbers ≥2.
-newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving Show
+newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 
 -- | Build a 'SmoothBasis' from a set of coprime numbers ≥2.
 --
