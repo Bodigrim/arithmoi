@@ -8,7 +8,10 @@
 --
 -- Sieve
 --
-{-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleContexts    #-}
+
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
@@ -44,6 +47,7 @@ import Data.Word
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.FromIntegral
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 
@@ -135,7 +139,7 @@ psieveList = makeSieves plim sqlim 0 0 cache
     plim = 4801     -- prime #647, 644 of them to use
     sqlim = plim*plim
     cache = runSTUArray $ do
-        sieve <- sieveTo 4801
+        sieve <- sieveTo (4801 :: Integer)
         new <- unsafeNewArray_ (0,1287) :: ST s (STUArray s Int CacheWord)
         let fill j indx
               | 1279 < indx = return new    -- index of 4801 = 159*30 + 31 ~> 159*8+7
@@ -404,7 +408,7 @@ nthPrimeCt n
                       bnd = bd0 + bd0 `quot` 32 + 37
                       !sv = primeSieve bnd
                   in countToNth (n-3) [sv]
-  | otherwise   = countToNth (n-3) (psieveFrom (fromIntegral $ fromInteger n .&. (7 :: Int)))
+  | otherwise   = countToNth (n-3) (psieveFrom (intToInteger $ fromInteger n .&. (7 :: Int)))
 
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
