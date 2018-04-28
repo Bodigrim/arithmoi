@@ -26,9 +26,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , countFromTo
     , countAll
     , countToNth
-    , sieveBytes
     , sieveBits
-    , sieveWords
     , sieveRange
     , sieveTo
     ) where
