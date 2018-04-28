@@ -6,6 +6,8 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
+-- Auxiliary stuff, conversion between number and index,
+-- remainders modulo 30 and related things.
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Indexing
     ( idxPr
@@ -18,13 +20,6 @@ import Data.Bits
 
 import Math.NumberTheory.Unsafe
 
--- Auxiliary stuff, conversion between number and index,
--- remainders modulo 30 and related things.
-
--- {-# SPECIALISE idxPr :: Integer -> (Int,Int),
---                         Int -> (Int,Int),
---                         Word -> (Int,Int)
---   #-}
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)
 idxPr n0
@@ -38,11 +33,6 @@ idxPr n0
     rm2 = rm1 `quot` 3
     rm3 = min 7 (if rm2 > 5 then rm2-1 else rm2)
 
--- {-# SPECIALISE toPrim :: Int -> Integer,
---                          Int -> Int,
---                          Int -> Word,
---                          Int -> Word16
---     #-}
 {-# INLINE toPrim #-}
 toPrim :: Integral a => Int -> a
 toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
