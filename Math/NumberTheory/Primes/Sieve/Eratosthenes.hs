@@ -109,12 +109,12 @@ primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
 
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
-primeList :: PrimeSieve -> [Integer]
+primeList :: Num a => PrimeSieve -> [a]
 primeList (PS 0 bs) = 2:3:5:[toPrim i | let (lo,hi) = bounds bs
                                       , i <- [lo .. hi]
                                       , unsafeAt bs i
                                       ]
-primeList (PS vO bs) = [vO + toPrim i
+primeList (PS vO bs) = [fromInteger vO + toPrim i
                             | let (lo,hi) = bounds bs
                             , i <- [lo .. hi]
                             , unsafeAt bs i
@@ -125,10 +125,28 @@ primeList (PS vO bs) = [vO + toPrim i
 -- > > take 10 primes
 -- > [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 --
--- 'primes' is a monomorphic list, so the results of computations are retained in memory forever.
--- Use it with caution.
-primes :: [Integer]
-primes = 2:3:5:concat [[vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
+-- 'primes' is a polymorphic list, so the results of computations are not retained in memory.
+-- Make it monomorphic to take advantages of memoization. Compare
+--
+-- > > :set +s
+-- > > primes !! 1000000 :: Int
+-- > 15485867
+-- > (5.32 secs, 6,945,267,496 bytes)
+-- > > primes !! 1000000 :: Int
+-- > 15485867
+-- > (5.19 secs, 6,945,267,496 bytes)
+--
+-- against
+--
+-- > > let primes' = primes :: [Int]
+-- > > primes' !! 1000000 :: Int
+-- > 15485867
+-- > (5.29 secs, 6,945,269,856 bytes)
+-- > > primes' !! 1000000 :: Int
+-- > 15485867
+-- > (0.02 secs, 336,232 bytes)
+primes :: Num a => [a]
+primes = 2:3:5:concat [[fromInteger vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
                                 | PS vO bs <- psieveList, let (_,li) = bounds bs]
 
 -- | List of primes in the form of a list of 'PrimeSieve's, more compact than

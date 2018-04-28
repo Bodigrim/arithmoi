@@ -8,7 +8,8 @@
 -- Tests for Math.NumberTheory.Primes.Sieve
 --
 
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# OPTIONS_GHC -fno-warn-deprecations  #-}
@@ -21,6 +22,9 @@ import Prelude hiding (words)
 
 import Test.Tasty
 import Test.Tasty.HUnit
+
+import Data.Proxy (Proxy(..))
+import Numeric.Natural (Natural)
 
 import Math.NumberTheory.Primes.Sieve
 import Math.NumberTheory.Primes.Testing
@@ -36,9 +40,9 @@ lim3 :: Num a => a
 lim3 = 1000
 
 -- | Check that 'primes' matches 'isPrime'.
-primesProperty1 :: Assertion
-primesProperty1 = assertEqual "primes matches isPrime"
-  (takeWhile (<= lim1) primes)
+primesProperty1 :: forall a. (Integral a, Show a) => Proxy a -> Assertion
+primesProperty1 _ = assertEqual "primes matches isPrime"
+  (takeWhile (<= lim1) primes :: [a])
   (filter (isPrime . toInteger) [1..lim1])
 
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
@@ -50,9 +54,9 @@ primeSieveProperty1 (AnySign highBound')
     highBound = highBound' `rem` lim1
 
 -- | Check that 'primeList' from 'psieveList' matches 'primes'.
-psieveListProperty1 :: Assertion
-psieveListProperty1 = assertEqual "primes == primeList . psieveList"
-  (take lim2 primes)
+psieveListProperty1 :: forall a. (Eq a, Num a, Show a) => Proxy a -> Assertion
+psieveListProperty1 _ = assertEqual "primes == primeList . psieveList"
+  (take lim2 primes :: [a])
   (take lim2 $ concatMap primeList psieveList)
 
 -- | Check that 'sieveFrom' matches 'primeList' of 'psieveFrom'.
@@ -73,9 +77,19 @@ sieveFromProperty2 (AnySign lowBound')
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
-  [ testCase "primes" primesProperty1
+  [ testGroup "primes"
+    [ testCase "Int"     (primesProperty1 (Proxy :: Proxy Int))
+    , testCase "Word"    (primesProperty1 (Proxy :: Proxy Word))
+    , testCase "Integer" (primesProperty1 (Proxy :: Proxy Integer))
+    , testCase "Natural" (primesProperty1 (Proxy :: Proxy Natural))
+    ]
   , testSmallAndQuick "primeSieve" primeSieveProperty1
-  , testCase "psieveList" psieveListProperty1
+  , testGroup "psieveList"
+    [ testCase "Int"     (psieveListProperty1 (Proxy :: Proxy Int))
+    , testCase "Word"    (psieveListProperty1 (Proxy :: Proxy Word))
+    , testCase "Integer" (psieveListProperty1 (Proxy :: Proxy Integer))
+    , testCase "Natural" (psieveListProperty1 (Proxy :: Proxy Natural))
+    ]
   , testGroup "sieveFrom"
     [ testSmallAndQuick "psieveFrom"     sieveFromProperty1
     , testSmallAndQuick "isPrime near 0" sieveFromProperty2

@@ -34,7 +34,7 @@ idxPr n0
     rm3 = min 7 (if rm2 > 5 then rm2-1 else rm2)
 
 {-# INLINE toPrim #-}
-toPrim :: Integral a => Int -> a
+toPrim :: Num a => Int -> a
 toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
   where
     i = ix .&. 7
