@@ -341,7 +341,7 @@ sieveFrom n = case psieveFrom n of
 psieveFrom :: Integer -> [PrimeSieve]
 psieveFrom n = makeSieves plim sqlim bitOff valOff cache
     where
-      k0 = max 0 (n-7) `quot` 30
+      k0 = ((n `max` 7) - 7) `quot` 30 -- beware arithmetic underflow
       valOff = 30*k0
       bitOff = 8*k0
       start = valOff+7
