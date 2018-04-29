@@ -1,6 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Primes.SieveTests
--- Copyright:   (c) 2016 Andrew Lelechenko
+-- Copyright:   (c) 2016-2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
@@ -23,31 +23,61 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Math.NumberTheory.Primes.Sieve
+import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.TestUtils
+
+lim1 :: Num a => a
+lim1 = 1000000
+
+lim2 :: Num a => a
+lim2 = 100000
+
+lim3 :: Num a => a
+lim3 = 1000
+
+-- | Check that 'primes' matches 'isPrime'.
+primesProperty1 :: Assertion
+primesProperty1 = assertEqual "primes matches isPrime"
+  (takeWhile (<= lim1) primes)
+  (filter (isPrime . toInteger) [1..lim1])
 
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
 primeSieveProperty1 :: AnySign Integer -> Bool
-primeSieveProperty1 (AnySign highBound)
-  = primeList (primeSieve highBound) == takeWhile (<= (highBound `max` 7)) primes
+primeSieveProperty1 (AnySign highBound')
+  =  primeList (primeSieve highBound)
+  == takeWhile (<= (highBound `max` 7)) primes
+  where
+    highBound = highBound' `rem` lim1
 
 -- | Check that 'primeList' from 'psieveList' matches 'primes'.
 psieveListProperty1 :: Assertion
-psieveListProperty1 = do
-  assertEqual "primes == primeList . psieveList" (trim primes) (trim $ concatMap primeList psieveList)
-  where
-    trim = take 100000
+psieveListProperty1 = assertEqual "primes == primeList . psieveList"
+  (take lim2 primes)
+  (take lim2 $ concatMap primeList psieveList)
 
--- | Check that 'primeList' from 'psieveFrom' matches 'sieveFrom'.
-psieveFromProperty1 :: AnySign Integer -> Bool
-psieveFromProperty1 (AnySign lowBound)
-  = trim (sieveFrom lowBound) == trim (filter (>= lowBound) (concatMap primeList $ psieveFrom lowBound))
+-- | Check that 'sieveFrom' matches 'primeList' of 'psieveFrom'.
+sieveFromProperty1 :: AnySign Integer -> Bool
+sieveFromProperty1 (AnySign lowBound')
+  =  take lim3 (sieveFrom lowBound)
+  == take lim3 (filter (>= lowBound) (concatMap primeList $ psieveFrom lowBound))
   where
-    trim = take 1000
+    lowBound = lowBound' `rem` lim1
 
+-- | Check that 'sieveFrom' matches 'isPrime' near 0.
+sieveFromProperty2 :: AnySign Integer -> Bool
+sieveFromProperty2 (AnySign lowBound')
+  =  take lim3 (sieveFrom lowBound)
+  == take lim3 (filter (isPrime . toInteger) [lowBound `max` 0 ..])
+  where
+    lowBound = lowBound' `rem` lim1
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
-  [ testSmallAndQuick "primeSieve" primeSieveProperty1
-  , testCase          "psieveList" psieveListProperty1
-  , testSmallAndQuick "psieveFrom" psieveFromProperty1
+  [ testCase "primes" primesProperty1
+  , testSmallAndQuick "primeSieve" primeSieveProperty1
+  , testCase "psieveList" psieveListProperty1
+  , testGroup "sieveFrom"
+    [ testSmallAndQuick "psieveFrom"     sieveFromProperty1
+    , testSmallAndQuick "isPrime near 0" sieveFromProperty2
+    ]
   ]
