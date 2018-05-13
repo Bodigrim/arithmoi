@@ -117,7 +117,7 @@ test-suite spec
     integer-gmp <1.1,
     QuickCheck >=2.10 && <2.12,
     smallcheck >=1.1.3 && <1.2,
-    tasty >=0.10 && <1.1,
+    tasty >=0.10 && <1.2,
     tasty-hunit >=0.9 && <0.11,
     tasty-quickcheck >=0.9 && <0.10,
     tasty-smallcheck >=0.8 && <0.9,
