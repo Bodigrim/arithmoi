@@ -10,6 +10,7 @@ import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
 import Math.NumberTheory.RecurrenciesBench as Recurrencies
 import Math.NumberTheory.SieveBlockBench as SieveBlock
+import Math.NumberTheory.SmoothNumbersBench as SmoothNumbers
 
 main = defaultMain
   [ ArithmeticFunctions.benchSuite
@@ -20,4 +21,5 @@ main = defaultMain
   , Primes.benchSuite
   , Recurrencies.benchSuite
   , SieveBlock.benchSuite
+  , SmoothNumbers.benchSuite
   ]

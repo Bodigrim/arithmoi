@@ -46,7 +46,7 @@ module Math.NumberTheory.TestUtils
 import Test.SmallCheck.Series (cons2)
 import Test.Tasty
 import Test.Tasty.SmallCheck as SC
-import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative)
+import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
 
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/))
 
@@ -56,6 +56,7 @@ import Numeric.Natural
 
 import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
+import qualified Math.NumberTheory.SmoothNumbers as SN
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, Prime, unPrime)
 
 import Math.NumberTheory.TestUtils.MyCompose
@@ -102,6 +103,15 @@ isOddPrime
   => PrimeWrapper a
   -> Maybe (Prime a)
 isOddPrime (PrimeWrapper p) = if (unPrime p :: a) == 2 then Nothing else Just p
+
+-------------------------------------------------------------------------------
+-- SmoothNumbers
+
+instance (Integral a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
+  arbitrary = (fmap getPositive <$> arbitrary) `suchThatMap` SN.fromList
+
+instance (Monad m, Integral a, Serial m a) => Serial m (SN.SmoothBasis a) where
+  series = (fmap getPositive <$> series) `suchThatMapSerial` SN.fromList
 
 -------------------------------------------------------------------------------
 
