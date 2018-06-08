@@ -110,15 +110,15 @@ primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
 primeList :: Num a => PrimeSieve -> [a]
-primeList (PS 0 bs) = 2:3:5:[toPrim i | let (lo,hi) = bounds bs
-                                      , i <- [lo .. hi]
-                                      , unsafeAt bs i
-                                      ]
-primeList (PS vO bs) = [fromInteger vO + toPrim i
-                            | let (lo,hi) = bounds bs
-                            , i <- [lo .. hi]
-                            , unsafeAt bs i
-                            ]
+primeList ps@(PS 0 _) = 2 : 3 : 5 : primeListInternal ps
+primeList ps          = primeListInternal ps
+
+primeListInternal :: Num a => PrimeSieve -> [a]
+primeListInternal (PS v0 bs)
+  = map ((+ fromInteger v0) . toPrim)
+  $ filter (unsafeAt bs) [lo..hi]
+  where
+    (lo, hi) = bounds bs
 
 -- | Ascending list of primes.
 --
@@ -146,8 +146,7 @@ primeList (PS vO bs) = [fromInteger vO + toPrim i
 -- > 15485867
 -- > (0.02 secs, 336,232 bytes)
 primes :: Num a => [a]
-primes = 2:3:5:concat [[fromInteger vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
-                                | PS vO bs <- psieveList, let (_,li) = bounds bs]
+primes = 2 : 3 : 5 : concatMap primeListInternal psieveList
 
 -- | List of primes in the form of a list of 'PrimeSieve's, more compact than
 --   'primes', thus it may be better to use @'psieveList' >>= 'primeList'@
