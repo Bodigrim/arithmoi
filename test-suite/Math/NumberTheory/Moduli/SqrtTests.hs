@@ -36,12 +36,12 @@ unwrapPP (p, Power e) = (unwrapP p, e)
 -- | Check that 'sqrtMod' is defined iff a quadratic residue exists.
 --   Also check that the result is a solution of input modular equation.
 sqrtModPProperty :: AnySign Integer -> PrimeWrapper Integer -> Bool
-sqrtModPProperty (AnySign n) (unwrapP -> p) = case sqrtModP n p of
+sqrtModPProperty (AnySign n) (unwrapP -> p) = case sqrtModMaybe n p of
   Nothing -> jacobi n p == MinusOne
   Just rt -> (p == 2 || jacobi n p /= MinusOne) && rt ^ 2 `mod` p == n `mod` p
 
 sqrtModPListProperty :: AnySign Integer -> PrimeWrapper Integer -> Bool
-sqrtModPListProperty (AnySign n) (unwrapP -> p) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtModPList n p)
+sqrtModPListProperty (AnySign n) (unwrapP -> p) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtModList n p)
 
 sqrtModP'Property :: Positive Integer -> PrimeWrapper Integer -> Bool
 sqrtModP'Property (Positive n) (unwrapP -> p) = (p /= 2 && jacobi n p /= One) || rt ^ 2 `mod` p == n `mod` p
@@ -67,7 +67,7 @@ tonelliShanksSpecialCases =
     rts = map (\p -> tonelliShanks 2 p) ps
 
 sqrtModPPProperty :: AnySign Integer -> (PrimeWrapper Integer, Power Int) -> Bool
-sqrtModPPProperty (AnySign n) (unwrapP -> p, Power e) = gcd n p > 1 || case sqrtModPP n (p, e) of
+sqrtModPPProperty (AnySign n) (unwrapP -> p, Power e) = gcd n p > 1 || case sqrtModMaybe n (p ^ e) of
   Nothing -> True
   Just rt -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)
 
@@ -76,15 +76,15 @@ sqrtModPPBase2Property n e = sqrtModPPProperty n (PrimeWrapper $ fromJust $ isPr
 
 sqrtModPPSpecialCase1 :: Assertion
 sqrtModPPSpecialCase1 =
-  assertEqual "sqrtModPP 16 2 2 = 4" (Just 0) (sqrtModPP 16 (2, 2))
+  assertEqual "sqrtModPP 16 2 2 = 4" (Just 0) (sqrtModMaybe 16 (2 ^ 2))
 
 sqrtModPPSpecialCase2 :: Assertion
 sqrtModPPSpecialCase2 =
-  assertEqual "sqrtModPP 16 3 2 = 4" (Just 4) (sqrtModPP 16 (3, 2))
+  assertEqual "sqrtModPP 16 3 2 = 4" (Just 4) (sqrtModMaybe 16 (3 ^ 2))
 
 sqrtModPPListProperty :: AnySign Integer -> (PrimeWrapper Integer, Power Int) -> Bool
 sqrtModPPListProperty (AnySign n) (unwrapP -> p, Power e) = gcd n p > 1
-  || all (\rt -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) (sqrtModPPList n (p, e))
+  || all (\rt -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) (sqrtModList n (p ^ e))
 
 sqrtModFProperty :: AnySign Integer -> [(PrimeWrapper Integer, Power Int)] -> Bool
 sqrtModFProperty (AnySign n) (map unwrapPP -> pes) = case sqrtModF n pes of
