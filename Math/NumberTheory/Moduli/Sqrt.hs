@@ -15,10 +15,8 @@
 module Math.NumberTheory.Moduli.Sqrt
   ( sqrtModList
   , sqrtModMaybe
-  -- Still exported since we do not check for quadratic residue and Tonelli-Shanks conditions.
-  -- So with upper interface the best algorithm will never be used.
+  -- Still exported since we do not check for quadraticity of residue. The only use case - p: p = 4k + 3. 
   , sqrtModP' --FIXME
-  , tonelliShanks --FIXME
   , sqrtModF
   , sqrtModFList
   ) where
@@ -28,7 +26,6 @@ import Safe (headMay)
 import Control.Monad (liftM2)
 import Data.Bits
 import Data.List (nub)
-import Data.Maybe (listToMaybe)
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Chinese
@@ -43,7 +40,6 @@ data FieldCharacterictic = Invalid
                          | PrimePower Integer Int
   deriving Show
 
--- FIXME: these two checks may be expensive. To benchmark.
 checkPrimePower :: Integer -> Maybe (Integer, Int)
 checkPrimePower = headMay . factorise
 
@@ -55,14 +51,16 @@ checkPreconditions p
       Just (prime,pow) -> PrimePower prime pow
 
 sqrtModList :: Integer -> Integer -> [Integer]
-sqrtModList n 2 = [n `mod` 2]
 sqrtModList n p = case checkPreconditions p of
   PrimePower prime power -> sqrtModPPList n (prime,power)
   Prime -> sqrtModPList n p
   Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
 
 sqrtModMaybe :: Integer -> Integer -> Maybe Integer
-sqrtModMaybe n = listToMaybe . sqrtModList n
+sqrtModMaybe n p = case checkPreconditions p of
+  PrimePower prime power -> sqrtModPP n (prime,power)
+  Prime -> sqrtModP n p
+  Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
 
 -- | @sqrtModP n prime@ calculates a modular square root of @n@ modulo @prime@
 --   if that exists. The second argument /must/ be a (positive) prime, otherwise
@@ -73,17 +71,21 @@ sqrtModMaybe n = listToMaybe . sqrtModList n
 --   is @Just r@ where @r^2 ≡ n (mod prime)@, if @n@ is a quadratic nonresidue,
 --   the result is @Nothing@.
 sqrtModP :: Integer -> Integer -> Maybe Integer
-sqrtModP n = listToMaybe . sqrtModPList n
+sqrtModP n 2 = Just (n `mod` 2)
+sqrtModP n prime = case jacobi n prime of
+                     MinusOne -> Nothing
+                     Zero     -> Just 0
+                     One      -> Just (sqrtModP' (n `mod` prime) prime)
 
 -- | @sqrtModPList n prime@ computes the list of all square roots of @n@
 --   modulo @prime@. @prime@ /must/ be a (positive) prime.
 --   The precondition is /not/ checked.
 sqrtModPList :: Integer -> Integer -> [Integer]
-sqrtModPList n prime = case jacobi n prime of
-                     MinusOne -> []
-                     Zero     -> [0]
-                     One      -> [r, prime-r]
-  where r = sqrtModP' (n `mod` prime) prime
+sqrtModPList n 2 = [n `mod` 2]
+sqrtModPList n prime = case sqrtModP n prime of
+                         Just 0 -> [0]
+                         Just r -> [r,prime-r] -- The group of units in Z/(p) is cyclic
+                         _      -> []
 
 -- | @sqrtModP' square prime@ finds a square root of @square@ modulo
 --   prime. @prime@ /must/ be a (positive) prime, and @square@ /must/ be a positive
@@ -91,6 +93,7 @@ sqrtModPList n prime = case jacobi n prime of
 --   The precondition is /not/ checked.
 sqrtModP' :: Integer -> Integer -> Integer
 sqrtModP' square prime
+    | prime == 2    = square
     | rem4 prime == 3 = powModInteger square ((prime + 1) `quot` 4) prime
     | otherwise     = tonelliShanks square prime
 
