@@ -27,6 +27,7 @@ import Data.Bits
 import Data.List (nub)
 import GHC.Integer.GMP.Internals
 
+import Math.NumberTheory.GCD (coprime)
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
@@ -34,16 +35,18 @@ import Math.NumberTheory.Primes.Testing.Probabilistic (isPrime)
 import Math.NumberTheory.Primes.Factorisation.Montgomery (factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 
+-- | Extended flag structure to check if square root is computed in finite field.
 data FieldCharacterictic = Invalid
                          | Prime
                          | PrimePower Integer Int
   deriving Show
 
+-- | Check if value is power of some prime.
 checkPrimePower :: Integer -> Maybe (Integer, Int)
 checkPrimePower = headMay . factorise
 
--- * Interface functions with preconditions checking.
-
+-- | Check if argument is valid characteristic of finite field.
+--   It's a precondition for computations in functions like @'sqrtModP'@ and @'sqrtModPP'@
 checkPreconditions :: Integer -> FieldCharacterictic
 checkPreconditions p
   | isPrime p = Prime
@@ -51,8 +54,11 @@ checkPreconditions p
       Nothing -> Invalid
       Just (prime,pow) -> PrimePower prime pow
 
+-- * Interface functions with preconditions checking.
+
 sqrtModSharp :: Integer -> Integer -> Integer
 sqrtModSharp n p
+  | p <= 0 = error "Cannot extract sqaure root by negative modulo"
   -- Euler's criterion.
   | isPrime p = if n^((p-1) `div` p) `mod` p == 1
       then sqrtModP' n p
@@ -60,21 +66,25 @@ sqrtModSharp n p
   | otherwise = error "Given characteristic is invalid for the field - cannot compute square roots."
 
 sqrtModList :: Integer -> Integer -> [Integer]
-sqrtModList n p = case checkPreconditions p of
-  PrimePower prime power -> sqrtModPPList n (prime,power)
-  Prime -> sqrtModPList n p
-  Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
+sqrtModList n p
+  | p <= 0 = error "Cannot extract sqaure root by negative modulo"
+  | otherwise = case checkPreconditions p of
+      PrimePower prime power -> sqrtModPPList n (prime,power)
+      Prime -> sqrtModPList n p
+      Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
 
 sqrtModMaybe :: Integer -> Integer -> Maybe Integer
-sqrtModMaybe n p = case checkPreconditions p of
-  PrimePower prime power -> sqrtModPP n (prime,power)
-  Prime -> sqrtModP n p
-  Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
+sqrtModMaybe n p
+  | p <= 0 = error "Cannot extract sqaure root by negative modulo"
+  | otherwise = case checkPreconditions p of
+      PrimePower prime power -> sqrtModPP n (prime,power)
+      Prime -> sqrtModP n p
+      Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
 
 -- | @sqrtModP n prime@ calculates a modular square root of @n@ modulo @prime@
 --   if that exists. The second argument /must/ be a (positive) prime, otherwise
 --   the computation may not terminate and if it does, may yield a wrong result.
---   The precondition is /not/ checked.
+--   The precondition is checked in @'sqrtModMaybe'@ interface.
 --
 --   If @prime@ is a prime and @n@ a quadratic residue modulo @prime@, the result
 --   is @Just r@ where @r^2 ≡ n (mod prime)@, if @n@ is a quadratic nonresidue,
@@ -88,7 +98,7 @@ sqrtModP n prime = case jacobi n prime of
 
 -- | @sqrtModPList n prime@ computes the list of all square roots of @n@
 --   modulo @prime@. @prime@ /must/ be a (positive) prime.
---   The precondition is /not/ checked.
+--   The precondition is checked in @'sqrtModList'@ interface.
 sqrtModPList :: Integer -> Integer -> [Integer]
 sqrtModPList n 2 = [n `mod` 2]
 sqrtModPList n prime = case sqrtModP n prime of
@@ -99,7 +109,7 @@ sqrtModPList n prime = case sqrtModP n prime of
 -- | @sqrtModP' square prime@ finds a square root of @square@ modulo
 --   prime. @prime@ /must/ be a (positive) prime, and @square@ /must/ be a positive
 --   quadratic residue modulo @prime@, i.e. @'jacobi square prime == 1@.
---   The precondition is /not/ checked.
+--   The precondition is checked with Euler's criterion in @'sqrtModSharp'@ interface.
 sqrtModP' :: Integer -> Integer -> Integer
 sqrtModP' square prime
     | prime == 2    = square
@@ -110,7 +120,7 @@ sqrtModP' square prime
 --   modulo @prime@, where @prime@ is a prime of the form @4*k + 1@ and
 --   @square@ is a positive quadratic residue modulo @prime@, using the
 --   Tonelli-Shanks algorithm.
---   No checks on the input are performed.
+--   No checks on the input are performed. But this function is internal.
 tonelliShanks :: Integer -> Integer -> Integer
 tonelliShanks square prime = loop rc t1 generator log2
   where
