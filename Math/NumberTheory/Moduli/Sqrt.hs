@@ -15,24 +15,21 @@
 module Math.NumberTheory.Moduli.Sqrt
   ( sqrtModList
   , sqrtModMaybe
-  , sqrtModSharp
+  , sqrtModExact
   , sqrtModF
   , sqrtModFList
   ) where
-
-import Safe (headMay)
 
 import Control.Monad (liftM2)
 import Data.Bits
 import Data.List (nub)
 import GHC.Integer.GMP.Internals
 
-import Math.NumberTheory.GCD (coprime)
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Jacobi
+import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
 import Math.NumberTheory.Primes.Testing.Probabilistic (isPrime)
-import Math.NumberTheory.Primes.Factorisation.Montgomery (factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 
 -- | Extended flag structure to check if square root is computed in finite field.
@@ -43,7 +40,9 @@ data FieldCharacterictic = Invalid
 
 -- | Check if value is power of some prime.
 checkPrimePower :: Integer -> Maybe (Integer, Int)
-checkPrimePower = headMay . factorise
+checkPrimePower p
+  | isPrime . fst . highestPower $ p = Just . highestPower $ p
+  | otherwise = Nothing
 
 -- | Check if argument is valid characteristic of finite field.
 --   It's a precondition for computations in functions like @'sqrtModP'@ and @'sqrtModPP'@
@@ -56,9 +55,9 @@ checkPreconditions p
 
 -- * Interface functions with preconditions checking.
 
-sqrtModSharp :: Integer -> Integer -> Integer
-sqrtModSharp n p
-  | p <= 0 = error "Cannot extract sqaure root by negative modulo"
+sqrtModExact :: Integer -> Integer -> Integer
+sqrtModExact n p
+  | p <= 0 = error "Cannot extract square root by non-positive modulo"
   -- Euler's criterion.
   | isPrime p = if n^((p-1) `div` p) `mod` p == 1
       then sqrtModP' n p
@@ -67,7 +66,7 @@ sqrtModSharp n p
 
 sqrtModList :: Integer -> Integer -> [Integer]
 sqrtModList n p
-  | p <= 0 = error "Cannot extract sqaure root by negative modulo"
+  | p <= 0 = error "Cannot extract square root by non-positive modulo"
   | otherwise = case checkPreconditions p of
       PrimePower prime power -> sqrtModPPList n (prime,power)
       Prime -> sqrtModPList n p
@@ -75,7 +74,7 @@ sqrtModList n p
 
 sqrtModMaybe :: Integer -> Integer -> Maybe Integer
 sqrtModMaybe n p
-  | p <= 0 = error "Cannot extract sqaure root by negative modulo"
+  | p <= 0 = error "Cannot extract square root by non-positive modulo"
   | otherwise = case checkPreconditions p of
       PrimePower prime power -> sqrtModPP n (prime,power)
       Prime -> sqrtModP n p
@@ -109,7 +108,7 @@ sqrtModPList n prime = case sqrtModP n prime of
 -- | @sqrtModP' square prime@ finds a square root of @square@ modulo
 --   prime. @prime@ /must/ be a (positive) prime, and @square@ /must/ be a positive
 --   quadratic residue modulo @prime@, i.e. @'jacobi square prime == 1@.
---   The precondition is checked with Euler's criterion in @'sqrtModSharp'@ interface.
+--   The precondition is checked with Euler's criterion in @'sqrtModExact'@ interface.
 sqrtModP' :: Integer -> Integer -> Integer
 sqrtModP' square prime
     | prime == 2    = square

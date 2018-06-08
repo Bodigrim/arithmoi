@@ -44,8 +44,7 @@ library
     integer-logarithms >=1.0,
     mtl >=2.0 && <2.3,
     random >=1.0 && <1.2,
-    vector >= 0.12,
-    safe
+    vector >= 0.12
   if impl(ghc <8.0)
     build-depends:
       semigroups >=0.8
