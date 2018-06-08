@@ -15,8 +15,7 @@
 module Math.NumberTheory.Moduli.Sqrt
   ( sqrtModList
   , sqrtModMaybe
-  -- Still exported since we do not check for quadraticity of residue. The only use case - p: p = 4k + 3. 
-  , sqrtModP' --FIXME
+  , sqrtModSharp
   , sqrtModF
   , sqrtModFList
   ) where
@@ -43,12 +42,22 @@ data FieldCharacterictic = Invalid
 checkPrimePower :: Integer -> Maybe (Integer, Int)
 checkPrimePower = headMay . factorise
 
+-- * Interface functions with preconditions checking.
+
 checkPreconditions :: Integer -> FieldCharacterictic
 checkPreconditions p
   | isPrime p = Prime
   | otherwise = case checkPrimePower p of
       Nothing -> Invalid
       Just (prime,pow) -> PrimePower prime pow
+
+sqrtModSharp :: Integer -> Integer -> Integer
+sqrtModSharp n p
+  -- Euler's criterion.
+  | isPrime p = if n^((p-1) `div` p) `mod` p == 1
+      then sqrtModP' n p
+      else error "Quadratic nonresidue as argument - in this case use sqrtModList."
+  | otherwise = error "Given characteristic is invalid for the field - cannot compute square roots."
 
 sqrtModList :: Integer -> Integer -> [Integer]
 sqrtModList n p = case checkPreconditions p of
