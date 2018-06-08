@@ -164,7 +164,7 @@ findPrime p
 -- check the precondition.
 findPrime' :: Integer -> GaussianInteger
 findPrime' p =
-    let (Just c) = Moduli.sqrtModP (-1) p
+    let (Just c) = Moduli.sqrtModMaybe (-1) p
         k  = Powers.integerSquareRoot p
         bs = [1 .. k]
         asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
