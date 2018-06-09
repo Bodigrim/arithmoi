@@ -30,7 +30,6 @@ module Math.NumberTheory.GaussianIntegers (
     primes,
     gcdG,
     gcdG',
-    findPrime,
     findPrime',
     factorise,
 ) where
@@ -155,13 +154,6 @@ gcdG' g h
     | otherwise = gcdG' h (abs (g `modG` h))
 
 -- |Find a Gaussian integer whose norm is the given prime number.
--- Checks the precondition that p is prime and that p `mod` 4 /= 3.
-findPrime :: Integer -> GaussianInteger
-findPrime p
-    | p == 2 || (p `mod` 4 == 1) = findPrime' (fromMaybeError "p must be prime" $ toFieldCharacteristic p)
-    | otherwise = error "p must be congruent to 3 (mod 4)"
-
--- |Find a Gaussian integer whose norm is the given prime number.
 findPrime' :: FieldCharacteristic -> GaussianInteger
 findPrime' (FieldCharacteristic prime 1) =
     let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacteristic prime 1)
@@ -171,6 +163,7 @@ findPrime' (FieldCharacteristic prime 1) =
         asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
         (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
     in a :+ b
+findPrime' (FieldCharacteristic _prime _pow) = error "Not a prime number as argument to findPrime'"
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
