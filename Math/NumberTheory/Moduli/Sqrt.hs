@@ -17,6 +17,8 @@ module Math.NumberTheory.Moduli.Sqrt
   ( -- Constructor and @'unPrime'@ are exported in order to do pattern-matching.
     FieldCharacteristic(..)
   , unPrime
+  -- Exported for testing purposes. Normally should not be used.
+  , primeF
   , toFieldCharacteristic
   , sqrtModList
   , sqrtModMaybe
