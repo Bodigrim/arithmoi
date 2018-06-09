@@ -10,11 +10,13 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( -- Constructor is exported in order to do pattern-matching.
-    FieldCharacterictic(..)
+  ( -- Constructor and @'unPrime'@ are exported in order to do pattern-matching.
+    FieldCharacteristic(..)
+  , unPrime
   , toFieldCharacteristic
   , sqrtModList
   , sqrtModMaybe
@@ -25,49 +27,61 @@ module Math.NumberTheory.Moduli.Sqrt
 
 import Control.Monad (liftM2)
 import Data.Bits
+import Data.Coerce
 import Data.List (nub)
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Powers.General (highestPower)
+import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
 import Math.NumberTheory.Primes.Testing.Probabilistic (isPrime)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 
+import Math.NumberTheory.Utils.FromIntegral
+
 -- | Extended flag structure to check if square root is computed in finite field.
-data FieldCharacterictic = FieldCharacterictic Integer Int
+data FieldCharacteristic = FieldCharacteristic (Prime Integer) Int
   deriving Show
 
+-- | Duplicate functions from @'instance UniqueFactorisation Integer'@. They cannot be imported because of cycle imports.
+unPrime :: PrimeNat -> Integer
+unPrime = coerce naturalToInteger
+
+primeF :: Integer -> PrimeNat
+primeF = coerce integerToNatural
+
 -- | Check if value is power of some prime.
-checkPrimePower :: Integer -> Maybe (Integer, Int)
+checkPrimePower :: Integer -> Maybe (Prime Integer, Int)
 checkPrimePower p
-  | isPrime . fst . highestPower $ p = Just . highestPower $ p
+  -- FIXME: @'mapFst'@ function presents in @'Data.Monoid.State'@
+  | isPrime . fst . highestPower $ p = Just . (\(f,s) -> (primeF f, s)) . highestPower $ p
   | otherwise = Nothing
 
 -- | Check if argument is valid characteristic of finite field.
 --   It's a precondition for computations in functions like @'sqrtModP'@ and @'sqrtModPP'@
-toFieldCharacteristic :: Integer -> Maybe FieldCharacterictic
+toFieldCharacteristic :: Integer -> Maybe FieldCharacteristic
 toFieldCharacteristic p
-  | isPrime p = Just $ FieldCharacterictic p 1
-  | otherwise = uncurry FieldCharacterictic <$> checkPrimePower p
+  | isPrime p = Just $ FieldCharacteristic (primeF p) 1
+  | otherwise = uncurry FieldCharacteristic <$> checkPrimePower p
 
 -- * Interface functions with preconditions checking.
 
-sqrtModExact :: Integer -> FieldCharacterictic -> Integer
-sqrtModExact n (FieldCharacterictic p 1)
+sqrtModExact :: Integer -> FieldCharacteristic -> Integer
+sqrtModExact n (FieldCharacteristic (unPrime -> p) 1)
   -- Euler's criterion.
   | n^((p-1) `div` p) `mod` p == 1 = sqrtModP' n p
   | otherwise = error "Quadratic nonresidue as argument - in this case use sqrtModList."
-sqrtModExact _n (FieldCharacterictic _p _pow) = error "This function will work only with modulo by prime. Try sqrtModList"
+sqrtModExact _n (FieldCharacteristic _p _pow) = error "This function will work only with modulo by prime. Try sqrtModList"
 
-sqrtModList :: Integer -> FieldCharacterictic -> [Integer]
-sqrtModList n (FieldCharacterictic p 1) = sqrtModPList n p
-sqrtModList n (FieldCharacterictic p pow) = sqrtModPPList n (p,pow)
+sqrtModList :: Integer -> FieldCharacteristic -> [Integer]
+sqrtModList n (FieldCharacteristic (unPrime -> p) 1) = sqrtModPList n p
+sqrtModList n (FieldCharacteristic (unPrime -> p) pow) = sqrtModPPList n (p,pow)
 
-sqrtModMaybe :: Integer -> FieldCharacterictic -> Maybe Integer
-sqrtModMaybe n (FieldCharacterictic p 1) = sqrtModP n p
-sqrtModMaybe n (FieldCharacterictic p pow) = sqrtModPP n (p,pow)
+sqrtModMaybe :: Integer -> FieldCharacteristic -> Maybe Integer
+sqrtModMaybe n (FieldCharacteristic (unPrime -> p) 1) = sqrtModP n p
+sqrtModMaybe n (FieldCharacteristic (unPrime -> p) pow) = sqrtModPP n (p,pow)
 
 -- | @sqrtModP n prime@ calculates a modular square root of @n@ modulo @prime@
 --   if that exists. The second argument /must/ be a (positive) prime, otherwise

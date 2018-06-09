@@ -36,7 +36,7 @@ module Math.NumberTheory.GaussianIntegers (
 ) where
 
 import qualified Math.NumberTheory.Moduli as Moduli
-import Math.NumberTheory.Moduli.Sqrt (FieldCharacterictic(..), toFieldCharacteristic)
+import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..), unPrime, toFieldCharacteristic)
 import qualified Math.NumberTheory.Powers as Powers
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
@@ -139,7 +139,7 @@ primes = [ g
                 else
                     if p == 2
                     then [1 :+ 1]
-                    else let x :+ y = findPrime' (FieldCharacterictic p 1)
+                    else let x :+ y = findPrime' (fromMaybeError "Impossible error" $ toFieldCharacteristic p) -- safe actually
                          in [x :+ y, y :+ x]
          ]
 
@@ -162,9 +162,10 @@ findPrime p
     | otherwise = error "p must be congruent to 3 (mod 4)"
 
 -- |Find a Gaussian integer whose norm is the given prime number.
-findPrime' :: FieldCharacterictic -> GaussianInteger
-findPrime' (FieldCharacterictic p 1) =
-    let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacterictic p 1)
+findPrime' :: FieldCharacteristic -> GaussianInteger
+findPrime' (FieldCharacteristic prime 1) =
+    let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacteristic prime 1)
+        p = unPrime prime
         k  = Powers.integerSquareRoot p
         bs = [1 .. k]
         asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
