@@ -36,6 +36,7 @@ module Math.NumberTheory.GaussianIntegers (
 ) where
 
 import qualified Math.NumberTheory.Moduli as Moduli
+import Math.NumberTheory.Moduli.Sqrt (FieldCharacterictic(..), toFieldCharacteristic)
 import qualified Math.NumberTheory.Powers as Powers
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
@@ -138,7 +139,7 @@ primes = [ g
                 else
                     if p == 2
                     then [1 :+ 1]
-                    else let x :+ y = findPrime' p
+                    else let x :+ y = findPrime' (FieldCharacterictic p 1)
                          in [x :+ y, y :+ x]
          ]
 
@@ -157,14 +158,13 @@ gcdG' g h
 -- Checks the precondition that p is prime and that p `mod` 4 /= 3.
 findPrime :: Integer -> GaussianInteger
 findPrime p
-    | p == 2 || (p `mod` 4 == 1 && Testing.isPrime p) = findPrime' p
-    | otherwise = error "p must be prime, and not congruent to 3 (mod 4)"
+    | p == 2 || (p `mod` 4 == 1) = findPrime' (fromMaybeError "p must be prime" $ toFieldCharacteristic p)
+    | otherwise = error "p must be congruent to 3 (mod 4)"
 
--- |Find a Gaussian integer whose norm is the given prime number. Does not
--- check the precondition.
-findPrime' :: Integer -> GaussianInteger
-findPrime' p =
-    let (Just c) = Moduli.sqrtModMaybe (-1) p
+-- |Find a Gaussian integer whose norm is the given prime number.
+findPrime' :: FieldCharacterictic -> GaussianInteger
+findPrime' (FieldCharacterictic p 1) =
+    let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacterictic p 1)
         k  = Powers.integerSquareRoot p
         bs = [1 .. k]
         asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
@@ -207,7 +207,7 @@ factorise g = helper (Factorisation.factorise $ norm g) g
                 -- otherwise: find a Gaussian prime gp for which `norm gp ==
                 -- p`. Then do trial divisions to find out how many times g' is
                 -- divisible by gp or its conjugate.
-                let gp = findPrime' p
+                let gp = findPrime' (fromMaybeError "p must be prime" $ toFieldCharacteristic p)
                 in trialDivide g' [gp, abs $ conjugate gp]
         in facs ++ helper pt g''
 
@@ -234,3 +234,8 @@ countEvenDivisions g pf = helper g 0
     helper g' acc
         | g' `modG` pf == 0 = helper (g' `divG` pf) (1 + acc)
         | otherwise     = (acc, g')
+
+-- Custom version of @'fromJust'@.
+fromMaybeError :: String -> Maybe a -> a
+fromMaybeError msg Nothing = error msg
+fromMaybeError _ (Just v) = v
