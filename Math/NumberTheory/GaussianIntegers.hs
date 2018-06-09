@@ -35,11 +35,13 @@ module Math.NumberTheory.GaussianIntegers (
 ) where
 
 import qualified Math.NumberTheory.Moduli as Moduli
-import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..), unPrime, toFieldCharacteristic)
+import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
 import qualified Math.NumberTheory.Powers as Powers
+import Math.NumberTheory.Primes.Types (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import Math.NumberTheory.Utils.FromIntegral (integerToNatural)
 
 infix 6 :+
 infixr 8 .^
@@ -138,7 +140,7 @@ primes = [ g
                 else
                     if p == 2
                     then [1 :+ 1]
-                    else let x :+ y = findPrime' (toFieldCharacteristic (PrimeNat p) 1) -- safe actually
+                    else let x :+ y = findPrime' p
                          in [x :+ y, y :+ x]
          ]
 
@@ -154,16 +156,14 @@ gcdG' g h
     | otherwise = gcdG' h (abs (g `modG` h))
 
 -- |Find a Gaussian integer whose norm is the given prime number.
-findPrime' :: FieldCharacteristic -> GaussianInteger
-findPrime' (FieldCharacteristic prime 1) =
-    let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacteristic prime 1)
-        p = unPrime prime
+findPrime' :: Integer -> GaussianInteger
+findPrime' p =
+    let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1)
         k  = Powers.integerSquareRoot p
         bs = [1 .. k]
         asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
         (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
     in a :+ b
-findPrime' (FieldCharacteristic _prime _pow) = error "Not a prime number as argument to findPrime'"
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
@@ -201,7 +201,7 @@ factorise g = helper (Factorisation.factorise $ norm g) g
                 -- otherwise: find a Gaussian prime gp for which `norm gp ==
                 -- p`. Then do trial divisions to find out how many times g' is
                 -- divisible by gp or its conjugate.
-                let gp = findPrime' (toFieldCharacteristic (PrimeNat p) 1)
+                let gp = findPrime' p
                 in trialDivide g' [gp, abs $ conjugate gp]
         in facs ++ helper pt g''
 

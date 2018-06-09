@@ -14,11 +14,8 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( -- Constructor and @'unPrime'@ are exported in order to do pattern-matching.
+  ( -- Constructor is exported in order to do pattern-matching.
     FieldCharacteristic(..)
-  , unPrime
-  -- Exported for testing purposes. Normally should not be used.
-  , primeF
   , toFieldCharacteristic
   , sqrtModList
   , sqrtModMaybe
@@ -206,22 +203,22 @@ sqM2P n e
 --   @product [p^k | (p,k) <- primePowers]@ if one exists and all primes
 --   are distinct.
 --   The list must be non-empty, @n@ must be coprime with all primes.
-sqrtModF :: Integer -> [(Integer,Int)] -> Maybe Integer
+sqrtModF :: Integer -> [FieldCharacteristic] -> Maybe Integer
 sqrtModF _ []  = Nothing
-sqrtModF n pps = do roots <- mapM (sqrtModPP n) pps
-                    chineseRemainder $ zip roots (map (uncurry (^)) pps)
+sqrtModF n pps = do roots <- mapM (sqrtModPP n . (\(FieldCharacteristic (unPrime -> p) pow) -> (p,pow))) pps
+                    chineseRemainder $ zip roots (map (uncurry (^) . (\(FieldCharacteristic (unPrime -> p) pow) -> (p,pow))) pps)
 
 -- | @sqrtModFList n primePowers@ calculates all square roots of @n@ modulo
 --   @product [p^k | (p,k) <- primePowers]@ if all primes are distinct.
 --   The list must be non-empty, @n@ must be coprime with all primes.
-sqrtModFList :: Integer -> [(Integer,Int)] -> [Integer]
+sqrtModFList :: Integer -> [FieldCharacteristic] -> [Integer]
 sqrtModFList _ []  = []
 sqrtModFList n pps = map fst $ foldl1 (liftM2 comb) cs
   where
     ms :: [Integer]
-    ms = map (uncurry (^)) pps
+    ms = map (uncurry (^) . (\(FieldCharacteristic (unPrime -> p) pow) -> (p,pow))) pps
     rs :: [[Integer]]
-    rs = map (sqrtModPPList n) pps
+    rs = map (sqrtModPPList n . (\(FieldCharacteristic (unPrime -> p) pow) -> (p,pow))) pps
     cs :: [[(Integer,Integer)]]
     cs = zipWith (\l m -> map (\x -> (x,m)) l) rs ms
     comb t1@(_,m1) t2@(_,m2) = (chineseRemainder2 t1 t2,m1*m2)
