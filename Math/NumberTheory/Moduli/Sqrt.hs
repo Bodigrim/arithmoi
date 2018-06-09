@@ -13,7 +13,10 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( sqrtModList
+  ( -- Constructor is exported in order to do pattern-matching.
+    FieldCharacterictic(..)
+  , toFieldCharacteristic
+  , sqrtModList
   , sqrtModMaybe
   , sqrtModExact
   , sqrtModF
@@ -33,9 +36,7 @@ import Math.NumberTheory.Primes.Testing.Probabilistic (isPrime)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 
 -- | Extended flag structure to check if square root is computed in finite field.
-data FieldCharacterictic = Invalid
-                         | Prime
-                         | PrimePower Integer Int
+data FieldCharacterictic = FieldCharacterictic Integer Int
   deriving Show
 
 -- | Check if value is power of some prime.
@@ -46,39 +47,27 @@ checkPrimePower p
 
 -- | Check if argument is valid characteristic of finite field.
 --   It's a precondition for computations in functions like @'sqrtModP'@ and @'sqrtModPP'@
-checkPreconditions :: Integer -> FieldCharacterictic
-checkPreconditions p
-  | isPrime p = Prime
-  | otherwise = case checkPrimePower p of
-      Nothing -> Invalid
-      Just (prime,pow) -> PrimePower prime pow
+toFieldCharacteristic :: Integer -> Maybe FieldCharacterictic
+toFieldCharacteristic p
+  | isPrime p = Just $ FieldCharacterictic p 1
+  | otherwise = uncurry FieldCharacterictic <$> checkPrimePower p
 
 -- * Interface functions with preconditions checking.
 
-sqrtModExact :: Integer -> Integer -> Integer
-sqrtModExact n p
-  | p <= 0 = error "Cannot extract square root by non-positive modulo"
+sqrtModExact :: Integer -> FieldCharacterictic -> Integer
+sqrtModExact n (FieldCharacterictic p 1)
   -- Euler's criterion.
-  | isPrime p = if n^((p-1) `div` p) `mod` p == 1
-      then sqrtModP' n p
-      else error "Quadratic nonresidue as argument - in this case use sqrtModList."
-  | otherwise = error "Given characteristic is invalid for the field - cannot compute square roots."
+  | n^((p-1) `div` p) `mod` p == 1 = sqrtModP' n p
+  | otherwise = error "Quadratic nonresidue as argument - in this case use sqrtModList."
+sqrtModExact _n (FieldCharacterictic _p _pow) = error "This function will work only with modulo by prime. Try sqrtModList"
 
-sqrtModList :: Integer -> Integer -> [Integer]
-sqrtModList n p
-  | p <= 0 = error "Cannot extract square root by non-positive modulo"
-  | otherwise = case checkPreconditions p of
-      PrimePower prime power -> sqrtModPPList n (prime,power)
-      Prime -> sqrtModPList n p
-      Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
+sqrtModList :: Integer -> FieldCharacterictic -> [Integer]
+sqrtModList n (FieldCharacterictic p 1) = sqrtModPList n p
+sqrtModList n (FieldCharacterictic p pow) = sqrtModPPList n (p,pow)
 
-sqrtModMaybe :: Integer -> Integer -> Maybe Integer
-sqrtModMaybe n p
-  | p <= 0 = error "Cannot extract square root by non-positive modulo"
-  | otherwise = case checkPreconditions p of
-      PrimePower prime power -> sqrtModPP n (prime,power)
-      Prime -> sqrtModP n p
-      Invalid -> error "Given characteristic is invalid for the field - cannot compute square roots."
+sqrtModMaybe :: Integer -> FieldCharacterictic -> Maybe Integer
+sqrtModMaybe n (FieldCharacterictic p 1) = sqrtModP n p
+sqrtModMaybe n (FieldCharacterictic p pow) = sqrtModPP n (p,pow)
 
 -- | @sqrtModP n prime@ calculates a modular square root of @n@ modulo @prime@
 --   if that exists. The second argument /must/ be a (positive) prime, otherwise
