@@ -25,6 +25,7 @@ module Math.NumberTheory.Moduli.Sqrt
   , sqrtModFList
   ) where
 
+import Control.Arrow (first)
 import Control.Monad (liftM2)
 import Data.Bits
 import Data.Coerce
@@ -55,8 +56,7 @@ primeF = coerce integerToNatural
 -- | Check if value is power of some prime.
 checkPrimePower :: Integer -> Maybe (Prime Integer, Int)
 checkPrimePower p
-  -- FIXME: @'mapFst'@ function presents in @'Data.Monoid.State'@
-  | isPrime . fst . highestPower $ p = Just . (\(f,s) -> (primeF f, s)) . highestPower $ p
+  | isPrime . fst . highestPower $ p = Just . first primeF . highestPower $ p
   | otherwise = Nothing
 
 -- | Check if argument is valid characteristic of finite field.
