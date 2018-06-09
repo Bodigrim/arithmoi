@@ -11,6 +11,8 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -36,6 +38,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Control.Monad.ST
 import Data.Array.ST
 import Data.Array.Unboxed
+import Data.Proxy
 import Control.Monad (when)
 import Data.Bits
 #if WORD_SIZE_IN_BITS == 32
@@ -109,9 +112,12 @@ primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
 
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
-primeList :: Num a => PrimeSieve -> [a]
-primeList ps@(PS 0 _) = 2 : 3 : 5 : primeListInternal ps
-primeList ps          = primeListInternal ps
+primeList :: forall a. Integral a => PrimeSieve -> [a]
+primeList ps@(PS v _)
+  | doesNotFit (Proxy :: Proxy a) v
+              = [] -- has an overflow already happened?
+  | v == 0    = takeWhileIncreasing $ 2 : 3 : 5 : primeListInternal ps
+  | otherwise = takeWhileIncreasing $ primeListInternal ps
 
 primeListInternal :: Num a => PrimeSieve -> [a]
 primeListInternal (PS v0 bs)
@@ -119,6 +125,20 @@ primeListInternal (PS v0 bs)
   $ filter (unsafeAt bs) [lo..hi]
   where
     (lo, hi) = bounds bs
+
+-- | Returns true if integer is beyond representation range of type a.
+doesNotFit :: forall a. Integral a => Proxy a -> Integer -> Bool
+doesNotFit _ v = toInteger (fromInteger v :: a) /= v
+
+-- | Extracts the longest strictly increasing prefix of the list
+-- (possibly infinite).
+takeWhileIncreasing :: Ord a => [a] -> [a]
+takeWhileIncreasing = \case
+  []     -> []
+  x : xs -> x : foldr go (const []) xs x
+    where
+      go :: Ord a => a -> (a -> [a]) -> a -> [a]
+      go y f z = if z < y then y : f y else []
 
 -- | Ascending list of primes.
 --
@@ -145,8 +165,8 @@ primeListInternal (PS v0 bs)
 -- > > primes' !! 1000000 :: Int
 -- > 15485867
 -- > (0.02 secs, 336,232 bytes)
-primes :: Num a => [a]
-primes = 2 : 3 : 5 : concatMap primeListInternal psieveList
+primes :: (Ord a, Num a) => [a]
+primes = takeWhileIncreasing $ 2 : 3 : 5 : concatMap primeListInternal psieveList
 
 -- | List of primes in the form of a list of 'PrimeSieve's, more compact than
 --   'primes', thus it may be better to use @'psieveList' >>= 'primeList'@
