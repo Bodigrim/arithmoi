@@ -182,6 +182,7 @@ benchmark criterion
       semigroups >=0.8
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
+    Math.NumberTheory.DiscreteLogarithmBench
     Math.NumberTheory.GCDBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench
