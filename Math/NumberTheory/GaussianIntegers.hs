@@ -138,7 +138,7 @@ primes = [ g
                 else
                     if p == 2
                     then [1 :+ 1]
-                    else let x :+ y = findPrime' (fromMaybeError "Impossible error" $ toFieldCharacteristic p) -- safe actually
+                    else let x :+ y = findPrime' (toFieldCharacteristic (PrimeNat p) 1) -- safe actually
                          in [x :+ y, y :+ x]
          ]
 
@@ -201,7 +201,7 @@ factorise g = helper (Factorisation.factorise $ norm g) g
                 -- otherwise: find a Gaussian prime gp for which `norm gp ==
                 -- p`. Then do trial divisions to find out how many times g' is
                 -- divisible by gp or its conjugate.
-                let gp = findPrime' (fromMaybeError "p must be prime" $ toFieldCharacteristic p)
+                let gp = findPrime' (toFieldCharacteristic (PrimeNat p) 1)
                 in trialDivide g' [gp, abs $ conjugate gp]
         in facs ++ helper pt g''
 
@@ -228,8 +228,3 @@ countEvenDivisions g pf = helper g 0
     helper g' acc
         | g' `modG` pf == 0 = helper (g' `divG` pf) (1 + acc)
         | otherwise     = (acc, g')
-
--- Custom version of @'fromJust'@.
-fromMaybeError :: String -> Maybe a -> a
-fromMaybeError msg Nothing = error msg
-fromMaybeError _ (Just v) = v
