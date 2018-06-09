@@ -63,6 +63,7 @@ library
     Math.NumberTheory.Moduli
     Math.NumberTheory.Moduli.Chinese
     Math.NumberTheory.Moduli.Class
+    Math.NumberTheory.Moduli.DiscreteLogarithm
     Math.NumberTheory.Moduli.Jacobi
     Math.NumberTheory.Moduli.PrimitiveRoot
     Math.NumberTheory.Moduli.Sqrt
@@ -135,6 +136,7 @@ test-suite spec
     Math.NumberTheory.GCD.LowLevelTests
     Math.NumberTheory.GCDTests
     Math.NumberTheory.Moduli.ChineseTests
+    Math.NumberTheory.Moduli.DiscreteLogarithmTests
     Math.NumberTheory.Moduli.ClassTests
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests
