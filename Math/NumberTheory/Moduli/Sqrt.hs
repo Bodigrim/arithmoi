@@ -14,9 +14,16 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( -- Constructor is exported in order to do pattern-matching.
+  ( -- | Constructor is exported in order to do pattern-matching.
+    --   Should not be used ideally to contruct because it does not check preconditions.
+    --   Use @'toFieldCharacteristic'@ instead.
     FieldCharacteristic(..)
   , toFieldCharacteristic
+  --  | Constructor is exported in order to do pattern-matching.
+  --   Should not be used ideally to contruct because it does not check preconditions.
+  --   Use @'toResidue'@ instead.
+  , QuadraticResidue(..)
+  , toQuadraticResidue
   , sqrtModList
   , sqrtModMaybe
   , sqrtModExact
@@ -45,6 +52,10 @@ import Math.NumberTheory.Utils.FromIntegral
 data FieldCharacteristic = FieldCharacteristic (Prime Integer) Int
   deriving Show
 
+-- | Flag structure to check if residue is quadratic by modulo.
+--   Condition is checked during construction.
+data QuadraticResidue = QuadraticResidue (Prime Integer) Integer deriving Show
+
 -- | Duplicate functions from @'instance UniqueFactorisation Integer'@. They cannot be imported because of cycle imports.
 unPrime :: PrimeNat -> Integer
 unPrime = coerce naturalToInteger
@@ -65,14 +76,16 @@ toFieldCharacteristic p
   | isPrime p = Just $ FieldCharacteristic (primeF p) 1
   | otherwise = uncurry FieldCharacteristic <$> checkPrimePower p
 
+-- | Check if second argument is quadratic resudue modulo @'p'@ or not.
+toQuadraticResidue :: Prime Integer -> Integer -> Maybe QuadraticResidue
+toQuadraticResidue p'@(unPrime -> p) n
+  | n^((p-1) `div` p) `mod` p == 1 = Just $ QuadraticResidue p' n
+  | otherwise = Nothing
+
 -- * Interface functions with preconditions checking.
 
-sqrtModExact :: Integer -> FieldCharacteristic -> Integer
-sqrtModExact n (FieldCharacteristic (unPrime -> p) 1)
-  -- Euler's criterion.
-  | n^((p-1) `div` p) `mod` p == 1 = sqrtModP' n p
-  | otherwise = error "Quadratic nonresidue as argument - in this case use sqrtModList."
-sqrtModExact _n (FieldCharacteristic _p _pow) = error "This function will work only with modulo by prime. Try sqrtModList"
+sqrtModExact :: QuadraticResidue -> Integer
+sqrtModExact (QuadraticResidue (unPrime -> p) n) = sqrtModP' n p
 
 sqrtModList :: Integer -> FieldCharacteristic -> [Integer]
 sqrtModList n (FieldCharacteristic (unPrime -> p) 1) = sqrtModPList n p

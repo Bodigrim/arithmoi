@@ -49,25 +49,25 @@ sqrtModPListProperty (AnySign n) (unwrapP -> p'@(unPrime -> p)) = all (\rt -> rt
 sqrtModP'Property :: Positive Integer -> PrimeWrapper Integer -> Bool
 sqrtModP'Property (Positive n) (unwrapP -> p'@(unPrime -> p)) = (p /= 2 && jacobi n p /= One) || rt ^ 2 `mod` p == n `mod` p
   where
-    rt = sqrtModExact n (FieldCharacteristic p' 1)
+    rt = sqrtModExact (QuadraticResidue p' n)
 
 tonelliShanksProperty1 :: Positive Integer -> PrimeWrapper Integer -> Bool
 tonelliShanksProperty1 (Positive n) (unwrapP -> p'@(unPrime -> p)) = p `mod` 4 /= 1 || jacobi n p /= One || rt ^ 2 `mod` p == n `mod` p
   where
-    rt = sqrtModExact n (FieldCharacteristic p' 1)
+    rt = sqrtModExact (QuadraticResidue p' n)
 
 tonelliShanksProperty2 :: PrimeWrapper Integer -> Bool
 tonelliShanksProperty2 (unwrapP -> p'@(unPrime -> p)) = p `mod` 4 /= 1 || rt ^ 2 `mod` p == n `mod` p
   where
     n  = head $ filter (\s -> jacobi s p == One) [2..p-1]
-    rt = sqrtModExact n (FieldCharacteristic p' 1)
+    rt = sqrtModExact (QuadraticResidue p' n)
 
 tonelliShanksSpecialCases :: Assertion
 tonelliShanksSpecialCases =
   assertEqual "OEIS A002224" [6, 32, 219, 439, 1526, 2987, 22193, 11740, 13854, 91168, 326277, 232059, 3230839, 4379725, 11754394, 32020334, 151024619, 345641931, 373671108, 1857111865, 8110112775, 4184367042] rts
   where
     ps = [17, 73, 241, 1009, 2689, 8089, 33049, 53881, 87481, 483289, 515761, 1083289, 3818929, 9257329, 22000801, 48473881, 175244281, 427733329, 898716289, 8114538721, 9176747449, 23616331489]
-    rts = map (\p -> sqrtModExact 2 (fromJust . toFieldCharacteristic $ p)) ps
+    rts = map (\p -> sqrtModExact (fromJust $ toQuadraticResidue (fromJust . isPrime $ (p::Integer)) 2)) ps
 
 sqrtModPPProperty :: AnySign Integer -> (PrimeWrapper Integer, Power Int) -> Bool
 sqrtModPPProperty (AnySign n) (unwrapP -> p'@(unPrime -> p), Power e) =
