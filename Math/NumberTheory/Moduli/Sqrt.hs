@@ -84,13 +84,24 @@ toQuadraticResidue p'@(unPrime -> p) n
 
 -- * Interface functions with preconditions checking.
 
+-- | Gets quadratic residue modulo prime and computes it's square root.
+--   Preconditions: @'n'@ is quadratic residue modulo @'p'@, @'p'@ is prime.
+--   All preconditions are cheched earlier and reflected to signature.
 sqrtModExact :: QuadraticResidue -> Integer
 sqrtModExact (QuadraticResidue (unPrime -> p) n) = sqrtModP' n p
 
+-- | Gets integer and computes its square root in field with given characteristic - because it exists only in field.
+--   Returns all roots.
+--   Preconditions: p is prime and second argument itself is valid characteristic (it's guaranteed by type).
+--   All preconditions are cheched earlier and reflected to signature.
 sqrtModList :: Integer -> FieldCharacteristic -> [Integer]
 sqrtModList n (FieldCharacteristic (unPrime -> p) 1) = sqrtModPList n p
 sqrtModList n (FieldCharacteristic (unPrime -> p) pow) = sqrtModPPList n (p,pow)
 
+-- | Gets integer and computes its square root in field with given characteristic - because it exists only in field.
+--   Returns only one root or none.
+--   Preconditions: p is prime and second argument itself is valid characteristic (it's guaranteed by type).
+--   All preconditions are cheched earlier and reflected to signature.
 sqrtModMaybe :: Integer -> FieldCharacteristic -> Maybe Integer
 sqrtModMaybe n (FieldCharacteristic (unPrime -> p) 1) = sqrtModP n p
 sqrtModMaybe n (FieldCharacteristic (unPrime -> p) pow) = sqrtModPP n (p,pow)
