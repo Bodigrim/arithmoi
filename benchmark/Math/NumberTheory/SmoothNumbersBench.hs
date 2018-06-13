@@ -7,7 +7,6 @@ module Math.NumberTheory.SmoothNumbersBench
 import Data.List (genericTake)
 import Data.Maybe
 import Gauge.Main
-import Numeric.Natural
 
 import Math.NumberTheory.SmoothNumbers
 
