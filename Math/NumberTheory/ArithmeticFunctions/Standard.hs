@@ -153,6 +153,8 @@ jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 ramanujan :: (UniqueFactorisation n, Integral n, Integral m) => n -> m
 ramanujan = runFunction ramanujanA
 
+-- | Calculates the <https://en.wikipedia.org/wiki/Ramanujan_tau_function Ramanujan tau function>
+--   of a positive number @n@, using formulas given <http://www.numbertheory.org/php/tau.html here>
 ramanujanA :: forall n m. (UniqueFactorisation n, Integral n, Integral m) => ArithmeticFunction n m
 ramanujanA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> ramanujanHelper p
 
