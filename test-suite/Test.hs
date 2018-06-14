@@ -1,7 +1,6 @@
 import Test.Tasty
 
 import qualified Math.NumberTheory.GCDTests as GCD
-import qualified Math.NumberTheory.GCD.LowLevelTests as GCDLowLevel
 
 import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
 import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
@@ -51,10 +50,7 @@ tests = testGroup "All"
     , Modular.testSuite
     , Squares.testSuite
     ]
-  , testGroup "GCD"
-    [ GCD.testSuite
-    , GCDLowLevel.testSuite
-    ]
+  , GCD.testSuite
   , testGroup "Recurrencies"
     [ RecurrenciesLinear.testSuite
     , RecurrenciesBilinear.testSuite

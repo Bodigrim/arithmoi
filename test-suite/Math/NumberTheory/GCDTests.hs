@@ -11,7 +11,9 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-# OPTIONS_GHC -fno-warn-type-defaults -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults  #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-deprecations   #-}
 
 module Math.NumberTheory.GCDTests
   ( testSuite

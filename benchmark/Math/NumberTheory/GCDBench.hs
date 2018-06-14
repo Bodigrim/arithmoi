@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
 
 module Math.NumberTheory.GCDBench
   ( benchSuite
