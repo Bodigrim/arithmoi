@@ -14,7 +14,8 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.ArithmeticFunctionsTests
-  where
+  ( testSuite
+  ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
