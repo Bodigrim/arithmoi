@@ -122,6 +122,15 @@ jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
   , 1728, 1584, 2208, 1536
   ]
 
+-- | ramanujan matches baseline from OEIS.
+ramanujanOeis :: Assertion
+ramanujanOeis = oeisAssertion "A000594" ramanujanA
+  [ 1, -24, 252, -1472, 4830, -6048, -16744, 84480, -113643, -115920
+  , 534612, -370944, -577738, 401856, 1217160, 987136, -6905934, 2727432
+  , 10661420, -7109760, -4219488, -12830688, 18643272, 21288960, -25499225
+  , 13865712, -73279080, 24647168
+  ]
+
 -- | moebius does not require full factorisation
 moebiusLazy :: Assertion
 moebiusLazy = assertEqual "moebius" MoebiusZ (runFunction moebiusA (2^2 * (2^100000-1) :: Natural))
@@ -229,6 +238,9 @@ testSuite = testGroup "ArithmeticFunctions"
     [ testSmallAndQuick "jordan_0 = [== 1]"  jordanProperty1
     , testSmallAndQuick "jordan_1 = totient" jordanProperty2
     , testCase          "OEIS jordan_2"      jordan2Oeis
+    ]
+  , testGroup "Ramanujan"
+    [ testCase          "OEIS ramanujan"      ramanujanOeis
     ]
   , testGroup "Moebius"
     [ testCase          "OEIS"           moebiusOeis

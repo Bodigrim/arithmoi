@@ -26,6 +26,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , sigma, sigmaA
   , totient, totientA
   , jordan, jordanA
+  , ramanujan, ramanujanA
   , moebius, moebiusA, Moebius(..), runMoebius
   , liouville, liouvilleA
     -- * Additive functions
@@ -148,6 +149,17 @@ jordanHelper pa 1 = pa - 1
 jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
+
+ramanujan :: (UniqueFactorisation n, Integral n) => n -> n
+ramanujan = runFunction ramanujanA
+
+ramanujanA :: forall n. (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
+ramanujanA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> ramanujanHelper p
+
+ramanujanHelper :: (UniqueFactorisation n, Integral n) => n -> Word -> n
+ramanujanHelper _ 0 = 1
+ramanujanHelper p 1 = (65 * (p ^ (11 :: Int) + 1) + 691 * (p ^ (5 :: Int) + 1) - 691 * 252 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p-1)]]) `quot` 756
+ramanujanHelper p k = ramanujanHelper p 1 * ramanujanHelper p (k-1) - (p ^ (11 :: Int)) * ramanujanHelper p (k-2)
 
 moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
