@@ -14,8 +14,7 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.ArithmeticFunctionsTests
-  ( testSuite
-  ) where
+  where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -121,6 +120,23 @@ jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
   , 768, 960, 864, 1152, 864, 1368, 1080, 1344, 1152, 1680, 1152, 1848, 1440
   , 1728, 1584, 2208, 1536
   ]
+
+-- | congruences 1,2,3,4 from https://en.wikipedia.org/wiki/Ramanujan_tau_function
+ramanujanCongruence1 :: NonZero Natural -> Bool
+ramanujanCongruence1 (NonZero n)
+  | k == 1 = (ramanujan n - sigma 11 n) `mod` (2^11) == 0
+  | k == 3 = (ramanujan n - 1217 * sigma 11 n) `mod` (2^13) == 0
+  | k == 5 = (ramanujan n - 1537 * sigma 11 n) `mod` (2^12) == 0
+  | k == 7 = (ramanujan n - 705 * sigma 11 n) `mod` (2^14) == 0
+  | otherwise = True
+  where k = n `mod` 8
+
+-- | congruences 8,9 from https://en.wikipedia.org/wiki/Ramanujan_tau_function
+ramanujanCongruence2 :: NonZero Natural -> Bool
+ramanujanCongruence2 (NonZero n)
+  | (n `mod` 7) `elem` [0,1,2,4] = m `mod` 7 == 0
+  | otherwise                    = m `mod` 49 == 0
+  where m = ramanujan n - (fromIntegral n) * sigma 9 n :: Integer
 
 -- | ramanujan matches baseline from OEIS.
 ramanujanOeis :: Assertion
@@ -240,7 +256,9 @@ testSuite = testGroup "ArithmeticFunctions"
     , testCase          "OEIS jordan_2"      jordan2Oeis
     ]
   , testGroup "Ramanujan"
-    [ testCase          "OEIS ramanujan"      ramanujanOeis
+    [ testSmallAndQuick "ramanujan mod 8 congruences" ramanujanCongruence1
+    , testSmallAndQuick "ramanujan mod 7 congruences" ramanujanCongruence2
+    , testCase          "OEIS ramanujan"              ramanujanOeis
     ]
   , testGroup "Moebius"
     [ testCase          "OEIS"           moebiusOeis

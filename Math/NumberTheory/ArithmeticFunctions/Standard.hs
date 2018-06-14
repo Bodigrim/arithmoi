@@ -106,22 +106,22 @@ tau = runFunction tauA
 tauA :: Num a => ArithmeticFunction n a
 tauA = multiplicative $ const (fromIntegral . succ)
 
-sigma :: (UniqueFactorisation n, Integral n) => Word -> n -> n
+sigma :: (UniqueFactorisation n, Integral n, Integral m) => Word -> n -> m
 sigma = runFunction . sigmaA
 
 -- | The sum of the @k@-th powers of (positive) divisors of an argument.
 --
 -- > sigmaA = multiplicative (\p k -> sum $ map (p ^) [0..k])
 -- > sigmaA 0 = tauA
-sigmaA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
+sigmaA :: forall n m. (UniqueFactorisation n, Integral n, Integral m) => Word -> ArithmeticFunction n m
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper p
 sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ wordToInt a)
 
-sigmaHelper :: Integral n => n -> Word -> n
-sigmaHelper pa 1 = pa + 1
-sigmaHelper pa 2 = pa * pa + pa + 1
-sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
+sigmaHelper :: (Integral n, Integral m) => n -> Word -> m
+sigmaHelper pa 1 = fromIntegral $ pa + 1
+sigmaHelper pa 2 = fromIntegral $ pa * pa + pa + 1
+sigmaHelper pa k = fromIntegral $ (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
 totient :: (UniqueFactorisation n, Num n) => n -> n
@@ -158,8 +158,9 @@ ramanujanA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> ramanujanHelp
 
 ramanujanHelper :: (UniqueFactorisation n, Integral n, Integral m) => n -> Word -> m
 ramanujanHelper _ 0 = 1
-ramanujanHelper p 1 = (fromIntegral (65 * (p ^ (11 :: Int) + 1) + 691 * (p ^ (5 :: Int) + 1)) - fromIntegral (691 * 252 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p-1)]])) `quot` 756
+ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p-1)]]) `quot` 756
 ramanujanHelper p k = ramanujanHelper p 1 * ramanujanHelper p (k-1) - (fromIntegral $ p ^ (11 :: Int)) * ramanujanHelper p (k-2)
+{-# INLINE ramanujanHelper #-}
 
 moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
