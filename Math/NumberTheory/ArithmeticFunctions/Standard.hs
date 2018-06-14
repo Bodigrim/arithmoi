@@ -150,16 +150,16 @@ jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
 
-ramanujan :: (UniqueFactorisation n, Integral n) => n -> n
+ramanujan :: (UniqueFactorisation n, Integral n, Integral m) => n -> m
 ramanujan = runFunction ramanujanA
 
-ramanujanA :: forall n. (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
+ramanujanA :: forall n m. (UniqueFactorisation n, Integral n, Integral m) => ArithmeticFunction n m
 ramanujanA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> ramanujanHelper p
 
-ramanujanHelper :: (UniqueFactorisation n, Integral n) => n -> Word -> n
+ramanujanHelper :: (UniqueFactorisation n, Integral n, Integral m) => n -> Word -> m
 ramanujanHelper _ 0 = 1
-ramanujanHelper p 1 = (65 * (p ^ (11 :: Int) + 1) + 691 * (p ^ (5 :: Int) + 1) - 691 * 252 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p-1)]]) `quot` 756
-ramanujanHelper p k = ramanujanHelper p 1 * ramanujanHelper p (k-1) - (p ^ (11 :: Int)) * ramanujanHelper p (k-2)
+ramanujanHelper p 1 = (fromIntegral (65 * (p ^ (11 :: Int) + 1) + 691 * (p ^ (5 :: Int) + 1)) - fromIntegral (691 * 252 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p-1)]])) `quot` 756
+ramanujanHelper p k = ramanujanHelper p 1 * ramanujanHelper p (k-1) - (fromIntegral $ p ^ (11 :: Int)) * ramanujanHelper p (k-2)
 
 moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
