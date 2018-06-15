@@ -25,5 +25,5 @@ benchSuite = bgroup "ArithmeticFunctions"
   , compareFunctions "sigma 2" (A.sigma 2)                       [1..100000]
   , compareFunctions "ramanujan range" ramanujan                 [1..2000]
   , compareFunctions "ramanujan large prime" ramanujan           [100003]
-  , compareFunctions "ramanujan prime power" ramanujan           [2^100]
+  , compareFunctions "ramanujan prime power" ramanujan           [2^3000]
   ]

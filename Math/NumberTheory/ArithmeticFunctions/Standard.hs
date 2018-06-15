@@ -163,9 +163,16 @@ ramanujanHelper :: (UniqueFactorisation n, Integral n, Integral m) => n -> Word 
 ramanujanHelper _ 0 = 1
 ramanujanHelper 2 1 = -24
 ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * 2 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p `quot` 2)]]) `quot` 756
-ramanujanHelper p k = sum [(-1)^j * binomial !! (wordToInt $ k-j) !! (wordToInt $ k - 2*j) * pa^j * tp ^ (k - 2*j) | j <- [0..k `quot` 2]]
+ramanujanHelper p k = sum $ zipWith3 (\a b c -> a * b * c) paPowers tpPowers binomials
   where pa = fromIntegral $ p ^ (11 :: Int)
         tp = ramanujanHelper p 1
+        paPowers = iterate (* (-pa)) 1
+        binFunc j
+          | 3*j > k   = row !! (wordToInt $ k - 2*j)
+          | otherwise = row !! (wordToInt $ j)
+          where row = binomial !! (wordToInt $ k - j)
+        binomials = map binFunc [0 .. k `quot` 2]
+        tpPowers = reverse $ take (length binomials) $ iterate (* tp^(2::Int)) (if even k then 1 else tp)
 {-# INLINE ramanujanHelper #-}
 
 moebius :: UniqueFactorisation n => n -> Moebius
