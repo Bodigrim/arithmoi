@@ -161,7 +161,8 @@ ramanujanA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> ramanujanHelp
 
 ramanujanHelper :: (UniqueFactorisation n, Integral n, Integral m) => n -> Word -> m
 ramanujanHelper _ 0 = 1
-ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p-1)]]) `quot` 756
+ramanujanHelper 2 1 = -24
+ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * 2 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p `quot` 2)]]) `quot` 756
 ramanujanHelper p k = sum [(-1)^j * binomial !! (wordToInt $ k-j) !! (wordToInt $ k - 2*j) * pa^j * tp ^ (k - 2*j) | j <- [0..k `quot` 2]]
   where pa = fromIntegral $ p ^ (11 :: Int)
         tp = ramanujanHelper p 1
