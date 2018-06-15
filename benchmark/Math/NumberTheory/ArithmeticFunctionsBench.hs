@@ -8,7 +8,7 @@ import Data.Set (Set)
 import Math.NumberTheory.ArithmeticFunctions as A
 
 compareFunctions :: String -> (Integer -> Integer) -> Benchmark
-compareFunctions name new = bench name $ nf (map new) [1..2000]
+compareFunctions name new = bench name $ nf (map new) [1..100000]
 
 compareSetFunctions :: String -> (Integer -> Set Integer) -> Benchmark
 compareSetFunctions name new = bench name $ nf (map new) [1..100000]
@@ -23,5 +23,5 @@ benchSuite = bgroup "ArithmeticFunctions"
   , compareFunctions "tau" A.tau
   , compareFunctions "sigma 1" (A.sigma 1)
   , compareFunctions "sigma 2" (A.sigma 2)
-  , compareFunctions "ramanujan" ramanujan
+  , bench "ramanujan" $ nf (map (ramanujan :: Integer -> Integer)) [1 .. 2000]
   ]
