@@ -32,6 +32,9 @@ import Numeric.Natural
 oeisAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Natural a -> [a] -> Assertion
 oeisAssertion name f baseline = assertEqual name baseline (map (runFunction f) [1 .. fromIntegral (length baseline)])
 
+wolframAlphaAssertion :: (Eq a, Show a) => String -> ArithmeticFunction Integer a -> [Integer] -> [a] -> Assertion
+wolframAlphaAssertion name f domain baseline = assertEqual name baseline (map (runFunction f) domain)
+
 -- | tau(n) equals to a number of divisors.
 divisorsProperty1 :: NonZero Natural -> Bool
 divisorsProperty1 (NonZero n) = S.size (runFunction divisorsA n) == runFunction tauA n
@@ -125,27 +128,67 @@ jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
 -- | congruences 1,2,3,4 from https://en.wikipedia.org/wiki/Ramanujan_tau_function
 ramanujanCongruence1 :: NonZero Natural -> Bool
 ramanujanCongruence1 (NonZero n)
-  | k == 1 = (ramanujan n - sigma 11 n) `mod` (2^11) == 0
-  | k == 3 = (ramanujan n - 1217 * sigma 11 n) `mod` (2^13) == 0
-  | k == 5 = (ramanujan n - 1537 * sigma 11 n) `mod` (2^12) == 0
-  | k == 7 = (ramanujan n - 705 * sigma 11 n) `mod` (2^14) == 0
+  | k == 1 = (ramanujan n' - sigma 11 n') `mod` (2^11) == 0
+  | k == 3 = (ramanujan n' - 1217 * sigma 11 n') `mod` (2^13) == 0
+  | k == 5 = (ramanujan n' - 1537 * sigma 11 n') `mod` (2^12) == 0
+  | k == 7 = (ramanujan n' - 705 * sigma 11 n') `mod` (2^14) == 0
   | otherwise = True
   where k = n `mod` 8
+        n' = fromIntegral n :: Integer
 
 -- | congruences 8,9 from https://en.wikipedia.org/wiki/Ramanujan_tau_function
 ramanujanCongruence2 :: NonZero Natural -> Bool
 ramanujanCongruence2 (NonZero n)
   | (n `mod` 7) `elem` [0,1,2,4] = m `mod` 7 == 0
   | otherwise                    = m `mod` 49 == 0
-  where m = ramanujan n - (fromIntegral n) * sigma 9 n :: Integer
+  where m = ramanujan n' - n' * sigma 9 n'
+        n' = fromIntegral n :: Integer
 
--- | ramanujan matches baseline from OEIS.
-ramanujanOeis :: Assertion
-ramanujanOeis = oeisAssertion "A000594" ramanujanA
+-- | ramanujan matches baseline from wolframAlpha: https://www.wolframalpha.com/input/?i=RamanujanTau%5BRange%5B100%5D%5D
+ramanujanRange :: Assertion
+ramanujanRange = wolframAlphaAssertion "A000594" ramanujanA [1..100]
   [ 1, -24, 252, -1472, 4830, -6048, -16744, 84480, -113643, -115920
   , 534612, -370944, -577738, 401856, 1217160, 987136, -6905934, 2727432
   , 10661420, -7109760, -4219488, -12830688, 18643272, 21288960, -25499225
-  , 13865712, -73279080, 24647168
+  , 13865712, -73279080, 24647168, 128406630, -29211840, -52843168
+  , -196706304, 134722224, 165742416, -80873520, 167282496, -182213314
+  , -255874080, -145589976, 408038400, 308120442, 101267712, -17125708
+  , -786948864, -548895690, -447438528, 2687348496, 248758272, -1696965207
+  , 611981400, -1740295368, 850430336, -1596055698, 1758697920, 2582175960
+  , -1414533120, 2686677840, -3081759120, -5189203740, -1791659520, 6956478662
+  , 1268236032, 1902838392, 2699296768, -2790474540, -3233333376, -15481826884
+  , 10165534848, 4698104544, 1940964480, 9791485272, -9600560640, 1463791322
+  , 4373119536, -6425804700, -15693610240, -8951543328, 3494159424, 38116845680
+  , 4767866880, 1665188361, -7394890608, -29335099668, 6211086336, -33355661220
+  , 411016992, 32358470760, 45164021760, -24992917110, 13173496560, 9673645072
+  , -27442896384, -13316478336, -64496363904, 51494658600, -49569988608
+  , 75013568546, 40727164968, -60754911516, 37534859200
+  ]
+
+-- | ramanujan matches baseline from wolframAlpha: https://www.wolframalpha.com/input/?i=RamanujanTau%5B2%5ERange%5B20%5D%5D
+ramanujanPowers2 :: Assertion
+ramanujanPowers2 = wolframAlphaAssertion "wolframAlpha2^n" ramanujanA [2^n | n <- [1..20]]
+  [ -24, -1472, 84480, 987136, -196706304, 2699296768, 338071388160
+  , -13641873096704, -364965248630784, 36697722069188608, -133296500464680960
+  , -71957818786545926144, 1999978883828768833536, 99370119662955604738048
+  , -6480839625992253084794880, -47969854045919004468445184
+  , 14424036051134190424902598656, -247934604141178449046286630912
+  , -23589995333334539213089642905600, 1073929957281162404760946449842176
+  ]
+
+-- | ramanujan matches baseline from wolframAlpha: https://www.wolframalpha.com/input/?i=RamanujanTau%5B3%5ERange%5B20%5D%5D
+ramanujanPowers3 :: Assertion
+ramanujanPowers3 = wolframAlphaAssertion "wolframAlpha3^n" ramanujanA [3^n | n <- [1..20]]
+  [ 252, -113643, -73279080, 1665188361, 13400796651732, 3082017633650397
+  , -1597242480784468560, -948475282905952954479, 43930942451226107469612
+  , 179090148438649827109433637, 37348482744132405171657919560
+  , -22313464873940134819697044764519, -12239164820907737153507340756954108
+  , 868493827155123300221022518147812077, 2386991774972433985188062567645398013280
+  , 447670851294004737003138291024309833342241
+  , -310035377434952569449318870332553243856267428
+  , -157432463407787104647123294163886831498857358283
+  , 15248856227707192449163419793501327951694151780600
+  , 31731400364681474724113131979212395183355010696469801
   ]
 
 -- | moebius does not require full factorisation
@@ -259,7 +302,9 @@ testSuite = testGroup "ArithmeticFunctions"
   , testGroup "Ramanujan"
     [ testSmallAndQuick "ramanujan mod 8 congruences" ramanujanCongruence1
     , testSmallAndQuick "ramanujan mod 7 congruences" ramanujanCongruence2
-    , testCase          "OEIS ramanujan"              ramanujanOeis
+    , testCase          "baseline ramanujan range"    ramanujanRange
+    , testCase          "baseline ramanujan powers2"  ramanujanPowers2
+    , testCase          "baseline ramanujan powers3"  ramanujanPowers3
     ]
   , testGroup "Moebius"
     [ testCase          "OEIS"           moebiusOeis
