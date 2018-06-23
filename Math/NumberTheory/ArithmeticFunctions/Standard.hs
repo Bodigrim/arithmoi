@@ -166,11 +166,8 @@ ramanujanHelper p k = sum $ zipWith3 (\a b c -> a * b * c) paPowers tpPowers bin
   where pa = fromIntegral $ p ^ (11 :: Int)
         tp = ramanujanHelper p 1
         paPowers = iterate (* (-pa)) 1
-        binFunc j
-          | 3*j > k   = row !! (wordToInt $ k - 2*j)
-          | otherwise = row !! (wordToInt $ j)
-          where row = binomial !! (wordToInt $ k - j)
-        binomials = map binFunc [0 .. k `quot` 2]
+        binomials = scanl (\acc j -> acc * (k' - 2 * j) * (k' - 2 * j - 1) `quot` (k' - j) `quot` (j + 1)) 1 [0 .. k' `quot` 2 - 1]
+        k' = fromIntegral k 
         tpPowers = reverse $ take (length binomials) $ iterate (* tp^(2::Int)) (if even k then 1 else tp)
 {-# INLINE ramanujanHelper #-}
 
