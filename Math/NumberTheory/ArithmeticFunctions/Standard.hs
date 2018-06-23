@@ -49,7 +49,6 @@ import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
-import Math.NumberTheory.Recurrencies.Bilinear (binomial)
 
 import Numeric.Natural
 
@@ -107,19 +106,19 @@ tau = runFunction tauA
 tauA :: Num a => ArithmeticFunction n a
 tauA = multiplicative $ const (fromIntegral . succ)
 
-sigma :: (UniqueFactorisation n, Integral n, Integral m) => Word -> n -> m
+sigma :: (UniqueFactorisation n, Integral n) => Word -> n -> n
 sigma = runFunction . sigmaA
 
 -- | The sum of the @k@-th powers of (positive) divisors of an argument.
 --
 -- > sigmaA = multiplicative (\p k -> sum $ map (p ^) [0..k])
 -- > sigmaA 0 = tauA
-sigmaA :: forall n m. (UniqueFactorisation n, Integral n, Integral m) => Word -> ArithmeticFunction n m
+sigmaA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper p
 sigmaA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> sigmaHelper (p ^ wordToInt a)
 
-sigmaHelper :: (Integral n, Integral m) => n -> Word -> m
+sigmaHelper :: Integral n => n -> Word -> n
 sigmaHelper pa 1 = fromIntegral $ pa + 1
 sigmaHelper pa 2 = fromIntegral $ pa * pa + pa + 1
 sigmaHelper pa k = fromIntegral $ (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
@@ -151,15 +150,15 @@ jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
 
-ramanujan :: (UniqueFactorisation n, Integral n, Integral m) => n -> m
+ramanujan :: Integer -> Integer
 ramanujan = runFunction ramanujanA
 
 -- | Calculates the <https://en.wikipedia.org/wiki/Ramanujan_tau_function Ramanujan tau function>
 --   of a positive number @n@, using formulas given <http://www.numbertheory.org/php/tau.html here>
-ramanujanA :: forall n m. (UniqueFactorisation n, Integral n, Integral m) => ArithmeticFunction n m
-ramanujanA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> ramanujanHelper p
+ramanujanA :: ArithmeticFunction Integer Integer
+ramanujanA = multiplicative $ \((unPrime :: Prime Integer -> Integer) -> p) -> ramanujanHelper p
 
-ramanujanHelper :: (UniqueFactorisation n, Integral n, Integral m) => n -> Word -> m
+ramanujanHelper :: Integer -> Word -> Integer
 ramanujanHelper _ 0 = 1
 ramanujanHelper 2 1 = -24
 ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * 2 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p `quot` 2)]]) `quot` 756
