@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.ArithmeticFunctionsBench
   ( benchSuite
   ) where
