@@ -8,7 +8,12 @@
 --
 -- Sieve
 --
-{-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
@@ -23,9 +28,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , countFromTo
     , countAll
     , countToNth
-    , sieveBytes
     , sieveBits
-    , sieveWords
     , sieveRange
     , sieveTo
     ) where
@@ -35,6 +38,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Control.Monad.ST
 import Data.Array.ST
 import Data.Array.Unboxed
+import Data.Proxy
 import Control.Monad (when)
 import Data.Bits
 #if WORD_SIZE_IN_BITS == 32
@@ -44,6 +48,7 @@ import Data.Word
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.FromIntegral
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 
@@ -107,24 +112,61 @@ primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
 
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
-primeList :: PrimeSieve -> [Integer]
-primeList (PS 0 bs) = 2:3:5:[toPrim i | let (lo,hi) = bounds bs
-                                      , i <- [lo .. hi]
-                                      , unsafeAt bs i
-                                      ]
-primeList (PS vO bs) = [vO + toPrim i
-                            | let (lo,hi) = bounds bs
-                            , i <- [lo .. hi]
-                            , unsafeAt bs i
-                            ]
+primeList :: forall a. Integral a => PrimeSieve -> [a]
+primeList ps@(PS v _)
+  | doesNotFit (Proxy :: Proxy a) v
+              = [] -- has an overflow already happened?
+  | v == 0    = takeWhileIncreasing $ 2 : 3 : 5 : primeListInternal ps
+  | otherwise = takeWhileIncreasing $ primeListInternal ps
 
--- | List of primes.
---   Since the sieve uses unboxed arrays, overflow occurs at some point.
---   On 64-bit systems, that point is beyond the memory limits, on
---   32-bit systems, it is at about @1.7*10^18@.
-primes :: [Integer]
-primes = 2:3:5:concat [[vO + toPrim i | i <- [0 .. li], unsafeAt bs i]
-                                | PS vO bs <- psieveList, let (_,li) = bounds bs]
+primeListInternal :: Num a => PrimeSieve -> [a]
+primeListInternal (PS v0 bs)
+  = map ((+ fromInteger v0) . toPrim)
+  $ filter (unsafeAt bs) [lo..hi]
+  where
+    (lo, hi) = bounds bs
+
+-- | Returns true if integer is beyond representation range of type a.
+doesNotFit :: forall a. Integral a => Proxy a -> Integer -> Bool
+doesNotFit _ v = toInteger (fromInteger v :: a) /= v
+
+-- | Extracts the longest strictly increasing prefix of the list
+-- (possibly infinite).
+takeWhileIncreasing :: Ord a => [a] -> [a]
+takeWhileIncreasing = \case
+  []     -> []
+  x : xs -> x : foldr go (const []) xs x
+    where
+      go :: Ord a => a -> (a -> [a]) -> a -> [a]
+      go y f z = if z < y then y : f y else []
+
+-- | Ascending list of primes.
+--
+-- > > take 10 primes
+-- > [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+--
+-- 'primes' is a polymorphic list, so the results of computations are not retained in memory.
+-- Make it monomorphic to take advantages of memoization. Compare
+--
+-- > > :set +s
+-- > > primes !! 1000000 :: Int
+-- > 15485867
+-- > (5.32 secs, 6,945,267,496 bytes)
+-- > > primes !! 1000000 :: Int
+-- > 15485867
+-- > (5.19 secs, 6,945,267,496 bytes)
+--
+-- against
+--
+-- > > let primes' = primes :: [Int]
+-- > > primes' !! 1000000 :: Int
+-- > 15485867
+-- > (5.29 secs, 6,945,269,856 bytes)
+-- > > primes' !! 1000000 :: Int
+-- > 15485867
+-- > (0.02 secs, 336,232 bytes)
+primes :: (Ord a, Num a) => [a]
+primes = takeWhileIncreasing $ 2 : 3 : 5 : concatMap primeListInternal psieveList
 
 -- | List of primes in the form of a list of 'PrimeSieve's, more compact than
 --   'primes', thus it may be better to use @'psieveList' >>= 'primeList'@
@@ -135,7 +177,7 @@ psieveList = makeSieves plim sqlim 0 0 cache
     plim = 4801     -- prime #647, 644 of them to use
     sqlim = plim*plim
     cache = runSTUArray $ do
-        sieve <- sieveTo 4801
+        sieve <- sieveTo (4801 :: Integer)
         new <- unsafeNewArray_ (0,1287) :: ST s (STUArray s Int CacheWord)
         let fill j indx
               | 1279 < indx = return new    -- index of 4801 = 159*30 + 31 ~> 159*8+7
@@ -336,7 +378,7 @@ sieveFrom n = case psieveFrom n of
 psieveFrom :: Integer -> [PrimeSieve]
 psieveFrom n = makeSieves plim sqlim bitOff valOff cache
     where
-      k0 = max 0 (n-7) `quot` 30
+      k0 = ((n `max` 7) - 7) `quot` 30 -- beware arithmetic underflow
       valOff = 30*k0
       bitOff = 8*k0
       start = valOff+7
@@ -404,7 +446,7 @@ nthPrimeCt n
                       bnd = bd0 + bd0 `quot` 32 + 37
                       !sv = primeSieve bnd
                   in countToNth (n-3) [sv]
-  | otherwise   = countToNth (n-3) (psieveFrom (fromIntegral $ fromInteger n .&. (7 :: Int)))
+  | otherwise   = countToNth (n-3) (psieveFrom (intToInteger $ fromInteger n .&. (7 :: Int)))
 
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime

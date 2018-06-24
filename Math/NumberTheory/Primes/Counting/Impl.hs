@@ -8,7 +8,11 @@
 --
 -- Number of primes not exceeding @n@, @&#960;(n)@, and @n@-th prime.
 --
-{-# LANGUAGE CPP, BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Counting.Impl
@@ -140,14 +144,18 @@ lowSieve a miss = countToNth (miss+rep) psieves
 -- highSieve a surp gap = error "Oh shit"
 
 sieveCount :: COUNT_T -> COUNT_T -> COUNT_T -> Integer
-sieveCount ub cr sr = runST $ do
+sieveCount ub cr sr = runST (sieveCountST ub cr sr)
+
+sieveCountST :: forall s. COUNT_T -> COUNT_T -> COUNT_T -> ST s Integer
+sieveCountST ub cr sr = do
     let psieves = psieveFrom (fromIntegral cr)
         pisr = approxPrimeCount sr
         picr = approxPrimeCount cr
         diff = pisr - picr
         size = fromIntegral (diff + diff `quot` 50) + 30
     store <- unsafeNewArray_ (0,size-1) :: ST s (STUArray s Int COUNT_T)
-    let feed voff !wi !ri uar sves
+    let feed :: COUNT_T -> Int -> Int -> UArray Int Bool -> [PrimeSieve] -> ST s Integer
+        feed voff !wi !ri uar sves
           | ri == sieveBits = case sves of
                                 (PS vO ba : more) -> feed (fromInteger vO) wi 0 ba more
                                 _ -> error "prime stream ended prematurely"
@@ -160,6 +168,7 @@ sieveCount ub cr sr = runST $ do
           | otherwise = feed voff wi (ri+1) uar sves
             where
               pval = voff + toPrim ri
+        eat :: Integer -> Integer -> COUNT_T -> Int -> Int -> STUArray s Int Bool -> [PrimeSieve] -> ST s Integer
         eat !acc !btw voff !wi !si stu sves
             | si == sieveBits =
                 case sves of
@@ -198,7 +207,10 @@ sieveCount ub cr sr = runST $ do
       _ -> error "No primes sieved"
 
 calc :: COUNT_T -> COUNT_T -> Integer
-calc lim plim = runST $ do
+calc lim plim = runST (calcST lim plim)
+
+calcST :: forall s. COUNT_T -> COUNT_T -> ST s Integer
+calcST lim plim = do
     !parr <- sieveTo (fromIntegral plim)
     (plo,phi) <- getBounds parr
     !pct <- countFromTo plo phi parr
@@ -206,7 +218,8 @@ calc lim plim = runST $ do
     unsafeWrite ar1 0 lim
     unsafeWrite ar1 1 1
     !ar2 <- unsafeNewArray_ (0,end-1)
-    let go cap pix old new
+    let go :: Int -> Int -> STUArray s Int COUNT_T -> STUArray s Int COUNT_T -> ST s Integer
+        go cap pix old new
             | pix == 2  =   coll cap old
             | otherwise = do
                 isp <- unsafeRead parr pix
@@ -216,6 +229,7 @@ calc lim plim = runST $ do
                         !ncap <- treat cap n old new
                         go ncap (pix-1) new old
                     else go cap (pix-1) old new
+        coll :: Int -> STUArray s Int COUNT_T -> ST s Integer
         coll stop ar =
             let cgo !acc i
                     | i < stop  = do
