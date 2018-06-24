@@ -26,6 +26,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , sigma, sigmaA
   , totient, totientA
   , jordan, jordanA
+  , ramanujan, ramanujanA
   , moebius, moebiusA, Moebius(..), runMoebius
   , liouville, liouvilleA
     -- * Additive functions
@@ -148,6 +149,27 @@ jordanHelper pa 1 = pa - 1
 jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
+
+ramanujan :: Integer -> Integer
+ramanujan = runFunction ramanujanA
+
+-- | Calculates the <https://en.wikipedia.org/wiki/Ramanujan_tau_function Ramanujan tau function>
+--   of a positive number @n@, using formulas given <http://www.numbertheory.org/php/tau.html here>
+ramanujanA :: ArithmeticFunction Integer Integer
+ramanujanA = multiplicative $ \(unPrime -> p) -> ramanujanHelper p
+
+ramanujanHelper :: Integer -> Word -> Integer
+ramanujanHelper _ 0 = 1
+ramanujanHelper 2 1 = -24
+ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * 2 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p `quot` 2)]]) `quot` 756
+ramanujanHelper p k = sum $ zipWith3 (\a b c -> a * b * c) paPowers tpPowers binomials
+  where pa = p ^ (11 :: Int)
+        tp = ramanujanHelper p 1
+        paPowers = iterate (* (-pa)) 1
+        binomials = scanl (\acc j -> acc * (k' - 2 * j) * (k' - 2 * j - 1) `quot` (k' - j) `quot` (j + 1)) 1 [0 .. k' `quot` 2 - 1]
+        k' = fromIntegral k
+        tpPowers = reverse $ take (length binomials) $ iterate (* tp^(2::Int)) (if even k then 1 else tp)
+{-# INLINE ramanujanHelper #-}
 
 moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
