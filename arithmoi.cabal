@@ -132,7 +132,6 @@ test-suite spec
     Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
     Math.NumberTheory.CurvesTests
     Math.NumberTheory.GaussianIntegersTests
-    Math.NumberTheory.GCD.LowLevelTests
     Math.NumberTheory.GCDTests
     Math.NumberTheory.Moduli.ChineseTests
     Math.NumberTheory.Moduli.ClassTests

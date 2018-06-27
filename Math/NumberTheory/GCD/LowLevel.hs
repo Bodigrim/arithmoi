@@ -31,6 +31,9 @@ import GHC.Base
 
 import Math.NumberTheory.Utils
 
+{-# DEPRECATED gcdInt, gcdWord, gcdInt#, gcdWord# "Use Prelude.gcd" #-}
+{-# DEPRECATED coprimeInt, coprimeWord, coprimeInt#, coprimeWord# "Use coprime" #-}
+
 -- | Greatest common divisor of two 'Int's, calculated with the binary gcd algorithm.
 gcdInt :: Int -> Int -> Int
 gcdInt (I# a#) (I# b#) = I# (gcdInt# a# b#)

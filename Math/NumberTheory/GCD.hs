@@ -27,6 +27,7 @@
 {-# LANGUAGE MagicHash    #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-deprecations   #-}
 
 module Math.NumberTheory.GCD
     ( binaryGCD
@@ -89,6 +90,8 @@ gw64 (W64# x#) (W64# y#) = W64# (gcdWord# x# y#)
 --   Relies on twos complement or sign and magnitude representaion for signed types.
 binaryGCD :: (Integral a, Bits a) => a -> a -> a
 binaryGCD = binaryGCDImpl
+
+{-# DEPRECATED binaryGCD "Use Prelude.gcd" #-}
 
 #if WORD_SIZE_IN_BITS < 64
 {-# SPECIALISE binaryGCDImpl :: Word64 -> Word64 -> Word64,
