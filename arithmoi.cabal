@@ -63,6 +63,7 @@ library
     Math.NumberTheory.Moduli
     Math.NumberTheory.Moduli.Chinese
     Math.NumberTheory.Moduli.Class
+    Math.NumberTheory.Moduli.DiscreteLogarithm
     Math.NumberTheory.Moduli.Jacobi
     Math.NumberTheory.Moduli.PrimitiveRoot
     Math.NumberTheory.Moduli.Sqrt
@@ -134,6 +135,7 @@ test-suite spec
     Math.NumberTheory.GaussianIntegersTests
     Math.NumberTheory.GCDTests
     Math.NumberTheory.Moduli.ChineseTests
+    Math.NumberTheory.Moduli.DiscreteLogarithmTests
     Math.NumberTheory.Moduli.ClassTests
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests
@@ -179,6 +181,7 @@ benchmark criterion
       semigroups >=0.8
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
+    Math.NumberTheory.DiscreteLogarithmBench
     Math.NumberTheory.GCDBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench

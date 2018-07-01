@@ -17,7 +17,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Math.NumberTheory.Moduli.PrimitiveRoot
-  ( isPrimitiveRoot
+  ( PrimitiveRoot
+  , isPrimitiveRoot
+  , primitiveRootGetMod
     -- * Cyclic groups
   , CyclicGroup(..)
   , cyclicGroupFromModulo
@@ -32,6 +34,8 @@ import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
+
+import Control.Monad (guard)
 
 -- | A multiplicative group of residues is called cyclic,
 -- if there is a primitive root @g@,
@@ -97,6 +101,18 @@ cyclicGroupToModulo = fromFactors . \case
   CGOddPrimePower p k       -> [(unPrime p, k)]
   CGDoubleOddPrimePower p k -> [(2, 1), (unPrime p, k)]
 
+-- | 'PrimitiveRoot n' is a type which is only inhabited by primitive roots of
+-- n.
+newtype PrimitiveRoot n = PrimitiveRoot (Mod n)
+  deriving (Eq, Ord, Show)
+
+-- | Extract the value from a 'PrimitiveRoot'.
+--
+-- > > fmap primitiveRootGetMod (isPrimitiveRoot (2 :: Mod 13))
+-- > 2 `modulo` 13
+primitiveRootGetMod :: PrimitiveRoot n -> Mod n
+primitiveRootGetMod (PrimitiveRoot m) = m
+
 -- | 'isPrimitiveRoot'' @cg@ @a@ checks whether @a@ is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>
 -- of a given cyclic multiplicative group of residues @cg@.
@@ -129,7 +145,7 @@ isPrimitiveRoot' cg r = r /= 0 && gcd r (prefValue m) == 1 && all (/= 1) exps
 --
 -- Here is how to list all primitive roots:
 --
--- > > filter isPrimitiveRoot [minBound .. maxBound] :: [Mod 13]
+-- > > mapMaybe isPrimitiveRoot [minBound .. maxBound] :: [Mod 13]
 -- > [(2 `modulo` 13), (6 `modulo` 13), (7 `modulo` 13), (11 `modulo` 13)]
 --
 -- This function is a convenient wrapper around 'isPrimitiveRoot''. The latter
@@ -137,7 +153,8 @@ isPrimitiveRoot' cg r = r /= 0 && gcd r (prefValue m) == 1 && all (/= 1) exps
 isPrimitiveRoot
   :: KnownNat n
   => Mod n
-  -> Bool
-isPrimitiveRoot r = case cyclicGroupFromModulo (getNatMod r) of
-  Nothing -> False
-  Just cg -> isPrimitiveRoot' cg (getNatVal r)
+  -> Maybe (PrimitiveRoot n)
+isPrimitiveRoot r = do
+  cg <- cyclicGroupFromModulo (getNatMod r)
+  guard (isPrimitiveRoot' cg (getNatVal r))
+  Just (PrimitiveRoot r)
