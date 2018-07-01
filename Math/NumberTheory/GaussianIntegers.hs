@@ -35,7 +35,7 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
-import qualified Math.NumberTheory.Moduli as Moduli
+import qualified Math.NumberTheory.Moduli.Sqrt as Moduli
 import qualified Math.NumberTheory.Powers as Powers
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve

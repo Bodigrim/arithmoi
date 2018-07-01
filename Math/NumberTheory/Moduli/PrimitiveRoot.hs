@@ -28,7 +28,7 @@ module Math.NumberTheory.Moduli.PrimitiveRoot
   ) where
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.Moduli (Mod, getNatMod, getNatVal, KnownNat)
+import Math.NumberTheory.Moduli.Class (Mod, getNatMod, getNatVal, KnownNat)
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
