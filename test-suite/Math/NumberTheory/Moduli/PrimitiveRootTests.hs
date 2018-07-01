@@ -66,20 +66,20 @@ isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty1 (AnySign n) (Positive m)
   = case n `modulo` m of
     SomeMod n' -> gcd n (toInteger m) == 1
-               || not (isPrimitiveRoot n')
+               || isNothing (isPrimitiveRoot n')
     InfMod{}   -> False
 
 isPrimitiveRootProperty2 :: Positive Natural -> Bool
 isPrimitiveRootProperty2 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
   || case 0 `modulo` m of
-    SomeMod (_ :: Mod t) -> any isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
+    SomeMod (_ :: Mod t) -> any (isJust . isPrimitiveRoot) [(minBound :: Mod t) .. maxBound]
     InfMod{}             -> False
 
 isPrimitiveRootProperty3 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty3 (AnySign n) (Positive m)
   = case n `modulo` m of
-    SomeMod n' -> not (isPrimitiveRoot n')
+    SomeMod n' -> isNothing (isPrimitiveRoot n')
                || allUnique (genericTake (totient m - 1) (iterate (* n') 1))
     InfMod{}   -> False
 
@@ -87,7 +87,7 @@ isPrimitiveRootProperty4 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty4 (AnySign n) (Positive m)
   = isJust (cyclicGroupFromModulo m)
   || case n `modulo` m of
-    SomeMod n' -> not (isPrimitiveRoot n')
+    SomeMod n' -> isNothing (isPrimitiveRoot n')
     InfMod{}   -> False
 
 testSuite :: TestTree
