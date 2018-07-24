@@ -36,6 +36,7 @@ import qualified Math.NumberTheory.EisensteinIntegersTests as Eisenstein
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
 import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctions
+import qualified Math.NumberTheory.ArithmeticFunctions.InverseTests as Inverse
 import qualified Math.NumberTheory.ArithmeticFunctions.MertensTests as Mertens
 import qualified Math.NumberTheory.ArithmeticFunctions.SieveBlockTests as SieveBlock
 import qualified Math.NumberTheory.UniqueFactorisationTests as UniqueFactorisation
@@ -88,6 +89,7 @@ tests = testGroup "All"
   , Gaussian.testSuite
   , testGroup "ArithmeticFunctions"
     [ ArithmeticFunctions.testSuite
+    , Inverse.testSuite
     , Mertens.testSuite
     , SieveBlock.testSuite
     ]

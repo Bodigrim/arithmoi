@@ -49,6 +49,7 @@ library
   exposed-modules:
     GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
+    Math.NumberTheory.ArithmeticFunctions.Inverse
     Math.NumberTheory.ArithmeticFunctions.Mertens
     Math.NumberTheory.ArithmeticFunctions.NFreedom
     Math.NumberTheory.ArithmeticFunctions.Moebius
@@ -138,6 +139,7 @@ test-suite spec
     vector
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsTests
+    Math.NumberTheory.ArithmeticFunctions.InverseTests
     Math.NumberTheory.ArithmeticFunctions.MertensTests
     Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
     Math.NumberTheory.CurvesTests
