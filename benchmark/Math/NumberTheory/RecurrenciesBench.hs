@@ -20,6 +20,15 @@ benchTriangle name triangle n = bgroup name
     benchAt i j = bench ("!! " ++ show i ++ " !! " ++ show j)
                 $ nf (\(x, y) -> triangle !! x !! y :: Integer) (i, j)
 
+benchPartition :: Int -> Benchmark
+benchPartition n = bgroup "partition"
+  [ benchAt n
+  , benchAt (n * 10)
+  , benchAt (n * 100)
+  ]
+  where
+    benchAt m = bench ("!!" ++ show m) $  nf (\n -> partition !! n :: Integer) m
+
 benchSuite :: Benchmark
 benchSuite = bgroup "Recurrencies"
   [
@@ -31,10 +40,7 @@ benchSuite = bgroup "Recurrencies"
     , benchTriangle "eulerian2" eulerian2 100
     ]
     ,
-    bgroup "Partition"
-    [ bench "partition" (nf partition' 100)
+    bgroup "Partition function"
+    [ benchPartition 100
     ]
   ]
-
-partition' :: Int -> Int
-partition' n = partition !! n
