@@ -12,31 +12,18 @@ module Math.NumberTheory.Recurrencies
 import qualified Data.Map as M
 import Numeric.Natural (Natural)
 
--- | Produce an infinite list of indices used by generalized pentagonal
--- numbers: '0, 1, -1, 2, -2, 3, -3, ...'
-pentIndexes :: Integral a => [a]
-pentIndexes = 0 : helper [1..]
-  where
-    helper :: Integral a => [a] -> [a]
-    helper (n : ns) = n : (-n) : helper ns
-    helper _ = []
-
--- | @'pent' n@ calculates the @n@-th generalized pentagonal number.
---
--- >>> pent (-2)
--- 7
--- >>> pent 2
--- 5
-pent :: Integral a => a -> a
-pent n = div (3 * (n * n) - n) 2
-
 -- | Infinite list of generalized pentagonal numbers.
 -- Example:
 --
 -- >>> take 10 pents
 -- [0, 1, 2, 5, 7, 12 ,15, 22, 26, 35]
-pents :: Integral a => [a]
-pents = map pent pentIndexes
+pents :: (Enum a, Num a) => [a]
+pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
+                   (scanl (\acc n -> acc + 3 * n - 2) 1 [2..])
+  where
+    interleave :: [a] -> [a] -> [a]
+    interleave (n : ns) (m : ms) = n : m : interleave ns ms
+    interleave _ _ = []
 
 -- | When calculating the @n@-th partition number @p(n)@ using the sum
 -- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(11) + ...@, the signs of each

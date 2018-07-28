@@ -18,6 +18,18 @@ import Test.Tasty.HUnit
 partition' :: Integral a => Int -> a
 partition' = (partition !!)
 
+-- | Check that the @k@-th generalized pentagonal number is
+-- @div (3 * k² - k) 2@, where @k ∈ {0, 1, −1, 2, −2, 3, −3, 4, ...}@.
+-- Notice that @-1@ is the @2 * abs (-1) == 2@-nd index in the zero-based list,
+-- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
+pentagonalNumbersProperty1 :: AnySign Int -> Bool
+pentagonalNumbersProperty1 (AnySign n)
+    | n == 0    = pents !! 0                 == 0
+    | n > 0     = pents !! (2 * n - 1) == pent n
+    | otherwise = pents !! (2 * abs n)       == pent n
+  where
+    pent m = div (3 * (m * m) - m) 2
+
 -- | Check that @partition !! 0@ is 1.
 partitionSpecialCase0 :: Assertion
 partitionSpecialCase0 = assertEqual "partition" (partition' 0) 1
@@ -42,5 +54,8 @@ testSuite = testGroup "Recurrencies"
     [ testSmallAndQuick "matches definition"  partitionProperty1
     , testCase          "partition !! 0"      partitionSpecialCase0
     , testCase          "partition !! 1"      partitionSpecialCase1
+    ]
+  , testGroup "Generalized pentagonal numbers"
+    [ testSmallAndQuick "matches definition" pentagonalNumbersProperty1
     ]
   ]
