@@ -2,7 +2,7 @@
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.RecurrenciesTests
+module Math.NumberTheory.Recurrencies.PentagonalTests
   ( testSuite
   ) where
 

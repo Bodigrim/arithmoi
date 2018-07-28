@@ -6,8 +6,8 @@ module Math.NumberTheory.RecurrenciesBench
 
 import Gauge.Main
 
-import Math.NumberTheory.Recurrencies          (partition)
-import Math.NumberTheory.Recurrencies.Bilinear
+import Math.NumberTheory.Recurrencies (binomial, eulerian1, eulerian2,
+                                       stirling1, stirling2, partition)
 
 benchTriangle :: String -> (forall a. (Integral a) => [[a]]) -> Int -> Benchmark
 benchTriangle name triangle n = bgroup name
@@ -40,7 +40,9 @@ benchSuite = bgroup "Recurrencies"
     , benchTriangle "eulerian2" eulerian2 100
     ]
     ,
-    bgroup "Partition function"
-    [ benchPartition 100
+    bgroup "Pentagonal"
+    [ bgroup "Partition function"
+      [ benchPartition 1000
+      ]
     ]
   ]

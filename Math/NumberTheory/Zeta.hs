@@ -19,8 +19,7 @@ module Math.NumberTheory.Zeta
 import Data.ExactPi
 import Data.Ratio
 
-import Math.NumberTheory.Recurrencies.Bilinear (bernoulli)
-import Math.NumberTheory.Recurrencies.Linear (factorial)
+import Math.NumberTheory.Recurrencies (bernoulli, factorial)
 
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors convertation to 'Double' may return values below 1:
