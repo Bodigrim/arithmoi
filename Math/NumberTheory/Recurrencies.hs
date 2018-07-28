@@ -37,10 +37,10 @@ pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
 --
 -- >>> pentagonalSigns [1..6]
 -- [1, 2, -3, -4, 5, 6]
-pentagonalSigns :: Integral a => [a] -> [a]
+pentagonalSigns :: Num a => [a] -> [a]
 pentagonalSigns = helper True
   where
-    helper :: Integral a => Bool -> [a] -> [a]
+    helper :: Num a => Bool -> [a] -> [a]
     helper b (x : y : ns) | b = x : y : helper b' ns
                           | otherwise = (-x) : (-y) : helper b' ns
       where b' = not b
@@ -64,14 +64,14 @@ pentagonalSigns = helper True
 --
 -- Note: @tail@ is applied to @pents@ because otherwise the calculation of
 -- @p(n)@ would involve a duplicated @p(n-1)@ term (see the above example).
-partition :: forall a . Integral a => [a]
+partition :: forall a . (Enum a, Num a, Ord a) => [a]
 partition = 1 : go (M.insert 0 1 mempty) 1
   where
-    go :: Integral a => M.Map a a -> a -> [a]
+    go :: (Enum a, Num a, Ord a) => M.Map a a -> a -> [a]
     go dict !n =
         let n' = (sum .
                  pentagonalSigns .
-                 map (\m -> dict M.! fromIntegral (n - m)) .
+                 map (\m -> dict M.! (n - m)) .
                  takeWhile (\m -> n - m >= 0) .
                  tail) pents
             dict' = M.insert n n' dict
