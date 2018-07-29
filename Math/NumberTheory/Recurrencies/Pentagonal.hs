@@ -38,15 +38,7 @@ pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
 -- >>> pentagonalSigns [1..6]
 -- [1, 2, -3, -4, 5, 6]
 pentagonalSigns :: Num a => [a] -> [a]
-pentagonalSigns = helper True
-  where
-    helper :: Num a => Bool -> [a] -> [a]
-    helper b (x : y : ns) | b = x : y : helper b' ns
-                          | otherwise = (-x) : (-y) : helper b' ns
-      where b' = not b
-    helper b (x : _) | b = [x]
-                     | otherwise = [-x]
-    helper _ _ = []
+pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
 -- @partition !! n@ calculates the @n@-th partition number:
 -- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(11) + ...@, where @p(0) = 1@
