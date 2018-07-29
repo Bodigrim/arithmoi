@@ -1,4 +1,6 @@
-{-# LANGUAGE CPP       #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -6,8 +8,11 @@ module Math.NumberTheory.Recurrencies.PentagonalTests
   ( testSuite
   ) where
 
-import Data.List                      ((!!))
+import Data.Proxy                     (Proxy)
+import GHC.Natural                    (Natural)
+import GHC.TypeNats.Compat            (KnownNat, Nat, SomeNat (..))
 
+import Math.NumberTheory.Moduli       (Mod, SomeMod (..), modulo)
 import Math.NumberTheory.Recurrencies (partition, pentagonalSigns, pents)
 import Math.NumberTheory.TestUtils
 
@@ -24,9 +29,9 @@ partition' = (partition !!)
 -- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
 pentagonalNumbersProperty1 :: AnySign Int -> Bool
 pentagonalNumbersProperty1 (AnySign n)
-    | n == 0    = pents !! 0                 == 0
+    | n == 0    = pents !! 0           == 0
     | n > 0     = pents !! (2 * n - 1) == pent n
-    | otherwise = pents !! (2 * abs n)       == pent n
+    | otherwise = pents !! (2 * abs n) == pent n
   where
     pent m = div (3 * (m * m) - m) 2
 
@@ -48,10 +53,30 @@ partitionProperty1 (Positive n) =
                      takeWhile (\m -> n - m >= 0) .
                      tail $ pents)
 
+-- | Check that
+-- @partition :: Math.NumberTheory.Moduli.Mod n == map (`mod` n) partition@.
+partitionProperty2 :: NonNegative Integer -> Nat -> Bool
+partitionProperty2 (NonNegative m) n = driver
+  where
+    m' = fromIntegral m
+    nat = natVal @n
+    p :: KnownNat p => p
+    p = case someNatVal n of
+        SomeNat (_ :: Proxy t) -> t
+    driver :: KnownNat p => Bool
+    driver = take m' (partition :: KnownNat n => [Mod p]) ==
+             map helper (take m' partition :: [Integer])
+    helper :: KnownNat p => Integer -> Mod p
+    helper x = case x `modulo` n of
+        InfMod{} -> error "impossible case"
+        SomeMod sm -> sm
+
 testSuite :: TestTree
 testSuite = testGroup "Pentagonal"
   [ testGroup "partition"
     [ testSmallAndQuick "matches definition"  partitionProperty1
+    , testSmallAndQuick "mapping residue modulus 'n' is the same as giving\
+                        \'partition' type '[Mod n]'" partitionProperty2
     , testCase          "partition !! 0"      partitionSpecialCase0
     , testCase          "partition !! 1"      partitionSpecialCase1
     ]
