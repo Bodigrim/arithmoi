@@ -31,12 +31,11 @@ lazyCases =
   ]
 
 -- | Number is zero or is equal to the product of its factors.
-factoriseProperty1 :: Integer -> Integer -> Bool
-factoriseProperty1 x y
-  =  x == 0 && y == 0
+factoriseProperty1 :: GaussianInteger -> Bool
+factoriseProperty1 g
+  =  g == 0
   || abs g == abs g'
   where
-    g = x :+ y
     factors = factorise g
     g' = product $ map (uncurry (.^)) factors
 
@@ -45,13 +44,12 @@ factoriseProperty2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.
-isPrimeProperty :: Integer -> Integer -> Bool
-isPrimeProperty x y
-  =  x == 0 && y == 0
+isPrimeProperty :: GaussianInteger -> Bool
+isPrimeProperty g
+  =  g == 0
   || isPrime g && n == 1
   || not (isPrime g) && n /= 1
   where
-    g = x :+ y
     factors = factorise g
     nonUnitFactors = filter (\(p, _) -> norm p /= 1) factors
     -- Count factors taking into account multiplicity
@@ -62,16 +60,13 @@ primesGeneratesPrimesProperty :: NonNegative Int -> Bool
 primesGeneratesPrimesProperty (NonNegative i) = isPrime (primes !! i)
 
 -- | signum and abs should satisfy: z == signum z * abs z
-signumAbsProperty :: Integer -> Integer -> Bool
-signumAbsProperty x y = z == signum z * abs z
-  where
-    z = x :+ y
+signumAbsProperty :: GaussianInteger -> Bool
+signumAbsProperty z = z == signum z * abs z
 
 -- | abs maps a Gaussian integer to its associate in first quadrant.
-absProperty :: Integer -> Integer -> Bool
-absProperty x y = isOrigin || (inFirstQuadrant && isAssociate)
+absProperty :: GaussianInteger -> Bool
+absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
   where
-    z = x :+ y
     z'@(x' :+ y') = abs z
     isOrigin = z' == 0 && z == 0
     inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis

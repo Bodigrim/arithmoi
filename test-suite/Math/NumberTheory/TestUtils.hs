@@ -68,7 +68,7 @@ instance Arbitrary Natural where
 
 instance Arbitrary GaussianInteger where
   arbitrary = (:+) <$> arbitrary <*> arbitrary
-  shrink (x :+ y) = (:+) <$> shrink x <*> shrink y
+  shrink (x :+ y) = map (x :+) (shrink y) ++ map (:+ y) (shrink x)
 
 instance Monad m => Serial m GaussianInteger where
   series = cons2 (:+)
