@@ -37,7 +37,6 @@ import GHC.Generics
 
 import qualified Math.NumberTheory.Moduli as Moduli
 import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
-import qualified Math.NumberTheory.Powers as Powers
 import Math.NumberTheory.Primes.Types (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
@@ -159,13 +158,9 @@ gcdG' g h
 
 -- |Find a Gaussian integer whose norm is the given prime number.
 findPrime' :: Integer -> GaussianInteger
-findPrime' p =
-    let (Just c) = Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1)
-        k  = Powers.integerSquareRoot p
-        bs = [1 .. k]
-        asbs = map (\b' -> ((b' * c) `mod` p, b')) bs
-        (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
-    in a :+ b
+findPrime' p = case Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
+    Nothing -> error "findPrime': impossible happened"
+    Just z  -> gcdG' (p :+ 0) (z :+ 1)
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
