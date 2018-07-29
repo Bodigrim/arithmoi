@@ -38,7 +38,7 @@ partitionSpecialCase0 = assertEqual "partition" (partition' 0) 1
 partitionSpecialCase1 :: Assertion
 partitionSpecialCase1 = assertEqual "partition" (partition' 1) 1
 
--- | Check that @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(11) + ...@,
+-- | Check that @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@,
 -- where @p(x) = 0@ for any negative integer.
 partitionProperty1 :: Positive Int -> Bool
 partitionProperty1 (Positive n) =
@@ -49,7 +49,7 @@ partitionProperty1 (Positive n) =
                      tail $ pents)
 
 testSuite :: TestTree
-testSuite = testGroup "Recurrencies"
+testSuite = testGroup "Pentagonal"
   [ testGroup "partition"
     [ testSmallAndQuick "matches definition"  partitionProperty1
     , testCase          "partition !! 0"      partitionSpecialCase0

@@ -26,7 +26,7 @@ pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
     interleave _ _ = []
 
 -- | When calculating the @n@-th partition number @p(n)@ using the sum
--- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(11) + ...@, the signs of each
+-- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@, the signs of each
 -- term alternate every two terms, starting with a positive sign.
 -- @pentagonalSigns@ takes a list of numbers and produces such an alternated
 -- sequence.
@@ -41,7 +41,7 @@ pentagonalSigns :: Num a => [a] -> [a]
 pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
 -- @partition !! n@ calculates the @n@-th partition number:
--- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(11) + ...@, where @p(0) = 1@
+-- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@, where @p(0) = 1@
 -- and @p(k) = 0@ for a negative integer @k@. Uses a @Map@ from the
 -- @containers@ package to memoize previous results.
 -- 
