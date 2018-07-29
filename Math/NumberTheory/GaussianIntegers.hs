@@ -11,6 +11,7 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Math.NumberTheory.GaussianIntegers (
     GaussianInteger(..),
@@ -32,6 +33,8 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
+import GHC.Generics
+
 import qualified Math.NumberTheory.Moduli as Moduli
 import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
 import qualified Math.NumberTheory.Powers as Powers
@@ -44,7 +47,8 @@ import Math.NumberTheory.Utils.FromIntegral (integerToNatural)
 infix 6 :+
 infixr 8 .^
 -- |A Gaussian integer is a+bi, where a and b are both integers.
-data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer } deriving (Eq)
+data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer }
+    deriving (Eq, Generic)
 
 -- |The imaginary unit, where
 --
