@@ -13,10 +13,8 @@
 {-# LANGUAGE BangPatterns #-}
 
 module Math.NumberTheory.GaussianIntegers (
-    GaussianInteger((:+)),
+    GaussianInteger(..),
     ι,
-    real,
-    imag,
     conjugate,
     norm,
     divModG,
@@ -181,6 +179,7 @@ a .^ e
     | otherwise = a * a .^ (e - 1)
     where
     s = a .^ div e 2
+{-# DEPRECATED (.^) "Use (^) instead." #-}
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.

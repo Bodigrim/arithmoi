@@ -37,7 +37,7 @@ factoriseProperty1 g
   || abs g == abs g'
   where
     factors = factorise g
-    g' = product $ map (uncurry (.^)) factors
+    g' = product $ map (uncurry (^)) factors
 
 factoriseProperty2 :: (GaussianInteger, [(GaussianInteger, Int)]) -> Assertion
 factoriseProperty2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
@@ -70,7 +70,7 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
     z'@(x' :+ y') = abs z
     isOrigin = z' == 0 && z == 0
     inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis
-    isAssociate = z' `elem` map (\e -> z * (0 :+ 1) .^ e) [0 .. 3]
+    isAssociate = z' `elem` map (\e -> z * (0 :+ 1) ^ e) [0 .. 3]
 
 -- | a special case that tests rounding/truncating in GCD.
 gcdGSpecialCase1 :: Assertion
