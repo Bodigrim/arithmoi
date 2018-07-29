@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -8,11 +8,11 @@ module Math.NumberTheory.Recurrencies.PentagonalTests
   ( testSuite
   ) where
 
-import Data.Proxy                     (Proxy)
+import Data.Proxy                     (Proxy (..))
 import GHC.Natural                    (Natural)
-import GHC.TypeNats.Compat            (KnownNat, Nat, SomeNat (..))
+import GHC.TypeNats.Compat            (SomeNat (..), someNatVal)
 
-import Math.NumberTheory.Moduli       (Mod, SomeMod (..), modulo)
+import Math.NumberTheory.Moduli       (Mod, getVal)
 import Math.NumberTheory.Recurrencies (partition, pentagonalSigns, pents)
 import Math.NumberTheory.TestUtils
 
@@ -55,21 +55,15 @@ partitionProperty1 (Positive n) =
 
 -- | Check that
 -- @partition :: Math.NumberTheory.Moduli.Mod n == map (`mod` n) partition@.
-partitionProperty2 :: NonNegative Integer -> Nat -> Bool
-partitionProperty2 (NonNegative m) n = driver
+partitionProperty2 :: NonNegative Integer -> Positive Natural -> Bool
+partitionProperty2 (NonNegative m)
+                   n@(someNatVal . getPositive -> (SomeNat (Proxy :: Proxy n))) =
+    (take m' . map getVal $ (partition :: [Mod n])) ==
+    map helper (take m' partition :: [Integer])
   where
     m' = fromIntegral m
-    nat = natVal @n
-    p :: KnownNat p => p
-    p = case someNatVal n of
-        SomeNat (_ :: Proxy t) -> t
-    driver :: KnownNat p => Bool
-    driver = take m' (partition :: KnownNat n => [Mod p]) ==
-             map helper (take m' partition :: [Integer])
-    helper :: KnownNat p => Integer -> Mod p
-    helper x = case x `modulo` n of
-        InfMod{} -> error "impossible case"
-        SomeMod sm -> sm
+    n' = fromIntegral n
+    helper x = x `mod` n'
 
 testSuite :: TestTree
 testSuite = testGroup "Pentagonal"
