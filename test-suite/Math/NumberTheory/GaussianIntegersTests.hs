@@ -43,8 +43,19 @@ factoriseProperty1 g
     factors = factorise g
     g' = product $ map (uncurry (^)) factors
 
-factoriseProperty2 :: (GaussianInteger, [(GaussianInteger, Int)]) -> Assertion
-factoriseProperty2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
+factoriseProperty2 :: GaussianInteger -> Bool
+factoriseProperty2 z = z == 0 || all ((> 0) . snd) (factorise z)
+
+factoriseProperty3 :: GaussianInteger -> Bool
+factoriseProperty3 z = z == 0 || all ((> 1) . norm . fst) (factorise z)
+
+factoriseSpecialCase1 :: Assertion
+factoriseSpecialCase1 = assertEqual "should be equal"
+  [(3, 2), (1 :+ 2, 1), (2 :+ 3, 1)]
+  (factorise (63 :+ 36))
+
+factoriseSpecialCase2 :: (GaussianInteger, [(GaussianInteger, Int)]) -> Assertion
+factoriseSpecialCase2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 findPrimeReference :: PrimeWrapper Integer -> GaussianInteger
 findPrimeReference (PrimeWrapper p) =
@@ -69,9 +80,8 @@ isPrimeProperty g
   || not (isPrime g) && n /= 1
   where
     factors = factorise g
-    nonUnitFactors = filter (\(p, _) -> norm p /= 1) factors
     -- Count factors taking into account multiplicity
-    n = sum $ map snd nonUnitFactors
+    n = sum $ map snd factors
 
 primesSpecialCase1 :: Assertion
 primesSpecialCase1 = assertEqual "primes"
@@ -104,7 +114,16 @@ gcdGSpecialCase1 = assertEqual "gcdG" 1 $ gcdG (12 :+ 23) (23 :+ 34)
 
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers" $
-  [ testSmallAndQuick "factorise"         factoriseProperty1
+  [ testGroup "factorise" (
+    [ testSmallAndQuick "factor back"       factoriseProperty1
+    , testSmallAndQuick "powers are > 0"    factoriseProperty2
+    , testSmallAndQuick "factors are > 1"   factoriseProperty3
+    , testCase          "factorise 63:+36"  factoriseSpecialCase1
+    ]
+    ++
+    map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseSpecialCase2 x))
+      lazyCases)
+
   , testSmallAndQuick "findPrime'"        findPrimeProperty1
   , testSmallAndQuick "isPrime"           isPrimeProperty
   , testCase          "primes matches reference" primesSpecialCase1
@@ -113,5 +132,3 @@ testSuite = testGroup "GaussianIntegers" $
   , testSmallAndQuick "absProperty"       absProperty
   , testCase          "gcdG (12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
   ]
-  ++
-  map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseProperty2 x)) lazyCases
