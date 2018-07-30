@@ -13,14 +13,14 @@ import GHC.Natural                    (Natural)
 import GHC.TypeNats.Compat            (SomeNat (..), someNatVal)
 
 import Math.NumberTheory.Moduli       (Mod, getVal)
-import Math.NumberTheory.Recurrencies (partition, pentagonalSigns, pents)
+import Math.NumberTheory.Recurrencies (partition, pents)
 import Math.NumberTheory.TestUtils
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 -- | Helper to avoid writing @partition !!@ too many times.
-partition' :: (Enum a, Num a, Ord a) => Int -> a
+partition' :: Num a => Int -> a
 partition' = (partition !!)
 
 -- | Check that the @k@-th generalized pentagonal number is
@@ -35,16 +35,20 @@ pentagonalNumbersProperty1 (AnySign n)
   where
     pent m = div (3 * (m * m) - m) 2
 
--- | Check that @partition !! 0@ is 1.
-partitionSpecialCase0 :: Assertion
-partitionSpecialCase0 = assertEqual "partition" (partition' 0) 1
+-- | Check that the first 20 elements of @partition@ are correct per
+-- https://oeis.org/A000041.
+partitionSpecialCase20 :: Assertion
+partitionSpecialCase20 = assertEqual "partition"
+    (take 20 partition)
+    [1, 1, 2, 3, 5, 7, 11, 15, 22, 30, 42, 56, 77, 101, 135, 176, 231, 297, 385, 490]
 
--- Check that @partition !! 1@ is 1.
-partitionSpecialCase1 :: Assertion
-partitionSpecialCase1 = assertEqual "partition" (partition' 1) 1
+-- | Copied from @Math.NumberTheory.Recurrencies.Pentagonal@ to test the
+-- reference implementation of @partition@.
+pentagonalSigns :: Num a => [a] -> [a]
+pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
 -- | Check that @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@,
--- where @p(x) = 0@ for any negative integer.
+-- where @p(x) = 0@ for any negative integer and @p(0) = 1@.
 partitionProperty1 :: Positive Int -> Bool
 partitionProperty1 (Positive n) =
     partition' n == (sum .
@@ -71,8 +75,8 @@ testSuite = testGroup "Pentagonal"
     [ testSmallAndQuick "matches definition"  partitionProperty1
     , testSmallAndQuick "mapping residue modulus 'n' is the same as giving\
                         \'partition' type '[Mod n]'" partitionProperty2
-    , testCase          "partition !! 0"      partitionSpecialCase0
-    , testCase          "partition !! 1"      partitionSpecialCase1
+    , testCase          "first 20 elements of partition are correct"
+                        partitionSpecialCase20
     ]
   , testGroup "Generalized pentagonal numbers"
     [ testSmallAndQuick "matches definition" pentagonalNumbersProperty1

@@ -1,5 +1,6 @@
 -- Values of <https://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function partition function>.
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes   #-}
 
 module Math.NumberTheory.Recurrencies.Pentagonal
@@ -55,20 +56,18 @@ pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 --
 -- Note: @tail@ is applied to @pents@ because otherwise the calculation of
 -- @p(n)@ would involve a duplicated @p(n-1)@ term (see the above example).
-partition :: forall a . (Enum a, Num a, Ord a) => [a]
-partition = 1 : go (IM.singleton 0 1) [1..]
+partition :: forall a . Num a => [a]
+partition = 1 : go (IM.singleton 0 1) 1
   where
-    go :: forall a . (Enum a, Num a, Ord a) => IM.IntMap a -> [Int] -> [a]
-    go dict (n : ns) =
-        let intN = fromEnum n
-            n' = (sum .
+    go :: forall a . Num a => IM.IntMap a -> Int -> [a]
+    go dict !n =
+        let n' = (sum .
                   pentagonalSigns .
-                  map (\m -> dict IM.! (intN - m)) .
-                  takeWhile (\m -> intN >= m) .
+                  map (\m -> dict IM.! (n - m)) .
+                  takeWhile (\m -> n >= m) .
                   tail) (pents :: [Int])
-            dict' = IM.insert intN n' dict
-        in n' : go dict' ns
-    go _ _ = []
+            dict' = IM.insert n n' dict
+        in n' : go dict' (n + 1)
 {-# SPECIALIZE partition :: [Int]     #-}
 {-# SPECIALIZE partition :: [Word]    #-}
 {-# SPECIALIZE partition :: [Integer] #-}
