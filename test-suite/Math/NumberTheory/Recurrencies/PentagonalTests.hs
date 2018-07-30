@@ -20,7 +20,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 -- | Helper to avoid writing @partition !!@ too many times.
-partition' :: Integral a => Int -> a
+partition' :: (Enum a, Num a, Ord a) => Int -> a
 partition' = (partition !!)
 
 -- | Check that the @k@-th generalized pentagonal number is
@@ -54,7 +54,7 @@ partitionProperty1 (Positive n) =
                      tail $ pents)
 
 -- | Check that
--- @partition :: Math.NumberTheory.Moduli.Mod n == map (`mod` n) partition@.
+-- @partition :: [Math.NumberTheory.Moduli.Mod n] == map (`mod` n) partition@.
 partitionProperty2 :: NonNegative Integer -> Positive Natural -> Bool
 partitionProperty2 (NonNegative m)
                    n@(someNatVal . getPositive -> (SomeNat (Proxy :: Proxy n))) =
