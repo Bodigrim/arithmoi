@@ -33,6 +33,7 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
+import Data.List (mapAccumL)
 import GHC.Generics
 
 import qualified Math.NumberTheory.Moduli as Moduli
@@ -183,46 +184,56 @@ a .^ e
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.
 factorise :: GaussianInteger -> [(GaussianInteger, Int)]
-factorise g = helper (Factorisation.factorise $ norm g) g
+factorise g = concat $ snd $ mapAccumL go g (Factorisation.factorise $ norm g)
     where
-    helper [] _ = []
-    helper ((!p, !e) : pt) g' =
-        -- For a given prime factor p of the magnitude squared...
-        let (!g'', !facs) = if p `mod` 4 == 3
-            then
-                -- if the p is congruent to 3 (mod 4), then g' is divisible by
-                -- p^(e/2).
-                let pow = div e 2
-                    gp = fromInteger p
-                in (g' `divG` (gp .^ pow), [(gp, pow)])
-            else
-                -- otherwise: find a Gaussian prime gp for which `norm gp ==
-                -- p`. Then do trial divisions to find out how many times g' is
-                -- divisible by gp or its conjugate.
-                let gp = findPrime' p
-                in trialDivide g' [gp, abs $ conjugate gp]
-        in facs ++ helper pt g''
+        go :: GaussianInteger -> (Integer, Int) -> (GaussianInteger, [(GaussianInteger, Int)])
+        go z (2, e) = (divideTwos z, [(1 :+ 1, e)])
+        go z (p, e)
+            | p `mod` 4 == 3
+            = let e' = e `quot` 2 in (z `quotI` (p ^ e'), [(p :+ 0, e')])
+            | otherwise
+            = (z `quotG` (gp ^ k) `quotG` (gp' ^ l), filter ((> 0) . snd) [(gp, k), (gp', l)])
+                where
+                    gp = findPrime' p
+                    (k, _) = trialDivide z gp p
+                    gp' = abs (conjugate gp)
+                    l = e - k
 
--- Divide a Gaussian integer by a set of (relatively prime) Gaussian integers,
--- as many times as possible, and return the final quotient as well as a count
--- of how many times each factor divided the original.
-trialDivide :: GaussianInteger -> [GaussianInteger] -> (GaussianInteger, [(GaussianInteger, Int)])
-trialDivide = helper []
-    where
-    helper fs g [] = (g, fs)
-    helper fs g (pf : pft)
-        | g `modG` pf == 0 =
-            let (cnt, g') = countEvenDivisions g pf
-            in helper ((pf, cnt) : fs) g' pft
-        | otherwise        = helper fs g pft
+quotI :: GaussianInteger -> Integer -> GaussianInteger
+quotI (x :+ y) n = (x `quot` n :+ y `quot` n)
 
--- Divide a Gaussian integer by a possible factor, and return how many times
--- the factor divided it evenly, as well as the result of dividing the original
--- that many times.
-countEvenDivisions :: GaussianInteger -> GaussianInteger -> (Int, GaussianInteger)
-countEvenDivisions g pf = helper g 0
+quotEvenI :: GaussianInteger -> Integer -> Maybe GaussianInteger
+quotEvenI (x :+ y) n
+    | xr == 0
+    , yr == 0
+    = Just (xq :+ yq)
+    | otherwise
+    = Nothing
     where
-    helper :: GaussianInteger -> Int -> (Int, GaussianInteger)
-    helper g' acc
-        | g' `modG` pf == 0 = helper (g' `divG` pf) (1 + acc)
-        | otherwise     = (acc, g')
+        (xq, xr) = x `quotRem` n
+        (yq, yr) = y `quotRem` n
+
+divideTwos :: GaussianInteger -> GaussianInteger
+divideTwos z@(x :+ y)
+    | even x, even y
+    = divideTwos $ z `quotI` 2
+    | odd x, odd y
+    = (x - y) `quot` 2 :+ (x + y) `quot` 2
+    | otherwise
+    = z
+
+trialDivide
+    :: GaussianInteger -- ^ Number to divide
+    -> GaussianInteger -- ^ Gaussian prime
+    -> Integer         -- ^ Norm of Gaussian prime, of form 4k + 1
+    -> (Int, GaussianInteger)
+trialDivide g p np = go 0 g
+    where
+        go :: Int -> GaussianInteger -> (Int, GaussianInteger)
+        go k z
+            | Just z' <- z `quotEvenI` np
+            = go (k + 1) z'
+            | Just z' <- (z * conjugate p) `quotEvenI` np
+            = go (k + 1) z'
+            | otherwise
+            = (k, z)
