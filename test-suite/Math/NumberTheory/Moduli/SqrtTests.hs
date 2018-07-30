@@ -62,6 +62,13 @@ tonelliShanksProperty2 (unwrapP -> p'@(unPrime -> p)) = p `mod` 4 /= 1 || rt ^ 2
     n  = head $ filter (\s -> jacobi s p == One) [2..p-1]
     rt = sqrtModExact (QuadraticResidue p' n)
 
+tonelliShanksProperty3 :: PrimeWrapper Integer -> Bool
+tonelliShanksProperty3 (unwrapP -> p'@(unPrime -> p))
+  = p `mod` 4 /= 1
+  || rt ^ 2 `mod` p == p - 1
+  where
+    rt = sqrtModExact (QuadraticResidue p' (-1))
+
 tonelliShanksSpecialCases :: Assertion
 tonelliShanksSpecialCases =
   assertEqual "OEIS A002224" [6, 32, 219, 439, 1526, 2987, 22193, 11740, 13854, 91168, 326277, 232059, 3230839, 4379725, 11754394, 32020334, 151024619, 345641931, 373671108, 1857111865, 8110112775, 4184367042] rts
@@ -116,6 +123,7 @@ testSuite = testGroup "Sqrt"
   , testGroup "tonelliShanks"
     [ testSmallAndQuick "generic"          tonelliShanksProperty1
     , testSmallAndQuick "smallest residue" tonelliShanksProperty2
+    , testSmallAndQuick "-1"               tonelliShanksProperty3
     , testCase          "OEIS A002224"     tonelliShanksSpecialCases
     ]
   , testGroup "sqrtModPP"
