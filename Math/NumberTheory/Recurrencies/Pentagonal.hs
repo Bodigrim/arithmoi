@@ -1,4 +1,13 @@
+-- |
+-- Module:      Math.NumberTheory.Recurrencies.Pentagonal
+-- Copyright:   (c) 2018 Andrew Lelechenko
+-- Licence:     MIT
+-- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+-- Stability:   Provisional
+-- Portability: Non-portable (GHC extensions)
+--
 -- Values of <https://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function partition function>.
+--
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes   #-}
@@ -49,13 +58,16 @@ pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 -- filled and called @dict :: Integral a => Map a a@.
 -- 
 -- * @tail [0, 1, 2, 5, 7, 12 ,15, 22, 26, 35, ..] == [1, 2, 5, 7, 12 ,15, 22, 26, 35, 40, ..]@.
--- * @takeWhile (\m -> 10 - m >= 0) == [1, 2, 5, 7]@.
+-- * @takeWhile (\m -> 10 - m >= 0) [1, 2, 5, 7, 12 ,15, 22, 26, 35, 40, ..] == [1, 2, 5, 7]@.
 -- * @map (\m -> dict ! fromIntegral (10 - m)) [1, 2, 5, 7] == [dict ! 9, dict ! 8, dict ! 5, dict ! 3] == [30, 22, 7, 3]@
 -- * @pentagonalSigns [30, 22, 7, 3] == [30, 22, 7, 3] == [30, 22, -7, -3]@
 -- * @sum [30, 22, -7, -3] == 42@
 --
--- Note: @tail@ is applied to @pents@ because otherwise the calculation of
+-- Notes:
+-- 1. @tail@ is applied to @pents@ because otherwise the calculation of
 -- @p(n)@ would involve a duplicated @p(n-1)@ term (see the above example).
+-- 2. Calculating @partition !! k@, where @k@ is any index equal or higher
+-- than @maxBound :: Int@ results in undefined behavior.
 partition :: forall a . Num a => [a]
 partition = 1 : go (IM.singleton 0 1) 1
   where

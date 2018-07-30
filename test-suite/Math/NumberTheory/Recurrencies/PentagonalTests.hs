@@ -1,3 +1,14 @@
+-- |
+-- Module:      Math.NumberTheory.Recurrencies.PentagonalTests
+-- Copyright:   (c) 2018 Andrew Lelechenko
+-- Licence:     MIT
+-- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+-- Stability:   Provisional
+-- Portability: Non-portable (GHC extensions)
+--
+-- Tests for Math.NumberTheory.Recurrencies.Pentagonal
+--
+
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
