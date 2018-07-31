@@ -2,6 +2,7 @@ import Test.Tasty
 
 import qualified Math.NumberTheory.GCDTests as GCD
 
+import qualified Math.NumberTheory.Recurrencies.PentagonalTests as RecurrenciesPentagonal
 import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
 import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
 
@@ -52,7 +53,8 @@ tests = testGroup "All"
     ]
   , GCD.testSuite
   , testGroup "Recurrencies"
-    [ RecurrenciesLinear.testSuite
+    [ RecurrenciesPentagonal.testSuite
+    , RecurrenciesLinear.testSuite
     , RecurrenciesBilinear.testSuite
     ]
   , testGroup "Moduli"

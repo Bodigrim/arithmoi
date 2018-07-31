@@ -83,6 +83,8 @@ library
     Math.NumberTheory.Primes.Sieve
     Math.NumberTheory.Primes.Testing
     Math.NumberTheory.Primes.Testing.Certificates
+    Math.NumberTheory.Recurrencies
+    Math.NumberTheory.Recurrencies.Pentagonal
     Math.NumberTheory.Recurrencies.Bilinear
     Math.NumberTheory.Recurrencies.Linear
     Math.NumberTheory.SmoothNumbers
@@ -151,6 +153,7 @@ test-suite spec
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests
     Math.NumberTheory.PrimesTests
+    Math.NumberTheory.Recurrencies.PentagonalTests
     Math.NumberTheory.Recurrencies.BilinearTests
     Math.NumberTheory.Recurrencies.LinearTests
     Math.NumberTheory.SmoothNumbersTests
