@@ -108,6 +108,21 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
     inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis
     isAssociate = z' `elem` map (\e -> z * (0 :+ 1) ^ e) [0 .. 3]
 
+gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
+gcdGProperty1 z1 z2
+  = z == 0
+  || z1 `remG` z == 0 && z2 `remG` z == 0 && z == abs z
+  where
+    z = gcdG z1 z2
+
+gcdGProperty2 :: GaussianInteger -> GaussianInteger -> GaussianInteger -> Bool
+gcdGProperty2 z z1 z2
+  = z == 0
+  || gcdG z1' z2' `remG` z == 0
+  where
+    z1' = z * z1
+    z2' = z * z2
+
 -- | a special case that tests rounding/truncating in GCD.
 gcdGSpecialCase1 :: Assertion
 gcdGSpecialCase1 = assertEqual "gcdG" 1 $ gcdG (12 :+ 23) (23 :+ 34)
@@ -130,5 +145,9 @@ testSuite = testGroup "GaussianIntegers" $
   , testSmallAndQuick "primes"            primesGeneratesPrimesProperty
   , testSmallAndQuick "signumAbsProperty" signumAbsProperty
   , testSmallAndQuick "absProperty"       absProperty
-  , testCase          "gcdG (12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
+  , testGroup "gcdG"
+    [ testSmallAndQuick "is divisor"            gcdGProperty1
+    , testSmallAndQuick "is greatest"           gcdGProperty2
+    , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
+    ]
   ]
