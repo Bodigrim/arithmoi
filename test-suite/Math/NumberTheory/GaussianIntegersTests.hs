@@ -69,7 +69,11 @@ findPrimeReference (PrimeWrapper p) =
 findPrimeProperty1 :: PrimeWrapper Integer -> Bool
 findPrimeProperty1 p'@(PrimeWrapper p)
   = unPrime p `mod` 4 /= (1 :: Integer)
-  || findPrimeReference p' == findPrime' (unPrime p)
+  || p1 == p2
+  || abs (p1 * p2) == fromInteger (unPrime p)
+  where
+    p1 = findPrimeReference p'
+    p2 = findPrime' (unPrime p)
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.

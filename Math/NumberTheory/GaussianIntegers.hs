@@ -38,6 +38,7 @@ import GHC.Generics
 
 import qualified Math.NumberTheory.Moduli as Moduli
 import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
+import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.Primes.Types (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
@@ -157,11 +158,20 @@ gcdG' g h
     | h == 0    = g --done recursing
     | otherwise = gcdG' h (abs (g `modG` h))
 
--- |Find a Gaussian integer whose norm is the given prime number.
+-- |Find a Gaussian integer whose norm is the given prime number using
+-- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
 findPrime' :: Integer -> GaussianInteger
 findPrime' p = case Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
     Nothing -> error "findPrime': impossible happened"
-    Just z  -> gcdG' (p :+ 0) (z :+ 1)
+    Just z  -> go p z -- Effectively we calculate gcdG' (p :+ 0) (z :+ 1)
+    where
+        sqrtp :: Integer
+        sqrtp = integerSquareRoot p
+
+        go :: Integer -> Integer -> GaussianInteger
+        go g h
+            | g <= sqrtp = g :+ h
+            | otherwise  = go h (g `mod` h)
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
