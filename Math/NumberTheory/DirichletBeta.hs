@@ -47,6 +47,8 @@ dirichletBetasOdd = zipWith Exact [1, 3 ..] $ zipWith4 (\sgn denom eul twos -> s
                                                        (iterate (*4) 4)
 
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
+-- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
+-- by Kwang-Wu Chen, second formula of the Corollary in page 7.
 
 -- >>> take 10 euler :: [Integer]
 -- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
@@ -65,3 +67,5 @@ euler = map (f . tail) (tail stirling2)
     dups :: [a] -> [a]
     dups (n : ns) = n : n : dups ns
     dups l = l
+{-# SPECIALIZE euler :: [Ratio Int]     #-}
+{-# SPECIALIZE euler :: [Ratio Integer] #-}
