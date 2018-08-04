@@ -89,6 +89,10 @@ zetasProperty1 (Positive m)
     zetaM  = zetas' !! m
     zetaM1 = zetas' !! (m + 1)
 
+-- | Let z1 be an approximation of z with precision eps1,
+-- and z2 be an approximation of the same value with precision eps2.
+-- Then (independently of the true value of z)
+-- abs (z1 - z2) < eps1 + eps2.
 zetasProperty2 :: NonNegative Int -> NonNegative Int -> Bool
 zetasProperty2 (NonNegative e1) (NonNegative e2)
   = maximum (take 25 $ drop 2 $ zipWith ((abs .) . (-)) (zetas eps1) (zetas eps2)) < eps1 + eps2
