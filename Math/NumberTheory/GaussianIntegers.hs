@@ -29,11 +29,13 @@ module Math.NumberTheory.GaussianIntegers (
     primes,
     gcdG,
     gcdG',
+    findPrime,
     findPrime',
     factorise,
 ) where
 
 import Data.List (mapAccumL)
+import Data.Maybe (fromMaybe)
 import GHC.Generics
 
 import qualified Math.NumberTheory.Moduli as Moduli
@@ -143,7 +145,7 @@ primes = [ g
                 else
                     if p == 2
                     then [1 :+ 1]
-                    else let x :+ y = findPrime' p
+                    else let x :+ y = findPrime p
                          in [x :+ y, y :+ x]
          ]
 
@@ -158,11 +160,12 @@ gcdG' g h
     | h == 0    = g --done recursing
     | otherwise = gcdG' h (abs (g `modG` h))
 
--- |Find a Gaussian integer whose norm is the given prime number using
+-- |Find a Gaussian integer whose norm is the given prime number
+-- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
-findPrime' :: Integer -> GaussianInteger
-findPrime' p = case Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
-    Nothing -> error "findPrime': impossible happened"
+findPrime :: Integer -> GaussianInteger
+findPrime p = case Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
+    Nothing -> error "findPrime: an argument must be prime p = 4k + 1"
     Just z  -> go p z -- Effectively we calculate gcdG' (p :+ 0) (z :+ 1)
     where
         sqrtp :: Integer
@@ -172,6 +175,10 @@ findPrime' p = case Moduli.sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . in
         go g h
             | g <= sqrtp = g :+ h
             | otherwise  = go h (g `mod` h)
+
+findPrime' :: Integer -> GaussianInteger
+findPrime' = findPrime
+{-# DEPRECATED findPrime' "Use 'findPrime' instead." #-}
 
 -- |Raise a Gaussian integer to a given power.
 (.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
@@ -197,17 +204,64 @@ factorise :: GaussianInteger -> [(GaussianInteger, Int)]
 factorise g = concat $ snd $ mapAccumL go g (Factorisation.factorise $ norm g)
     where
         go :: GaussianInteger -> (Integer, Int) -> (GaussianInteger, [(GaussianInteger, Int)])
-        go z (2, e) = (divideTwos z, [(1 :+ 1, e)])
+        go z (2, e) = (divideByTwo z, [(1 :+ 1, e)])
         go z (p, e)
             | p `mod` 4 == 3
             = let e' = e `quot` 2 in (z `quotI` (p ^ e'), [(p :+ 0, e')])
             | otherwise
-            = (z `quotG` (gp ^ k) `quotG` (gp' ^ l), filter ((> 0) . snd) [(gp, k), (gp', l)])
+            = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
                 where
-                    gp = findPrime' p
-                    (k, _) = trialDivide z gp p
+                    gp = findPrime p
+                    (k, k', z') = divideByPrime gp p e z
                     gp' = abs (conjugate gp)
-                    l = e - k
+
+-- | Remove all (1:+1) factors from the argument,
+-- avoiding complex division.
+divideByTwo :: GaussianInteger -> GaussianInteger
+divideByTwo z@(x :+ y)
+    | even x, even y
+    = divideByTwo $ z `quotI` 2
+    | odd x, odd y
+    = (x - y) `quot` 2 :+ (x + y) `quot` 2
+    | otherwise
+    = z
+
+-- | Remove p and conj p factors from the argument,
+-- avoiding complex division.
+divideByPrime
+    :: GaussianInteger   -- ^ Gaussian prime p
+    -> Integer           -- ^ Precomputed norm of p, of form 4k + 1
+    -> Int               -- ^ Expected number of factors (either p or conj p)
+                         --   in Gaussian integer z
+    -> GaussianInteger   -- ^ Gaussian integer z
+    -> ( Int             -- ^ Multiplicity of factor p in z
+       , Int             -- ^ Multiplicity of factor conj p in z
+       , GaussianInteger -- ^ Remaining Gaussian integer
+       )
+divideByPrime p np k = go k 0
+    where
+        go :: Int -> Int -> GaussianInteger -> (Int, Int, GaussianInteger)
+        go 0 d z = (d, d, z)
+        go c d z
+            | c >= 2
+            , Just z' <- z `quotEvenI` np
+            = go (c - 2) (d + 1) z'
+        go c d z = (d + d1, d + d2, z'')
+            where
+                (d1, z') = go1 c 0 z
+                d2 = c - d1
+                z'' = head $ drop d2
+                    $ iterate (\g -> fromMaybe err $ (g * p) `quotEvenI` np) z'
+
+        go1 :: Int -> Int -> GaussianInteger -> (Int, GaussianInteger)
+        go1 0 d z = (d, z)
+        go1 c d z
+            | Just z' <- (z * conjugate p) `quotEvenI` np
+            = go1 (c - 1) (d + 1) z'
+            | otherwise
+            = (d, z)
+
+        err = error $ "divideByPrime: malformed arguments" ++ show (p, np, k)
 
 quotI :: GaussianInteger -> Integer -> GaussianInteger
 quotI (x :+ y) n = (x `quot` n :+ y `quot` n)
@@ -222,28 +276,3 @@ quotEvenI (x :+ y) n
     where
         (xq, xr) = x `quotRem` n
         (yq, yr) = y `quotRem` n
-
-divideTwos :: GaussianInteger -> GaussianInteger
-divideTwos z@(x :+ y)
-    | even x, even y
-    = divideTwos $ z `quotI` 2
-    | odd x, odd y
-    = (x - y) `quot` 2 :+ (x + y) `quot` 2
-    | otherwise
-    = z
-
-trialDivide
-    :: GaussianInteger -- ^ Number to divide
-    -> GaussianInteger -- ^ Gaussian prime
-    -> Integer         -- ^ Norm of Gaussian prime, of form 4k + 1
-    -> (Int, GaussianInteger)
-trialDivide g p np = go 0 g
-    where
-        go :: Int -> GaussianInteger -> (Int, GaussianInteger)
-        go k z
-            | Just z' <- z `quotEvenI` np
-            = go (k + 1) z'
-            | Just z' <- (z * conjugate p) `quotEvenI` np
-            = go (k + 1) z'
-            | otherwise
-            = (k, z)

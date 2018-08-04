@@ -14,7 +14,7 @@ import Math.NumberTheory.GaussianIntegers
 instance NFData GaussianInteger
 
 benchFindPrime :: Integer -> Benchmark
-benchFindPrime n = bench (show n) $ nf findPrime' n
+benchFindPrime n = bench (show n) $ nf findPrime n
 
 benchTau :: Integer -> Benchmark
 benchTau n = bench (show n) $ nf (\m -> sum [tau (x :+ y) | x <- [1..m], y <- [0..m]] :: Word) n

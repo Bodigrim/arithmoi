@@ -73,7 +73,7 @@ findPrimeProperty1 p'@(PrimeWrapper p)
   || abs (p1 * p2) == fromInteger (unPrime p)
   where
     p1 = findPrimeReference p'
-    p2 = findPrime' (unPrime p)
+    p2 = findPrime (unPrime p)
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.
@@ -114,7 +114,7 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
 
 gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty1 z1 z2
-  = z == 0
+  = z1 == 0 && z2 == 0
   || z1 `remG` z == 0 && z2 `remG` z == 0 && z == abs z
   where
     z = gcdG z1 z2
@@ -122,7 +122,7 @@ gcdGProperty1 z1 z2
 gcdGProperty2 :: GaussianInteger -> GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty2 z z1 z2
   = z == 0
-  || gcdG z1' z2' `remG` z == 0
+  || (gcdG z1' z2') `remG` z == 0
   where
     z1' = z * z1
     z2' = z * z2
