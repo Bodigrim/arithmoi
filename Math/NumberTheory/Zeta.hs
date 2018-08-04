@@ -13,7 +13,9 @@
 module Math.NumberTheory.Zeta
   ( zetas
   , zetasEven
+  , zetasOdd
   , approximateValue
+  , suminf
   ) where
 
 import Data.ExactPi
@@ -79,7 +81,7 @@ zetasOdd eps = (1 / 0) : zets
     as = zipWith (/) zetasEven' (iterate (* 4) 1)
 
     bs :: [a] -- map (+ log 2) [b(1), b(2), b(3)...],
-              -- where b(m) = \sum_{n=0}^\infty zeta(2n) / 4^n / (n + m)
+              -- where b(m) = \sum_{n=0}^\infty (zeta(2n) / 4^n) / (n + m)
     bs = map ((+ log 2) . suminf eps . zipWith (*) as) rss
 
     cs :: [a] -- second summand of RHS in (57) for m = [1..]

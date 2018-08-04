@@ -56,8 +56,8 @@ library
     Math.NumberTheory.ArithmeticFunctions.Moebius
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.ArithmeticFunctions.Standard
+    Math.NumberTheory.Beta
     Math.NumberTheory.Curves.Montgomery
-    Math.NumberTheory.DirichletBeta
     Math.NumberTheory.GaussianIntegers
     Math.NumberTheory.GCD
     Math.NumberTheory.GCD.LowLevel
