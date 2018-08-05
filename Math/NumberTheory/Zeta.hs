@@ -15,6 +15,7 @@ module Math.NumberTheory.Zeta
   , zetasEven
   , zetasOdd
   , approximateValue
+  , skipOdds
   , suminf
   ) where
 
