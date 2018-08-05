@@ -96,11 +96,11 @@ betasEven eps = (1 / 2) : bets
 
     odds = [1, 3 ..]
 
-    evens = [0, 2 ..]
+    skipEvens = skipOdds . tail
 
     -- [1!, 3!, 5!..]
     factorial1AsInteger :: [Integer]
-    factorial1AsInteger = skipOdds $ tail factorial
+    factorial1AsInteger = skipEvens factorial
 
     -- [1!, 3!, 5!..]
     factorial1 :: [a]
@@ -111,19 +111,19 @@ betasEven eps = (1 / 2) : bets
     fracs = zipWith (\pow fac -> 1 % (pow * fac)) factorial1AsInteger (iterate (4 *) 2)
 
     -- First term of the right hand side of (12).
-    rhs1 = zipWith3 (\sgn frac lg -> sgn * lg * approximateValue frac) (cycle [1, -1])
-                                                                       (zipWith Exact odds fracs)
-                                                                       (repeat (log 2))
+    rhs1 = zipWith3 (\sgn piFrac lg -> sgn * lg * approximateValue piFrac) (cycle [1, -1])
+                                                                           (zipWith Exact odds fracs)
+                                                                           (repeat (log 2))
 
     -- [1 - (1 / (2^2)), 1 - (1 / (2^4)), 1 - (1 / (2^6)), ..]
     second :: [a]
-    second = tail $ map (1 -) $ iterate (/ 4) 1
+    second = map (1 -) $ (iterate (/ 4) (1/4))
 
     -- [- (1 - (1 / (2^2))) * zeta(3), (1 - (1 / (2^4))) * zeta(5), - (1 - (1 / (2^6))) * zeta(7), ..]
     zets :: [a]
     zets = zipWith3 (\sgn twosFrac z -> sgn * twosFrac * z) (cycle [-1, 1])
                                                             second
-                                                            (drop 2 $ zetasOdd eps)
+                                                            (tail $ zetasOdd eps)
 
     -- [pi / (2^1 * 1!), pi^3 / (2^3 * 3!), pi^5 / (2^5 * 5!), ..]
     pisAndFacs :: [a]
@@ -137,9 +137,10 @@ betasEven eps = (1 / 2) : bets
     rhs2 :: [a]
     rhs2 = zipWith (*) (cycle [-1, 1]) $ map (sum . zipWith (*) zets) pisAndFacs'
 
-    -- [pi^3 / 4, pi^5 / 6, pi^7 / 8 ..]
-    pis :: [a]
-    pis = map approximateValue $ zipWith Exact (tail odds) (map recip (drop 2 evens))
+    -- [pi^3 / (2^4), pi^5 / (2^6), pi^7 / (2^8) ..]
+    -- Second factor of third addend in RHS of (12).
+    pis :: Floating a => [a]
+    pis = map approximateValue $ zipWith Exact (tail odds) (map recip (iterate (4 *) 16))
 
     -- [[3!, 5!, 7! ..], [5!, 7! ..] ..]
     oddFacs :: [[a]]
@@ -161,12 +162,16 @@ betasEven eps = (1 / 2) : bets
     infSumNum :: [a]
     infSumNum = zipWith3 (\sgn p eulerP -> sgn * p * eulerP) (cycle [1, -1])
                                                              pis2
-                                                             (map fromRational . skipOdds . tail $ eulerPolyAt1)
+                                                             (map fromRational . skipEvens $ eulerPolyAt1)
 
+    -- [[ pi^0 * E_1(1)  (-1) * pi^2 * E_3(1)   ]  [ (-1) * pi^2 * E_3(1)  pi^4 * E_5(1)    ]  [ pi^4 * E_5(1)  (-1) * pi^6 * E_7(1)    ]  ]
+    -- || -------------, -------------------- ..|, | --------------------, ------------- .. |, | -------------, -------------------- .. |..|
+    -- [[       3!                 5!           ]  [          5!                 7!         ]  [       7!                9!             ]  ]
     infSum :: [a]
     infSum = map (suminf eps . zipWith (/) infSumNum) infSumDenoms
 
     -- Third summand of the right hand side of (12).
+    rhs3 :: [a]
     rhs3 = zipWith3 (\sgn p inf -> sgn * p * inf) (cycle [-1, 1])
                                                   pis
                                                   infSum
