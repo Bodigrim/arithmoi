@@ -1,5 +1,7 @@
 import Test.Tasty
 
+import qualified Math.NumberTheory.BetaTests as Beta
+
 import qualified Math.NumberTheory.GCDTests as GCD
 
 import qualified Math.NumberTheory.Recurrencies.PentagonalTests as RecurrenciesPentagonal
@@ -82,6 +84,7 @@ tests = testGroup "All"
     , Mertens.testSuite
     , SieveBlock.testSuite
     ]
+  , Beta.testSuite
   , UniqueFactorisation.testSuite
   , Zeta.testSuite
   , Curves.testSuite

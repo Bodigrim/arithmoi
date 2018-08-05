@@ -133,6 +133,7 @@ test-suite spec
     Math.NumberTheory.ArithmeticFunctionsTests
     Math.NumberTheory.ArithmeticFunctions.MertensTests
     Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
+    Math.NumberTheory.BetaTests
     Math.NumberTheory.CurvesTests
     Math.NumberTheory.GaussianIntegersTests
     Math.NumberTheory.GCDTests
