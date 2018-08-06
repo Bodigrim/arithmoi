@@ -92,7 +92,9 @@ betasEven :: forall a. (Floating a, Ord a) => a -> [a]
 betasEven eps = (1 / 2) : bets
   where
     bets :: [a]
-    bets = zipWith3 (\r1 r2 r3 -> r1 + (-r2) + r3) rhs1 rhs2 rhs3
+    bets = zipWith3 (\r1 r2 r3 -> (r1 + (negate r2) + r3)) rhs1 rhs2 rhs3
+
+    evens = [0, 2 ..]
 
     odds = [1, 3 ..]
 
@@ -111,7 +113,7 @@ betasEven eps = (1 / 2) : bets
     fracs = zipWith (\pow fac -> 1 % (pow * fac)) factorial1AsInteger (iterate (4 *) 2)
 
     -- First term of the right hand side of (12).
-    rhs1 = zipWith3 (\sgn piFrac lg -> sgn * lg * approximateValue piFrac) (cycle [1, -1])
+    rhs1 = zipWith3 (\sgn piFrac lg -> sgn * (lg * approximateValue piFrac)) (cycle [1, -1])
                                                                            (zipWith Exact odds fracs)
                                                                            (repeat (log 2))
 
@@ -127,7 +129,10 @@ betasEven eps = (1 / 2) : bets
 
     -- [pi / (2^1 * 1!), pi^3 / (2^3 * 3!), pi^5 / (2^5 * 5!), ..]
     pisAndFacs :: [a]
-    pisAndFacs = zipWith (/) (iterate ((pi * pi) *) pi) (zipWith (*) (iterate (4 *) 2) factorial1)
+    pisAndFacs = map approximateValue $ zipWith3 (\od pow fac -> Exact od (1 % (pow * fac)))
+                                                 odds
+                                                 (iterate (4 *) 2)
+                                                 factorial1AsInteger
 
     -- [[], [pisAndFacs !! 0], [pisAndFacs !! 1, pisAndFacs !! 0], [pisAndFacs !! 2, pisAndFacs !! 1, pisAndFacs !! 0]...]
     pisAndFacs' :: [[a]]
@@ -156,7 +161,7 @@ betasEven eps = (1 / 2) : bets
 
     -- [pi^0, pi^2, pi^4, pi^6 ..]
     pis2 :: [a]
-    pis2 = iterate ((pi * pi) *) 1
+    pis2 = map approximateValue $ zipWith Exact evens (repeat 1)
 
     -- [pi^0 * E_1(1), - pi^2 * E_3(1), pi^4 * E_5(1) ..]
     infSumNum :: [a]
@@ -164,9 +169,9 @@ betasEven eps = (1 / 2) : bets
                                                              pis2
                                                              (map fromRational . skipEvens $ eulerPolyAt1)
 
-    -- [[ pi^0 * E_1(1)  (-1) * pi^2 * E_3(1)   ]  [ (-1) * pi^2 * E_3(1)  pi^4 * E_5(1)    ]  [ pi^4 * E_5(1)  (-1) * pi^6 * E_7(1)    ]  ]
-    -- || -------------, -------------------- ..|, | --------------------, ------------- .. |, | -------------, -------------------- .. |..|
-    -- [[       3!                 5!           ]  [          5!                 7!         ]  [       7!                9!             ]  ]
+    -- [     [ pi^0 * E_1(1)  (-1) * pi^2 * E_3(1)   ]      [ (-1) * pi^2 * E_3(1)  pi^4 * E_5(1)    ]      [ pi^4 * E_5(1)  (-1) * pi^6 * E_7(1)    ]  ]
+    -- | sum | -------------, -------------------- ..|, sum | --------------------, ------------- .. |, sum | -------------, -------------------- .. |..|
+    -- [     [       3!                 5!           ]      [          5!                 7!         ]      [       7!                9!             ]  ]
     infSum :: [a]
     infSum = map (suminf eps . zipWith (/) infSumNum) infSumDenoms
 
@@ -177,7 +182,7 @@ betasEven eps = (1 / 2) : bets
                                                   infSum
 
 -- | Infinite sequence of approximate (up to given precision)
--- values of Beta beta-function at integer arguments, starting with @β(0)@.
+-- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.
 -- The algorithm used to compute @β@ for even arguments was derived from
 -- <https://arxiv.org/pdf/0910.5004.pdf An Euler-type formula for β(2n) and closed-form expressions for a class of zeta series>
 -- by F. M. S. Lima, formula (12).
@@ -185,10 +190,15 @@ betasEven eps = (1 / 2) : bets
 -- > > take 5 (betas 1e-14) :: [Double]
 -- > [0.5,0.7853981633974483,0.9159655941772191,0.9689461462593693,0.988944551741105]
 betas :: (Floating a, Ord a) => a -> [a]
-betas eps = e : o : intertwine es os
+betas eps = e : o : scanl1 f (intertwine es os)
   where
     e : es = betasEven eps
     o : os = betasOdd'
 
     intertwine (x : xs) (y : ys) = x : y : intertwine xs ys
     intertwine xs ys = xs ++ ys
+
+    -- Cap-and-floor to improve numerical stability:
+    -- 0 < zeta(n + 1) - 1 < (zeta(n) - 1) / 2
+    -- A similar method is used in @Math.NumberTheory.Zeta.zetas@.
+    f x y = 1 `min` (y `max` (1 + (x - 1) / 2))
