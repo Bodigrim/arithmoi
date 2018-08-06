@@ -12,10 +12,11 @@ module Math.NumberTheory.BetaTests
   ( testSuite
   ) where
 
+import Data.Ratio                  ((%))
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Math.NumberTheory.Beta      (betas, betasOdd)
+import Math.NumberTheory.Beta      (betas, betasOdd, eulerPolyAt1)
 import Math.NumberTheory.Zeta      (approximateValue)
 import Math.NumberTheory.TestUtils
 
@@ -96,6 +97,15 @@ betasProperty2 (NonNegative e1) (NonNegative e2)
     eps1 = (1.0 / 2) ^ e1
     eps2 = (1.0 / 2) ^ e2
 
+eulerPAt1Property1 :: Positive Int -> Bool
+eulerPAt1Property1 (Positive n) = eulerPolyAt1 !! (2 * n) == 0
+
+eulerPAt1SpecialCase1 :: Assertion
+eulerPAt1SpecialCase1 = assertEqual "eulerPolyAt1"
+    (take 20 eulerPolyAt1)
+    (zipWith (%) [1, 1, 0, -1, 0, 1, 0, -17, 0, 31, 0, -691, 0, 5461, 0, -929569, 0, 3202291, 0, -221930581]
+                 [1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1, 16, 1, 2, 1, 4])
+
 testSuite :: TestTree
 testSuite = testGroup "Beta"
   [ testGroup "betasOdd"
@@ -111,5 +121,9 @@ testSuite = testGroup "Beta"
     , testCase "beta(4)"                          betasSpecialCase3
     , testSmallAndQuick "beta(n) < beta(n+1)"     betasProperty1
     , testSmallAndQuick "precision"               betasProperty2
+    ]
+  , testGroup "Euler Polynomial of order N evaluated at 1"
+    [ testCase "First 20 elements of E_n(1) are correct" eulerPAt1SpecialCase1
+    , testSmallAndQuick "E_n(1) with n in [2,4,6..] is 0" eulerPAt1Property1
     ]
   ]
