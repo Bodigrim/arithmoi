@@ -139,7 +139,19 @@ sqrtModP' :: Integer -> Integer -> Integer
 sqrtModP' square prime
     | prime == 2    = square
     | rem4 prime == 3 = powModInteger square ((prime + 1) `quot` 4) prime
+    | square `mod` prime == prime - 1
+                    = sqrtOfMinusOne prime
     | otherwise     = tonelliShanks square prime
+
+-- | p must be of form 4k + 1
+sqrtOfMinusOne :: Integer -> Integer
+sqrtOfMinusOne p
+  = head
+  $ filter (\n -> n /= 1 && n /= p - 1)
+  $ map (\n -> powModInteger n k p)
+    [2..p-2]
+  where
+    k = (p - 1) `quot` 4
 
 -- | @tonelliShanks square prime@ calculates a square root of @square@
 --   modulo @prime@, where @prime@ is a prime of the form @4*k + 1@ and

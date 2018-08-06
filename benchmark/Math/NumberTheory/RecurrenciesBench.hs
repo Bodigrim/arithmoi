@@ -27,7 +27,7 @@ benchPartition n = bgroup "partition"
   , benchAt (n * 100)
   ]
   where
-    benchAt m = bench ("!!" ++ show m) $  nf (\n -> partition !! n :: Integer) m
+    benchAt m = bench ("!!" ++ show m) $  nf (\k -> partition !! k :: Integer) m
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Recurrencies"
