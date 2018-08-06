@@ -15,12 +15,13 @@ module Math.NumberTheory.Beta
   , betasEven
   , betasOdd
   , euler
+  , euler'
   , eulerPolyAt1
   ) where
 
 import Data.ExactPi                   (ExactPi (..), approximateValue)
 import Data.List                      (zipWith4)
-import Data.Ratio                     (Ratio, (%))
+import Data.Ratio                     (Ratio, (%), numerator)
 
 import Math.NumberTheory.Recurrencies (factorial, stirling2)
 import Math.NumberTheory.Zeta         (skipOdds, suminf, zetasOdd)
@@ -28,7 +29,7 @@ import Math.NumberTheory.Zeta         (skipOdds, suminf, zetasOdd)
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
 -- by Kwang-Wu Chen, second formula of the Corollary in page 7.
-
+--
 -- >>> take 10 euler :: [Rational]
 -- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
 euler :: forall a . Integral a => [Ratio a]
@@ -39,15 +40,23 @@ euler = map (f . tail) (tail stirling2)
                                                                    as
 
     as :: Integral a => [Ratio a]
-    as = zipWith3 (\sgn frac divByFour -> sgn * divByFour * frac) (cycle [1, 1, 1, 1, -1, -1, -1, -1])
-                                                                  (dups (1 : iterate (/ 2) (1 % 2)))
-                                                                  (cycle [1, 1, 1, 0])
+    as = zipWith3 (\sgn frac ones -> (sgn * ones) % frac) (cycle [1, 1, 1, 1, -1, -1, -1, -1])
+                                                          (dups (iterate (2 *) 1))
+                                                          (cycle [1, 1, 1, 0])
 
     dups :: forall x . [x] -> [x]
     dups (n : ns) = n : n : dups ns
     dups l = l
 {-# SPECIALIZE euler :: [Ratio Int]     #-}
 {-# SPECIALIZE euler :: [Ratio Integer] #-}
+
+-- | The same sequence as @euler@, but with type @[a]@ instead of @[Ratio a]@
+-- as the denominators in @euler@ are always @1@.
+--
+-- >>> take 10 euler :: [Integer]
+-- [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0]
+euler' :: forall a . Integral a => [a]
+euler' = map numerator euler
 
 -- | Infinite zero-based list of the @n@-th order Euler polynomials evaluated at @1@.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
@@ -75,10 +84,10 @@ eulerPolyAt1 = map (f . tail) (tail stirling2)
 -- > 0.99999999999999999999999960726927497384196726751694z
 --
 betasOdd :: [ExactPi]
-betasOdd = zipWith Exact [1, 3 ..] $ zipWith4 (\sgn denom eul twos -> sgn * (eul / (twos * denom)))
+betasOdd = zipWith Exact [1, 3 ..] $ zipWith4 (\sgn denom eul twos -> sgn * (eul % (twos * denom)))
                                               (cycle [1, -1])
                                               (skipOdds factorial)
-                                              (skipOdds euler)
+                                              (skipOdds euler')
                                               (iterate (4 *) 4)
 
 -- | @betasOdd@, but with @forall a . Floating a => a@ instead of @ExactPi@s.
