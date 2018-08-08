@@ -97,14 +97,13 @@ fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
 -- (but not neccesarily prime) factors with multiplicities.
--- If you cannot ensure coprimality, use 'splitIntoCoprimes'.
 --
 -- > > fromFactors (splitIntoCoprimes [(140, 1), (165, 1)])
 -- > Prefactored {prefValue = 23100, prefFactors = [(5, 2), (28, 1), (33, 1)]}
 -- > > fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
 -- > Prefactored {prefValue = 88045650000, prefFactors = [(5, 5), (28, 2), (33, 3)]}
-fromFactors :: Integral a => [(a, Word)] -> Prefactored a
-fromFactors as = Prefactored (product (map (uncurry (^)) as)) (splitIntoCoprimes as)
+fromFactors :: Integral a => Coprimes a Word -> Prefactored a
+fromFactors as = Prefactored (product (map (uncurry (^)) (toList as))) as
 
 instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _

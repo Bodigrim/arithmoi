@@ -25,7 +25,12 @@ module Math.NumberTheory.Moduli.PrimitiveRoot
   , isPrimitiveRoot'
   ) where
 
+#if __GLASGOW_HASKELL__ < 803
+import Data.Semigroup
+#endif
+
 import Math.NumberTheory.ArithmeticFunctions (totient)
+import Math.NumberTheory.GCD as Coprimes
 import Math.NumberTheory.Moduli (Mod, getNatMod, getNatVal, KnownNat)
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
@@ -92,10 +97,10 @@ cyclicGroupToModulo
   => CyclicGroup a
   -> Prefactored a
 cyclicGroupToModulo = fromFactors . \case
-  CG2                       -> [(2, 1)]
-  CG4                       -> [(2, 2)]
-  CGOddPrimePower p k       -> [(unPrime p, k)]
-  CGDoubleOddPrimePower p k -> [(2, 1), (unPrime p, k)]
+  CG2                       -> Coprimes.singleton 2 1
+  CG4                       -> Coprimes.singleton 2 2
+  CGOddPrimePower p k       -> Coprimes.singleton (unPrime p) k
+  CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1 <> Coprimes.singleton (unPrime p) k
 
 -- | 'isPrimitiveRoot'' @cg@ @a@ checks whether @a@ is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>
