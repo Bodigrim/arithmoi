@@ -1,28 +1,26 @@
 -- |
--- Module:      Math.NumberTheory.ZetaTests
+-- Module:      Math.NumberTheory.Zeta.RiemannTests
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.Zeta
+-- Tests for Math.NumberTheory.Zeta.Riemann
 --
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.ZetaTests
+module Math.NumberTheory.Zeta.RiemannTests
   ( testSuite
   ) where
 
+import Data.ExactPi                (approximateValue)
+
 import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit            (Assertion, assertEqual, testCase)
 
 import Math.NumberTheory.Zeta
 import Math.NumberTheory.TestUtils
-
-assertEqualUpToEps :: String -> Double -> Double -> Double -> Assertion
-assertEqualUpToEps msg eps expected actual
-  = assertBool msg (abs (expected - actual) < eps)
 
 epsilon :: Double
 epsilon = 1e-14

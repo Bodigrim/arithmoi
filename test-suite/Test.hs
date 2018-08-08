@@ -1,7 +1,5 @@
 import Test.Tasty
 
-import qualified Math.NumberTheory.BetaTests as Beta
-
 import qualified Math.NumberTheory.GCDTests as GCD
 
 import qualified Math.NumberTheory.Recurrencies.PentagonalTests as RecurrenciesPentagonal
@@ -37,9 +35,11 @@ import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctio
 import qualified Math.NumberTheory.ArithmeticFunctions.MertensTests as Mertens
 import qualified Math.NumberTheory.ArithmeticFunctions.SieveBlockTests as SieveBlock
 import qualified Math.NumberTheory.UniqueFactorisationTests as UniqueFactorisation
-import qualified Math.NumberTheory.ZetaTests as Zeta
 import qualified Math.NumberTheory.CurvesTests as Curves
 import qualified Math.NumberTheory.SmoothNumbersTests as SmoothNumbers
+
+import qualified Math.NumberTheory.Zeta.DirichletTests as DirichletTests
+import qualified Math.NumberTheory.Zeta.RiemannTests as RiemannTests
 
 main :: IO ()
 main = defaultMain tests
@@ -84,9 +84,12 @@ tests = testGroup "All"
     , Mertens.testSuite
     , SieveBlock.testSuite
     ]
-  , Beta.testSuite
   , UniqueFactorisation.testSuite
-  , Zeta.testSuite
   , Curves.testSuite
   , SmoothNumbers.testSuite
+
+  , testGroup "Zeta functions"
+    [ DirichletTests.testSuite
+    , RiemannTests.testSuite
+    ]
   ]

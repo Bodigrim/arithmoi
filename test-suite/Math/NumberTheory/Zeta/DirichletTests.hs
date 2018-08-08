@@ -1,31 +1,28 @@
 -- |
--- Module:      Math.NumberTheory.BetaTests
+-- Module:      Math.NumberTheory.Zeta.DirichletTests
 -- Copyright:   (c) 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.Beta
+-- Tests for Math.NumberTheory.Zeta.Dirichlet
 --
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.BetaTests
+module Math.NumberTheory.Zeta.DirichletTests
   ( testSuite
   ) where
 
+import Data.ExactPi                (approximateValue)
 import Data.Ratio                  ((%), denominator)
+
 import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit            (Assertion, assertEqual, testCase)
 
-import Math.NumberTheory.Beta      (betas, betasOdd, euler, euler'
-                                   , eulerPolyAt1)
-import Math.NumberTheory.Zeta      (approximateValue)
+import Math.NumberTheory.Zeta      (betas, betasOdd, euler, euler',
+                                    eulerPolyAt1)
 import Math.NumberTheory.TestUtils
-
-assertEqualUpToEps :: String -> Double -> Double -> Double -> Assertion
-assertEqualUpToEps msg eps expected actual
-  = assertBool msg (abs (expected - actual) < eps)
 
 epsilon :: Double
 epsilon = 1e-14

@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -- |
--- Module:      Math.NumberTheory.Beta
+-- Module:      Math.NumberTheory.Zeta.Dirichlet
 -- Copyright:   (c) 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
@@ -10,7 +10,7 @@
 --
 -- Dirichlet beta-function.
 
-module Math.NumberTheory.Beta
+module Math.NumberTheory.Zeta.Dirichlet
   ( betas
   , betasEven
   , betasOdd
@@ -19,12 +19,13 @@ module Math.NumberTheory.Beta
   , eulerPolyAt1
   ) where
 
-import Data.ExactPi                   (ExactPi (..), approximateValue)
-import Data.List                      (zipWith4)
-import Data.Ratio                     (Ratio, (%), numerator)
+import Data.ExactPi                     (ExactPi (..), approximateValue)
+import Data.List                        (zipWith4)
+import Data.Ratio                       (Ratio, (%), numerator)
 
-import Math.NumberTheory.Recurrencies (factorial, stirling2)
-import Math.NumberTheory.Zeta         (skipOdds, suminf, zetasOdd)
+import Math.NumberTheory.Recurrencies   (factorial, stirling2)
+import Math.NumberTheory.Zeta.Riemann   (zetasOdd)
+import Math.NumberTheory.Zeta.ZetaUtils (skipEvens, skipOdds, suminf)
 
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
@@ -106,8 +107,6 @@ betasEven eps = (1 / 2) : bets
     evens = [0, 2 ..]
 
     odds = [1, 3 ..]
-
-    skipEvens = skipOdds . tail
 
     -- [1!, 3!, 5!..]
     factorial1AsInteger :: [Integer]
@@ -209,5 +208,5 @@ betas eps = e : o : scanl1 f (intertwine es os)
 
     -- Cap-and-floor to improve numerical stability:
     -- 0 < zeta(n + 1) - 1 < (zeta(n) - 1) / 2
-    -- A similar method is used in @Math.NumberTheory.Zeta.zetas@.
+    -- A similar method is used in @Math.NumberTheory.Zeta.Riemann.zetas@.
     f x y = 1 `min` (y `max` (1 + (x - 1) / 2))
