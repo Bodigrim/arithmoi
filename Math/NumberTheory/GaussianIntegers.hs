@@ -149,16 +149,16 @@ primes = [ g
                          in [x :+ y, y :+ x]
          ]
 
--- |Compute the GCD of two Gaussian integers. Enforces the precondition that each
--- integer must be in the first quadrant (or zero).
+-- | Compute the GCD of two Gaussian integers. Result is always
+-- in the first quadrant.
 gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG g h = gcdG' (abs g) (abs h)
 
--- |Compute the GCD of two Gauss integers. Does not check the precondition.
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG' g h
-    | h == 0    = g --done recursing
+    | h == 0    = g -- done recursing
     | otherwise = gcdG' h (abs (g `modG` h))
+{-# DEPRECATED gcdG' "Use 'gcdG' instead." #-}
 
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
