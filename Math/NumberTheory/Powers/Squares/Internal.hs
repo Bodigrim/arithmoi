@@ -14,6 +14,8 @@
 {-# LANGUAGE CPP              #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+{-# OPTIONS_HADDOCK hide #-}
+
 module Math.NumberTheory.Powers.Squares.Internal
   ( karatsubaSqrt
   , isqrtA
