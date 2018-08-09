@@ -24,7 +24,7 @@ import GHC.Natural                    (Natural)
 import GHC.TypeNats.Compat            (SomeNat (..), someNatVal)
 
 import Math.NumberTheory.Moduli       (Mod, getVal)
-import Math.NumberTheory.Recurrencies (partition, pents)
+import Math.NumberTheory.Recurrencies (partition)
 import Math.NumberTheory.TestUtils
 
 import Test.Tasty
@@ -57,6 +57,16 @@ partitionSpecialCase20 = assertEqual "partition"
 -- reference implementation of @partition@.
 pentagonalSigns :: Num a => [a] -> [a]
 pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
+
+-- | Copied from @Math.NumberTheory.Recurrencies.Pentagonal@ to test the
+-- reference implementation of @partition@.
+pents :: (Enum a, Num a) => [a]
+pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
+                   (scanl (\acc n -> acc + 3 * n - 2) 1 [2..])
+  where
+    interleave :: [a] -> [a] -> [a]
+    interleave (n : ns) (m : ms) = n : m : interleave ns ms
+    interleave _ _ = []
 
 -- | Check that @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@,
 -- where @p(x) = 0@ for any negative integer and @p(0) = 1@.
