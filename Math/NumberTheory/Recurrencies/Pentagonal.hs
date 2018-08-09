@@ -49,14 +49,15 @@ pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
 pentagonalSigns :: Num a => [a] -> [a]
 pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
--- | @partition !! n@ calculates the @n@-th partition number:
+-- [Implementation notes for partition function]
+--
 -- @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@, where @p(0) = 1@
 -- and @p(k) = 0@ for a negative integer @k@. Uses a @Map@ from the
 -- @containers@ package to memoize previous results.
--- 
+--
 -- Example: calculating @partition !! 10@, assuming the memoization map is
 -- filled and called @dict :: Integral a => Map a a@.
--- 
+--
 -- * @tail [0, 1, 2, 5, 7, 12 ,15, 22, 26, 35, ..] == [1, 2, 5, 7, 12 ,15, 22, 26, 35, 40, ..]@.
 -- * @takeWhile (\m -> 10 - m >= 0) [1, 2, 5, 7, 12 ,15, 22, 26, 35, 40, ..] == [1, 2, 5, 7]@.
 -- * @map (\m -> dict ! fromIntegral (10 - m)) [1, 2, 5, 7] == [dict ! 9, dict ! 8, dict ! 5, dict ! 3] == [30, 22, 7, 3]@
@@ -68,10 +69,19 @@ pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 -- @p(n)@ would involve a duplicated @p(n-1)@ term (see the above example).
 -- 2. Calculating @partition !! k@, where @k@ is any index equal or higher
 -- than @maxBound :: Int@ results in undefined behavior.
-partition :: forall a . Num a => [a]
+
+-- | Infinite zero-based table of <https://oeis.org/A000041 partition numbers>.
+--
+-- >>> take 10 partition
+-- [1, 1, 2, 3, 5, 7, 11, 15, 22, 30]
+--
+-- >>> :set -XDataKinds
+-- >>> partition !! 1000 :: Mod 1000
+-- (991 `modulo` 1000)
+partition :: Num a => [a]
 partition = 1 : go (IM.singleton 0 1) 1
   where
-    go :: forall a . Num a => IM.IntMap a -> Int -> [a]
+    go :: Num a => IM.IntMap a -> Int -> [a]
     go dict !n =
         let n' = (sum .
                   pentagonalSigns .

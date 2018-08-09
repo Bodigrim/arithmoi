@@ -29,10 +29,10 @@ import Math.NumberTheory.Utils.FromIntegral
 -- An exponent @e@ must be non-negative, a modulo @m@ must be positive.
 -- Otherwise the behaviour of @powMod@ is undefined.
 --
--- > > powMod 2 3 5
--- > 3
--- > > powMod 3 12345678901234567890 1001
--- > 1
+-- >>> powMod 2 3 5
+-- 3
+-- >>> powMod 3 12345678901234567890 1001
+-- 1
 --
 -- See also 'Math.NumberTheory.Moduli.Class.powMod' and 'Math.NumberTheory.Moduli.Class.powSomeMod'.
 --
@@ -42,12 +42,12 @@ import Math.NumberTheory.Utils.FromIntegral
 -- need both to fit into machine word and to handle large moduli,
 -- take a look at 'powModInt' and 'powModWord'.
 --
--- > > powMod 3 101 (2^60-1 :: Integer)
--- > 1018105167100379328 -- correct
--- > > powMod 3 101 (2^60-1 :: Int64)
--- > 1115647832265427613 -- incorrect due to overflow
--- > > powModInt 3 101 (2^60-1 :: Int)
--- > 1018105167100379328 -- correct
+-- >>> powMod 3 101 (2^60-1 :: Integer)
+-- 1018105167100379328 -- correct
+-- >>> powMod 3 101 (2^60-1 :: Int64)
+-- 1115647832265427613 -- incorrect due to overflow
+-- >>> powModInt 3 101 (2^60-1 :: Int)
+-- 1018105167100379328 -- correct
 powMod :: (Integral a, Integral b) => a -> b -> a -> a
 powMod x y m
   | m <= 0    = error "powModInt: non-positive modulo"
@@ -75,15 +75,15 @@ powModInteger b e m = GMP.powModInteger (b `mod` m) e m
 
 -- | Specialised version of 'powMod', able to handle large moduli correctly.
 --
--- > > powModWord 3 101 (2^60-1)
--- > 1018105167100379328
+-- >>> powModWord 3 101 (2^60-1)
+-- 1018105167100379328
 powModWord :: Word -> Word -> Word -> Word
 powModWord (W# x) (W# y) (W# m) = W# (GMP.powModWord x y m)
 
 -- | Specialised version of 'powMod', able to handle large moduli correctly.
 --
--- > > powModInt 3 101 (2^60-1)
--- > 1018105167100379328
+-- >> powModInt 3 101 (2^60-1)
+-- 1018105167100379328
 powModInt :: Int -> Int -> Int -> Int
 powModInt x y m
   | m <= 0 = error "powModInt: non-positive modulo"

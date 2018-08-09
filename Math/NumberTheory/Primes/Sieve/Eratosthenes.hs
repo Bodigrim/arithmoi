@@ -142,29 +142,29 @@ takeWhileIncreasing = \case
 
 -- | Ascending list of primes.
 --
--- > > take 10 primes
--- > [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+-- >>> take 10 primes
+-- [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 --
 -- 'primes' is a polymorphic list, so the results of computations are not retained in memory.
 -- Make it monomorphic to take advantages of memoization. Compare
 --
--- > > :set +s
--- > > primes !! 1000000 :: Int
--- > 15485867
--- > (5.32 secs, 6,945,267,496 bytes)
--- > > primes !! 1000000 :: Int
--- > 15485867
--- > (5.19 secs, 6,945,267,496 bytes)
+-- >>> :set +s
+-- >>> primes !! 1000000 :: Int
+-- 15485867
+-- (5.32 secs, 6,945,267,496 bytes)
+-- >>> primes !! 1000000 :: Int
+-- 15485867
+-- (5.19 secs, 6,945,267,496 bytes)
 --
 -- against
 --
--- > > let primes' = primes :: [Int]
--- > > primes' !! 1000000 :: Int
--- > 15485867
--- > (5.29 secs, 6,945,269,856 bytes)
--- > > primes' !! 1000000 :: Int
--- > 15485867
--- > (0.02 secs, 336,232 bytes)
+-- >>> let primes' = primes :: [Int]
+-- >>> primes' !! 1000000 :: Int
+-- 15485867
+-- (5.29 secs, 6,945,269,856 bytes)
+-- >>> primes' !! 1000000 :: Int
+-- 15485867
+-- (0.02 secs, 336,232 bytes)
 primes :: (Ord a, Num a) => [a]
 primes = takeWhileIncreasing $ 2 : 3 : 5 : concatMap primeListInternal psieveList
 

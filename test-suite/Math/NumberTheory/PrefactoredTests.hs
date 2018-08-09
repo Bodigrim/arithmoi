@@ -44,7 +44,7 @@ fromFactorsProperty :: [(Integer, Power Word)] -> Bool
 fromFactorsProperty fs' = isValid pref && abs (prefValue pref) == abs (product (map (uncurry (^)) fs))
   where
     fs   = map (second getPower) fs'
-    pref = fromFactors (toList $ splitIntoCoprimes fs)
+    pref = fromFactors (splitIntoCoprimes fs)
 
 plusProperty :: Integer -> Integer -> Bool
 plusProperty x y = isValid z && prefValue z == x + y

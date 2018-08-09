@@ -84,7 +84,6 @@ library
     Math.NumberTheory.Primes.Testing
     Math.NumberTheory.Primes.Testing.Certificates
     Math.NumberTheory.Recurrencies
-    Math.NumberTheory.Recurrencies.Pentagonal
     Math.NumberTheory.Recurrencies.Bilinear
     Math.NumberTheory.Recurrencies.Linear
     Math.NumberTheory.SmoothNumbers
@@ -105,6 +104,7 @@ library
     Math.NumberTheory.Primes.Testing.Certified
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
+    Math.NumberTheory.Recurrencies.Pentagonal
     Math.NumberTheory.Unsafe
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.FromIntegral
@@ -179,6 +179,7 @@ benchmark criterion
     base,
     arithmoi,
     containers,
+    deepseq,
     gauge,
     integer-logarithms,
     random,
@@ -188,6 +189,7 @@ benchmark criterion
       semigroups >=0.8
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
+    Math.NumberTheory.GaussianIntegersBench
     Math.NumberTheory.GCDBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench

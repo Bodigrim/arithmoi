@@ -15,9 +15,12 @@
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE LambdaCase   #-}
 
+{-# OPTIONS_GHC -fno-warn-deprecations  #-}
+
 module Math.NumberTheory.Moduli.Jacobi
   ( JacobiSymbol(..)
   , jacobi
+  , jacobi'
   ) where
 
 import Data.Bits
@@ -56,10 +59,10 @@ negJS = \case
 -- If arguments have a common factor, the result
 -- is 'Zero', otherwise it is 'MinusOne' or 'One'.
 --
--- > > jacobi 1001 9911
--- > Zero -- arguments have a common factor 11
--- > > jacobi 1001 9907
--- > MinusOne
+-- >>> jacobi 1001 9911
+-- Zero -- arguments have a common factor 11
+-- >>> jacobi 1001 9907
+-- MinusOne
 {-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
                          Natural -> Natural -> JacobiSymbol,
                          Int -> Int -> JacobiSymbol,
@@ -88,6 +91,7 @@ jacobi' a b
                                 s = if evenI z || rem8is1or7 b then r else negJS r
                             in jacOL s b o
   | otherwise = jacOL (if rem4is3 a && rem4is3 b then MinusOne else One) b a
+{-# DEPRECATED jacobi' "Use 'jacobi' instead" #-}
 
 -- numerator positive and smaller than denominator
 jacPS :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol

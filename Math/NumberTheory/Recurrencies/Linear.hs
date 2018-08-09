@@ -25,8 +25,8 @@ import Numeric.Natural
 
 -- | Infinite zero-based table of factorials.
 --
--- > > take 5 factorial
--- > [1,1,2,6,24]
+-- >>> take 5 factorial
+-- [1,1,2,6,24]
 --
 -- The time-and-space behaviour of 'factorial' is similar to described in
 -- "Math.NumberTheory.Recurrencies.Bilinear#memory".
