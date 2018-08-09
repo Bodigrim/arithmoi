@@ -234,9 +234,9 @@ divideByPrime
     -> Int               -- ^ Expected number of factors (either p or conj p)
                          --   in Gaussian integer z
     -> GaussianInteger   -- ^ Gaussian integer z
-    -> ( Int             -- ^ Multiplicity of factor p in z
-       , Int             -- ^ Multiplicity of factor conj p in z
-       , GaussianInteger -- ^ Remaining Gaussian integer
+    -> ( Int             -- Multiplicity of factor p in z
+       , Int             -- Multiplicity of factor conj p in z
+       , GaussianInteger -- Remaining Gaussian integer
        )
 divideByPrime p np k = go k 0
     where
