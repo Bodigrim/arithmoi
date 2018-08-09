@@ -92,7 +92,7 @@ library
     Math.NumberTheory.Zeta
     Math.NumberTheory.Zeta.Dirichlet
     Math.NumberTheory.Zeta.Riemann
-    Math.NumberTheory.Zeta.ZetaUtils
+    Math.NumberTheory.Zeta.Utils
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
     Math.NumberTheory.Primes.Counting.Approximate

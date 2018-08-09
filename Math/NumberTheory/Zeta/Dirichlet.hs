@@ -1,14 +1,14 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 -- |
 -- Module:      Math.NumberTheory.Zeta.Dirichlet
--- Copyright:   (c) 2018 Andrew Lelechenko
+-- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
--- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+-- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
 -- Dirichlet beta-function.
+
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Zeta.Dirichlet
   ( betas
@@ -25,7 +25,8 @@ import Data.Ratio                       (Ratio, (%), numerator)
 
 import Math.NumberTheory.Recurrencies   (factorial, stirling2)
 import Math.NumberTheory.Zeta.Riemann   (zetasOdd)
-import Math.NumberTheory.Zeta.ZetaUtils (skipEvens, skipOdds, suminf)
+import Math.NumberTheory.Zeta.Utils     (intertwine, skipEvens, skipOdds,
+                                         suminf)
 
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
@@ -203,10 +204,7 @@ betas eps = e : o : scanl1 f (intertwine es os)
     e : es = betasEven eps
     o : os = betasOdd'
 
-    intertwine (x : xs) (y : ys) = x : y : intertwine xs ys
-    intertwine xs ys = xs ++ ys
-
     -- Cap-and-floor to improve numerical stability:
-    -- 0 < zeta(n + 1) - 1 < (zeta(n) - 1) / 2
+    -- 1 > beta(n + 1) - 1 > (beta(n) - 1) / 2
     -- A similar method is used in @Math.NumberTheory.Zeta.Riemann.zetas@.
     f x y = 1 `min` (y `max` (1 + (x - 1) / 2))

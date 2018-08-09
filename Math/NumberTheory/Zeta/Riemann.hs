@@ -20,7 +20,7 @@ import Data.ExactPi                     (ExactPi (..), approximateValue)
 import Data.Ratio                       ((%))
 
 import Math.NumberTheory.Recurrencies   (bernoulli, factorial)
-import Math.NumberTheory.Zeta.ZetaUtils (skipOdds, suminf)
+import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds, suminf)
 
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors convertation to 'Double' may return values below 1:
@@ -99,9 +99,6 @@ zetas eps = e : o : scanl1 f (intertwine es os)
   where
     e : es = zetasEven'
     o : os = zetasOdd eps
-
-    intertwine (x : xs) (y : ys) = x : y : intertwine xs ys
-    intertwine      xs       ys  = xs ++ ys
 
     -- Cap-and-floor to improve numerical stability:
     -- 0 < zeta(n + 1) - 1 < (zeta(n) - 1) / 2

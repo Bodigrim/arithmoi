@@ -6,7 +6,7 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Interface to work with Riemann zeta-function and Dirichlet's beta-function.
+-- Interface to work with Riemann zeta-function and Dirichlet beta-function.
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
