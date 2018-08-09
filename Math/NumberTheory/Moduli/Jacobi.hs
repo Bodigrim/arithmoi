@@ -59,10 +59,10 @@ negJS = \case
 -- If arguments have a common factor, the result
 -- is 'Zero', otherwise it is 'MinusOne' or 'One'.
 --
--- > > jacobi 1001 9911
--- > Zero -- arguments have a common factor 11
--- > > jacobi 1001 9907
--- > MinusOne
+-- >>> jacobi 1001 9911
+-- Zero -- arguments have a common factor 11
+-- >>> jacobi 1001 9907
+-- MinusOne
 {-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
                          Natural -> Natural -> JacobiSymbol,
                          Int -> Int -> JacobiSymbol,

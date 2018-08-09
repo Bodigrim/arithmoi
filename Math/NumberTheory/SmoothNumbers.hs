@@ -34,34 +34,35 @@ newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 
 -- | Build a 'SmoothBasis' from a set of coprime numbers ≥2.
 --
--- > > fromSet (Set.fromList [2, 3])
--- > Just (SmoothBasis [2, 3])
--- > > fromSet (Set.fromList [2, 4]) -- should be coprime
--- > Nothing
--- > > fromSet (Set.fromList [1, 3]) -- should be >= 2
--- > Nothing
+-- >>> import qualified Data.Set as Set
+-- >>> fromSet (Set.fromList [2, 3])
+-- Just (SmoothBasis [2, 3])
+-- >>> fromSet (Set.fromList [2, 4]) -- should be coprime
+-- Nothing
+-- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
+-- Nothing
 fromSet :: Integral a => S.Set a -> Maybe (SmoothBasis a)
 fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
 
 -- | Build a 'SmoothBasis' from a list of coprime numbers ≥2.
 --
--- > > fromList [2, 3]
--- > Just (SmoothBasis [2, 3])
--- > > fromList [2, 2]
--- > Just (SmoothBasis [2])
--- > > fromList [2, 4] -- should be coprime
--- > Nothing
--- > > fromList [1, 3] -- should be >= 2
--- > Nothing
+-- >>> fromList [2, 3]
+-- Just (SmoothBasis [2, 3])
+-- >>> fromList [2, 2]
+-- Just (SmoothBasis [2])
+-- >>> fromList [2, 4] -- should be coprime
+-- Nothing
+-- >>> fromList [1, 3] -- should be >= 2
+-- Nothing
 fromList :: Integral a => [a] -> Maybe (SmoothBasis a)
 fromList l = if isValid l' then Just (SmoothBasis l') else Nothing where l' = nub $ sort l
 
 -- | Build a 'SmoothBasis' from a list of primes below given bound.
 --
--- > > fromSmoothUpperBound 10
--- > Just (SmoothBasis [2, 3, 5, 7])
--- > > fromSmoothUpperBound 1
--- > Nothing
+-- >>> fromSmoothUpperBound 10
+-- Just (SmoothBasis [2, 3, 5, 7])
+-- >>> fromSmoothUpperBound 1
+-- Nothing
 fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
 fromSmoothUpperBound n = if (n < 2)
                          then Nothing
@@ -72,8 +73,9 @@ fromSmoothUpperBound n = if (n < 2)
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
 -- over a given smooth basis.
 --
--- > > take 10 (smoothOver (fromJust (fromList [2, 5])))
--- > [1, 2, 4, 5, 8, 10, 16, 20, 25, 32]
+-- >>> import Data.Maybe
+-- >>> take 10 (smoothOver (fromJust (fromList [2, 5])))
+-- [1, 2, 4, 5, 8, 10, 16, 20, 25, 32]
 smoothOver :: Integral a => SmoothBasis a -> [a]
 smoothOver pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmoothBasis pl)
                 where
@@ -95,8 +97,9 @@ smoothOver pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmo
 -- for short, but distant ranges;
 -- consider using 'smoothOverInRangeBF' in such cases.
 --
--- > > smoothOverInRange (fromJust (fromList [2, 5])) 100 200
--- > [100, 125, 128, 160, 200]
+-- >>> import Data.Maybe
+-- >>> smoothOverInRange (fromJust (fromList [2, 5])) 100 200
+-- [100, 125, 128, 160, 200]
 smoothOverInRange   :: Integral a => SmoothBasis a -> a -> a -> [a]
 smoothOverInRange s lo hi = takeWhile (<= hi) $ dropWhile (< lo) (smoothOver s)
 
@@ -110,8 +113,9 @@ smoothOverInRange s lo hi = takeWhile (<= hi) $ dropWhile (< lo) (smoothOver s)
 --
 -- Suffix BF stands for the brute force algorithm, involving a lot of divisions.
 --
--- > > smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
--- > [100, 125, 128, 160, 200]
+-- >>> import Data.Maybe
+-- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
+-- [100, 125, 128, 160, 200]
 smoothOverInRangeBF :: Integral a => SmoothBasis a -> a -> a -> [a]
 smoothOverInRangeBF prs lo hi = filter (mf prs') [lo..hi]
                                 where mf []     n    = (n == 1) -- mf means manually factor

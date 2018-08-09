@@ -76,8 +76,8 @@ additiveSieveBlockConfig f = SieveBlockConfig
 --
 -- For example, here is an analogue of divisor function 'tau':
 --
--- > > sieveBlockUnboxed (SieveBlockConfig 1 (*) (\_ a -> a + 1) 1 10)
--- > [1,2,2,3,2,4,2,4,3,4]
+-- >>> sieveBlockUnboxed (SieveBlockConfig 1 (\_ a -> a + 1) (*)) 1 10
+-- [1,2,2,3,2,4,2,4,3,4]
 sieveBlockUnboxed
   :: V.Unbox a
   => SieveBlockConfig a

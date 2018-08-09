@@ -14,23 +14,23 @@
 -- Top-level definitions in this module are polymorphic, so the results of computations are not retained in memory.
 -- Make them monomorphic to take advantages of memoization. Compare
 --
--- > > :set +s
--- > > binomial !! 1000 !! 1000 :: Integer
--- > 1
--- > (0.01 secs, 1,385,512 bytes)
--- > > binomial !! 1000 !! 1000 :: Integer
--- > 1
--- > (0.01 secs, 1,381,616 bytes)
+-- >>> :set +s
+-- >>> binomial !! 1000 !! 1000 :: Integer
+-- 1
+-- (0.01 secs, 1,385,512 bytes)
+-- >>> binomial !! 1000 !! 1000 :: Integer
+-- 1
+-- (0.01 secs, 1,381,616 bytes)
 --
 -- against
 --
--- > > let binomial' = binomial :: [[Integer]]
--- > > binomial' !! 1000 !! 1000 :: Integer
--- > 1
--- > (0.01 secs, 1,381,696 bytes)
--- > > binomial' !! 1000 !! 1000 :: Integer
--- > 1
--- > (0.01 secs, 391,152 bytes)
+-- >>> let binomial' = binomial :: [[Integer]]
+-- >>> binomial' !! 1000 !! 1000 :: Integer
+-- 1
+-- (0.01 secs, 1,381,696 bytes)
+-- >>> binomial' !! 1000 !! 1000 :: Integer
+-- 1
+-- (0.01 secs, 391,152 bytes)
 
 {-# LANGUAGE CPP #-}
 
@@ -53,8 +53,8 @@ import Math.NumberTheory.Recurrencies.Linear (factorial)
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle):
 -- @binomial !! n !! k == n! \/ k! \/ (n - k)!@.
 --
--- > > take 5 (map (take 5) binomial)
--- > [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1]]
+-- >>> take 5 (map (take 5) binomial)
+-- [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1]]
 --
 -- Complexity: @binomial !! n !! k@ is O(n) bits long, its computation
 -- takes O(k n) time and forces thunks @binomial !! n !! i@ for @0 <= i <= k@.
@@ -72,8 +72,8 @@ binomial = map f [0..]
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --
--- > > take 5 (map (take 5) stirling1)
--- > [[1],[0,1],[0,1,1],[0,2,3,1],[0,6,11,6,1]]
+-- >>> take 5 (map (take 5) stirling1)
+-- [[1],[0,1],[0,1,1],[0,2,3,1],[0,6,11,6,1]]
 --
 -- Complexity: @stirling1 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @stirling1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
@@ -90,8 +90,8 @@ stirling1 = scanl f [1] [0..]
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind Stirling numbers of the second kind>.
 --
--- > > take 5 (map (take 5) stirling2)
--- > [[1],[0,1],[0,1,1],[0,1,3,1],[0,1,7,6,1]]
+-- >>> take 5 (map (take 5) stirling2)
+-- [[1],[0,1],[0,1,1],[0,1,3,1],[0,1,7,6,1]]
 --
 -- Complexity: @stirling2 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
@@ -109,8 +109,8 @@ stirling2 = iterate f [1]
 -- | Infinite one-based table of <https://en.wikipedia.org/wiki/Lah_number Lah numbers>.
 -- @lah !! n !! k@ equals to lah(n + 1, k + 1).
 --
--- > > take 5 (map (take 5) lah)
--- > [[1],[2,1],[6,6,1],[24,36,12,1],[120,240,120,20,1]]
+-- >>> take 5 (map (take 5) lah)
+-- [[1],[2,1],[6,6,1],[24,36,12,1],[120,240,120,20,1]]
 --
 -- Complexity: @lah !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n ln n) time and forces thunks @lah !! n !! i@ for @0 <= i <= k@.
@@ -126,8 +126,8 @@ lah = zipWith f (tail factorial) [1..]
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Eulerian_number Eulerian numbers of the first kind>.
 --
--- > > take 5 (map (take 5) eulerian1)
--- > [[],[1],[1,1],[1,4,1],[1,11,11,1]]
+-- >>> take 5 (map (take 5) eulerian1)
+-- [[],[1],[1,1],[1,4,1],[1,11,11,1]]
 --
 -- Complexity: @eulerian1 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @eulerian1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
@@ -143,8 +143,8 @@ eulerian1 = scanl f [] [1..]
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Eulerian_number#Eulerian_numbers_of_the_second_kind Eulerian numbers of the second kind>.
 --
--- > > take 5 (map (take 5) eulerian2)
--- > [[],[1],[1,2],[1,8,6],[1,22,58,24]]
+-- >>> take 5 (map (take 5) eulerian2)
+-- [[],[1],[1,2],[1,8,6],[1,22,58,24]]
 --
 -- Complexity: @eulerian2 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @eulerian2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
@@ -162,8 +162,8 @@ eulerian2 = scanl f [] [1..]
 -- computed via <https://en.wikipedia.org/wiki/Bernoulli_number#Connection_with_Stirling_numbers_of_the_second_kind connection>
 -- with 'stirling2'.
 --
--- > > take 5 bernoulli
--- > [1 % 1,(-1) % 2,1 % 6,0 % 1,(-1) % 30]
+-- >>> take 5 bernoulli
+-- [1 % 1,(-1) % 2,1 % 6,0 % 1,(-1) % 30]
 --
 -- Complexity: @bernoulli !! n@ is O(n ln n) bits long, its computation
 -- takes O(n^3 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @0 <= j <= i@.

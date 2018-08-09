@@ -24,13 +24,14 @@ import Math.NumberTheory.Recurrencies (bernoulli, factorial)
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors convertation to 'Double' may return values below 1:
 --
--- > > approximateValue (zetasEven !! 25) :: Double
--- > 0.9999999999999996
+-- >>> approximateValue (zetasEven !! 25) :: Double
+-- 0.9999999999999996
 --
 -- Use your favorite type for long-precision arithmetic. For instance, 'Data.Number.Fixed.Fixed' works fine:
 --
--- > > approximateValue (zetasEven !! 25) :: Fixed Prec50
--- > 1.00000000000000088817842111574532859293035196051773
+-- >>> import Data.Number.Fixed
+-- >>> approximateValue (zetasEven !! 25) :: Fixed Prec50
+-- 1.00000000000000088817842111574532859293035196051773
 --
 zetasEven :: [ExactPi]
 zetasEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
@@ -94,7 +95,7 @@ suminf eps = sum . takeWhile ((>= eps / 111) . abs)
 -- <https://cr.yp.to/bib/2000/borwein.pdf Computational strategies for the Riemann zeta function>
 -- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57).
 --
--- > > take 5 (zetas 1e-14) :: [Double]
+-- >>> take 5 (zetas 1e-14) :: [Double]
 -- > [-0.5,Infinity,1.6449340668482262,1.2020569031595942,1.0823232337111381]
 --
 -- Beware to force evaluation of @zetas !! 1@, if the type @a@ does not support infinite values

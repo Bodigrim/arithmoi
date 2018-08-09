@@ -52,10 +52,11 @@ import GHC.Natural (Natural, powModNatural)
 -- The modulo is stored on type level, so it is impossible, for example, to add up by mistake
 -- residues with different moduli.
 --
--- > > (3 :: Mod 10) + (4 :: Mod 12)
--- > error: Couldn't match type ‘12’ with ‘10’...
--- > > (3 :: Mod 10) + 8
--- > (1 `modulo` 10)
+-- >>> :set -XDataKinds
+-- >>> (3 :: Mod 10) + (4 :: Mod 12)
+-- error: Couldn't match type ‘12’ with ‘10’...
+-- >>> (3 :: Mod 10) + 8
+-- (1 `modulo` 10)
 --
 -- Note that modulo cannot be negative.
 newtype Mod (m :: Nat) = Mod Natural
@@ -131,10 +132,11 @@ getNatVal (Mod x) = x
 
 -- | Computes the modular inverse, if the residue is coprime with the modulo.
 --
--- > > invertMod (3 :: Mod 10)
--- > Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
--- > > invertMod (4 :: Mod 10)
--- > Nothing
+-- >>> :set -XDataKinds
+-- >>> invertMod (3 :: Mod 10)
+-- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- >>> invertMod (4 :: Mod 10)
+-- Nothing
 invertMod :: KnownNat m => Mod m -> Maybe (Mod m)
 invertMod mx
   = if y <= 0
@@ -146,7 +148,8 @@ invertMod mx
 
 -- | Drop-in replacement for '^', with much better performance.
 --
--- > > powMod (3 :: Mod 10) 4
+-- >>> :set -XDataKinds
+-- >>> powMod (3 :: Mod 10) 4
 -- > (1 `modulo` 10)
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx a
@@ -181,14 +184,14 @@ infixr 8 ^%
 -- One can freely combine them in arithmetic expressions, but each operation
 -- will spend time on modulo's recalculation:
 --
--- > > 2 `modulo` 10 + 4 `modulo` 15
--- > (1 `modulo` 5)
--- > > 2 `modulo` 10 * 4 `modulo` 15
--- > (3 `modulo` 5)
--- > > 2 `modulo` 10 + fromRational (3 % 7)
--- > (1 `modulo` 10)
--- > > 2 `modulo` 10 * fromRational (3 % 7)
--- > (8 `modulo` 10)
+-- >>> 2 `modulo` 10 + 4 `modulo` 15
+-- (1 `modulo` 5)
+-- >>> 2 `modulo` 10 * 4 `modulo` 15
+-- (3 `modulo` 5)
+-- >>> 2 `modulo` 10 + fromRational (3 % 7)
+-- (1 `modulo` 10)
+-- >>> 2 `modulo` 10 * fromRational (3 % 7)
+-- (8 `modulo` 10)
 --
 -- If performance is crucial, it is recommended to extract @Mod m@ for further processing
 -- by pattern matching. E. g.,
@@ -278,12 +281,12 @@ instance Fractional SomeMod where
 
 -- | Computes the inverse value, if it exists.
 --
--- > > invertSomeMod (3 `modulo` 10)
--- > Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
--- > > invertMod (4 `modulo` 10)
--- > Nothing
--- > > invertSomeMod (fromRational (2 % 5))
--- > Just 5 % 2
+-- >>> invertSomeMod (3 `modulo` 10)
+-- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- >>> invertMod (4 `modulo` 10)
+-- Nothing
+-- >>> invertSomeMod (fromRational (2 % 5))
+-- Just 5 % 2
 invertSomeMod :: SomeMod -> Maybe SomeMod
 invertSomeMod = \case
   SomeMod m -> fmap SomeMod (invertMod m)
@@ -299,8 +302,8 @@ invertSomeMod = \case
 -- | Drop-in replacement for '^', with much better performance.
 -- When -O is enabled, there is a rewrite rule, which specialises '^' to 'powSomeMod'.
 --
--- > > powSomeMod (3 `modulo` 10) 4
--- > (1 `modulo` 10)
+-- >>> powSomeMod (3 `modulo` 10) 4
+-- (1 `modulo` 10)
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
 powSomeMod (SomeMod m) a = SomeMod (m ^% a)
 powSomeMod (InfMod  r) a = InfMod  (r ^  a)

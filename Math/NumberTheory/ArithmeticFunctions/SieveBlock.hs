@@ -55,8 +55,8 @@ import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 --
 -- This is a thin wrapper over 'sieveBlock', read more details there.
 --
--- > > runFunctionOverBlock carmichaelA 1 10
--- > [1,1,2,2,4,2,6,2,6,4]
+-- >>> runFunctionOverBlock carmichaelA 1 10
+-- [1,1,2,2,4,2,6,2,6,4]
 runFunctionOverBlock
   :: ArithmeticFunction Word a
   -> Word
@@ -79,8 +79,13 @@ runFunctionOverBlock (ArithmeticFunction f g) = (V.map g .) . sieveBlock SieveBl
 --
 -- For example, following code lists smallest prime factors:
 --
--- > > sieveBlock (SieveBlockConfig maxBound min (\p _ -> p) 2 10)
--- > [2,3,2,5,2,7,2,3,2,11]
+-- >>> sieveBlock (SieveBlockConfig maxBound (\p _ -> p) min) 2 10
+-- [2,3,2,5,2,7,2,3,2,11]
+--
+-- And this is how to factorise all numbers in a block:
+--
+-- >>> sieveBlock (SieveBlockConfig [] (\p k -> [(p,k)]) (++)) 2 10
+-- [[(2,1)],[(3,1)],[(2,2)],[(5,1)],[(2,1),(3,1)],[(7,1)],[(2,3)],[(3,2)],[(2,1),(5,1)],[(11,1)]]
 sieveBlock
   :: SieveBlockConfig a
   -> Word

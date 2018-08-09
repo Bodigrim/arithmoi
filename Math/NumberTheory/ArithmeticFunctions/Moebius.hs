@@ -126,8 +126,8 @@ instance Monoid Moebius where
 --
 -- Based on the sieving algorithm from p. 3 of <https://arxiv.org/pdf/1610.08551.pdf Computations of the Mertens function and improved bounds on the Mertens conjecture> by G. Hurst. It is approximately 5x faster than 'Math.NumberTheory.ArithmeticFunctions.SieveBlock.sieveBlockUnboxed'.
 --
--- > > sieveBlockMoebius 1 10
--- > [MoebiusP, MoebiusN, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusN, MoebiusZ, MoebiusZ, MoebiusP]
+-- >>> sieveBlockMoebius 1 10
+-- [MoebiusP, MoebiusN, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusN, MoebiusZ, MoebiusZ, MoebiusP]
 sieveBlockMoebius
   :: Word
   -> Word

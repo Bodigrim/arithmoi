@@ -24,8 +24,8 @@ import Math.NumberTheory.ArithmeticFunctions.Moebius
 
 -- | Compute individual values of Mertens function in O(n^(2/3)) time and space.
 --
--- > > map (mertens . (10 ^)) [0..9]
--- > [1,-1,1,2,-23,-48,212,1037,1928,-222]
+-- >>> map (mertens . (10 ^)) [0..9]
+-- [1,-1,1,2,-23,-48,212,1037,1928,-222]
 --
 -- The implementation follows Theorem 3.1 from <https://arxiv.org/pdf/1610.08551.pdf Computations of the Mertens function and improved bounds on the Mertens conjecture> by G. Hurst, excluding segmentation of sieves.
 mertens :: Word -> Int
