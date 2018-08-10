@@ -15,13 +15,12 @@ module Math.NumberTheory.Zeta.DirichletTests
   ) where
 
 import Data.ExactPi                (approximateValue)
-import Data.Ratio                  ((%), denominator)
+import Data.Ratio                  ((%))
 
 import Test.Tasty
 import Test.Tasty.HUnit            (Assertion, assertEqual, testCase)
 
-import Math.NumberTheory.Zeta      (betas, betasOdd, euler, euler',
-                                    eulerPolyAt1)
+import Math.NumberTheory.Zeta      (betas, betasOdd, euler, eulerPolyAt1)
 import Math.NumberTheory.TestUtils
 
 epsilon :: Double
@@ -99,21 +98,16 @@ betasProperty2 (NonNegative e1) (NonNegative e2)
 
 -- | For every odd positive integer @n@, @E_n@ is @0@.
 eulerProperty1 :: Positive Int -> Bool
-eulerProperty1 (Positive n) = euler' !! (2 * n - 1) == 0
-
--- | @forall a . Integral a => euler :: [Ratio a]@ always computes @Ratio@s
--- with denominator @1@.
-eulerProperty2 :: NonNegative Int -> Bool
-eulerProperty2 (NonNegative n) = denominator (euler !! n) == 1
+eulerProperty1 (Positive n) = euler !! (2 * n - 1) == 0
 
 -- | Every positive even index produces a negative result.
-eulerProperty3 :: NonNegative Int -> Bool
-eulerProperty3 (NonNegative n) = euler !! (2 + 4 * n) < 0
+eulerProperty2 :: NonNegative Int -> Bool
+eulerProperty2 (NonNegative n) = euler !! (2 + 4 * n) < 0
 
 -- | The Euler number sequence is https://oeis.org/A122045
 eulerSpecialCase1 :: Assertion
 eulerSpecialCase1 = assertEqual "euler"
-    (take 20 euler')
+    (take 20 euler)
     [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0, -50521, 0, 2702765, 0, -199360981, 0, 19391512145, 0, -2404879675441, 0]
 
 -- | For any even positive integer @n@, @E_n(1)@ is @0@.
@@ -148,8 +142,7 @@ testSuite = testGroup "Beta"
   , testGroup "Euler numbers"
     [ testCase "First 20 elements of E_n are correct"           eulerSpecialCase1
     , testSmallAndQuick "E_n with n odd is 0"                   eulerProperty1
-    , testSmallAndQuick "E_n is always an entire integer"       eulerProperty2
-    , testSmallAndQuick "E_n for n in [2,6,8,12..] is negative" eulerProperty3
+    , testSmallAndQuick "E_n for n in [2,6,8,12..] is negative" eulerProperty2
     ]
 
   , testGroup "Euler Polynomial of order N evaluated at 1"

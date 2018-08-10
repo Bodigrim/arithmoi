@@ -15,7 +15,6 @@ module Math.NumberTheory.Zeta.Dirichlet
   , betasEven
   , betasOdd
   , euler
-  , euler'
   , eulerPolyAt1
   ) where
 
@@ -31,47 +30,55 @@ import Math.NumberTheory.Zeta.Utils     (intertwine, skipEvens, skipOdds,
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
 -- by Kwang-Wu Chen, second formula of the Corollary in page 7.
+-- Sequence <https://oeis.org/A122045 A122045> in OEIS.
 --
--- >>> take 10 euler :: [Rational]
+-- >>> take 10 euler' :: [Rational]
 -- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
-euler :: forall a . Integral a => [Ratio a]
-euler = map (f . tail) (tail stirling2)
+euler' :: forall a . Integral a => [Ratio a]
+euler' = map (f . tail) (tail stirling2)
   where
-    f = sum . zipWith4 (\sgn fact a stir -> sgn * fact * stir * a) (cycle [1, -1])
-                                                                   factorial
-                                                                   as
+    f = sum . zipWith4
+              (\sgn fact a stir -> sgn * fact * stir * a)
+              (cycle [1, -1])
+              factorial
+              as
 
     as :: Integral a => [Ratio a]
-    as = zipWith3 (\sgn frac ones -> (sgn * ones) % frac) (cycle [1, 1, 1, 1, -1, -1, -1, -1])
-                                                          (dups (iterate (2 *) 1))
-                                                          (cycle [1, 1, 1, 0])
+    as = zipWith3
+        (\sgn frac ones -> (sgn * ones) % frac)
+        (cycle [1, 1, 1, 1, -1, -1, -1, -1])
+        (dups (iterate (2 *) 1))
+        (cycle [1, 1, 1, 0])
 
     dups :: forall x . [x] -> [x]
-    dups (n : ns) = n : n : dups ns
-    dups l = l
-{-# SPECIALIZE euler :: [Ratio Int]     #-}
-{-# SPECIALIZE euler :: [Ratio Integer] #-}
+    dups = foldr (\n list -> n : n : list) []
+{-# SPECIALIZE euler' :: [Ratio Int]     #-}
+{-# SPECIALIZE euler' :: [Ratio Integer] #-}
 
--- | The same sequence as @euler@, but with type @[a]@ instead of @[Ratio a]@
--- as the denominators in @euler@ are always @1@.
+-- | The same sequence as @euler'@, but with type @[a]@ instead of @[Ratio a]@
+-- as the denominators in @euler'@ are always @1@.
 --
 -- >>> take 10 euler :: [Integer]
 -- [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0]
-euler' :: forall a . Integral a => [a]
-euler' = map numerator euler
+euler :: forall a . Integral a => [a]
+euler = map numerator euler'
 
 -- | Infinite zero-based list of the @n@-th order Euler polynomials evaluated at @1@.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
 -- by Kwang-Wu Chen, third formula of the Corollary in page 7.
+-- Element-by-element division of sequences <https://oeis.org/A198631 A1986631>
+-- and <https://oeis.org/A006519 A006519> in OEIS.
+--
 -- >>> take 10 eulerPolyAt1 :: [Rational]
 -- [1 % 1,1 % 2,0 % 1,(-1) % 4,0 % 1,1 % 2,0 % 1,(-17) % 8,0 % 1,31 % 2]
 eulerPolyAt1 :: forall a . Integral a => [Ratio a]
 eulerPolyAt1 = map (f . tail) (tail stirling2)
   where
-    f = sum . zipWith4 (\sgn fact twos stir -> (sgn * fact * stir) % twos)
-                       (cycle [1, -1])
-                       factorial
-                       (iterate (2 *) 1)
+    f = sum . zipWith4
+              (\sgn fact twos stir -> (sgn * fact * stir) % twos)
+              (cycle [1, -1])
+              factorial
+              (iterate (2 *) 1)
 {-# SPECIALIZE eulerPolyAt1 :: [Ratio Int]     #-}
 {-# SPECIALIZE eulerPolyAt1 :: [Ratio Integer] #-}
 
@@ -86,11 +93,12 @@ eulerPolyAt1 = map (f . tail) (tail stirling2)
 -- > 0.99999999999999999999999960726927497384196726751694z
 --
 betasOdd :: [ExactPi]
-betasOdd = zipWith Exact [1, 3 ..] $ zipWith4 (\sgn denom eul twos -> sgn * (eul % (twos * denom)))
-                                              (cycle [1, -1])
-                                              (skipOdds factorial)
-                                              (skipOdds euler')
-                                              (iterate (4 *) 4)
+betasOdd = zipWith Exact [1, 3 ..] $ zipWith4
+                                     (\sgn denom eul twos -> sgn * (eul % (twos * denom)))
+                                     (cycle [1, -1])
+                                     (skipOdds factorial)
+                                     (skipOdds euler)
+                                     (iterate (4 *) 4)
 
 -- | @betasOdd@, but with @forall a . Floating a => a@ instead of @ExactPi@s.
 -- Used in @betasEven@.
@@ -105,10 +113,6 @@ betasEven eps = (1 / 2) : bets
     bets :: [a]
     bets = zipWith3 (\r1 r2 r3 -> (r1 + (negate r2) + r3)) rhs1 rhs2 rhs3
 
-    evens = [0, 2 ..]
-
-    odds = [1, 3 ..]
-
     -- [1!, 3!, 5!..]
     factorial1AsInteger :: [Integer]
     factorial1AsInteger = skipEvens factorial
@@ -117,14 +121,18 @@ betasEven eps = (1 / 2) : bets
     factorial1 :: [a]
     factorial1 = map fromInteger factorial1AsInteger
 
-    -- [1 / (2^1 * 1!), 1 / (2^3 * 3!), 1 /(2^5 * 5!), 1 / (2^7 * 7!) ..]
-    fracs :: [Rational]
-    fracs = zipWith (\pow fac -> 1 % (pow * fac)) factorial1AsInteger (iterate (4 *) 2)
+    -- [2^1 * 1!, 2^3 * 3!, 2^5 * 5!, 2^7 * 7! ..]
+    denoms :: [a]
+    denoms = zipWith
+             (\pow fac -> fromInteger $ pow * fac)
+             factorial1AsInteger
+             (iterate (4 *) 2)
 
     -- First term of the right hand side of (12).
-    rhs1 = zipWith3 (\sgn piFrac lg -> sgn * (lg * approximateValue piFrac)) (cycle [1, -1])
-                                                                           (zipWith Exact odds fracs)
-                                                                           (repeat (log 2))
+    rhs1 = zipWith
+           (\sgn piFrac -> sgn * piFrac * log 2)
+           (cycle [1, -1])
+           (zipWith (\p f -> p / f) (iterate ((pi * pi) *) pi) denoms)
 
     -- [1 - (1 / (2^2)), 1 - (1 / (2^4)), 1 - (1 / (2^6)), ..]
     second :: [a]
@@ -132,16 +140,19 @@ betasEven eps = (1 / 2) : bets
 
     -- [- (1 - (1 / (2^2))) * zeta(3), (1 - (1 / (2^4))) * zeta(5), - (1 - (1 / (2^6))) * zeta(7), ..]
     zets :: [a]
-    zets = zipWith3 (\sgn twosFrac z -> sgn * twosFrac * z) (cycle [-1, 1])
-                                                            second
-                                                            (tail $ zetasOdd eps)
+    zets = zipWith3
+           (\sgn twosFrac z -> sgn * twosFrac * z)
+           (cycle [-1, 1])
+           second
+           (tail $ zetasOdd eps)
 
     -- [pi / (2^1 * 1!), pi^3 / (2^3 * 3!), pi^5 / (2^5 * 5!), ..]
     pisAndFacs :: [a]
-    pisAndFacs = map approximateValue $ zipWith3 (\od pow fac -> Exact od (1 % (pow * fac)))
-                                                 odds
-                                                 (iterate (4 *) 2)
-                                                 factorial1AsInteger
+    pisAndFacs = zipWith3
+                 (\p pow fac -> p / (pow * fac))
+                 (iterate ((pi * pi) *) pi)
+                 (iterate (4 *) 2)
+                 factorial1
 
     -- [[], [pisAndFacs !! 0], [pisAndFacs !! 1, pisAndFacs !! 0], [pisAndFacs !! 2, pisAndFacs !! 1, pisAndFacs !! 0]...]
     pisAndFacs' :: [[a]]
@@ -154,7 +165,10 @@ betasEven eps = (1 / 2) : bets
     -- [pi^3 / (2^4), pi^5 / (2^6), pi^7 / (2^8) ..]
     -- Second factor of third addend in RHS of (12).
     pis :: Floating a => [a]
-    pis = map approximateValue $ zipWith Exact (tail odds) (map recip (iterate (4 *) 16))
+    pis = zipWith
+          (\p f -> p / f)
+          (iterate ((pi * pi) *) (pi ^^ (3 :: Integer)))
+          (iterate (4 *) 16)
 
     -- [[3!, 5!, 7! ..], [5!, 7! ..] ..]
     oddFacs :: [[a]]
@@ -170,13 +184,15 @@ betasEven eps = (1 / 2) : bets
 
     -- [pi^0, pi^2, pi^4, pi^6 ..]
     pis2 :: [a]
-    pis2 = map approximateValue $ zipWith Exact evens (repeat 1)
+    pis2 = iterate ((pi * pi) *) 1
 
     -- [pi^0 * E_1(1), - pi^2 * E_3(1), pi^4 * E_5(1) ..]
     infSumNum :: [a]
-    infSumNum = zipWith3 (\sgn p eulerP -> sgn * p * eulerP) (cycle [1, -1])
-                                                             pis2
-                                                             (map fromRational . skipEvens $ eulerPolyAt1)
+    infSumNum = zipWith3
+                (\sgn p eulerP -> sgn * p * eulerP)
+                (cycle [1, -1])
+                pis2
+                (map fromRational . skipEvens $ eulerPolyAt1)
 
     -- [     [ pi^0 * E_1(1)  (-1) * pi^2 * E_3(1)   ]      [ (-1) * pi^2 * E_3(1)  pi^4 * E_5(1)    ]      [ pi^4 * E_5(1)  (-1) * pi^6 * E_7(1)    ]  ]
     -- | sum | -------------, -------------------- ..|, sum | --------------------, ------------- .. |, sum | -------------, -------------------- .. |..|
@@ -186,9 +202,11 @@ betasEven eps = (1 / 2) : bets
 
     -- Third summand of the right hand side of (12).
     rhs3 :: [a]
-    rhs3 = zipWith3 (\sgn p inf -> sgn * p * inf) (cycle [-1, 1])
-                                                  pis
-                                                  infSum
+    rhs3 = zipWith3
+           (\sgn p inf -> sgn * p * inf)
+           (cycle [-1, 1])
+           pis
+           infSum
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.

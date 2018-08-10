@@ -13,7 +13,9 @@
 module Math.NumberTheory.Zeta
   ( module Math.NumberTheory.Zeta.Dirichlet
   , module Math.NumberTheory.Zeta.Riemann
+  , module Math.NumberTheory.Zeta.Utils
   ) where
 
 import Math.NumberTheory.Zeta.Dirichlet
 import Math.NumberTheory.Zeta.Riemann
+import Math.NumberTheory.Zeta.Utils
