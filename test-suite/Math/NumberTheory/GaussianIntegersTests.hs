@@ -15,7 +15,7 @@ module Math.NumberTheory.GaussianIntegersTests
   ) where
 
 import Control.Monad (zipWithM_)
-import Data.List (groupBy, sort)
+import Data.List (groupBy, sort, sortOn)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -99,6 +99,20 @@ primesSpecialCase1 = assertEqual "primes"
 primesGeneratesPrimesProperty :: NonNegative Int -> Bool
 primesGeneratesPrimesProperty (NonNegative i) = isPrime (primes !! i)
 
+-- | Check that ordered primes generates the primes in order.
+orderingPrimes :: Assertion
+orderingPrimes = assertBool "ordered primes are ordered" (and $ zipWith (<=) xs (tail xs))
+  where xs = map norm $ take 1000 orderedPrimes
+
+-- | The ordered list of primes should include only primes.
+orderedPrimesGeneratesPrimesProperty :: NonNegative Int -> Bool
+orderedPrimesGeneratesPrimesProperty (NonNegative i) = isPrime (orderedPrimes !! i)
+
+consistentPrimes :: Assertion
+consistentPrimes = assertEqual "ordered primes is primes"
+  (sortOn norm $ filter ((<= 1000) . norm) $ takeWhile ((<= 1000000) . norm) primes)
+  (takeWhile ((<= 1000) . norm) orderedPrimes)
+
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
 signumAbsProperty z = z == signum z * abs z
@@ -143,12 +157,15 @@ testSuite = testGroup "GaussianIntegers" $
     map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseSpecialCase2 x))
       lazyCases)
 
-  , testSmallAndQuick "findPrime'"        findPrimeProperty1
-  , testSmallAndQuick "isPrime"           isPrimeProperty
-  , testCase          "primes matches reference" primesSpecialCase1
-  , testSmallAndQuick "primes"            primesGeneratesPrimesProperty
-  , testSmallAndQuick "signumAbsProperty" signumAbsProperty
-  , testSmallAndQuick "absProperty"       absProperty
+  , testSmallAndQuick "findPrime'"                   findPrimeProperty1
+  , testSmallAndQuick "isPrime"                      isPrimeProperty
+  , testCase          "primes matches reference"     primesSpecialCase1
+  , testSmallAndQuick "primes"                       primesGeneratesPrimesProperty
+  , testCase          "ordered primes are ordered"   orderingPrimes
+  , testSmallAndQuick "ordered primes are primes"    orderedPrimesGeneratesPrimesProperty
+  , testCase          "prime lists match"            consistentPrimes
+  , testSmallAndQuick "signumAbsProperty"            signumAbsProperty
+  , testSmallAndQuick "absProperty"                  absProperty
   , testGroup "gcdG"
     [ testSmallAndQuick "is divisor"            gcdGProperty1
     , testSmallAndQuick "is greatest"           gcdGProperty2
