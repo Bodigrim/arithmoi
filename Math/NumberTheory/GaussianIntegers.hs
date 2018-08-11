@@ -34,8 +34,9 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
-import Data.List (mapAccumL)
+import Data.List (mapAccumL, partition)
 import Data.Maybe (fromMaybe)
+import Data.Ord (comparing)
 import GHC.Generics
 
 import qualified Math.NumberTheory.Moduli as Moduli
@@ -136,18 +137,23 @@ isPrime g@(x :+ y)
     | otherwise        = Testing.isPrime $ norm g
 
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
--- generate all Gaussian primes, but not quite in order of ascending magnitude.
+-- generate all Gaussian primes (up to associates), in order of ascending
+-- magnitude.
 primes :: [GaussianInteger]
-primes = [ g
-         | p <- Sieve.primes
-         , g <- if p `mod` 4 == 3
-                then [p :+ 0]
-                else
-                    if p == 2
-                    then [1 :+ 1]
-                    else let x :+ y = findPrime p
-                         in [x :+ y, y :+ x]
-         ]
+primes = (1 :+ 1): mergeBy (comparing norm) l r
+  where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 4 == 3) (tail Sieve.primes)
+        l = [p :+ 0 | p <- leftPrimes]
+        r = [g | p <- rightPrimes, let x :+ y = findPrime p, g <- [x :+ y, y :+ x]]
+
+mergeBy :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
+mergeBy cmp = loop
+  where
+    loop [] ys  = ys
+    loop xs []  = xs
+    loop (x:xs) (y:ys)
+      = case cmp x y of
+         GT -> y : loop (x:xs) ys
+         _  -> x : loop xs (y:ys)
 
 -- | Compute the GCD of two Gaussian integers. Result is always
 -- in the first quadrant.
