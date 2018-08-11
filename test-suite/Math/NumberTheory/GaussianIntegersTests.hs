@@ -113,6 +113,11 @@ consistentPrimes = assertEqual "ordered primes is primes"
   (sortOn norm $ filter ((<= 1000) . norm) $ takeWhile ((<= 1000000) . norm) primes)
   (takeWhile ((<= 1000) . norm) orderedPrimes)
 
+numberOfOrderedPrimes :: Assertion
+numberOfOrderedPrimes = assertEqual "counting primes: OEIS A091100"
+  [16,100,668,4928,38404,313752,2658344,23046512]
+  [4 * (length $ takeWhile ((<= 10^n) . norm) orderedPrimes) | n <- [1..8]]
+
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
 signumAbsProperty z = z == signum z * abs z
@@ -164,6 +169,7 @@ testSuite = testGroup "GaussianIntegers" $
   , testCase          "ordered primes are ordered"   orderingPrimes
   , testSmallAndQuick "ordered primes are primes"    orderedPrimesGeneratesPrimesProperty
   , testCase          "prime lists match"            consistentPrimes
+  , testCase          "counting primes"              numberOfOrderedPrimes
   , testSmallAndQuick "signumAbsProperty"            signumAbsProperty
   , testSmallAndQuick "absProperty"                  absProperty
   , testGroup "gcdG"
