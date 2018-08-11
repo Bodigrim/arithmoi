@@ -27,6 +27,7 @@ module Math.NumberTheory.GaussianIntegers (
     (.^),
     isPrime,
     primes,
+    orderedPrimes,
     gcdG,
     gcdG',
     findPrime,
