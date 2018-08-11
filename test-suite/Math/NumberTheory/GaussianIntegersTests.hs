@@ -15,7 +15,7 @@ module Math.NumberTheory.GaussianIntegersTests
   ) where
 
 import Control.Monad (zipWithM_)
-import Data.List (groupBy, sort, sortOn)
+import Data.List (groupBy, sort)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -89,7 +89,7 @@ isPrimeProperty g
 
 primesSpecialCase1 :: Assertion
 primesSpecialCase1 = assertEqual "primes"
-  (f [1+ι,3,1+2*ι,2+ι,7,11,3+2*ι,2+3*ι,4+ι,1+4*ι,19,23,2+5*ι,5+2*ι,31,6+ι,1+6*ι,5+4*ι,4+5*ι,43,47,2+7*ι,7+2*ι,59,5+6*ι,6+5*ι,67,71,3+8*ι,8+3*ι,79,83,5+8*ι,8+5*ι,4+9*ι,9+4*ι,1+10*ι,10+ι,103,107,3+10*ι,10+3*ι,8+7*ι,7+8*ι,127,131,11+4*ι,4+11*ι,139,10+7*ι,7+10*ι])
+  (f [1+ι,2+ι,1+2*ι,3,3+2*ι,2+3*ι,4+ι,1+4*ι,5+2*ι,2+5*ι,6+ι,1+6*ι,5+4*ι,4+5*ι,7,7+2*ι,2+7*ι,6+5*ι,5+6*ι,8+3*ι,3+8*ι,8+5*ι,5+8*ι,9+4*ι,4+9*ι,10+ι,1+10*ι,10+3*ι,3+10*ι,8+7*ι,7+8*ι,11,11+4*ι,4+11*ι,10+7*ι,7+10*ι,11+6*ι,6+11*ι,13+2*ι,2+13*ι,10+9*ι,9+10*ι,12+7*ι,7+12*ι,14+ι,1+14*ι,15+2*ι,2+15*ι,13+8*ι,8+13*ι,15+4*ι])
   (f $ take 51 primes)
   where
     f :: [GaussianInteger] -> [[GaussianInteger]]
@@ -99,24 +99,15 @@ primesSpecialCase1 = assertEqual "primes"
 primesGeneratesPrimesProperty :: NonNegative Int -> Bool
 primesGeneratesPrimesProperty (NonNegative i) = isPrime (primes !! i)
 
--- | Check that ordered primes generates the primes in order.
+-- | Check that primes generates the primes in order.
 orderingPrimes :: Assertion
-orderingPrimes = assertBool "ordered primes are ordered" (and $ zipWith (<=) xs (tail xs))
-  where xs = map norm $ take 1000 orderedPrimes
+orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs))
+  where xs = map norm $ take 1000 primes
 
--- | The ordered list of primes should include only primes.
-orderedPrimesGeneratesPrimesProperty :: NonNegative Int -> Bool
-orderedPrimesGeneratesPrimesProperty (NonNegative i) = isPrime (orderedPrimes !! i)
-
-consistentPrimes :: Assertion
-consistentPrimes = assertEqual "ordered primes is primes"
-  (sortOn norm $ filter ((<= 1000) . norm) $ takeWhile ((<= 1000000) . norm) primes)
-  (takeWhile ((<= 1000) . norm) orderedPrimes)
-
-numberOfOrderedPrimes :: Assertion
-numberOfOrderedPrimes = assertEqual "counting primes: OEIS A091100"
+numberOfPrimes :: Assertion
+numberOfPrimes = assertEqual "counting primes: OEIS A091100"
   [16,100,668,4928,38404,313752,2658344,23046512]
-  [4 * (length $ takeWhile ((<= 10^n) . norm) orderedPrimes) | n <- [1..8]]
+  [4 * (length $ takeWhile ((<= 10^n) . norm) primes) | n <- [1..8]]
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
@@ -162,16 +153,14 @@ testSuite = testGroup "GaussianIntegers" $
     map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseSpecialCase2 x))
       lazyCases)
 
-  , testSmallAndQuick "findPrime'"                   findPrimeProperty1
-  , testSmallAndQuick "isPrime"                      isPrimeProperty
-  , testCase          "primes matches reference"     primesSpecialCase1
-  , testSmallAndQuick "primes"                       primesGeneratesPrimesProperty
-  , testCase          "ordered primes are ordered"   orderingPrimes
-  , testSmallAndQuick "ordered primes are primes"    orderedPrimesGeneratesPrimesProperty
-  , testCase          "prime lists match"            consistentPrimes
-  , testCase          "counting primes"              numberOfOrderedPrimes
-  , testSmallAndQuick "signumAbsProperty"            signumAbsProperty
-  , testSmallAndQuick "absProperty"                  absProperty
+  , testSmallAndQuick "findPrime'"               findPrimeProperty1
+  , testSmallAndQuick "isPrime"                  isPrimeProperty
+  , testCase          "primes matches reference" primesSpecialCase1
+  , testSmallAndQuick "primes"                   primesGeneratesPrimesProperty
+  , testCase          "primes are ordered"       orderingPrimes
+  , testCase          "counting primes"          numberOfPrimes
+  , testSmallAndQuick "signumAbsProperty"        signumAbsProperty
+  , testSmallAndQuick "absProperty"              absProperty
   , testGroup "gcdG"
     [ testSmallAndQuick "is divisor"            gcdGProperty1
     , testSmallAndQuick "is greatest"           gcdGProperty2

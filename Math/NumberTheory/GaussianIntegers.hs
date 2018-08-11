@@ -27,7 +27,6 @@ module Math.NumberTheory.GaussianIntegers (
     (.^),
     isPrime,
     primes,
-    orderedPrimes,
     gcdG,
     gcdG',
     findPrime,
@@ -138,23 +137,10 @@ isPrime g@(x :+ y)
     | otherwise        = Testing.isPrime $ norm g
 
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
--- generate all Gaussian primes (up to associates), but not quite in order of
--- ascending magnitude. See 'orderedPrimes'.
+-- generate all Gaussian primes (up to associates), in order of ascending
+-- magnitude.
 primes :: [GaussianInteger]
-primes = [ g
-         | p <- Sieve.primes
-         , g <- if p `mod` 4 == 3
-                then [p :+ 0]
-                else
-                    if p == 2
-                    then [1 :+ 1]
-                    else let x :+ y = findPrime p
-                         in [x :+ y, y :+ x]
-         ]
-
--- |An infinite list of Gaussian primes. See 'primes'.
-orderedPrimes :: [GaussianInteger]
-orderedPrimes = (1 :+ 1): mergeBy (comparing norm) l r
+primes = (1 :+ 1): mergeBy (comparing norm) l r
   where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 4 == 3) (tail Sieve.primes)
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes, let x :+ y = findPrime p, g <- [x :+ y, y :+ x]]
