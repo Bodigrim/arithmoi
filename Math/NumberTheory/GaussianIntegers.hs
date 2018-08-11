@@ -37,7 +37,7 @@ module Math.NumberTheory.GaussianIntegers (
 
 import Data.List (mapAccumL, partition)
 import Data.Maybe (fromMaybe)
-import Data.List.Ordered (merge)
+import Data.Ord (comparing)
 import GHC.Generics
 
 import qualified Math.NumberTheory.Moduli as Moduli
@@ -154,10 +154,20 @@ primes = [ g
 
 -- |An infinite list of Gaussian primes. See 'primes'.
 orderedPrimes :: [GaussianInteger]
-orderedPrimes = (1 :+ 1): merge l r
+orderedPrimes = (1 :+ 1): mergeBy (comparing norm) l r
   where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 4 == 3) (tail Sieve.primes)
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes, let x :+ y = findPrime p, g <- [x :+ y, y :+ x]]
+
+mergeBy :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
+mergeBy cmp = loop
+  where
+    loop [] ys  = ys
+    loop xs []  = xs
+    loop (x:xs) (y:ys)
+      = case cmp x y of
+         GT -> y : loop (x:xs) ys
+         _  -> x : loop xs (y:ys)
 
 -- | Compute the GCD of two Gaussian integers. Result is always
 -- in the first quadrant.
