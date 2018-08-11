@@ -106,8 +106,8 @@ orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs
 
 numberOfPrimes :: Assertion
 numberOfPrimes = assertEqual "counting primes: OEIS A091100"
-  [16,100,668,4928,38404,313752,2658344,23046512]
-  [4 * (length $ takeWhile ((<= 10^n) . norm) primes) | n <- [1..8]]
+  [16,100,668,4928,38404,313752,2658344]
+  [4 * (length $ takeWhile ((<= 10^n) . norm) primes) | n <- [1..7]]
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
