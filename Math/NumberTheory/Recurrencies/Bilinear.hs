@@ -32,7 +32,8 @@
 -- 1
 -- (0.01 secs, 391,152 bytes)
 
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Recurrencies.Bilinear
   ( binomial
@@ -42,6 +43,8 @@ module Math.NumberTheory.Recurrencies.Bilinear
   , eulerian1
   , eulerian2
   , bernoulli
+  , euler
+  , eulerPolyAt1
   ) where
 
 import Data.List
@@ -170,11 +173,52 @@ eulerian2 = scanl f [] [1..]
 --
 -- One could also consider 'Math.Combinat.Numbers.bernoulli' to compute stand-alone values.
 bernoulli :: Integral a => [Ratio a]
-bernoulli = map f stirling2
-  where
-    f = sum . zipWith4 (\sgn denom fact stir -> sgn * fact * stir % denom) (cycle [1, -1]) [1..] factorial
+bernoulli = helperForB_E_EP id (map recip [1..])
 {-# SPECIALIZE bernoulli :: [Ratio Int] #-}
 {-# SPECIALIZE bernoulli :: [Rational] #-}
+
+-- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
+-- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
+-- by Kwang-Wu Chen, second formula of the Corollary in page 7.
+-- Sequence <https://oeis.org/A122045 A122045> in OEIS.
+--
+-- >>> take 10 euler' :: [Rational]
+-- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
+euler' :: forall a . Integral a => [Ratio a]
+euler' = tail $ helperForB_E_EP tail as
+  where
+    as :: Integral a => [Ratio a]
+    as = zipWith3
+        (\sgn frac ones -> (sgn * ones) % frac)
+        (cycle [1, 1, 1, 1, -1, -1, -1, -1])
+        (dups (iterate (2 *) 1))
+        (cycle [1, 1, 1, 0])
+
+    dups :: forall x . [x] -> [x]
+    dups = foldr (\n list -> n : n : list) []
+{-# SPECIALIZE euler' :: [Ratio Int]     #-}
+{-# SPECIALIZE euler' :: [Rational]      #-}
+
+-- | The same sequence as @euler'@, but with type @[a]@ instead of @[Ratio a]@
+-- as the denominators in @euler'@ are always @1@.
+--
+-- >>> take 10 euler :: [Integer]
+-- [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0]
+euler :: forall a . Integral a => [a]
+euler = map numerator euler'
+
+-- | Infinite zero-based list of the @n@-th order Euler polynomials evaluated at @1@.
+-- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
+-- by Kwang-Wu Chen, third formula of the Corollary in page 7.
+-- Element-by-element division of sequences <https://oeis.org/A198631 A1986631>
+-- and <https://oeis.org/A006519 A006519> in OEIS.
+--
+-- >>> take 10 eulerPolyAt1 :: [Rational]
+-- [1 % 1,1 % 2,0 % 1,(-1) % 4,0 % 1,1 % 2,0 % 1,(-17) % 8,0 % 1,31 % 2]
+eulerPolyAt1 :: forall a . Integral a => [Ratio a]
+eulerPolyAt1 = tail $ helperForB_E_EP tail (map recip (iterate (2 *) 1))
+{-# SPECIALIZE eulerPolyAt1 :: [Ratio Int]     #-}
+{-# SPECIALIZE eulerPolyAt1 :: [Rational]      #-}
 
 -------------------------------------------------------------------------------
 -- Utils
@@ -190,3 +234,22 @@ zipIndexedListWithTail f n as a = case as of
       []       -> let v = f m y a in [v]
       (z : zs) -> let v = f m y z in (v : go (succ m) z zs)
 {-# INLINE zipIndexedListWithTail #-}
+
+-- | Helper for common code in @bernoulli, euler, eulerPolyAt1. All three
+-- sequences rely on @stirling2@ and have the same general structure of
+-- zipping four lists together with multiplication, with one of those lists
+-- being the sublists in @stirling2@, and two of them being the factorial
+-- sequence and @cycle [1, -1]@. The remaining list is passed to
+-- @helperForB_E_EP@ as an argument.
+--
+-- Note: This function has a @([Ratio a] -> [Ratio a])@ argument because
+-- @bernoulli !! n@ will use, for all nonnegative @n@, every element in
+-- @stirling2 !! n@, while @euler, eulerPolyAt1@ only use
+-- @tail $ stirling2 !! n@. As such, this argument serves to pass @id@
+-- in the former case, and @tail@ in the latter.
+helperForB_E_EP :: Integral a => ([Ratio a] -> [Ratio a]) -> [Ratio a] -> [Ratio a]
+helperForB_E_EP g xs = map (f . g) stirling2
+  where
+    f = sum . zipWith4 (\sgn fact x stir -> sgn * fact * x * stir) (cycle [1, -1]) factorial xs
+{-# SPECIALIZE helperForB_E_EP :: ([Ratio Int] -> [Ratio Int]) -> [Ratio Int] -> [Ratio Int] #-}
+{-# SPECIALIZE helperForB_E_EP :: ([Rational] -> [Rational]) -> [Rational] -> [Rational]     #-}

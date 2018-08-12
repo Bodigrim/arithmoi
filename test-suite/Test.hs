@@ -35,9 +35,10 @@ import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctio
 import qualified Math.NumberTheory.ArithmeticFunctions.MertensTests as Mertens
 import qualified Math.NumberTheory.ArithmeticFunctions.SieveBlockTests as SieveBlock
 import qualified Math.NumberTheory.UniqueFactorisationTests as UniqueFactorisation
-import qualified Math.NumberTheory.ZetaTests as Zeta
 import qualified Math.NumberTheory.CurvesTests as Curves
 import qualified Math.NumberTheory.SmoothNumbersTests as SmoothNumbers
+
+import qualified Math.NumberTheory.ZetaTests as ZetaTests
 
 main :: IO ()
 main = defaultMain tests
@@ -83,7 +84,8 @@ tests = testGroup "All"
     , SieveBlock.testSuite
     ]
   , UniqueFactorisation.testSuite
-  , Zeta.testSuite
   , Curves.testSuite
   , SmoothNumbers.testSuite
+
+  , ZetaTests.testSuite
   ]

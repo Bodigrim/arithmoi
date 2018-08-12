@@ -1,8 +1,8 @@
 -- |
 -- Module:      Math.NumberTheory.Recurrencies.Pentagonal
--- Copyright:   (c) 2018 Andrew Lelechenko
+-- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
--- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+-- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --

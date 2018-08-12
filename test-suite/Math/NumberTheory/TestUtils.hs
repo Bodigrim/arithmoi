@@ -41,10 +41,14 @@ module Math.NumberTheory.TestUtils
   , testSameIntegralProperty
   , testIntegral2Property
   , testSmallAndQuick
+
+  -- * Export for @Zeta@ tests
+  , assertEqualUpToEps
   ) where
 
 import Test.SmallCheck.Series (cons2)
 import Test.Tasty
+import Test.Tasty.HUnit       (Assertion, assertBool)
 import Test.Tasty.SmallCheck as SC
 import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
 
@@ -212,3 +216,10 @@ testSmallAndQuick name f = testGroup name
   [ SC.testProperty "smallcheck" f
   , QC.testProperty "quickcheck" f
   ]
+
+
+-- | Used in @Math.NumberTheory.Zeta.DirichletTests@ and
+-- @Math.NumberTheory.Zeta.RiemannTests@.
+assertEqualUpToEps :: String -> Double -> Double -> Double -> Assertion
+assertEqualUpToEps msg eps expected actual
+  = assertBool msg (abs (expected - actual) < eps)
