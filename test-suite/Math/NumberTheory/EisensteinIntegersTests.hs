@@ -38,9 +38,21 @@ absProperty z = isOrigin || (inFirstSextant && isAssociate)
     inFirstSextant = x' > y' && y' >= 0
     isAssociate = z' `elem` map (\e -> z * (1 E.:+ 1) ^ e) [0 .. 5]
 
+-- | Verify that `divModE` produces the right quotient and remainder.
+divModProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
+divModProperty1 x y = (y == 0) || (x `E.divE` y) * y + (x `E.modE` y) == x
+
+-- | Verify that `divModE` produces a remainder smaller than the divisor with
+-- regards to the Euclidean domain's function.
+modProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
+modProperty1 x y = (y == 0) || (E.norm $ x `E.modE` y) < (E.norm y)
+
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $
   [ testSmallAndQuick "forall z . z == signum z * abs z" signumAbsProperty
   , testSmallAndQuick "abs z always returns an @EisensteinInteger@ in the\
                       \ first sextant of the complex plane" absProperty
+  , testSmallAndQuick "divModE works properly" divModProperty1
+  , testSmallAndQuick "The remainder's norm is smaller than the divisor's"
+                      modProperty1
   ]
