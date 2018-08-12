@@ -14,73 +14,16 @@ module Math.NumberTheory.Zeta.Dirichlet
   ( betas
   , betasEven
   , betasOdd
-  , euler
-  , eulerPolyAt1
   ) where
 
 import Data.ExactPi                     (ExactPi (..), approximateValue)
 import Data.List                        (zipWith4)
-import Data.Ratio                       (Ratio, (%), numerator)
+import Data.Ratio                       ((%))
 
-import Math.NumberTheory.Recurrencies   (factorial, stirling2)
+import Math.NumberTheory.Recurrencies   (euler, eulerPolyAt1, factorial)
 import Math.NumberTheory.Zeta.Riemann   (zetasOdd)
 import Math.NumberTheory.Zeta.Utils     (intertwine, skipEvens, skipOdds,
                                          suminf)
-
--- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
--- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
--- by Kwang-Wu Chen, second formula of the Corollary in page 7.
--- Sequence <https://oeis.org/A122045 A122045> in OEIS.
---
--- >>> take 10 euler' :: [Rational]
--- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
-euler' :: forall a . Integral a => [Ratio a]
-euler' = map (f . tail) (tail stirling2)
-  where
-    f = sum . zipWith4
-              (\sgn fact a stir -> sgn * fact * stir * a)
-              (cycle [1, -1])
-              factorial
-              as
-
-    as :: Integral a => [Ratio a]
-    as = zipWith3
-        (\sgn frac ones -> (sgn * ones) % frac)
-        (cycle [1, 1, 1, 1, -1, -1, -1, -1])
-        (dups (iterate (2 *) 1))
-        (cycle [1, 1, 1, 0])
-
-    dups :: forall x . [x] -> [x]
-    dups = foldr (\n list -> n : n : list) []
-{-# SPECIALIZE euler' :: [Ratio Int]     #-}
-{-# SPECIALIZE euler' :: [Ratio Integer] #-}
-
--- | The same sequence as @euler'@, but with type @[a]@ instead of @[Ratio a]@
--- as the denominators in @euler'@ are always @1@.
---
--- >>> take 10 euler :: [Integer]
--- [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0]
-euler :: forall a . Integral a => [a]
-euler = map numerator euler'
-
--- | Infinite zero-based list of the @n@-th order Euler polynomials evaluated at @1@.
--- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
--- by Kwang-Wu Chen, third formula of the Corollary in page 7.
--- Element-by-element division of sequences <https://oeis.org/A198631 A1986631>
--- and <https://oeis.org/A006519 A006519> in OEIS.
---
--- >>> take 10 eulerPolyAt1 :: [Rational]
--- [1 % 1,1 % 2,0 % 1,(-1) % 4,0 % 1,1 % 2,0 % 1,(-17) % 8,0 % 1,31 % 2]
-eulerPolyAt1 :: forall a . Integral a => [Ratio a]
-eulerPolyAt1 = map (f . tail) (tail stirling2)
-  where
-    f = sum . zipWith4
-              (\sgn fact twos stir -> (sgn * fact * stir) % twos)
-              (cycle [1, -1])
-              factorial
-              (iterate (2 *) 1)
-{-# SPECIALIZE eulerPolyAt1 :: [Ratio Int]     #-}
-{-# SPECIALIZE eulerPolyAt1 :: [Ratio Integer] #-}
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
 --

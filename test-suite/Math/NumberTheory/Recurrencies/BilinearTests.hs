@@ -19,7 +19,10 @@ import Test.Tasty.HUnit
 
 import Data.Ratio
 
-import Math.NumberTheory.Recurrencies.Bilinear
+import Math.NumberTheory.Recurrencies.Bilinear (bernoulli, binomial, euler,
+                                                eulerian1, eulerian2,
+                                                eulerPolyAt1, lah, stirling1,
+                                                stirling2)
 import Math.NumberTheory.TestUtils
 
 binomialProperty1 :: NonNegative Int -> Bool
@@ -149,6 +152,32 @@ bernoulliProperty2 (NonNegative m)
          | k <- [0 .. m - 1]
          ]
 
+-- | For every odd positive integer @n@, @E_n@ is @0@.
+eulerProperty1 :: Positive Int -> Bool
+eulerProperty1 (Positive n) = euler !! (2 * n - 1) == 0
+
+-- | Every positive even index produces a negative result.
+eulerProperty2 :: NonNegative Int -> Bool
+eulerProperty2 (NonNegative n) = euler !! (2 + 4 * n) < 0
+
+-- | The Euler number sequence is https://oeis.org/A122045
+eulerSpecialCase1 :: Assertion
+eulerSpecialCase1 = assertEqual "euler"
+    (take 20 euler)
+    [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0, -50521, 0, 2702765, 0, -199360981, 0, 19391512145, 0, -2404879675441, 0]
+
+-- | For any even positive integer @n@, @E_n(1)@ is @0@.
+eulerPAt1Property1 :: Positive Int -> Bool
+eulerPAt1Property1 (Positive n) = (eulerPolyAt1 !! (2 * n)) == 0
+
+-- | The numerators in this sequence are from https://oeis.org/A198631 while the
+-- denominators are from https://oeis.org/A006519.
+eulerPAt1SpecialCase1 :: Assertion
+eulerPAt1SpecialCase1 = assertEqual "eulerPolyAt1"
+    (take 20 eulerPolyAt1)
+    (zipWith (%) [1, 1, 0, -1, 0, 1, 0, -17, 0, 31, 0, -691, 0, 5461, 0, -929569, 0, 3202291, 0, -221930581]
+                 [1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1, 16, 1, 2, 1, 4])
+
 testSuite :: TestTree
 testSuite = testGroup "Bilinear"
   [ testGroup "binomial"
@@ -192,5 +221,14 @@ testSuite = testGroup "Bilinear"
     , testCase "B_1"                           bernoulliSpecialCase2
     , testSmallAndQuick "sign"                 bernoulliProperty1
     , testSmallAndQuick "recursive definition" bernoulliProperty2
+    ]
+    , testGroup "Euler numbers"
+    [ testCase "First 20 elements of E_n are correct"           eulerSpecialCase1
+    , testSmallAndQuick "E_n with n odd is 0"                   eulerProperty1
+    , testSmallAndQuick "E_n for n in [2,6,8,12..] is negative" eulerProperty2
+    ]
+  , testGroup "Euler Polynomial of order N evaluated at 1"
+    [ testCase "First 20 elements of E_n(1) are correct"        eulerPAt1SpecialCase1
+    , testSmallAndQuick "E_n(1) with n in [2,4,6..] is 0"       eulerPAt1Property1
     ]
   ]
