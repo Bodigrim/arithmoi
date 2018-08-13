@@ -13,7 +13,6 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -115,7 +114,7 @@ cyclicGroupToModulo = fromFactors . \case
 -- >>> isPrimitiveRoot' cg 2
 -- True
 isPrimitiveRoot'
-  :: forall a. (Integral a, UniqueFactorisation a)
+  :: (Integral a, UniqueFactorisation a)
   => CyclicGroup a
   -> a
   -> Bool
