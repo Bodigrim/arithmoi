@@ -91,6 +91,7 @@ library
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
     Math.NumberTheory.Zeta.Dirichlet
+    Math.NumberTheory.Zeta.Hurwitz
     Math.NumberTheory.Zeta.Riemann
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.Class
