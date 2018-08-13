@@ -13,6 +13,7 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE StandaloneDeriving   #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -114,17 +115,26 @@ cyclicGroupToModulo = fromFactors . \case
 -- >>> isPrimitiveRoot' cg 2
 -- True
 isPrimitiveRoot'
-  :: (Integral a, UniqueFactorisation a)
+  :: forall a. (Integral a, UniqueFactorisation a)
   => CyclicGroup a
   -> a
   -> Bool
-isPrimitiveRoot' cg r = r /= 0 && gcd r (prefValue m) == 1 && all (/= 1) exps
+-- https://en.wikipedia.org/wiki/Primitive_root_modulo_n#Finding_primitive_roots
+isPrimitiveRoot' cg r =
+  case cg of
+    CG2                       -> r == 1
+    CG4                       -> r == 3
+    CGOddPrimePower p k       -> oddPrimePowerTest (unPrime p) k r
+    CGDoubleOddPrimePower p k -> doubleOddPrimePowerTest (unPrime p) k r
   where
-    -- https://en.wikipedia.org/wiki/Primitive_root_modulo_n#Finding_primitive_roots
-    m    = cyclicGroupToModulo cg
-    phi  = totient m
-    pows = map (\pk -> prefValue phi `quot` unPrime (fst pk)) (factorise phi)
-    exps = map (\p -> powMod r p (prefValue m)) pows
+    oddPrimeTest p g              = let phi  = totient p
+                                        pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
+                                        exps = map (\x -> powMod g x p) pows
+                                     in g /= 0 && gcd g p == 1 && all (/= 1) exps
+    oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
+    oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
+    doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
+    -- really should be testing odd (g `mod` 2p^k)
 
 -- | Check whether a given modular residue is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>.

@@ -101,8 +101,8 @@ testSuite = testGroup "Primitive root"
     [ testGroup "primitive root is coprime with modulo"
       [ testSmallAndQuick "Integer" (isPrimitiveRoot'Property1 :: AnySign Integer -> CyclicGroup Integer -> Bool)
       , testSmallAndQuick "Natural" (isPrimitiveRoot'Property1 :: AnySign Natural -> CyclicGroup Natural -> Bool)
-      , testSmallAndQuick "Int"     (isPrimitiveRoot'Property1 :: AnySign Int     -> CyclicGroup Int     -> Bool)
-      , testSmallAndQuick "Word"    (isPrimitiveRoot'Property1 :: AnySign Word    -> CyclicGroup Word    -> Bool)
+      , testSmallAndQuick "Int"     (isPrimitiveRoot'Property1 :: AnySign Int     -> CyclicGroup Int     -> Bool) -- dubious test
+      , testSmallAndQuick "Word"    (isPrimitiveRoot'Property1 :: AnySign Word    -> CyclicGroup Word    -> Bool) -- dubious test
       ]
     ]
   , testGroup "isPrimitiveRoot"
