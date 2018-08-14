@@ -18,10 +18,9 @@ import Data.ExactPi                    (ExactPi (..), approximateValue)
 import Data.List                       (zipWith4)
 import Data.Ratio                      ((%))
 
-import Math.NumberTheory.Recurrences   (euler, eulerPolyAt1, factorial)
-import Math.NumberTheory.Zeta.Riemann  (zetasOdd)
-import Math.NumberTheory.Zeta.Utils    (intertwine, skipEvens, skipOdds,
-                                        suminf)
+import Math.NumberTheory.Recurrencies   (euler, factorial)
+import Math.NumberTheory.Zeta.Hurwitz   (zeta)
+import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds)
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
 --
@@ -48,105 +47,10 @@ betasOdd' = map approximateValue betasOdd
 -- | Infinite sequence of approximate values of the Dirichlet @β@ function at
 -- positive even integer arguments, starting with @β(0)@.
 betasEven :: forall a. (Floating a, Ord a) => a -> [a]
-betasEven eps = (1 / 2) : bets
+betasEven eps = (1 / 2) : zipWith hurwitz [2, 4 ..] (iterate (16 *) 16)
   where
-    bets :: [a]
-    bets = zipWith3 (\r1 r2 r3 -> (r1 + (negate r2) + r3)) rhs1 rhs2 rhs3
-
-    -- [1!, 3!, 5!..]
-    factorial1AsInteger :: [Integer]
-    factorial1AsInteger = skipEvens factorial
-
-    -- [1!, 3!, 5!..]
-    factorial1 :: [a]
-    factorial1 = map fromInteger factorial1AsInteger
-
-    -- [2^1 * 1!, 2^3 * 3!, 2^5 * 5!, 2^7 * 7! ..]
-    denoms :: [a]
-    denoms = zipWith
-             (\pow fac -> fromInteger $ pow * fac)
-             factorial1AsInteger
-             (iterate (4 *) 2)
-
-    -- First term of the right hand side of (12).
-    rhs1 = zipWith
-           (\sgn piFrac -> sgn * piFrac * log 2)
-           (cycle [1, -1])
-           (zipWith (\p f -> p / f) (iterate ((pi * pi) *) pi) denoms)
-
-    -- [1 - (1 / (2^2)), 1 - (1 / (2^4)), 1 - (1 / (2^6)), ..]
-    second :: [a]
-    second = map (1 -) $ (iterate (/ 4) (1/4))
-
-    -- [- (1 - (1 / (2^2))) * zeta(3), (1 - (1 / (2^4))) * zeta(5), - (1 - (1 / (2^6))) * zeta(7), ..]
-    zets :: [a]
-    zets = zipWith3
-           (\sgn twosFrac z -> sgn * twosFrac * z)
-           (cycle [-1, 1])
-           second
-           (tail $ zetasOdd eps)
-
-    -- [pi / (2^1 * 1!), pi^3 / (2^3 * 3!), pi^5 / (2^5 * 5!), ..]
-    pisAndFacs :: [a]
-    pisAndFacs = zipWith3
-                 (\p pow fac -> p / (pow * fac))
-                 (iterate ((pi * pi) *) pi)
-                 (iterate (4 *) 2)
-                 factorial1
-
-    -- [[], [pisAndFacs !! 0], [pisAndFacs !! 1, pisAndFacs !! 0], [pisAndFacs !! 2, pisAndFacs !! 1, pisAndFacs !! 0]...]
-    pisAndFacs' :: [[a]]
-    pisAndFacs' = scanl (flip (:)) [] pisAndFacs
-
-    -- Second summand of RHS in (12) for k = [1 ..]
-    rhs2 :: [a]
-    rhs2 = zipWith (*) (cycle [-1, 1]) $ map (sum . zipWith (*) zets) pisAndFacs'
-
-    -- [pi^3 / (2^4), pi^5 / (2^6), pi^7 / (2^8) ..]
-    -- Second factor of third addend in RHS of (12).
-    pis :: [a]
-    pis = zipWith
-          (\p f -> p / f)
-          (iterate ((pi * pi) *) (pi ^^ (3 :: Integer)))
-          (iterate (4 *) 16)
-
-    -- [[3!, 5!, 7! ..], [5!, 7! ..] ..]
-    oddFacs :: [[a]]
-    oddFacs = iterate tail (tail factorial1)
-
-    -- [1, 4, 16 ..]
-    fours :: [a]
-    fours = iterate (4 *) 1
-
-    -- [[3! * 2^0, 5! * 2^2, 7! * 2^4 ..], [5! * 2^0, 7! * 2^2, 9! * 2^4 ..] ..]
-    infSumDenoms :: [[a]]
-    infSumDenoms = map (zipWith (*) fours) oddFacs
-
-    -- [pi^0, pi^2, pi^4, pi^6 ..]
-    pis2 :: [a]
-    pis2 = iterate ((pi * pi) *) 1
-
-    -- [pi^0 * E_1(1), - pi^2 * E_3(1), pi^4 * E_5(1) ..]
-    infSumNum :: [a]
-    infSumNum = zipWith3
-                (\sgn p eulerP -> sgn * p * eulerP)
-                (cycle [1, -1])
-                pis2
-                (map fromRational . skipEvens $ eulerPolyAt1)
-
-    -- [     [ pi^0 * E_1(1)  (-1) * pi^2 * E_3(1)   ]      [ (-1) * pi^2 * E_3(1)  pi^4 * E_5(1)    ]      [ pi^4 * E_5(1)  (-1) * pi^6 * E_7(1)    ]  ]
-    -- | sum | -------------, -------------------- ..|, sum | --------------------, ------------- .. |, sum | -------------, -------------------- .. |..|
-    -- [     [       3!                 5!           ]      [          5!                 7!         ]      [       7!                9!             ]  ]
-    infSum :: [a]
-    infSum = map (suminf eps . zipWith (/) infSumNum) infSumDenoms
-
-    -- Third summand of the right hand side of (12).
-    rhs3 :: [a]
-    rhs3 = zipWith3
-           (\sgn p inf -> sgn * p * inf)
-           (cycle [-1, 1])
-           pis
-           infSum
+    hurwitz :: Integer -> a -> a
+    hurwitz s fours = (zeta eps s 0.25 - zeta eps s 0.75) / fours
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.

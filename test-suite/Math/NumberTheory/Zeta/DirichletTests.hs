@@ -22,7 +22,7 @@ import Math.NumberTheory.Zeta      (betas, betasOdd)
 import Math.NumberTheory.TestUtils
 
 epsilon :: Double
-epsilon = 1e-14
+epsilon = 1e-40
 
 betas' :: [Double]
 betas' = betas epsilon
