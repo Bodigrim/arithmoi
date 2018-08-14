@@ -23,10 +23,8 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds, suminf)
 -- from the <https://dlmf.nist.gov/25.11#iii Digital Library of Mathematical Functions>
 -- by the <https://www.nist.gov/ National Institute of Standards and Technology (NIST)>,
 -- formula 25.11.5.
-zeta :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> [a]
-zeta eps s a = map (\second ->
-                       firstSum + constant1 + (negate constant2) + second)
-               seconds
+zeta :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
+zeta eps s a = firstSum + constant1 + constant2 + second
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
     -- (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14 == 15@,
@@ -58,7 +56,9 @@ zeta eps s a = map (\second ->
     -- \sum_{k=0}^\n | ----------- |
     --               [ (a + k) ^ s ]
     firstSum :: a
-    firstSum = suminf eps $ map (recip . (^^ s) . (a +) . fromInteger) [0..]
+    firstSum = sum .
+               take digitsOfPrecision .
+               map (recip . (^^ s) . (a +) . fromInteger) $ [0..]
 
     -- [0!, 1!, 2!, 3! ..]
     factorial' :: [a]
@@ -73,41 +73,22 @@ zeta eps s a = map (\second ->
                             (tail $ skipOdds bernoulli)
                             (tail $ skipOdds factorial)
 
-    -- [ [ B_2k                ]  [ B_2k                ]  [ B_2k                ]   ]
-    -- | | ----- | k <- [1 ..] |, | ----- | k <- [2 ..] |, | ----- | k <- [3 ..] | ..|
-    -- [ [ (2k)!               ]  [ (2k)!               ]  [ (2k)!               ]   ]
-    evenBernoulliFacFracs :: [[a]]
-    evenBernoulliFacFracs = iterate tail evenBernoulliDivByFac
-
     -- [(s + 2*k - 2)! | k <- [1 ..]]
     secondSumNum :: [a]
     secondSumNum = skipOdds $ drop (fromIntegral s) factorial'
-
-    -- [[(s + 2*k - 2)! | k <- [1 ..]], [(s + 2*k - 2)! | k <- [2 ..]], [(s + 2*k - 2)! | k <- [3 ..]] ..]
-    secondSumNums :: [[a]]
-    secondSumNums = iterate tail secondSumNum
 
     -- [(s - 1)! * (a + n) ^ s * (a + n) ^ (2*k - 1) | k <- [1 ..]]
     secondSumDenom :: [a]
     secondSumDenom = map ((factorial' !! (fromEnum s - 1) *))
                          (iterate ((aPlusN * aPlusN) *) (aPlusN * powOfAPlusN))
 
-    -- [[(s - 1)! * (a + n) ^ s * (a + n) ^ (2*k - 1) | k <- [1 ..]], [(s - 1)! * (a + n) ^ s * (a + n) ^ (2*k - 1) | k <- [2 ..]] ..]
-    secondSumDenoms :: [[a]]
-    secondSumDenoms = iterate tail secondSumDenom
-
-    -- [[ B_2k           (s + 2*k - 2)!           |             ]  [ B_2k           (s + 2*k - 2)!           |             ]   ]
-    -- || ----- --------------------------------- | k <- [1 ..] |, | ----- --------------------------------- | k <- [2 ..] | ..|
-    -- [[ (2k)! (s - 1)! * (a + n) ^ (s + 2*k -1) |             ]  [ (2k)! (s - 1)! * (a + n) ^ (s + 2*k -1) |             ]   ]
-    seconds :: [a]
-    seconds = zipWith3
-              (\l1 l2 l3 ->
-                  suminf eps $ zipWith3
-                               (\bernFac num denom -> bernFac * (num / denom))
-                               l1
-                               l2
-                               l3)
-              evenBernoulliFacFracs
-              secondSumNums
-              secondSumDenoms
+    -- [ B_2k           (s + 2*k - 2)!           |             ]
+    -- | ----- --------------------------------- | k <- [1 ..] |
+    -- [ (2k)! (s - 1)! * (a + n) ^ (s + 2*k -1) |             ]
+    second :: a
+    second = suminf eps $ zipWith3
+                           (\bernFac num denom -> bernFac * (num / denom))
+                           evenBernoulliDivByFac
+                           secondSumNum
+                           secondSumDenom
 
