@@ -133,7 +133,6 @@ isPrimitiveRoot' cg r =
     oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
     oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
     doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
-    -- really should be testing odd (g `mod` 2p^k)
 
 -- | Check whether a given modular residue is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>.

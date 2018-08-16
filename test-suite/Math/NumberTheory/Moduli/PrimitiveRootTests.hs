@@ -22,12 +22,14 @@ import Test.Tasty
 import qualified Data.Set as S
 import Data.List (genericTake)
 import Data.Maybe
+import Control.Arrow (first)
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
+import qualified Math.NumberTheory.GCD as GCD
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot
-import Math.NumberTheory.Prefactored (prefValue)
+import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefactored)
 import Math.NumberTheory.TestUtils
 import Math.NumberTheory.UniqueFactorisation
 
@@ -59,8 +61,11 @@ isPrimitiveRoot'Property1
   :: (Eq a, Integral a, UniqueFactorisation a)
   => AnySign a -> CyclicGroup a -> Bool
 isPrimitiveRoot'Property1 (AnySign n) cg
-  = gcd n (prefValue (cyclicGroupToModulo cg)) == 1
+  = gcd (toInteger n) (prefValue (castPrefactored (cyclicGroupToModulo cg))) == 1
   || not (isPrimitiveRoot' cg n)
+
+castPrefactored :: Integral a => Prefactored a -> Prefactored Integer
+castPrefactored = fromFactors . GCD.splitIntoCoprimes . map (first toInteger) . GCD.toList . prefFactors
 
 isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty1 (AnySign n) (Positive m)
