@@ -20,7 +20,7 @@ module Math.NumberTheory.Moduli.PrimitiveRootTests
 import Test.Tasty
 
 import qualified Data.Set as S
-import Data.List (genericTake)
+import Data.List (genericTake, genericLength)
 import Data.Maybe
 import Control.Arrow (first)
 import Numeric.Natural
@@ -95,6 +95,13 @@ isPrimitiveRootProperty4 (AnySign n) (Positive m)
     SomeMod n' -> not (isPrimitiveRoot n')
     InfMod{}   -> False
 
+isPrimitiveRootProperty5 :: Positive Natural -> Bool
+isPrimitiveRootProperty5 (Positive m)
+  = isNothing (cyclicGroupFromModulo m)
+  || case 0 `modulo` m of
+       SomeMod (_ :: Mod t) -> genericLength (filter isPrimitiveRoot [(minBound :: Mod t) .. maxBound]) == totient (totient m)
+       InfMod{}             -> False
+
 testSuite :: TestTree
 testSuite = testGroup "Primitive root"
   [ testGroup "CyclicGroup"
@@ -111,9 +118,10 @@ testSuite = testGroup "Primitive root"
       ]
     ]
   , testGroup "isPrimitiveRoot"
-    [ testSmallAndQuick "primitive root is coprime with modulo" isPrimitiveRootProperty1
-    , testSmallAndQuick "cyclic group has a primitive root"     isPrimitiveRootProperty2
-    , testSmallAndQuick "primitive root generates cyclic group" isPrimitiveRootProperty3
-    , testSmallAndQuick "no primitive root in non-cyclic group" isPrimitiveRootProperty4
+    [ testSmallAndQuick "primitive root is coprime with modulo"            isPrimitiveRootProperty1
+    , testSmallAndQuick "cyclic group has a primitive root"                isPrimitiveRootProperty2
+    , testSmallAndQuick "primitive root generates cyclic group"            isPrimitiveRootProperty3
+    , testSmallAndQuick "no primitive root in non-cyclic group"            isPrimitiveRootProperty4
+    , testSmallAndQuick "cyclic group has right number of primitive roots" isPrimitiveRootProperty5
     ]
   ]
