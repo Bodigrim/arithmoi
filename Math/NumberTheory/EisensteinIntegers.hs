@@ -27,6 +27,8 @@ module Math.NumberTheory.EisensteinIntegers
   , quotE
   , remE
 
+  , gcdE
+
   -- * Primality functions
   , isPrime
   ) where
@@ -145,3 +147,13 @@ isPrime e@(a :+ b)
     | nE `mod` 3 == 0 || nE `mod` 3 == 1 = Testing.isPrime nE
     | otherwise = False
   where nE = norm e
+
+-- | Compute the GCD of two Eisenstein integers. The result is always
+-- in the first sextant.
+gcdE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
+gcdE g h = gcdE' (abs g) (abs h)
+
+gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
+gcdE' g h
+    | h == 0    = g -- done recursing
+    | otherwise = gcdE' h (abs (g `modE` h))

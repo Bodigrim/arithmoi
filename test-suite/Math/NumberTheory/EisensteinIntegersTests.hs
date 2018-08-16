@@ -17,6 +17,8 @@ module Math.NumberTheory.EisensteinIntegersTests
 import qualified Math.NumberTheory.EisensteinIntegers as E
 
 import Test.Tasty                                     (TestTree, testGroup)
+import Test.Tasty.HUnit                               (Assertion, assertEqual,
+                                                      testCase)
 
 import Math.NumberTheory.TestUtils                    (testSmallAndQuick)
 
@@ -67,6 +69,27 @@ quotRemProperty1 x y = (y == 0) || q == q' && r == r'
 quotRemProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 quotRemProperty2 x y = (y == 0) || (x `E.quotE` y) * y + (x `E.remE` y) == x
 
+-- | Verify that @gcd z2 z2@ always divides @z1@ and @z2@.
+gcdEProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
+gcdEProperty1 z1 z2
+  = z1 == 0 && z2 == 0
+  || z1 `E.remE` z == 0 && z2 `E.remE` z == 0 && z == abs z
+  where
+    z = E.gcdE z1 z2
+
+-- | Verify that a common divisor of @z1, z2@ is a always divisor of @gcdE z1 z2@.
+gcdEProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> E.EisensteinInteger -> Bool
+gcdEProperty2 z z1 z2
+  = z == 0
+  || (E.gcdE z1' z2') `E.remE` z == 0
+  where
+    z1' = z * z1
+    z2' = z * z2
+
+-- | A special case that tests rounding/truncating in GCD.
+gcdESpecialCase1 :: Assertion
+gcdESpecialCase1 = assertEqual "gcdE" 1 $ E.gcdE (12 E.:+ 23) (23 E.:+ 34)
+
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $
   [ testSmallAndQuick "forall z . z == signum z * abs z" signumAbsProperty
@@ -80,5 +103,14 @@ testSuite = testGroup "EisensteinIntegers" $
 
     , testSmallAndQuick "quotE and remE work properly" quotRemProperty1
     , testSmallAndQuick "quotRemE works properly" quotRemProperty2
+    ]
+
+  , testGroup "g.c.d."
+    [ testSmallAndQuick "The g.c.d. of two Eisenstein integers divides them"
+                        gcdEProperty1
+    , testSmallAndQuick "A common divisor of two Eisenstein integers always\
+                        \ divides the g.c.d. of those two integers"
+                        gcdEProperty2
+    , testCase          "g.c.d. (12 :+ 23) (23 :+ 34)" gcdESpecialCase1
     ]
   ]
