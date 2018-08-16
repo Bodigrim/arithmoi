@@ -26,10 +26,14 @@ module Math.NumberTheory.EisensteinIntegers
   , quotRemE
   , quotE
   , remE
+
+  -- * Primality functions
+  , isPrime
   ) where
 
 import GHC.Generics                               (Generic)
 
+import qualified Math.NumberTheory.Primes.Testing as Testing
 
 infix 6 :+
 
@@ -128,3 +132,16 @@ conjugate (a :+ b) = (a - b) :+ (-b)
 -- | The square of the magnitude of a Eisenstein integer.
 norm :: EisensteinInteger -> Integer
 norm (a :+ b) = a*a - a * b + b*b
+
+-- | Checks if a given @EisensteinInteger@ is prime. @EisensteinInteger@s
+-- whose norm is a prime congruent to @0@ or @1@ modulo 3 are prime.
+-- See <http://thekeep.eiu.edu/theses/2467 Bandara, Sarada, "An Exposition of the Eisenstein Integers" (2016)>,
+-- page 12.
+isPrime :: EisensteinInteger -> Bool
+isPrime e@(a :+ b)
+    | e == 0                             = False
+    | b == 0 && a `mod` 3 == 2           = Testing.isPrime a
+    | a == 0 && b `mod` 3 == 2           = Testing.isPrime b
+    | nE `mod` 3 == 0 || nE `mod` 3 == 1 = Testing.isPrime nE
+    | otherwise = False
+  where nE = norm e
