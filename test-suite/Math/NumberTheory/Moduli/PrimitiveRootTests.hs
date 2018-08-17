@@ -21,12 +21,14 @@ import Test.Tasty
 
 import qualified Data.Set as S
 import Data.List (genericTake, genericLength)
-import Data.Maybe
+import Data.Maybe (isJust, isNothing)
 import Control.Arrow (first)
 import Numeric.Natural
+import Data.Proxy
+import GHC.TypeNats.Compat
 
-import Math.NumberTheory.ArithmeticFunctions (totient)
 import qualified Math.NumberTheory.GCD as GCD
+import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefactored)
@@ -77,9 +79,8 @@ isPrimitiveRootProperty1 (AnySign n) (Positive m)
 isPrimitiveRootProperty2 :: Positive Natural -> Bool
 isPrimitiveRootProperty2 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
-  || case 0 `modulo` m of
-    SomeMod (_ :: Mod t) -> any isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
-    InfMod{}             -> False
+  || case someNatVal m of
+    SomeNat (_ :: Proxy t) -> any isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
 
 isPrimitiveRootProperty3 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty3 (AnySign n) (Positive m)
@@ -98,9 +99,8 @@ isPrimitiveRootProperty4 (AnySign n) (Positive m)
 isPrimitiveRootProperty5 :: Positive Natural -> Bool
 isPrimitiveRootProperty5 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
-  || case 0 `modulo` m of
-       SomeMod (_ :: Mod t) -> genericLength (filter isPrimitiveRoot [(minBound :: Mod t) .. maxBound]) == totient (totient m)
-       InfMod{}             -> False
+  || case someNatVal m of
+       SomeNat (_ :: Proxy t) -> genericLength (filter isPrimitiveRoot [(minBound :: Mod t) .. maxBound]) == totient (totient m)
 
 testSuite :: TestTree
 testSuite = testGroup "Primitive root"
@@ -113,8 +113,8 @@ testSuite = testGroup "Primitive root"
     [ testGroup "primitive root is coprime with modulo"
       [ testSmallAndQuick "Integer" (isPrimitiveRoot'Property1 :: AnySign Integer -> CyclicGroup Integer -> Bool)
       , testSmallAndQuick "Natural" (isPrimitiveRoot'Property1 :: AnySign Natural -> CyclicGroup Natural -> Bool)
-      , testSmallAndQuick "Int"     (isPrimitiveRoot'Property1 :: AnySign Int     -> CyclicGroup Int     -> Bool) -- dubious test
-      , testSmallAndQuick "Word"    (isPrimitiveRoot'Property1 :: AnySign Word    -> CyclicGroup Word    -> Bool) -- dubious test
+      , testSmallAndQuick "Int"     (isPrimitiveRoot'Property1 :: AnySign Int     -> CyclicGroup Int     -> Bool)
+      , testSmallAndQuick "Word"    (isPrimitiveRoot'Property1 :: AnySign Word    -> CyclicGroup Word    -> Bool)
       ]
     ]
   , testGroup "isPrimitiveRoot"
