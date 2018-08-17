@@ -10,8 +10,9 @@
 -- Should not be exposed to users.
 --
 
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP           #-}
+{-# LANGUAGE TypeFamilies  #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Math.NumberTheory.Primes.Types
   ( Prime
@@ -20,9 +21,10 @@ module Math.NumberTheory.Primes.Types
   ) where
 
 import Numeric.Natural
+import GHC.Generics
 
 newtype Prm = Prm { unPrm :: Word }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
 
 instance Show Prm where
   showsPrec d (Prm p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
@@ -30,7 +32,7 @@ instance Show Prm where
       s = "Prm " ++ show p
 
 newtype PrimeNat = PrimeNat { unPrimeNat :: Natural }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
 
 instance Show PrimeNat where
   showsPrec d (PrimeNat p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r

@@ -1,5 +1,6 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans       #-}
 
 module Math.NumberTheory.PrimitiveRootsBench
   ( benchSuite
@@ -7,9 +8,14 @@ module Math.NumberTheory.PrimitiveRootsBench
 
 import Gauge.Main
 import Data.Maybe
+import Control.DeepSeq
 
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes.Types
+
+instance NFData PrimeNat
+instance NFData (CyclicGroup Integer)
 
 primRootWrap :: Integer -> Word -> Integer -> Bool
 primRootWrap p k g = isPrimitiveRoot' (CGOddPrimePower p' k) g
@@ -19,16 +25,8 @@ primRootWrap2 :: Integer -> Word -> Integer -> Bool
 primRootWrap2 p k g = isPrimitiveRoot' (CGDoubleOddPrimePower p' k) g
   where p' = fromJust $ isPrime p
 
--- contrived function which forces the cyclic group to be fully calculated 
-forceCyclic :: Maybe (CyclicGroup a) -> Int
-forceCyclic Nothing    = 0
-forceCyclic (Just CG2) = -2
-forceCyclic (Just CG4) = -1
-forceCyclic (Just (CGOddPrimePower !_p !_k)) = 1
-forceCyclic (Just (CGDoubleOddPrimePower !_p !_k)) = 2
-
-cyclicWrap :: Integer -> Int
-cyclicWrap = forceCyclic . cyclicGroupFromModulo
+cyclicWrap :: Integer -> Maybe (CyclicGroup Integer)
+cyclicWrap = cyclicGroupFromModulo
 
 benchSuite :: Benchmark
 benchSuite = bgroup "PrimRoot"
