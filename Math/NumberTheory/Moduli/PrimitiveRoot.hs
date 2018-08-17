@@ -91,7 +91,7 @@ isPrimePower n = (, intToWord k) <$> isPrime m
 -- >>> cyclicGroupToModulo CG4
 -- Prefactored {prefValue = 4, prefFactors = Coprimes {unCoprimes = fromList [(2,2)]}}
 --
--- >>> :set -XGADTs
+-- >>> :set -XTypeFamilies
 -- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (PrimeNat 13) 3)
 -- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = fromList [(2,1),(13,3)]}}
 cyclicGroupToModulo
