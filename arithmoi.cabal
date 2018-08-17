@@ -189,6 +189,7 @@ benchmark criterion
     Math.NumberTheory.MertensBench
     Math.NumberTheory.PowersBench
     Math.NumberTheory.PrimesBench
+    Math.NumberTheory.PrimitiveRootsBench
     Math.NumberTheory.RecurrenciesBench
     Math.NumberTheory.SieveBlockBench
     Math.NumberTheory.SmoothNumbersBench
