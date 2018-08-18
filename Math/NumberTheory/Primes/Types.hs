@@ -22,9 +22,12 @@ module Math.NumberTheory.Primes.Types
 
 import Numeric.Natural
 import GHC.Generics
+import Control.DeepSeq
 
 newtype Prm = Prm { unPrm :: Word }
   deriving (Eq, Ord, Generic)
+
+instance NFData Prm
 
 instance Show Prm where
   showsPrec d (Prm p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
@@ -33,6 +36,8 @@ instance Show Prm where
 
 newtype PrimeNat = PrimeNat { unPrimeNat :: Natural }
   deriving (Eq, Ord, Generic)
+
+instance NFData PrimeNat
 
 instance Show PrimeNat where
   showsPrec d (PrimeNat p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r

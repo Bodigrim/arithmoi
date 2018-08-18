@@ -12,9 +12,7 @@ import Control.DeepSeq
 
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.Primes.Types
 
-instance NFData PrimeNat
 instance NFData (CyclicGroup Integer)
 
 primRootWrap :: Integer -> Word -> Integer -> Bool
