@@ -19,7 +19,6 @@ module Math.NumberTheory.Moduli.ClassTests
 
 import Test.Tasty
 
-import Data.Bits
 import Data.Maybe
 import Numeric.Natural
 
@@ -40,7 +39,7 @@ invertModProperty (AnySign k) (Positive m) = case invertMod k m of
   Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1
 
 -- | Check that 'powerMod' is multiplicative by first argument.
-powerModProperty2 :: (Integral a, Bits a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty2 :: (Integral a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
   =  e < 0 && (isNothing (invertMod b1 m) || isNothing (invertMod b2 m))
   || pm1 * pm2 == pm12
@@ -50,7 +49,7 @@ powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
     pm12 = powerMod (b1 * b2) e m
 
 -- | Check that 'powerMod' is additive by second argument.
-powerModProperty3 :: (Integral a, Bits a) => NonNegative a -> NonNegative a -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty3 :: (Integral a) => NonNegative a -> NonNegative a -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
   =  (e1 < 0 || e2 < 0) && isNothing (invertMod b m)
   || e2 >= 0 && e1 + e2 < e1 -- check overflow

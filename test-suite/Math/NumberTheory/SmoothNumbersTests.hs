@@ -26,7 +26,7 @@ import Math.NumberTheory.TestUtils
 fromSetListProperty :: Integral a => [a] -> Bool
 fromSetListProperty xs = fromSet (S.fromList xs) == fromList xs
 
-fromSmoothUpperBoundProperty :: (Show a, Integral a) => Positive a -> Bool
+fromSmoothUpperBoundProperty :: Integral a => Positive a -> Bool
 fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of
     Nothing -> n < 2
     Just sb -> head (genericDrop (n - 1) (smoothOver sb)) == n

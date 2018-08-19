@@ -54,12 +54,12 @@ data CyclicGroup a
   -- ^ Residues modulo @p@^@k@ for __odd__ prime @p@.
   | CGDoubleOddPrimePower (Prime a) Word
   -- ^ Residues modulo 2@p@^@k@ for __odd__ prime @p@.
+  deriving (Generic)
 
 instance NFData (Prime a) => NFData (CyclicGroup a)
 
 deriving instance Eq      (Prime a) => Eq      (CyclicGroup a)
 deriving instance Show    (Prime a) => Show    (CyclicGroup a)
-deriving instance Generic (Prime a) => Generic (CyclicGroup a)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.

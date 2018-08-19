@@ -187,7 +187,7 @@ bernoulli = helperForB_E_EP id (map recip [1..])
 euler' :: forall a . Integral a => [Ratio a]
 euler' = tail $ helperForB_E_EP tail as
   where
-    as :: Integral a => [Ratio a]
+    as :: [Ratio a]
     as = zipWith3
         (\sgn frac ones -> (sgn * ones) % frac)
         (cycle [1, 1, 1, 1, -1, -1, -1, -1])

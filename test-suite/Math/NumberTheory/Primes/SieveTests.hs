@@ -66,7 +66,7 @@ psieveListProperty1 _ = assertEqual "primes == primeList . psieveList"
   (take lim2 primes :: [a])
   (take lim2 $ concatMap primeList psieveList)
 
-psieveListProperty2 :: forall a. (Integral a, Bounded a, Show a) => Proxy a -> Assertion
+psieveListProperty2 :: forall a. (Integral a, Show a) => Proxy a -> Assertion
 psieveListProperty2 _ = assertEqual "primes == primeList . psieveList"
   (primes :: [a])
   (concat $ takeWhile (not . null) $ map primeList psieveList)

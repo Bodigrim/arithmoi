@@ -9,8 +9,8 @@
 -- Type for numbers, accompanied by their factorisation.
 --
 
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP           #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
@@ -103,10 +103,10 @@ fromValue a = Prefactored a (singleton a 1)
 -- Prefactored {prefValue = 23100, prefFactors = Coprimes {unCoprimes = fromList [(5,2),(28,1),(33,1)]}}
 -- >>> fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
 -- Prefactored {prefValue = 88045650000, prefFactors = Coprimes {unCoprimes = fromList [(5,5),(28,2),(33,3)]}}
-fromFactors :: Integral a => Coprimes a Word -> Prefactored a
+fromFactors :: Num a => Coprimes a Word -> Prefactored a
 fromFactors as = Prefactored (product (map (uncurry (^)) (toList as))) as
 
-instance (Integral a, UniqueFactorisation a) => Num (Prefactored a) where
+instance Integral a => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
     = fromValue (v1 + v2)
   Prefactored v1 _ - Prefactored v2 _

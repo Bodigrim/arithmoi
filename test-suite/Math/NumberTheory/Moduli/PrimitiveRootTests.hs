@@ -35,7 +35,7 @@ import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefa
 import Math.NumberTheory.TestUtils
 import Math.NumberTheory.UniqueFactorisation
 
-cyclicGroupProperty1 :: (Integral a, UniqueFactorisation a, Show a) => AnySign a -> Bool
+cyclicGroupProperty1 :: (Integral a, UniqueFactorisation a) => AnySign a -> Bool
 cyclicGroupProperty1 (AnySign n) = case cyclicGroupFromModulo n of
   Nothing -> True
   Just cg -> prefValue (cyclicGroupToModulo cg) == n
@@ -60,7 +60,7 @@ allUnique = go S.empty
     go acc (x : xs) = if x `S.member` acc then False else go (S.insert x acc) xs
 
 isPrimitiveRoot'Property1
-  :: (Eq a, Integral a, UniqueFactorisation a)
+  :: (Integral a, UniqueFactorisation a)
   => AnySign a -> CyclicGroup a -> Bool
 isPrimitiveRoot'Property1 (AnySign n) cg
   = gcd (toInteger n) (prefValue (castPrefactored (cyclicGroupToModulo cg))) == 1

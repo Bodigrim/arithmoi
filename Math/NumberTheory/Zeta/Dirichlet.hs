@@ -107,7 +107,7 @@ betasEven eps = (1 / 2) : bets
 
     -- [pi^3 / (2^4), pi^5 / (2^6), pi^7 / (2^8) ..]
     -- Second factor of third addend in RHS of (12).
-    pis :: Floating a => [a]
+    pis :: [a]
     pis = zipWith
           (\p f -> p / f)
           (iterate ((pi * pi) *) (pi ^^ (3 :: Integer)))

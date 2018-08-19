@@ -121,12 +121,12 @@ getNatMod = natVal
 {-# INLINE getNatMod #-}
 
 -- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-getVal :: KnownNat m => Mod m -> Integer
+getVal :: Mod m -> Integer
 getVal (Mod x) = toInteger x
 {-# INLINE getVal #-}
 
 -- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-getNatVal :: KnownNat m => Mod m -> Natural
+getNatVal :: Mod m -> Natural
 getNatVal (Mod x) = x
 {-# INLINE getNatVal #-}
 
