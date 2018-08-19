@@ -34,6 +34,7 @@ module Math.NumberTheory.GaussianIntegers (
     factorise,
 ) where
 
+import Control.DeepSeq (NFData)
 import Data.List (mapAccumL, partition)
 import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
@@ -53,6 +54,8 @@ infixr 8 .^
 -- |A Gaussian integer is a+bi, where a and b are both integers.
 data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer }
     deriving (Eq, Ord, Generic)
+
+instance NFData GaussianInteger
 
 -- |The imaginary unit, where
 --

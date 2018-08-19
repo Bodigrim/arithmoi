@@ -26,6 +26,7 @@ module Math.NumberTheory.Moduli.PrimitiveRoot
   , isPrimitiveRoot'
   ) where
 
+import Control.DeepSeq
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
@@ -53,6 +54,8 @@ data CyclicGroup a
   -- ^ Residues modulo @p@^@k@ for __odd__ prime @p@.
   | CGDoubleOddPrimePower (Prime a) Word
   -- ^ Residues modulo 2@p@^@k@ for __odd__ prime @p@.
+
+instance NFData (Prime a) => NFData (CyclicGroup a)
 
 deriving instance Eq      (Prime a) => Eq      (CyclicGroup a)
 deriving instance Show    (Prime a) => Show    (CyclicGroup a)

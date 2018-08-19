@@ -1,17 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-{-# OPTIONS_GHC -fno-warn-orphans       #-}
 
 module Math.NumberTheory.GaussianIntegersBench
   ( benchSuite
   ) where
 
-import Control.DeepSeq
 import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctions (tau)
 import Math.NumberTheory.GaussianIntegers
-
-instance NFData GaussianInteger
 
 benchFindPrime :: Integer -> Benchmark
 benchFindPrime n = bench (show n) $ nf findPrime n
