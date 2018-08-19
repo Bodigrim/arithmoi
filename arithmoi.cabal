@@ -168,7 +168,6 @@ test-suite spec
     Math.NumberTheory.UniqueFactorisationTests
     Math.NumberTheory.Zeta.DirichletTests
     Math.NumberTheory.Zeta.RiemannTests
-    Math.NumberTheory.ZetaTests
   type: exitcode-stdio-1.0
   main-is: Test.hs
   default-language: Haskell2010

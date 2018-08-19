@@ -38,7 +38,8 @@ import qualified Math.NumberTheory.UniqueFactorisationTests as UniqueFactorisati
 import qualified Math.NumberTheory.CurvesTests as Curves
 import qualified Math.NumberTheory.SmoothNumbersTests as SmoothNumbers
 
-import qualified Math.NumberTheory.ZetaTests as ZetaTests
+import qualified Math.NumberTheory.Zeta.RiemannTests as Riemann
+import qualified Math.NumberTheory.Zeta.DirichletTests as Dirichlet
 
 main :: IO ()
 main = defaultMain tests
@@ -87,5 +88,8 @@ tests = testGroup "All"
   , Curves.testSuite
   , SmoothNumbers.testSuite
 
-  , ZetaTests.testSuite
+  , testGroup "Zeta"
+    [ Riemann.testSuite
+    , Dirichlet.testSuite
+    ]
   ]
