@@ -20,14 +20,18 @@ module Math.NumberTheory.Moduli.PrimitiveRootTests
 import Test.Tasty
 
 import qualified Data.Set as S
-import Data.List (genericTake)
-import Data.Maybe
+import Data.List (genericTake, genericLength)
+import Data.Maybe (isJust, isNothing)
+import Control.Arrow (first)
 import Numeric.Natural
+import Data.Proxy
+import GHC.TypeNats.Compat
 
+import qualified Math.NumberTheory.GCD as GCD
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot
-import Math.NumberTheory.Prefactored (prefValue)
+import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefactored)
 import Math.NumberTheory.TestUtils
 import Math.NumberTheory.UniqueFactorisation
 
@@ -59,8 +63,11 @@ isPrimitiveRoot'Property1
   :: (Eq a, Integral a, UniqueFactorisation a)
   => AnySign a -> CyclicGroup a -> Bool
 isPrimitiveRoot'Property1 (AnySign n) cg
-  = gcd n (prefValue (cyclicGroupToModulo cg)) == 1
+  = gcd (toInteger n) (prefValue (castPrefactored (cyclicGroupToModulo cg))) == 1
   || not (isPrimitiveRoot' cg n)
+
+castPrefactored :: Integral a => Prefactored a -> Prefactored Integer
+castPrefactored = fromFactors . GCD.splitIntoCoprimes . map (first toInteger) . GCD.toList . prefFactors
 
 isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty1 (AnySign n) (Positive m)
@@ -72,9 +79,8 @@ isPrimitiveRootProperty1 (AnySign n) (Positive m)
 isPrimitiveRootProperty2 :: Positive Natural -> Bool
 isPrimitiveRootProperty2 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
-  || case 0 `modulo` m of
-    SomeMod (_ :: Mod t) -> any isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
-    InfMod{}             -> False
+  || case someNatVal m of
+    SomeNat (_ :: Proxy t) -> any isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
 
 isPrimitiveRootProperty3 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty3 (AnySign n) (Positive m)
@@ -89,6 +95,12 @@ isPrimitiveRootProperty4 (AnySign n) (Positive m)
   || case n `modulo` m of
     SomeMod n' -> not (isPrimitiveRoot n')
     InfMod{}   -> False
+
+isPrimitiveRootProperty5 :: Positive Natural -> Bool
+isPrimitiveRootProperty5 (Positive m)
+  = isNothing (cyclicGroupFromModulo m)
+  || case someNatVal m of
+       SomeNat (_ :: Proxy t) -> genericLength (filter isPrimitiveRoot [(minBound :: Mod t) .. maxBound]) == totient (totient m)
 
 testSuite :: TestTree
 testSuite = testGroup "Primitive root"
@@ -106,9 +118,10 @@ testSuite = testGroup "Primitive root"
       ]
     ]
   , testGroup "isPrimitiveRoot"
-    [ testSmallAndQuick "primitive root is coprime with modulo" isPrimitiveRootProperty1
-    , testSmallAndQuick "cyclic group has a primitive root"     isPrimitiveRootProperty2
-    , testSmallAndQuick "primitive root generates cyclic group" isPrimitiveRootProperty3
-    , testSmallAndQuick "no primitive root in non-cyclic group" isPrimitiveRootProperty4
+    [ testSmallAndQuick "primitive root is coprime with modulo"            isPrimitiveRootProperty1
+    , testSmallAndQuick "cyclic group has a primitive root"                isPrimitiveRootProperty2
+    , testSmallAndQuick "primitive root generates cyclic group"            isPrimitiveRootProperty3
+    , testSmallAndQuick "no primitive root in non-cyclic group"            isPrimitiveRootProperty4
+    , testSmallAndQuick "cyclic group has right number of primitive roots" isPrimitiveRootProperty5
     ]
   ]

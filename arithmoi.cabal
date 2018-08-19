@@ -38,6 +38,7 @@ library
     base >=4.7 && <5,
     array >=0.5 && <0.6,
     containers >=0.5 && <0.7,
+    deepseq,
     exact-pi >=0.4.1.1,
     ghc-prim <0.6,
     integer-gmp <1.1,
@@ -195,6 +196,7 @@ benchmark criterion
     Math.NumberTheory.MertensBench
     Math.NumberTheory.PowersBench
     Math.NumberTheory.PrimesBench
+    Math.NumberTheory.PrimitiveRootsBench
     Math.NumberTheory.RecurrenciesBench
     Math.NumberTheory.SieveBlockBench
     Math.NumberTheory.SmoothNumbersBench

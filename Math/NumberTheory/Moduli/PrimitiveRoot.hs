@@ -10,6 +10,7 @@
 --
 
 {-# LANGUAGE CPP                  #-}
+{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE StandaloneDeriving   #-}
@@ -38,6 +39,8 @@ import Math.NumberTheory.Prefactored
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
 
+import GHC.Generics
+
 -- | A multiplicative group of residues is called cyclic,
 -- if there is a primitive root @g@,
 -- whose powers generates all elements.
@@ -51,7 +54,9 @@ data CyclicGroup a
   | CGDoubleOddPrimePower (Prime a) Word
   -- ^ Residues modulo 2@p@^@k@ for __odd__ prime @p@.
 
-deriving instance Show (Prime a) => Show (CyclicGroup a)
+deriving instance Eq      (Prime a) => Eq      (CyclicGroup a)
+deriving instance Show    (Prime a) => Show    (CyclicGroup a)
+deriving instance Generic (Prime a) => Generic (CyclicGroup a)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.
@@ -91,7 +96,7 @@ isPrimePower n = (, intToWord k) <$> isPrime m
 -- >>> cyclicGroupToModulo CG4
 -- Prefactored {prefValue = 4, prefFactors = Coprimes {unCoprimes = fromList [(2,2)]}}
 --
--- >>> :set -XGADTs
+-- >>> :set -XTypeFamilies
 -- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (PrimeNat 13) 3)
 -- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = fromList [(2,1),(13,3)]}}
 cyclicGroupToModulo
@@ -118,13 +123,21 @@ isPrimitiveRoot'
   => CyclicGroup a
   -> a
   -> Bool
-isPrimitiveRoot' cg r = r /= 0 && gcd r (prefValue m) == 1 && all (/= 1) exps
+-- https://en.wikipedia.org/wiki/Primitive_root_modulo_n#Finding_primitive_roots
+isPrimitiveRoot' cg r =
+  case cg of
+    CG2                       -> r == 1
+    CG4                       -> r == 3
+    CGOddPrimePower p k       -> oddPrimePowerTest (unPrime p) k r
+    CGDoubleOddPrimePower p k -> doubleOddPrimePowerTest (unPrime p) k r
   where
-    -- https://en.wikipedia.org/wiki/Primitive_root_modulo_n#Finding_primitive_roots
-    m    = cyclicGroupToModulo cg
-    phi  = totient m
-    pows = map (\pk -> prefValue phi `quot` unPrime (fst pk)) (factorise phi)
-    exps = map (\p -> powMod r p (prefValue m)) pows
+    oddPrimeTest p g              = let phi  = totient p
+                                        pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
+                                        exps = map (\x -> powMod g x p) pows
+                                     in g /= 0 && gcd g p == 1 && all (/= 1) exps
+    oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
+    oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
+    doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
 
 -- | Check whether a given modular residue is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>.

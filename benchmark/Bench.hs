@@ -9,10 +9,12 @@ import Math.NumberTheory.JacobiBench as Jacobi
 import Math.NumberTheory.MertensBench as Mertens
 import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
+import Math.NumberTheory.PrimitiveRootsBench as PrimitiveRoots
 import Math.NumberTheory.RecurrenciesBench as Recurrencies
 import Math.NumberTheory.SieveBlockBench as SieveBlock
 import Math.NumberTheory.SmoothNumbersBench as SmoothNumbers
 
+main :: IO ()
 main = defaultMain
   [ ArithmeticFunctions.benchSuite
   , Gaussian.benchSuite
@@ -21,6 +23,7 @@ main = defaultMain
   , Mertens.benchSuite
   , Powers.benchSuite
   , Primes.benchSuite
+  , PrimitiveRoots.benchSuite
   , Recurrencies.benchSuite
   , SieveBlock.benchSuite
   , SmoothNumbers.benchSuite
