@@ -29,6 +29,12 @@ module Math.NumberTheory.Moduli.Class
   , invertMod
   , powMod
   , (^%)
+  -- * Multiplicative group
+  , MultMod
+  , multElement
+  , isMultElement
+  , invertGroup
+  , powMultMod
   -- * Unknown modulo
   , SomeMod(..)
   , modulo
@@ -38,6 +44,11 @@ module Math.NumberTheory.Moduli.Class
   , KnownNat
   ) where
 
+#if __GLASGOW_HASKELL__ < 803
+import Data.Semigroup
+#endif
+
+import Data.Maybe
 import Data.Proxy
 import Data.Ratio
 import Data.Type.Equality
@@ -179,6 +190,39 @@ infixr 8 ^%
 -- Unfortunately, such rule never fires due to technical details
 -- of type classes in Core.
 -- {-# RULES "^%Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^% p #-}
+
+-- | This type represents elements of the multiplicative group mod m, i.e.
+-- those elemets which are coprime to m. Use @toMultElement@ to construct.
+newtype MultMod m = MultMod { multElement :: Mod m }
+  deriving (Eq, Ord, Show)
+
+instance KnownNat m => Semigroup (MultMod m) where
+  MultMod a <> MultMod b = MultMod (a * b)
+
+instance KnownNat m => Monoid (MultMod m) where
+  mempty = MultMod 1
+  mappend = (<>)
+
+instance KnownNat m => Bounded (MultMod m) where
+  minBound = MultMod 1
+  maxBound = MultMod (-1)
+
+-- | Attempt to construct a multiplicative group element.
+isMultElement :: KnownNat m => Mod m -> Maybe (MultMod m)
+isMultElement a = if getVal a `gcd` getMod a == 1
+                     then Just $ MultMod a
+                     else Nothing
+
+-- | Powers can be taken without leaving the multiplicative group.
+powMultMod :: (KnownNat m, Integral a) => MultMod m -> a -> MultMod m
+powMultMod (MultMod a) k
+  | k >= 0 = MultMod (powMod a k)
+  | otherwise = invertGroup (MultMod (powMod a (-k)))
+
+-- | For elements of the multiplicative group, we can safely perform the inverse
+-- without needing to worry about failure.
+invertGroup :: KnownNat m => MultMod m -> MultMod m
+invertGroup = MultMod . fromJust . invertMod . multElement
 
 -- | This type represents residues with unknown modulo and rational numbers.
 -- One can freely combine them in arithmetic expressions, but each operation
