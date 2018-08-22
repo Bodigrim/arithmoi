@@ -11,12 +11,9 @@
 
 module Math.NumberTheory.Moduli.DiscreteLogarithm where
 
-#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
-#endif
 import Data.Maybe
 -- import Data.List
--- import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as M
 import Numeric.Natural
 
