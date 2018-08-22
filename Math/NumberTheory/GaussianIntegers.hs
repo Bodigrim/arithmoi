@@ -40,7 +40,7 @@ import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
 import GHC.Generics
 
-import qualified Math.NumberTheory.Moduli as Moduli
+import qualified Math.NumberTheory.Moduli.Sqrt as Moduli
 import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.Primes.Types (PrimeNat(..))
