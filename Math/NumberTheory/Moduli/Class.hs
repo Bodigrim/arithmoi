@@ -43,12 +43,10 @@ module Math.NumberTheory.Moduli.Class
   , KnownNat
   ) where
 
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 
 import Data.Proxy
 import Data.Ratio
+import Data.Semigroup
 import Data.Type.Equality
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
