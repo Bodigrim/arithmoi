@@ -34,7 +34,6 @@ module Math.NumberTheory.Moduli.Class
   , multElement
   , isMultElement
   , invertGroup
-  , powMultMod
   -- * Unknown modulo
   , SomeMod(..)
   , modulo
@@ -48,7 +47,6 @@ module Math.NumberTheory.Moduli.Class
 import Data.Semigroup
 #endif
 
-import Data.Maybe
 import Data.Proxy
 import Data.Ratio
 import Data.Type.Equality
@@ -192,12 +190,16 @@ infixr 8 ^%
 -- {-# RULES "^%Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^% p #-}
 
 -- | This type represents elements of the multiplicative group mod m, i.e.
--- those elemets which are coprime to m. Use @toMultElement@ to construct.
+-- those elements which are coprime to m. Use @toMultElement@ to construct.
 newtype MultMod m = MultMod { multElement :: Mod m }
   deriving (Eq, Ord, Show)
 
 instance KnownNat m => Semigroup (MultMod m) where
   MultMod a <> MultMod b = MultMod (a * b)
+  stimes k a@(MultMod a')
+    | k >= 0 = MultMod (powMod a' k)
+    | otherwise = invertGroup $ stimes (-k) a
+  -- ^ This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 
 instance KnownNat m => Monoid (MultMod m) where
   mempty = MultMod 1
@@ -213,16 +215,12 @@ isMultElement a = if getVal a `gcd` getMod a == 1
                      then Just $ MultMod a
                      else Nothing
 
--- | Powers can be taken without leaving the multiplicative group.
-powMultMod :: (KnownNat m, Integral a) => MultMod m -> a -> MultMod m
-powMultMod (MultMod a) k
-  | k >= 0 = MultMod (powMod a k)
-  | otherwise = invertGroup (MultMod (powMod a (-k)))
-
 -- | For elements of the multiplicative group, we can safely perform the inverse
 -- without needing to worry about failure.
 invertGroup :: KnownNat m => MultMod m -> MultMod m
-invertGroup = MultMod . fromJust . invertMod . multElement
+invertGroup (MultMod a) = case invertMod a of
+                            Just b -> MultMod b
+                            Nothing -> error "Math.NumberTheory.Moduli.invertGroup: failed to invert element"
 
 -- | This type represents residues with unknown modulo and rational numbers.
 -- One can freely combine them in arithmetic expressions, but each operation
