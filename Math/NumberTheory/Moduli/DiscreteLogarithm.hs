@@ -9,17 +9,14 @@
 
 {-# LANGUAGE CPP #-}
 
-{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-unused-matches -fno-warn-unused-local-binds #-} -- devel only; to remove
-{-# LANGUAGE PartialTypeSignatures #-}
-
 module Math.NumberTheory.Moduli.DiscreteLogarithm where
 
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
 import Data.Maybe
-import Data.List
-import Data.IntMap.Strict (IntMap)
+-- import Data.List
+-- import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as M
 import Numeric.Natural
 
