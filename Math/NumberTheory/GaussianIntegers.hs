@@ -46,6 +46,7 @@ import Math.NumberTheory.Primes.Types (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import Math.NumberTheory.Utils              (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral (integerToNatural)
 
 infix 6 :+
@@ -145,15 +146,6 @@ primes = (1 :+ 1): mergeBy (comparing norm) l r
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes, let x :+ y = findPrime p, g <- [x :+ y, y :+ x]]
 
-mergeBy :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
-mergeBy cmp = loop
-  where
-    loop [] ys  = ys
-    loop xs []  = xs
-    loop (x:xs) (y:ys)
-      = case cmp x y of
-         GT -> y : loop (x:xs) ys
-         _  -> x : loop xs (y:ys)
 
 -- | Compute the GCD of two Gaussian integers. Result is always
 -- in the first quadrant.

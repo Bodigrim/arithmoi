@@ -32,14 +32,19 @@ module Math.NumberTheory.EisensteinIntegers
   -- * Primality functions
   , findPrime
   , isPrime
+  , primes
   ) where
 
+import Data.List                                  (partition)
+import Data.Ord                                   (comparing)
 import GHC.Generics                               (Generic)
 
 import qualified Math.NumberTheory.Moduli         as Moduli
 import Math.NumberTheory.Moduli.Sqrt              (FieldCharacteristic(..))
 import Math.NumberTheory.Primes.Types             (PrimeNat(..))
+import qualified Math.NumberTheory.Primes.Sieve   as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import Math.NumberTheory.Utils                    (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral       (integerToNatural)
 
 infix 6 :+
@@ -176,3 +181,13 @@ findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNa
     where
         k :: Integer
         k = p `div` 6
+
+-- | An infinite list of the Eisenstein primes. Uses primes in Z to exhaustively
+-- generate all Eisenstein primes (up to associates), in order of ascending
+-- magnitude.
+primes :: [EisensteinInteger]
+primes = (2 :+ 1) : mergeBy (comparing norm) l r
+  where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 3 == 2) Sieve.primes
+        rightPrimes' = filter (\prime -> prime `mod` 3 == 1) $ tail rightPrimes
+        l = [p :+ 0 | p <- leftPrimes]
+        r = [g | p <- rightPrimes', let x :+ y = findPrime p, g <- [x :+ y, x :+ (x - y)]]
