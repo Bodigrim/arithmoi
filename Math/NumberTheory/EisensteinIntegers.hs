@@ -30,12 +30,17 @@ module Math.NumberTheory.EisensteinIntegers
   , gcdE
 
   -- * Primality functions
+  , findPrime
   , isPrime
   ) where
 
 import GHC.Generics                               (Generic)
 
+import qualified Math.NumberTheory.Moduli         as Moduli
+import Math.NumberTheory.Moduli.Sqrt              (FieldCharacteristic(..))
+import Math.NumberTheory.Primes.Types             (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import Math.NumberTheory.Utils.FromIntegral       (integerToNatural)
 
 infix 6 :+
 
@@ -140,13 +145,16 @@ norm (a :+ b) = a*a - a * b + b*b
 -- See <http://thekeep.eiu.edu/theses/2467 Bandara, Sarada, "An Exposition of the Eisenstein Integers" (2016)>,
 -- page 12.
 isPrime :: EisensteinInteger -> Bool
-isPrime e@(a :+ b)
-    | e == 0                             = False
-    | b == 0 && a `mod` 3 == 2           = Testing.isPrime a
-    | a == 0 && b `mod` 3 == 2           = Testing.isPrime b
-    | nE `mod` 3 == 0 || nE `mod` 3 == 1 = Testing.isPrime nE
+isPrime e
+    | e == 0                     = False
+    -- Special case, @1 - ω@ is the only Eisenstein prime with norm @3@, and
+    -- @abs (1 - ω) = 2 + ω@.
+    | a' == 2 && b' == 1         = True
+    | b' == 0 && a' `mod` 3 == 2 = Testing.isPrime a'
+    | nE `mod` 3 == 1            = Testing.isPrime nE
     | otherwise = False
-  where nE = norm e
+  where nE       = norm e
+        a' :+ b' = abs e
 
 -- | Compute the GCD of two Eisenstein integers. The result is always
 -- in the first sextant.
@@ -157,3 +165,14 @@ gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
 gcdE' g h
     | h == 0    = g -- done recursing
     | otherwise = gcdE' h (abs (g `modE` h))
+
+-- | Find an Eisenstein integer whose norm is the given prime number
+-- in the form @3k + 1@ using a modification of the
+-- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
+findPrime :: Integer -> EisensteinInteger
+findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
+    Nothing   -> error "findPrime: argument must be prime p = 6k + 1"
+    Just zed  -> gcdE (p :+ 0) ((zed - 3 * k) :+ 1)
+    where
+        k :: Integer
+        k = p `div` 6

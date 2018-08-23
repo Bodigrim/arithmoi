@@ -15,12 +15,13 @@ module Math.NumberTheory.EisensteinIntegersTests
   ) where
 
 import qualified Math.NumberTheory.EisensteinIntegers as E
-
+import Math.NumberTheory.Primes                       (primes)
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
                                                       testCase)
 
-import Math.NumberTheory.TestUtils                    (testSmallAndQuick)
+import Math.NumberTheory.TestUtils                    (Positive (..),
+                                                       testSmallAndQuick)
 
 -- | Check that @signum@ and @abs@ satisfy @z == signum z * abs z@, where @z@ is
 -- an @EisensteinInteger@.
@@ -90,6 +91,13 @@ gcdEProperty2 z z1 z2
 gcdESpecialCase1 :: Assertion
 gcdESpecialCase1 = assertEqual "gcdE" 1 $ E.gcdE (12 E.:+ 23) (23 E.:+ 34)
 
+findPrimesProperty1 :: Positive Int -> Bool
+findPrimesProperty1 (Positive index) =
+    let -- Only retain primes that are of the form @6k + 1@, for some nonzero natural @k@.
+        prop prime = prime `mod` 6 == 1
+        p = (!! index) $ filter prop $ drop 3 primes
+    in E.isPrime $ E.findPrime p
+
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $
   [ testSmallAndQuick "forall z . z == signum z * abs z" signumAbsProperty
@@ -112,5 +120,12 @@ testSuite = testGroup "EisensteinIntegers" $
                         \ divides the g.c.d. of those two integers"
                         gcdEProperty2
     , testCase          "g.c.d. (12 :+ 23) (23 :+ 34)" gcdESpecialCase1
+    ]
+  
+  , testGroup "Primality"
+    [ testSmallAndQuick "Eisenstein primes found by the norm search used in\
+                        \ findPrime are really prime"
+                        findPrimesProperty1
+
     ]
   ]
