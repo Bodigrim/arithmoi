@@ -7,8 +7,6 @@
 -- Portability:  Non-portable
 --
 
-{-# LANGUAGE CPP #-}
-
 module Math.NumberTheory.Moduli.DiscreteLogarithm where
 
 import Data.Semigroup
@@ -38,6 +36,6 @@ discreteLogarithm a b = let n = prefValue . groupSize . getGroup $ a
                             m = integerSquareRoot (n - 1) + 1 -- simple way of ceiling . sqrt
                             babies = fromInteger . getVal . multElement <$> iterate (<> a') mempty
                             table = M.fromList $ zip babies [0..(m-1)]
-                            bigGiant = stimes (- fromIntegral m) a'
+                            bigGiant = stimes (- toInteger m) a'
                             giants = fromInteger . getVal . multElement <$> iterate (<> bigGiant) b
                          in head [i*m + j | (v,i) <- zip giants [0..(m-1)], j <- maybeToList $ M.lookup v table]
