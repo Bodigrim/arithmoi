@@ -9,13 +9,23 @@
 -- Polynomial modular equations.
 --
 
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
+
 module Math.NumberTheory.Moduli.Equations
   ( solveLinear
+  , solveQuadratic
   ) where
 
 import GHC.Integer.GMP.Internals
 
+import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Sqrt
+import Math.NumberTheory.UniqueFactorisation
+
+-------------------------------------------------------------------------------
+-- Linear equations
 
 -- | Find all solutions of ax + b ≡ 0 (mod m).
 --
@@ -41,3 +51,89 @@ solveLinearCoprime :: Integer -> Integer -> Integer -> Maybe Integer
 solveLinearCoprime m a b
   | m `gcd` a /= 1 = Nothing
   | otherwise = Just $ negate b * recipModInteger a m `mod` m
+
+-------------------------------------------------------------------------------
+-- Quadratic equations
+
+-- | Find all solutions of ax² + bx + c ≡ 0 (mod m).
+--
+-- >>> :set -XDataKinds
+-- >>> solveQuadratic (1 :: Mod 32) 0 (-17) -- solving x² - 17 ≡ 0 (mod 32)
+-- [(9 `modulo` 32),(25 `modulo` 32),(7 `modulo` 32),(23 `modulo` 32)]
+solveQuadratic
+  :: KnownNat m
+  => Mod m   -- ^ a
+  -> Mod m   -- ^ b
+  -> Mod m   -- ^ c
+  -> [Mod m] -- ^ list of c
+solveQuadratic a b c
+  = map fromInteger
+  $ fst
+  $ combine
+  $ map (\(p, n) -> (solveQuadraticPrimePower a' b' c' p n, unPrime p ^ n))
+  $ factorise
+  $ getMod a
+  where
+    a' = getVal a
+    b' = getVal b
+    c' = getVal c
+
+    combine :: [([Integer], Integer)] -> ([Integer], Integer)
+    combine = foldl
+      (\(xs, xm) (ys, ym) -> ([ chineseRemainder2 (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
+      ([0], 1)
+
+solveQuadraticPrimePower
+  :: Integer
+  -> Integer
+  -> Integer
+  -> Prime Integer
+  -> Word
+  -> [Integer]
+solveQuadraticPrimePower a b c p = go
+  where
+    go :: Word -> [Integer]
+    go 0 = [0]
+    go 1 = solveQuadraticPrime a b c p
+    go k = concatMap (liftRoot k) (go (k - 1))
+
+    -- Hensel lifting
+    -- https://en.wikipedia.org/wiki/Hensel%27s_lemma#Hensel_lifting
+    liftRoot :: Word -> Integer -> [Integer]
+    liftRoot k r = case recipModInteger (2 * a * r + b) pk of
+      0 -> case fr of
+        0 -> map (\i -> r + pk `quot` p' * i) [0 .. p' - 1]
+        _ -> []
+      invDeriv -> [(r - fr * invDeriv) `mod` pk]
+      where
+        pk = p' ^ k
+        fr = (a * r * r + b * r + c) `mod` pk
+
+    p' :: Integer
+    p' = unPrime p
+
+solveQuadraticPrime
+  :: Integer
+  -> Integer
+  -> Integer
+  -> Prime Integer
+  -> [Integer]
+solveQuadraticPrime a b c (unPrime -> 2 :: Integer)
+  = case (even c, even (a + b)) of
+    (True, True) -> [0, 1]
+    (True, _)    -> [0]
+    (_, False)   -> [1]
+    _            -> []
+solveQuadraticPrime a b c p
+  | a `mod` p' == 0
+  = solveLinear' p' b c
+  | otherwise
+  = map (\n -> n * recipModInteger (2 * a) p' `mod` p')
+  $ case sqrtModMaybe (b * b - 4 * a * c) (FieldCharacteristic p 1) of
+    Nothing -> []
+    Just 0  -> [- b]
+    Just rt -> [rt - b, - rt - b]
+    where
+      p' :: Integer
+      p' = unPrime p
+
