@@ -282,7 +282,8 @@ factorise g = concat $
 
         quotI (a :+ b) n = (a `quot` n :+ b `quot` n)
 
--- | Remove @p@ and @conjugate p@ factors from the argument.
+-- | Remove @p@ and @conjugate p@ factors from the argument, where
+-- @p@ is an Eisenstein prime.
 divideByPrime
     :: EisensteinInteger   -- ^ Eisenstein prime @p@
     -> EisensteinInteger   -- ^ Conjugate of @p@
@@ -298,10 +299,7 @@ divideByPrime p p' np k = go k 0
     where
         go :: Int -> Int -> EisensteinInteger -> (Int, Int, EisensteinInteger)
         go 0 d z = (d, d, z)
-        go c d z
-            | c >= 2
-            , Just z' <- z `quotEvenI` np
-            = go (c - 2) (d + 1) z'
+        go c d z | c >= 2, Just z' <- z `quotEvenI` np = go (c - 2) (d + 1) z'
         go c d z = (d + d1, d + d2, z'')
             where
                 (d1, z') = go1 c 0 z
@@ -319,13 +317,11 @@ divideByPrime p p' np k = go k 0
 
         err = error $ "divideByPrime: malformed arguments" ++ show (p, np, k)
 
+-- | Divide an Eisenstein integer by an even integer.
 quotEvenI :: EisensteinInteger -> Integer -> Maybe EisensteinInteger
 quotEvenI (x :+ y) n
-    | xr == 0
-    , yr == 0
-    = Just (xq :+ yq)
-    | otherwise
-    = Nothing
-    where
-        (xq, xr) = x `quotRem` n
-        (yq, yr) = y `quotRem` n
+    | xr == 0 , yr == 0 = Just (xq :+ yq)
+    | otherwise         = Nothing
+  where
+    (xq, xr) = x `quotRem` n
+    (yq, yr) = y `quotRem` n
