@@ -117,6 +117,12 @@ primesProperty2 (Positive index) =
         isOrdered xs = all (\(x,y) -> E.norm x <= E.norm y) . zip xs $ tail xs
     in isOrdered $ take index E.primes
 
+-- | Checks that the numbers produced by @primes@ are all in the first
+-- sextant.
+primesProperty3 :: Positive Int -> Bool
+primesProperty3 (Positive index) =
+    all (\e -> abs e == e) $ take index $ E.primes
+
 -- | An Eisenstein integer is either zero or associated (i.e. equal up to
 -- multiplication by a unit) to the product of its factors raised to their
 -- respective exponents.
@@ -184,6 +190,8 @@ testSuite = testGroup "EisensteinIntegers" $
     , testSmallAndQuick "The infinite list of Eisenstein primes produced by\
                         \ `primes` is ordered. "
                         primesProperty2
+    , testSmallAndQuick "All generated primes are in the first sextant"
+                        primesProperty3
     ]
 
     , testGroup "Factorisation"

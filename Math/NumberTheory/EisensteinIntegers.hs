@@ -22,9 +22,6 @@ module Math.NumberTheory.EisensteinIntegers
   , associates
   , ids
 
-  -- * TEMP exports
-  , primary
-
   -- * Division and remainder functions
   , divE
   , divModE
@@ -207,8 +204,8 @@ findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNa
         k = p `div` 6
 
 -- | An infinite list of the Eisenstein primes. Uses primes in Z to exhaustively
--- generate all Eisenstein primes (up to associates), in order of ascending
--- magnitude.
+-- generate all Eisenstein primes (all in the first sextant), in order of
+-- ascending magnitude.
 primes :: [EisensteinInteger]
 primes = (2 :+ 1) : mergeBy (comparing norm) l r
   where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 3 == 2) Sieve.primes
