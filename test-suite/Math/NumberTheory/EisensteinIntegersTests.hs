@@ -98,6 +98,12 @@ findPrimesProperty1 (Positive index) =
         p = (!! index) $ filter prop $ drop 3 primes
     in E.isPrime $ E.findPrime p
 
+-- | Checks that the @norm@ of the Euclidean domain of Eisenstein integers
+-- is multiplicative i.e.
+-- @forall e1 e2 in Z[ω] . norm(e1 * e2) == norm(e1) * norm(e2)@.
+euclideanDomainProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
+euclideanDomainProperty1 e1 e2 = E.norm (e1 * e2) == E.norm e1 * E.norm e2
+
 -- | Checks that the numbers produced by @primes@ are actually Eisenstein
 -- primes.
 primesProperty1 :: Positive Int -> Bool
@@ -110,6 +116,29 @@ primesProperty2 (Positive index) =
     let isOrdered :: [E.EisensteinInteger] -> Bool 
         isOrdered xs = all (\(x,y) -> E.norm x <= E.norm y) . zip xs $ tail xs
     in isOrdered $ take index E.primes
+
+-- | An Eisenstein integer is either zero or associated (i.e. equal up to
+-- multiplication by a unit) to the product of its factors raised to their
+-- respective exponents.
+factoriseProperty1 :: E.EisensteinInteger -> Bool
+factoriseProperty1 g = g == 0 || abs g == abs g'
+  where
+    factors = E.factorise g
+    g' = product $ map (uncurry (^)) factors
+
+-- | Check that there are no factors with exponent @0@ in the factorisation.
+factoriseProperty2 :: E.EisensteinInteger -> Bool
+factoriseProperty2 z = z == 0 || all ((> 0) . snd) (E.factorise z)
+
+-- | Check that no factor produced by @factorise@ is a unit.
+factoriseProperty3 :: E.EisensteinInteger -> Bool
+factoriseProperty3 z = z == 0 || all ((> 1) . E.norm . fst) (E.factorise z)
+
+factoriseSpecialCase1 :: Assertion
+factoriseSpecialCase1 = assertEqual "should be equal"
+  [(2 E.:+ 1, 3), (2 E.:+ 3, 1)]
+  (E.factorise (15 E.:+ 12))
+
 
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $
@@ -134,7 +163,8 @@ testSuite = testGroup "EisensteinIntegers" $
                         gcdEProperty2
     , testCase          "g.c.d. (12 :+ 23) (23 :+ 34)" gcdESpecialCase1
     ]
-  
+  , testSmallAndQuick "The Eisenstein norm function is multiplicative"
+                    euclideanDomainProperty1
   , testGroup "Primality"
     [ testSmallAndQuick "Eisenstein primes found by the norm search used in\
                         \ findPrime are really prime"
@@ -146,4 +176,14 @@ testSuite = testGroup "EisensteinIntegers" $
                         \ `primes` is ordered. "
                         primesProperty2
     ]
+
+    , testGroup "Factorisation"
+      [ testSmallAndQuick "factorise produces correct results"
+                          factoriseProperty1
+      , testSmallAndQuick "factorise produces no factors with exponent 0"
+                          factoriseProperty2
+      , testSmallAndQuick "factorise produces no unit factors"
+                          factoriseProperty3
+      , testCase          "factorise 15:+12" factoriseSpecialCase1
+      ]
   ]

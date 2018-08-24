@@ -10,6 +10,7 @@
 -- computing their prime factorisations.
 --
 
+{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RankNTypes    #-}
 
@@ -18,6 +19,11 @@ module Math.NumberTheory.EisensteinIntegers
   , ω
   , conjugate
   , norm
+  , associates
+  , ids
+
+  -- * TEMP exports
+  , primary
 
   -- * Division and remainder functions
   , divE
@@ -30,22 +36,25 @@ module Math.NumberTheory.EisensteinIntegers
   , gcdE
 
   -- * Primality functions
+  , factorise
   , findPrime
   , isPrime
   , primes
   ) where
 
-import Data.List                                  (partition)
-import Data.Ord                                   (comparing)
-import GHC.Generics                               (Generic)
+import Data.List                                       (mapAccumL, partition)
+import Data.Maybe                                      (fromMaybe)
+import Data.Ord                                        (comparing)
+import GHC.Generics                                    (Generic)
 
-import qualified Math.NumberTheory.Moduli         as Moduli
-import Math.NumberTheory.Moduli.Sqrt              (FieldCharacteristic(..))
-import Math.NumberTheory.Primes.Types             (PrimeNat(..))
-import qualified Math.NumberTheory.Primes.Sieve   as Sieve
-import qualified Math.NumberTheory.Primes.Testing as Testing
-import Math.NumberTheory.Utils                    (mergeBy)
-import Math.NumberTheory.Utils.FromIntegral       (integerToNatural)
+import qualified Math.NumberTheory.Moduli               as Moduli
+import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..))
+import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
+import Math.NumberTheory.Primes.Types                   (PrimeNat(..))
+import qualified Math.NumberTheory.Primes.Sieve         as Sieve
+import qualified Math.NumberTheory.Primes.Testing       as Testing
+import Math.NumberTheory.Utils                          (mergeBy)
+import Math.NumberTheory.Utils.FromIntegral             (integerToNatural)
 
 infix 6 :+
 
@@ -86,6 +95,22 @@ instance Num EisensteinInteger where
     signum z@(a :+ b)
         | a == 0 && b == 0 = z               -- hole at origin
         | otherwise        = z `divE` abs z
+
+-- | List of all Eisenstein units, counterclockwise across all sextants,
+-- starting with @1@.
+ids :: [EisensteinInteger]
+ids = take 6 (iterate ((1 + ω) *) 1)
+
+-- | Produce a list of an @EisensteinInteger@s' associates.
+associates :: EisensteinInteger -> [EisensteinInteger]
+associates e = map (e *) ids
+
+-- | Takes an Eisenstein prime whose norm is of the form @3k + 1@ with @k@
+-- a nonnegative integer.
+-- * Does *not* check for this precondition.
+-- * @head@ will fail when supplied a number unsatisfying it.
+primary :: EisensteinInteger -> EisensteinInteger
+primary = head . filter (\p -> p `modE` 3 == 2) . associates
 
 -- |Simultaneous 'quot' and 'rem'.
 quotRemE
@@ -150,14 +175,13 @@ norm (a :+ b) = a*a - a * b + b*b
 -- See <http://thekeep.eiu.edu/theses/2467 Bandara, Sarada, "An Exposition of the Eisenstein Integers" (2016)>,
 -- page 12.
 isPrime :: EisensteinInteger -> Bool
-isPrime e
-    | e == 0                     = False
-    -- Special case, @1 - ω@ is the only Eisenstein prime with norm @3@, and
-    -- @abs (1 - ω) = 2 + ω@.
-    | a' == 2 && b' == 1         = True
-    | b' == 0 && a' `mod` 3 == 2 = Testing.isPrime a'
-    | nE `mod` 3 == 1            = Testing.isPrime nE
-    | otherwise = False
+isPrime e | e == 0                     = False
+          -- Special case, @1 - ω@ is the only Eisenstein prime with norm @3@,
+          --  and @abs (1 - ω) = 2 + ω@.
+          | a' == 2 && b' == 1         = True
+          | b' == 0 && a' `mod` 3 == 2 = Testing.isPrime a'
+          | nE `mod` 3 == 1            = Testing.isPrime nE
+          | otherwise = False
   where nE       = norm e
         a' :+ b' = abs e
 
@@ -176,8 +200,8 @@ gcdE' g h
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
 findPrime :: Integer -> EisensteinInteger
 findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
-    Nothing   -> error "findPrime: argument must be prime p = 6k + 1"
-    Just zed  -> gcdE (p :+ 0) ((zed - 3 * k) :+ 1)
+    Nothing      -> error "findPrime: argument must be prime p = 6k + 1"
+    Just sqrtMod -> gcdE (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
     where
         k :: Integer
         k = p `div` 6
@@ -191,3 +215,87 @@ primes = (2 :+ 1) : mergeBy (comparing norm) l r
         rightPrimes' = filter (\prime -> prime `mod` 3 == 1) $ tail rightPrimes
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes', let x :+ y = findPrime p, g <- [x :+ y, x :+ (x - y)]]
+
+-- | Compute the prime factorisation of a Eisenstein integer. This is unique up
+-- to units (+/- 1, +/- ω, +/- ω²).
+-- Unit factors are not included in the result.
+-- All prime factors are primary i.e. @e ≡ 2 (modE 3)@, for an Eisenstein
+-- prime factor @e@.
+factorise :: EisensteinInteger -> [(EisensteinInteger, Int)]
+factorise g = concat $
+              snd $
+              mapAccumL go (abs g) (Factorisation.factorise $ norm g)
+  where
+    go :: EisensteinInteger -> (Integer, Int) -> (EisensteinInteger, [(EisensteinInteger, Int)])
+    go z (3, e) | r == 0    = (q, [(2 :+ 1, e)])
+                | otherwise = error $ "3 is a prime factor of the norm of z\
+                                      \ == " ++ show z ++ "but (1 - ω) is not\
+                                      \ a prime factor of z."
+      where
+        -- | Remove all @1 :+ (-1)@ (which is associated to @2 :+ 1@) factors from the
+        -- argument.
+        (q, r) = divModE z (2 :+ 1)
+    go z (p, e) | p `mod` 3 == 2 =
+                    let e' = e `quot` 2 in (z `quotI` (p ^ e'), [(p :+ 0, e')])
+
+                -- The @`mod` 3 == 0@ case need not be verified because the
+                -- only Eisenstein primes whose norm are a multiple of 3
+                -- are @1 - ω@ and its associates, which have already been
+                -- removed by the above @go z (3, e)@ pattern match.
+                -- This @otherwise@ is mandatorily @`mod` 3 == 1@.
+                | otherwise   = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
+      where
+        gp@(x :+ y)      = primary $ findPrime p
+        -- @gp'@ is @gp@'s conjugate.
+        gp'              = primary $ abs $ x :+ (x - y)
+        (k, k', z') = divideByPrime gp gp' p e z
+
+        quotI (a :+ b) n = (a `quot` n :+ b `quot` n)
+
+-- | Remove @p@ and @conjugate p@ factors from the argument.
+divideByPrime
+    :: EisensteinInteger   -- ^ Eisenstein prime @p@
+    -> EisensteinInteger   -- ^ Conjugate of @p@
+    -> Integer             -- ^ Precomputed norm of @p@, of form @4k + 1@
+    -> Int                 -- ^ Expected number of factors (either @p@ or @conjugate p@)
+                           --   in Eisenstein integer @z@
+    -> EisensteinInteger   -- ^ Eisenstein integer @z@
+    -> ( Int               -- Multiplicity of factor @p@ in @z@
+       , Int               -- Multiplicity of factor @conjigate p@ in @z@
+       , EisensteinInteger -- Remaining Eisenstein integer
+       )
+divideByPrime p p' np k = go k 0
+    where
+        go :: Int -> Int -> EisensteinInteger -> (Int, Int, EisensteinInteger)
+        go 0 d z = (d, d, z)
+        go c d z
+            | c >= 2
+            , Just z' <- z `quotEvenI` np
+            = go (c - 2) (d + 1) z'
+        go c d z = (d + d1, d + d2, z'')
+            where
+                (d1, z') = go1 c 0 z
+                d2 = c - d1
+                z'' = head $ drop d2
+                    $ iterate (\g -> fromMaybe err $ (g * p) `quotEvenI` np) z'
+
+        go1 :: Int -> Int -> EisensteinInteger -> (Int, EisensteinInteger)
+        go1 0 d z = (d, z)
+        go1 c d z
+            | Just z' <- (z * p') `quotEvenI` np
+            = go1 (c - 1) (d + 1) z'
+            | otherwise
+            = (d, z)
+
+        err = error $ "divideByPrime: malformed arguments" ++ show (p, np, k)
+
+quotEvenI :: EisensteinInteger -> Integer -> Maybe EisensteinInteger
+quotEvenI (x :+ y) n
+    | xr == 0
+    , yr == 0
+    = Just (xq :+ yq)
+    | otherwise
+    = Nothing
+    where
+        (xq, xr) = x `quotRem` n
+        (yq, yr) = y `quotRem` n
