@@ -213,11 +213,44 @@ primes = (2 :+ 1) : mergeBy (comparing norm) l r
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes', let x :+ y = findPrime p, g <- [x :+ y, x :+ (x - y)]]
 
--- | Compute the prime factorisation of a Eisenstein integer. This is unique up
--- to units (+/- 1, +/- ω, +/- ω²).
--- Unit factors are not included in the result.
--- All prime factors are primary i.e. @e ≡ 2 (modE 3)@, for an Eisenstein
+-- | Compute the prime factorisation of a Eisenstein integer. This is unique
+-- up to units (+/- 1, +/- ω, +/- ω²).
+-- * Unit factors are not included in the result.
+-- * All prime factors are primary i.e. @e ≡ 2 (modE 3)@, for an Eisenstein
 -- prime factor @e@.
+--
+-- * This function works by factorising the norm of an Eisenstein integer
+-- and then, for each prime factor, finding the Eisenstein prime whose norm
+-- is said prime factor with @findPrime@.
+--
+-- * This is only possible because the norm function of the Euclidean Domain of
+-- Eisenstein integers is multiplicative: @norm (e1 * e2) == norm e1 * norm e2@
+-- for any two @EisensteinInteger@s @e1, e2@.
+--
+-- * In the previously mentioned work <http://thekeep.eiu.edu/theses/2467 Bandara, Sarada, "An Exposition of the Eisenstein Integers" (2016)>,
+-- in Theorem 8.4 in Chapter 8, a way is given to express any Eisenstein
+-- integer @μ@ as @(-1)^a * ω^b * (1 - ω)^c * product [π_i^a_i | i <- [1..N]]@
+-- where @a, b, c, a_i@ are nonnegative integers, @N > 1@ is an integer and
+-- @π_i@ are primary primes.
+--
+-- * Aplying @norm@ to both sides of Theorem 8.4:
+--    @norm μ = norm ((-1)^a * ω^b * (1 - ω)^c * product [ π_i^a_i | i <- [1..N]])@
+-- == @norm μ = norm ((-1)^a) * norm (ω^b) * norm ((1 - ω)^c) * norm (product [ π_i^a_i | i <- [1..N]])@
+-- == @norm μ = (norm (-1))^a * (norm ω)^b * (norm (1 - ω))^c * product [ norm (π_i^a_i) | i <- [1..N]]@
+-- == @norm μ = (norm (-1))^a * (norm ω)^b * (norm (1 - ω))^c * product [ (norm π_i)^a_i) | i <- [1..N]]@
+-- == @norm μ = 1^a * 1^b * 3^c * product [ (norm π_i)^a_i) | i <- [1..N]]@
+-- == @norm μ = product [ (norm π_i)^a_i) | i <- [1..N]]@
+-- where @a, b, c, a_i@ are nonnegative integers, and @N > 1@ is an integer.
+--
+-- * The remainder of the Eisenstein integer factorisation problem is about
+-- finding appropriate @[e_i | i <- [1..M]@ such that
+-- @(nub . map norm) [e_i | i <- [1..N]] == [π_i | i <- [1..N]]@
+-- where @ 1 < N <= M@ are integers, @nub@ removes duplicates and @==@
+-- is equality on sets.
+--
+-- * The reason @M >= N@ is because the prime factors of an Eisenstein integer
+-- may include a prime factor and its conjugate, meaning the number may have
+-- more Eisenstein prime factors than its norm has integer prime factors.
 factorise :: EisensteinInteger -> [(EisensteinInteger, Int)]
 factorise g = concat $
               snd $
