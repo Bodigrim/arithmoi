@@ -195,6 +195,21 @@ gcdE' g h
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@ using a modification of the
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
+--
+-- The maintainer <https://github.com/cartazio/arithmoi/pull/121#issuecomment-415010647 Andrew Lelechenko>
+-- derived the following:
+-- * Each prime of form @3n+1@ is actually of form @6k+1@.
+-- * One has @(z+3k)^2 ≡ z^2 + 6kz + 9k^2 ≡ z^2 + (6k+1)z - z + 9k^2 ≡ z^2 - z + 9k^2 (mod 6k+1)@.
+--
+-- * The goal is to solve @z^2 - z + 1 ≡ 0 (mod 6k+1)@. One has:
+-- @z^2 - z + 9k^2 ≡ 9k^2 - 1 (mod 6k+1)@
+-- @(z+3k)^2 ≡ 9k^2-1 (mod 6k+1)@
+-- @z+3k = sqrtMod(9k^2-1)@
+-- @z = sqrtMod(9k^2-1) - 3k@
+-- 
+-- * For example, let @p = 7@, then @k = 1@. Square root of @9*1^2-1 modulo 7@ is @1@.
+-- * And @z = 1 - 3*1 = -2 ≡ 5 (mod 7)@.
+-- * Truly, @norm (5 :+ 1) = 25 - 5 + 1 = 21 ≡ 0 (mod 7)@.
 findPrime :: Integer -> EisensteinInteger
 findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
     Nothing      -> error "findPrime: argument must be prime p = 6k + 1"
