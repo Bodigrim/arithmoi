@@ -134,6 +134,15 @@ factoriseProperty2 z = z == 0 || all ((> 0) . snd) (E.factorise z)
 factoriseProperty3 :: E.EisensteinInteger -> Bool
 factoriseProperty3 z = z == 0 || all ((> 1) . E.norm . fst) (E.factorise z)
 
+-- | Check that every prime factor in the factorisation is primary, excluding
+-- @1 - ω@, if it is a factor.
+factoriseProperty4 :: E.EisensteinInteger -> Bool
+factoriseProperty4 z =
+    z == 0 ||
+    (all (\e -> e `E.modE` 3 == 2) $
+     filter (\e -> not $ elem e $ E.associates $ 1 E.:+ (-1)) $
+     map fst $ E.factorise z)
+
 factoriseSpecialCase1 :: Assertion
 factoriseSpecialCase1 = assertEqual "should be equal"
   [(2 E.:+ 1, 3), (2 E.:+ 3, 1)]
@@ -184,6 +193,8 @@ testSuite = testGroup "EisensteinIntegers" $
                           factoriseProperty2
       , testSmallAndQuick "factorise produces no unit factors"
                           factoriseProperty3
+      , testSmallAndQuick "factorise only produces primary primes"
+                          factoriseProperty4
       , testCase          "factorise 15:+12" factoriseSpecialCase1
       ]
   ]
