@@ -3,6 +3,7 @@ module Main where
 import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctionsBench as ArithmeticFunctions
+import Math.NumberTheory.EisensteinIntegersBench as Eisenstein
 import Math.NumberTheory.GaussianIntegersBench as Gaussian
 import Math.NumberTheory.GCDBench as GCD
 import Math.NumberTheory.JacobiBench as Jacobi
@@ -15,6 +16,7 @@ import Math.NumberTheory.SmoothNumbersBench as SmoothNumbers
 
 main = defaultMain
   [ ArithmeticFunctions.benchSuite
+  , Eisenstein.benchSuite
   , Gaussian.benchSuite
   , GCD.benchSuite
   , Jacobi.benchSuite
