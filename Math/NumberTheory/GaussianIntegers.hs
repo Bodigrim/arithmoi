@@ -74,17 +74,18 @@ instance Show GaussianInteger where
 instance Num GaussianInteger where
     (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
     (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (a * d + b * c)
-    abs z@(a :+ b)
-        | a == 0 && b == 0 =   z             -- origin
-        | a >  0 && b >= 0 =   z             -- first quadrant: (0, inf) x [0, inf)i
-        | a <= 0 && b >  0 =   b  :+ (-a)    -- second quadrant: (-inf, 0] x (0, inf)i
-        | a <  0 && b <= 0 = (-a) :+ (-b)    -- third quadrant: (-inf, 0) x (-inf, 0]i
-        | otherwise        = (-b) :+   a     -- fourth quadrant: [0, inf) x (-inf, 0)i
+    abs = fst . absSignum
     negate (a :+ b) = (-a) :+ (-b)
     fromInteger n = n :+ 0
-    signum z@(a :+ b)
-        | a == 0 && b == 0 = z               -- hole at origin
-        | otherwise        = z `divG` abs z
+    signum = snd . absSignum
+
+absSignum :: GaussianInteger -> (GaussianInteger, GaussianInteger)
+absSignum z@(a :+ b)
+    | a == 0 && b == 0 =   (z, 0)              -- origin
+    | a >  0 && b >= 0 =   (z, 1)              -- first quadrant: (0, inf) x [0, inf)i
+    | a <= 0 && b >  0 =   (b  :+ (-a), ι)     -- second quadrant: (-inf, 0] x (0, inf)i
+    | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
+    | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
 -- |Simultaneous 'quot' and 'rem'.
 quotRemG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)

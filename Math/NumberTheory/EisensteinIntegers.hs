@@ -79,19 +79,22 @@ instance Show EisensteinInteger where
 instance Num EisensteinInteger where
     (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
     (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (b * c + a * d - b * d)
-    abs z@(a :+ b)
-        | a == 0 && b == 0                                  = z            -- origin
-        | a > b && b >= 0                                   = z            -- first sextant: 0 ≤ Arg(η) < π/3
-        | b >= a && a > 0                                   = (-ω) * z     -- second sextant: π/3 ≤ Arg(η) < 2π/3
-        | b > 0 && 0 >= a                                   = (-1 - ω) * z -- third sextant: 2π/3 ≤ Arg(η) < π
-        | a < b && b <= 0                                   = - z          -- fourth sextant: -π < Arg(η) < -2π/3 or Arg(η) = π
-        | b <= a && a < 0                                   = ω * z        -- fifth sextant: -2π/3 ≤ Arg(η) < -π/3
-        | otherwise                                         = (1 + ω) * z  -- sixth sextant: -π/3 ≤ Arg(η) < 0
+    abs = fst . absSignum
     negate (a :+ b) = (-a) :+ (-b)
     fromInteger n = n :+ 0
-    signum z@(a :+ b)
-        | a == 0 && b == 0 = z               -- hole at origin
-        | otherwise        = z `divE` abs z
+    signum = snd . absSignum
+
+-- | Returns an @EisensteinInteger@'s sign, and its associate in the first
+-- sextant.
+absSignum :: EisensteinInteger -> (EisensteinInteger, EisensteinInteger)
+absSignum z@(a :+ b)
+    | a == 0 && b == 0                                  = (z, 0)            -- origin
+    | a > b && b >= 0                                   = (z, 1)            -- first sextant: 0 ≤ Arg(η) < π/3
+    | b >= a && a > 0                                   = ((-ω) * z, 1 + ω) -- second sextant: π/3 ≤ Arg(η) < 2π/3
+    | b > 0 && 0 >= a                                   = ((-1 - ω) * z, ω) -- third sextant: 2π/3 ≤ Arg(η) < π
+    | a < b && b <= 0                                   = (- z, -1)         -- fourth sextant: -π < Arg(η) < -2π/3 or Arg(η) = π
+    | b <= a && a < 0                                   = (ω * z, -1 - ω)   -- fifth sextant: -2π/3 ≤ Arg(η) < -π/3
+    | otherwise                                         = ((1 + ω) * z, -ω) -- sixth sextant: -π/3 ≤ Arg(η) < 0
 
 -- | List of all Eisenstein units, counterclockwise across all sextants,
 -- starting with @1@.
@@ -103,7 +106,7 @@ associates :: EisensteinInteger -> [EisensteinInteger]
 associates e = map (e *) ids
 
 -- | Takes an Eisenstein prime whose norm is of the form @3k + 1@ with @k@
--- a nonnegative integer.
+-- a nonnegative integer, and return its primary associate.
 -- * Does *not* check for this precondition.
 -- * @head@ will fail when supplied a number unsatisfying it.
 primary :: EisensteinInteger -> EisensteinInteger

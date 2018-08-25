@@ -21,6 +21,6 @@ benchTau n = bench (show n) $ nf (\m -> sum [tau (x :+ y) | x <- [1..m], y <- [0
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Gaussian"
-  [ bgroup "findPrime" $ map benchFindPrime [1000033, 10000121, 100000037, 1000000021, 10000000033, 100000000057, 1000000000061, 10000000000037]
+  [ bgroup "findPrime" $ map benchFindPrime [1000033, 10000121, 100000037, 1000000009, 10000000033, 100000000057, 1000000000061, 10000000000037]
   , bgroup "tau" $ map benchTau [10, 20, 40, 80]
   ]
