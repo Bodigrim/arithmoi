@@ -120,10 +120,10 @@ cyclicGroupToModulo = fromFactors . \case
   CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1 <> Coprimes.singleton (unPrime p) k
 
 -- | 'PrimitiveRoot m' is a type which is only inhabited by primitive roots of n.
-data PrimitiveRoot m =
-  PrimitiveRoot { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
-                , getGroup        :: CyclicGroup Natural -- ^ Get cyclic group structure.
-                }
+data PrimitiveRoot m = PrimitiveRoot
+  { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
+  , getGroup        :: CyclicGroup Natural -- ^ Get cyclic group structure.
+  }
   deriving (Eq, Show)
 
 -- | 'isPrimitiveRoot'' @cg@ @a@ checks whether @a@ is

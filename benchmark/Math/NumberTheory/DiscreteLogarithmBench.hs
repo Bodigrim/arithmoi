@@ -1,12 +1,6 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ViewPatterns #-}
-
-{-# LANGUAGE PartialTypeSignatures #-}
-
--- {-# OPTIONS_GHC -w #-}
 
 module Math.NumberTheory.DiscreteLogarithmBench
   ( benchSuite

@@ -80,7 +80,7 @@ isPrimitiveRootProperty2 :: Positive Natural -> Bool
 isPrimitiveRootProperty2 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
   || case someNatVal m of
-    SomeNat (_ :: Proxy t) -> not $ null $ mapMaybe isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
+    SomeNat (_ :: Proxy t) -> any (isJust . isPrimitiveRoot) [(minBound :: Mod t) .. maxBound]
 
 isPrimitiveRootProperty3 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty3 (AnySign n) (Positive m)

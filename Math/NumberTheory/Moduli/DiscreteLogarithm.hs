@@ -11,7 +11,6 @@ module Math.NumberTheory.Moduli.DiscreteLogarithm where
 
 import Data.Semigroup
 import Data.Maybe
--- import Data.List
 import qualified Data.IntMap.Strict as M
 import Numeric.Natural
 
@@ -26,11 +25,6 @@ discreteLogarithm
   => PrimitiveRoot m
   -> MultMod m
   -> Natural
--- discreteLogarithm a b = let n = prefValue . groupSize . getGroup $ a
---                             a' = unPrimitiveRoot a
---                             vals = genericTake n $ iterate (<> a') mempty
---                          in fromIntegral $ fromJust $ elemIndex b vals
-
 discreteLogarithm a b = let n = prefValue . groupSize . getGroup $ a
                             a' = unPrimitiveRoot a
                             m = integerSquareRoot (n - 1) + 1 -- simple way of ceiling . sqrt
