@@ -65,8 +65,8 @@ data CyclicGroup a
 
 instance NFData (Prime a) => NFData (CyclicGroup a)
 
-deriving instance Eq      (Prime a) => Eq      (CyclicGroup a)
-deriving instance Show    (Prime a) => Show    (CyclicGroup a)
+deriving instance Eq   (Prime a) => Eq   (CyclicGroup a)
+deriving instance Show (Prime a) => Show (CyclicGroup a)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.

@@ -9,7 +9,6 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -42,7 +41,6 @@ module Math.NumberTheory.Moduli.Class
   -- * Re-exported from GHC.TypeNats.Compat
   , KnownNat
   ) where
-
 
 import Data.Proxy
 import Data.Ratio
