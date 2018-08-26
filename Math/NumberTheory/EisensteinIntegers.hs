@@ -31,6 +31,8 @@ module Math.NumberTheory.EisensteinIntegers
   , remE
 
   , gcdE
+  , divideByThree
+  , gcdE''
 
   -- * Primality functions
   , factorise
@@ -185,8 +187,8 @@ isPrime e | e == 0                     = False
   where nE       = norm e
         a' :+ b' = abs e
 
--- | Compute the GCD of two Eisenstein integers. The result is always
--- in the first sextant.
+-- | Compute the GCD of two Eisenstein integers. The result is always in the
+-- first sextant.
 gcdE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
 gcdE g h = gcdE' (abs g) (abs h)
 
@@ -194,6 +196,44 @@ gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
 gcdE' g h
     | h == 0    = g -- done recursing
     | otherwise = gcdE' h (abs (g `modE` h))
+
+-- | Remove @1 - ω@ factors from an @EisensteinInteger@, and calculate that
+-- prime's multiplicity in the number's factorisation.
+divideByThree :: EisensteinInteger -> (Int, EisensteinInteger)
+divideByThree e = go 0 (abs e)
+  where
+    go :: Int -> EisensteinInteger -> (Int, EisensteinInteger)
+    go !n !z | r == 0    = go (n + 1) q
+             | otherwise = (n, z)
+      where
+        (q, r) = divModE (z * (2 :+ 1)) 3
+
+-- | Outputs which of two @EisensteinInteger@s has the larger norm, but
+-- without actually computing it in full. Uses an approximation method
+-- to achieve better assymptotic complexity.
+-- Based on a method described in
+-- <https://core.ac.uk/download/pdf/82554035.pdf Efficient algorithms for the gcd and cubic residuosity in the ring of Eisenstein integers>
+-- by I. B. Damgård  and G. S. Frandsen.
+approxLarger :: EisensteinInteger -> EisensteinInteger -> Bool
+approxLarger = undefined
+
+-- | Compute the GCD of two Eisenstein integers. The result is always in the
+-- first sextant.
+-- Based on
+-- <https://core.ac.uk/download/pdf/82554035.pdf Efficient algorithms for the gcd and cubic residuosity in the ring of Eisenstein integers>
+-- by I. B. Damgård  and G. S. Frandsen.
+gcdE'' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
+gcdE'' α β =
+    let (j1, γ) = divideByThree α
+        (j2, δ) = divideByThree β
+        g       = (1 :+ (-1)) ^ min j1 j2
+        go :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
+        go alfa beta | alfa == beta           = alfa
+                     | approxLarger alfa beta = go gamma beta
+                     | otherwise              = go alfa gamma
+          where
+            (_, gamma) = divideByThree (alfa - beta)
+    in abs $ g * go γ δ
 
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@ using a modification of the
