@@ -70,7 +70,7 @@ quotRemProperty1 x y = (y == 0) || q == q' && r == r'
 quotRemProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 quotRemProperty2 x y = (y == 0) || (x `E.quotE` y) * y + (x `E.remE` y) == x
 
--- | Verify that @gcd z2 z2@ always divides @z1@ and @z2@.
+-- | Verify that @gcd z1 z2@ always divides @z1@ and @z2@.
 gcdEProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty1 z1 z2
   = z1 == 0 && z2 == 0
@@ -153,7 +153,6 @@ factoriseSpecialCase1 :: Assertion
 factoriseSpecialCase1 = assertEqual "should be equal"
   [(2 E.:+ 1, 3), (2 E.:+ 3, 1)]
   (E.factorise (15 E.:+ 12))
-
 
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $

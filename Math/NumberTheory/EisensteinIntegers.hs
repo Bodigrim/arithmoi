@@ -10,9 +10,10 @@
 -- computing their prime factorisations.
 --
 
-{-# LANGUAGE BangPatterns  #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE RankNTypes    #-}
+{-# LANGUAGE BangPatterns   #-}
+{-# LANGUAGE BinaryLiterals #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE RankNTypes     #-}
 
 module Math.NumberTheory.EisensteinIntegers
   ( EisensteinInteger(..)
@@ -30,9 +31,8 @@ module Math.NumberTheory.EisensteinIntegers
   , quotE
   , remE
 
-  , gcdE
   , divideByThree
-  , gcdE''
+  , gcdE
 
   -- * Primality functions
   , factorise
@@ -41,6 +41,8 @@ module Math.NumberTheory.EisensteinIntegers
   , primes
   ) where
 
+import Data.Bits                                       ((.&.), setBit, shift,
+                                                        zeroBits)
 import Data.List                                       (mapAccumL, partition)
 import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
@@ -187,24 +189,14 @@ isPrime e | e == 0                     = False
   where nE       = norm e
         a' :+ b' = abs e
 
--- | Compute the GCD of two Eisenstein integers. The result is always in the
--- first sextant.
-gcdE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE g h = gcdE' (abs g) (abs h)
-
-gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE' g h
-    | h == 0    = g -- done recursing
-    | otherwise = gcdE' h (abs (g `modE` h))
-
 -- | Remove @1 - ω@ factors from an @EisensteinInteger@, and calculate that
 -- prime's multiplicity in the number's factorisation.
 divideByThree :: EisensteinInteger -> (Int, EisensteinInteger)
-divideByThree e = go 0 (abs e)
+divideByThree e = go 0 e
   where
     go :: Int -> EisensteinInteger -> (Int, EisensteinInteger)
     go !n !z | r == 0    = go (n + 1) q
-             | otherwise = (n, z)
+             | otherwise = (n, abs z)
       where
         (q, r) = divModE (z * (2 :+ 1)) 3
 
@@ -213,17 +205,47 @@ divideByThree e = go 0 (abs e)
 -- to achieve better assymptotic complexity.
 -- Based on a method described in
 -- <https://core.ac.uk/download/pdf/82554035.pdf Efficient algorithms for the gcd and cubic residuosity in the ring of Eisenstein integers>
--- by I. B. Damgård  and G. S. Frandsen.
+-- by I. B. Damgård and G. S. Frandsen.
+-- Complexity: runs in @O(log (norm(α)) + log (norm(β)))@ time, where @α,β@
+-- are the argument @EisensteinInteger@s.
 approxLarger :: EisensteinInteger -> EisensteinInteger -> Bool
-approxLarger = undefined
+approxLarger (a :+ b) (c :+ d) = f a b > f c d
+  where
+    f :: Integer -> Integer -> Integer
+    f x y = approxSquare (x - y) + approxSquare x + approxSquare y
 
--- | Compute the GCD of two Eisenstein integers. The result is always in the
--- first sextant.
--- Based on
--- <https://core.ac.uk/download/pdf/82554035.pdf Efficient algorithms for the gcd and cubic residuosity in the ring of Eisenstein integers>
--- by I. B. Damgård  and G. S. Frandsen.
-gcdE'' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE'' α β =
+-- | Give an approximation of an integer's square. It sets every bit in the
+-- number to 0, with the exception of its 6 most significant bits.
+-- As such this function multiplies a 6-bit integer by itself.
+approxSquare :: Integer -> Integer
+approxSquare n = res * res
+  where
+    n' = abs n
+
+    -- Repeatedly shifts an @Integer@ right until it is @0@ in order to
+    -- count its significant bits.
+    -- Note: the result is undefined if the @Integer@ has more than @2^63 - 1@
+    -- significant digits.
+    go :: Integer -> Int -> Int
+    go !x !i | x == 0    = i
+              | otherwise = go x' (i + 1)
+      where
+        x' = shift x (-1)
+
+    -- Number of significant bits used by the integer @n@.
+    m :: Int
+    m = go n' 0
+
+    mask :: Integer
+    mask | m < 6 = 0b111111
+         | otherwise = foldl (\acc bit -> setBit acc bit) zeroBits [m - 6 .. m - 1]
+
+    res = n' .&. mask
+
+-- | Helper function used by @gcdE@. Checking the arguments for zeroes is done
+-- in @gcdE@.
+gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
+gcdE' α β =
     let (j1, γ) = divideByThree α
         (j2, δ) = divideByThree β
         g       = (1 :+ (-1)) ^ min j1 j2
@@ -234,6 +256,17 @@ gcdE'' α β =
           where
             (_, gamma) = divideByThree (alfa - beta)
     in abs $ g * go γ δ
+
+-- | Compute the GCD of two Eisenstein integers. The result is always in the
+-- first sextant. Based on
+-- <https://core.ac.uk/download/pdf/82554035.pdf Efficient algorithms for the gcd and cubic residuosity in the ring of Eisenstein integers>
+-- by I. B. Damgård and G. S. Frandsen.
+-- Complexity: runs in @O(log^2 norm(α*β))@ time, where @α,β@ are the argument
+-- @EisensteinInteger@s.
+gcdE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
+gcdE α β | α == 0 = abs β
+         | β == 0 = abs α
+         | otherwise = gcdE' α β
 
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@ using a modification of the
