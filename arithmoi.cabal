@@ -43,8 +43,8 @@ library
     ghc-prim <0.6,
     integer-gmp <1.1,
     integer-logarithms >=1.0,
-    mtl >=2.0 && <2.3,
     random >=1.0 && <1.2,
+    transformers >=0.0.1 && <0.6,
     vector >= 0.12
   if impl(ghc <8.0)
     build-depends:
