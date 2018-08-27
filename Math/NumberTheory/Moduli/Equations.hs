@@ -6,7 +6,7 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Modular equations
+-- Polynomial modular equations.
 --
 
 module Math.NumberTheory.Moduli.Equations
@@ -17,8 +17,16 @@ import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Class
 
--- | Find all solutions of ax + b == 0 (mod m).
-solveLinear :: KnownNat m => Mod m -> Mod m -> [Mod m]
+-- | Find all solutions of ax + b ≡ 0 (mod m).
+--
+-- >>> :set -XDataKinds
+-- >>> solveLinear (6 :: Mod 10) 4 -- solving 6x + 4 ≡ 0 (mod 10)
+-- [(1 `modulo` 10),(6 `modulo` 10)]
+solveLinear
+  :: KnownNat m
+  => Mod m   -- ^ a
+  -> Mod m   -- ^ b
+  -> [Mod m] -- ^ list of x
 solveLinear a b = map fromInteger $ solveLinear' (getMod a) (getVal a) (getVal b)
 
 solveLinear' :: Integer -> Integer -> Integer -> [Integer]
