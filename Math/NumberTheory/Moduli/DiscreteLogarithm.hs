@@ -7,9 +7,15 @@
 -- Portability:  Non-portable
 --
 
-module Math.NumberTheory.Moduli.DiscreteLogarithm where
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+-- {-# OPTIONS_GHC -fno-warn-unused-matches #-}
 
-import Data.Semigroup
+module Math.NumberTheory.Moduli.DiscreteLogarithm
+  ( discreteLogarithm
+  ) where
+
+-- import Data.Semigroup
 import Data.Maybe
 import qualified Data.IntMap.Strict as M
 import Numeric.Natural
@@ -19,17 +25,30 @@ import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.Powers.Squares
 
--- | Computes the discrete logarithm. Currently uses a naive search.
+-- | Computes the discrete logarithm. Currently uses the baby-step giant-step method.
 discreteLogarithm
-  :: KnownNat m
+  :: forall m. KnownNat m
   => PrimitiveRoot m
   -> MultMod m
   -> Natural
-discreteLogarithm a b = let n = prefValue . groupSize . getGroup $ a
-                            a' = unPrimitiveRoot a
-                            m = integerSquareRoot (n - 1) + 1 -- simple way of ceiling . sqrt
-                            babies = fromInteger . getVal . multElement <$> iterate (<> a') mempty
-                            table = M.fromList $ zip babies [0..(m-1)]
-                            bigGiant = stimes (- toInteger m) a'
-                            giants = fromInteger . getVal . multElement <$> iterate (<> bigGiant) b
-                         in head [i*m + j | (v,i) <- zip giants [0..(m-1)], j <- maybeToList $ M.lookup v table]
+discreteLogarithm a b = discreteLogarithm' (getGroup a) a' aInv (multElement b)
+  where
+    aElem = unPrimitiveRoot a
+    a'    = multElement aElem
+    aInv  = multElement $ invertGroup aElem
+
+discreteLogarithm'
+  :: forall m. KnownNat m
+  => CyclicGroup Natural -- ^ group structure
+  -> Mod m               -- ^ a
+  -> Mod m               -- ^ a inverse
+  -> Mod m               -- ^ b
+  -> Natural             -- ^ result
+discreteLogarithm' cg a a' b = head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
+  where
+    n = prefValue (groupSize cg)
+    m = integerSquareRoot (n - 1) + 1 -- simple way of ceiling . sqrt
+    babies = fromIntegral . getNatVal <$> iterate (* a) 1
+    table = M.fromList (zip babies [0..m-1])
+    bigGiant = powMod a' m
+    giants = fromIntegral . getNatVal <$> iterate (* bigGiant) b
