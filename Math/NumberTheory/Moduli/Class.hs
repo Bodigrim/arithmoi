@@ -207,7 +207,7 @@ instance KnownNat m => Bounded (MultMod m) where
 
 -- | Attempt to construct a multiplicative group element.
 isMultElement :: KnownNat m => Mod m -> Maybe (MultMod m)
-isMultElement a = if getVal a `gcd` getMod a == 1
+isMultElement a = if getNatVal a `gcd` getNatMod a == 1
                      then Just $ MultMod a
                      else Nothing
 
