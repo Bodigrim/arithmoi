@@ -13,6 +13,7 @@
 {-# LANGUAGE BangPatterns   #-}
 {-# LANGUAGE BinaryLiterals #-}
 {-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE MagicHash      #-}
 {-# LANGUAGE RankNTypes     #-}
 
 module Math.NumberTheory.EisensteinIntegers
@@ -41,12 +42,13 @@ module Math.NumberTheory.EisensteinIntegers
   , primes
   ) where
 
-import Data.Bits                                       ((.&.), setBit, shift,
-                                                        zeroBits)
+import Data.Bits                                       ((.&.), shift)
 import Data.List                                       (mapAccumL, partition)
 import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
+import GHC.Exts                                        (Int (I#), word2Int#)
 import GHC.Generics                                    (Generic)
+import GHC.Integer.GMP.Internals                       (sizeInBaseInteger)
 
 import qualified Math.NumberTheory.Moduli               as Moduli
 import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..))
@@ -82,7 +84,7 @@ instance Show EisensteinInteger where
 
 instance Num EisensteinInteger where
     (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
-    (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (b * c + a * d - b * d)
+    (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (b * (c - d) + a * d)
     abs = fst . absSignum
     negate (a :+ b) = (-a) :+ (-b)
     fromInteger n = n :+ 0
@@ -195,10 +197,13 @@ divideByThree :: EisensteinInteger -> (Int, EisensteinInteger)
 divideByThree e = go 0 e
   where
     go :: Int -> EisensteinInteger -> (Int, EisensteinInteger)
-    go !n !z | r == 0    = go (n + 1) q
-             | otherwise = (n, abs z)
+    go !n !z@(a :+ b) | r1 == 0 && r2 == 0 = go (n + 1) (q1 :+ q2)
+                      | otherwise          = (n, abs z)
       where
-        (q, r) = divModE (z * (2 :+ 1)) 3
+        -- @(a + a - b) :+ (a + b)@ is @z * (2 :+ 1)@, and @z * (2 :+ 1)/3@
+        -- is the same as @z / (1 :+ (-1))@.
+        (q1, r1) = divMod (a + a - b) 3
+        (q2, r2) = divMod (a + b) 3
 
 -- | Outputs which of two @EisensteinInteger@s has the larger norm, but
 -- without actually computing it in full. Uses an approximation method
@@ -220,27 +225,17 @@ approxLarger (a :+ b) (c :+ d) = f a b > f c d
 approxSquare :: Integer -> Integer
 approxSquare n = res * res
   where
-    n' = abs n
-
-    -- Repeatedly shifts an @Integer@ right until it is @0@ in order to
-    -- count its significant bits.
-    -- Note: the result is undefined if the @Integer@ has more than @2^63 - 1@
-    -- significant digits.
-    go :: Integer -> Int -> Int
-    go !x !i | x == 0    = i
-              | otherwise = go x' (i + 1)
-      where
-        x' = shift x (-1)
-
-    -- Number of significant bits used by the integer @n@.
+    -- Number of significant bits in the integer @n@.
     m :: Int
-    m = go n' 0
+    m = I# (word2Int# (sizeInBaseInteger n 2#))
+
+    bits = 0b111111
 
     mask :: Integer
-    mask | m < 6 = 0b111111
-         | otherwise = foldl (\acc bit -> setBit acc bit) zeroBits [m - 6 .. m - 1]
+    mask | m < 6 = bits
+         | otherwise = shift bits (m - 6)
 
-    res = n' .&. mask
+    res = n .&. mask
 
 -- | Helper function used by @gcdE@. Checking the arguments for zeroes is done
 -- in @gcdE@.
@@ -248,7 +243,13 @@ gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
 gcdE' α β =
     let (j1, γ) = divideByThree α
         (j2, δ) = divideByThree β
-        g       = (1 :+ (-1)) ^ min j1 j2
+        g       | min' == 0 = 1
+                | min' == 1 = 1 :+ (-1) 
+                | min' == 2 = 0 :+ (-3)
+                | min' == 3 = (-3) :+ (-6)
+                | otherwise = (1 :+ (-1)) ^ min'
+          where
+            min' = min j1 j2
         go :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
         go alfa beta | alfa == beta           = alfa
                      | approxLarger alfa beta = go gamma beta
@@ -333,7 +334,7 @@ primes = (2 :+ 1) : mergeBy (comparing norm) l r
 -- == @norm μ = (norm (-1))^a * (norm ω)^b * (norm (1 - ω))^c * product [ norm (π_i^a_i) | i <- [1..N]]@
 -- == @norm μ = (norm (-1))^a * (norm ω)^b * (norm (1 - ω))^c * product [ (norm π_i)^a_i) | i <- [1..N]]@
 -- == @norm μ = 1^a * 1^b * 3^c * product [ (norm π_i)^a_i) | i <- [1..N]]@
--- == @norm μ = product [ (norm π_i)^a_i) | i <- [1..N]]@
+-- == @norm μ = 3^c * product [ (norm π_i)^a_i) | i <- [1..N]]@
 -- where @a, b, c, a_i@ are nonnegative integers, and @N > 1@ is an integer.
 --
 -- * The remainder of the Eisenstein integer factorisation problem is about
