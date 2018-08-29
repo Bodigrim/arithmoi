@@ -58,6 +58,7 @@ import Data.Bits
 import GHC.Exts
 import Numeric.Natural
 
+import qualified Math.NumberTheory.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
 import qualified Math.NumberTheory.SmoothNumbers as SN
@@ -69,6 +70,13 @@ import Math.NumberTheory.TestUtils.Wrappers
 instance Arbitrary Natural where
   arbitrary = fromInteger <$> (arbitrary `suchThat` (>= 0))
   shrink = map fromInteger . filter (>= 0) . shrink . toInteger
+
+instance Arbitrary E.EisensteinInteger where
+  arbitrary = (E.:+) <$> arbitrary <*> arbitrary
+  shrink (x E.:+ y) = map (x E.:+) (shrink y) ++ map (E.:+ y) (shrink x)
+
+instance Monad m => Serial m E.EisensteinInteger where
+  series = cons2 (E.:+)
 
 instance Arbitrary GaussianInteger where
   arbitrary = (:+) <$> arbitrary <*> arbitrary

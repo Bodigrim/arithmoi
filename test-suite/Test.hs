@@ -30,6 +30,8 @@ import qualified Math.NumberTheory.Primes.FactorisationTests as Factorisation
 import qualified Math.NumberTheory.Primes.SieveTests as Sieve
 import qualified Math.NumberTheory.Primes.TestingTests as Testing
 
+import qualified Math.NumberTheory.EisensteinIntegersTests as Eisenstein
+
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
 import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctions
@@ -80,6 +82,7 @@ tests = testGroup "All"
     , Sieve.testSuite
     , Testing.testSuite
     ]
+  , Eisenstein.testSuite
   , Gaussian.testSuite
   , testGroup "ArithmeticFunctions"
     [ ArithmeticFunctions.testSuite

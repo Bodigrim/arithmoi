@@ -47,6 +47,7 @@ import Math.NumberTheory.Primes.Types (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import Math.NumberTheory.Utils              (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral (integerToNatural)
 
 infix 6 :+
@@ -76,17 +77,18 @@ instance Show GaussianInteger where
 instance Num GaussianInteger where
     (+) (a :+ b) (c :+ d) = (a + c) :+ (b + d)
     (*) (a :+ b) (c :+ d) = (a * c - b * d) :+ (a * d + b * c)
-    abs z@(a :+ b)
-        | a == 0 && b == 0 =   z             -- origin
-        | a >  0 && b >= 0 =   z             -- first quadrant: (0, inf) x [0, inf)i
-        | a <= 0 && b >  0 =   b  :+ (-a)    -- second quadrant: (-inf, 0] x (0, inf)i
-        | a <  0 && b <= 0 = (-a) :+ (-b)    -- third quadrant: (-inf, 0) x (-inf, 0]i
-        | otherwise        = (-b) :+   a     -- fourth quadrant: [0, inf) x (-inf, 0)i
+    abs = fst . absSignum
     negate (a :+ b) = (-a) :+ (-b)
     fromInteger n = n :+ 0
-    signum z@(a :+ b)
-        | a == 0 && b == 0 = z               -- hole at origin
-        | otherwise        = z `divG` abs z
+    signum = snd . absSignum
+
+absSignum :: GaussianInteger -> (GaussianInteger, GaussianInteger)
+absSignum z@(a :+ b)
+    | a == 0 && b == 0 =   (z, 0)              -- origin
+    | a >  0 && b >= 0 =   (z, 1)              -- first quadrant: (0, inf) x [0, inf)i
+    | a <= 0 && b >  0 =   (b  :+ (-a), ι)     -- second quadrant: (-inf, 0] x (0, inf)i
+    | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
+    | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
 -- |Simultaneous 'quot' and 'rem'.
 quotRemG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
@@ -148,15 +150,6 @@ primes = (1 :+ 1): mergeBy (comparing norm) l r
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes, let x :+ y = findPrime p, g <- [x :+ y, y :+ x]]
 
-mergeBy :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
-mergeBy cmp = loop
-  where
-    loop [] ys  = ys
-    loop xs []  = xs
-    loop (x:xs) (y:ys)
-      = case cmp x y of
-         GT -> y : loop (x:xs) ys
-         _  -> x : loop xs (y:ys)
 
 -- | Compute the GCD of two Gaussian integers. Result is always
 -- in the first quadrant.
