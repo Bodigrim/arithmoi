@@ -119,9 +119,8 @@ instance (Euclidean a, Ord a) => Num (Prefactored a) where
   signum (Prefactored v _) = Prefactored (signum v) mempty
   fromInteger n = fromValue (fromInteger n)
 
-type instance Prime (Prefactored a) = Prime a
-
 instance (Eq a, Num a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
+  type Prime (Prefactored a) = Prime a
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (unCoprimes f)

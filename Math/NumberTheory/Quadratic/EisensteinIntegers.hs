@@ -13,6 +13,7 @@
 {-# LANGUAGE BangPatterns   #-}
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE RankNTypes     #-}
+{-# LANGUAGE TypeFamilies   #-}
 
 module Math.NumberTheory.Quadratic.EisensteinIntegers
   ( EisensteinInteger(..)
@@ -31,6 +32,8 @@ module Math.NumberTheory.Quadratic.EisensteinIntegers
   , primes
   ) where
 
+import Control.Arrow
+import Data.Coerce
 import Data.List                                       (mapAccumL, partition)
 import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
@@ -42,8 +45,9 @@ import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import Math.NumberTheory.Primes.Types                   (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Sieve         as Sieve
 import qualified Math.NumberTheory.Primes.Testing       as Testing
+import qualified Math.NumberTheory.UniqueFactorisation  as U
 import Math.NumberTheory.Utils                          (mergeBy)
-import Math.NumberTheory.Utils.FromIntegral             (integerToNatural)
+import Math.NumberTheory.Utils.FromIntegral             (integerToNatural, intToWord)
 
 infix 6 :+
 
@@ -313,3 +317,16 @@ quotEvenI (x :+ y) n
   where
     (xq, xr) = x `quotRem` n
     (yq, yr) = y `quotRem` n
+
+-------------------------------------------------------------------------------
+
+newtype EisensteinPrime = EisensteinPrime { _unEisensteinPrime :: EisensteinInteger }
+  deriving (Eq, Show)
+
+instance U.UniqueFactorisation EisensteinInteger where
+  type Prime EisensteinInteger = EisensteinPrime
+  unPrime = coerce
+
+  factorise 0 = []
+  factorise e = map (coerce *** intToWord) $ factorise e
+

@@ -41,6 +41,7 @@ import Math.NumberTheory.Powers.Modular (powMod)
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
+import Math.NumberTheory.UniqueFactorisation (Prime)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
 

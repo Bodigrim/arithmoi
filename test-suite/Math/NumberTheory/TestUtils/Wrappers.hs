@@ -186,16 +186,14 @@ instance (Monad m, Serial m a, UniqueFactorisation a) => Serial m (PrimeWrapper 
 -------------------------------------------------------------------------------
 -- UniqueFactorisation
 
-type instance Prime (Large a) = Prime a
-
 instance UniqueFactorisation a => UniqueFactorisation (Large a) where
+  type Prime (Large a) = Prime a
   unPrime p = Large (unPrime p)
   factorise (Large x) = factorise x
   isPrime (Large x) = isPrime x
 
-type instance Prime (Huge a) = Prime a
-
 instance UniqueFactorisation a => UniqueFactorisation (Huge a) where
+  type Prime (Huge a) = Prime a
   unPrime p = Huge (unPrime p)
   factorise (Huge x) = factorise x
   isPrime (Huge x) = isPrime x

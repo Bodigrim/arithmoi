@@ -1,17 +1,6 @@
--- |
--- Module:      Math.NumberTheory.GaussianIntegers
--- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
--- Licence:     MIT
--- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
---
--- This module exports functions for manipulating Gaussian integers, including
--- computing their prime factorisations.
---
-
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 module Math.NumberTheory.Quadratic.GaussianIntegers (
     GaussianInteger(..),
@@ -28,7 +17,9 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     factorise,
 ) where
 
+import Control.Arrow
 import Control.DeepSeq (NFData)
+import Data.Coerce
 import Data.List (mapAccumL, partition)
 import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
@@ -42,8 +33,9 @@ import Math.NumberTheory.Primes.Types (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import qualified Math.NumberTheory.UniqueFactorisation  as U
 import Math.NumberTheory.Utils              (mergeBy)
-import Math.NumberTheory.Utils.FromIntegral (integerToNatural)
+import Math.NumberTheory.Utils.FromIntegral (integerToNatural, intToWord)
 
 infix 6 :+
 infixr 8 .^
@@ -252,3 +244,15 @@ quotEvenI (x :+ y) n
     where
         (xq, xr) = x `quotRem` n
         (yq, yr) = y `quotRem` n
+
+-------------------------------------------------------------------------------
+
+newtype GaussianPrime = GaussianPrime { _unGaussianPrime :: GaussianInteger }
+  deriving (Eq, Show)
+
+instance U.UniqueFactorisation GaussianInteger where
+  type Prime GaussianInteger = GaussianPrime
+  unPrime = coerce
+
+  factorise 0 = []
+  factorise g = map (coerce *** intToWord) $ factorise g
