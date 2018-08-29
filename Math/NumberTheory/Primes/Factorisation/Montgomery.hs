@@ -50,8 +50,8 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
   ) where
 
 import Control.Arrow
+import Control.Monad.Trans.State.Lazy
 import System.Random
-import Control.Monad.State.Lazy
 import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -60,6 +60,7 @@ import Data.Maybe
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import Data.Traversable
 
 import GHC.TypeNats.Compat
 
