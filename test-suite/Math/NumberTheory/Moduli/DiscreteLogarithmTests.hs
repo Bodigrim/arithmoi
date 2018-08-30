@@ -47,29 +47,6 @@ discreteLogarithmProperty' (Positive m) a k =
       let a' = unPrimitiveRoot a''
       return $ discreteLogarithm a'' (k `stimes` a') == k `mod` totient m
 
--- cases = mapMaybe makeCase [ (5,  8, 10^9 + 7)
---                           , (2,  7, 3^20)
---                           , (2,  3, 10^11 + 3)
---                           , (3, 17, 5^16)
---                           ]
-
-pointTest1 :: Assertion
-pointTest1 = discreteLogarithm a b @?= 145514840
-  where Just a = isPrimitiveRoot (5 :: Mod (10^9 + 7))
-        Just b = isMultElement 8
-pointTest2 :: Assertion
-pointTest2 = discreteLogarithm a b @?= 151298512
-  where Just a = isPrimitiveRoot (2 :: Mod (3^20))
-        Just b = isMultElement 7
-pointTest3 :: Assertion
-pointTest3 = discreteLogarithm a b @?= 1452889085
-  where Just a = isPrimitiveRoot (2 :: Mod (10^11 + 3))
-        Just b = isMultElement 3
-pointTest4 :: Assertion
-pointTest4 = discreteLogarithm a b @?= 70218319539
-  where Just a = isPrimitiveRoot (3 :: Mod (5^16))
-        Just b = isMultElement 17
-
 testSuite :: TestTree
 testSuite = testGroup "Discrete logarithm"
   [ testSmallAndQuick "output is correct range" discreteLogRange
