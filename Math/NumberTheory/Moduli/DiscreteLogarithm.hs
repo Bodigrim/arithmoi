@@ -11,19 +11,20 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Math.NumberTheory.Moduli.DiscreteLogarithm where
+module Math.NumberTheory.Moduli.DiscreteLogarithm
+  ( discreteLogarithm
+  ) where
 
--- import Data.Semigroup
-import Data.Maybe
 import qualified Data.IntMap.Strict as M
-import Numeric.Natural
-import GHC.Integer.GMP.Internals
+import Data.Maybe                             (maybeToList)
+import Numeric.Natural                        (Natural)
+import GHC.Integer.GMP.Internals              (recipModInteger, powModInteger)
 
-import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class
-import Math.NumberTheory.Moduli.PrimitiveRoot
-import Math.NumberTheory.Powers.Squares
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Moduli.Chinese       (chineseRemainder2)
+import Math.NumberTheory.Moduli.Class         (KnownNat, MultMod(..), Mod, getVal)
+import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..))
+import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
+import Math.NumberTheory.UniqueFactorisation  (unPrime)
 
 -- | Computes the discrete logarithm. Currently uses the baby-step giant-step method with Bach reduction.
 discreteLogarithm
@@ -35,10 +36,10 @@ discreteLogarithm a b = discreteLogarithm' (getGroup a) (multElement $ unPrimiti
 
 discreteLogarithm'
   :: forall m. KnownNat m
-  => CyclicGroup Natural -- ^ group structure
-  -> Mod m               -- ^ a
-  -> Mod m               -- ^ b
-  -> Natural             -- ^ result
+  => CyclicGroup Natural  -- ^ group structure (must be the multiplicative group mod m)
+  -> Mod m                -- ^ a
+  -> Mod m                -- ^ b
+  -> Natural              -- ^ result
 discreteLogarithm' cg a b =
   case cg of
     CG2                                    -> 0
@@ -46,7 +47,8 @@ discreteLogarithm' cg a b =
     CG4                                    -> if b == 1 then 0 else 1
        -- the only possible input here is a=3 with b = 1 or 3
     CGOddPrimePower       (unPrime -> p) k -> discreteLogarithmPP p k (getVal a) (getVal b)
-    CGDoubleOddPrimePower (unPrime -> p) k -> discreteLogarithmPP p k (getVal a) (getVal b)
+    CGDoubleOddPrimePower (unPrime -> p) k -> discreteLogarithmPP p k (getVal a `rem` p^k) (getVal b `rem` p^k)
+       -- we have the isomorphism t -> t `rem` p^k from (Z/2p^kZ)* -> (Z/p^kZ)*
 
 discreteLogarithmPP
   :: Integer -- ^ prime
@@ -54,14 +56,14 @@ discreteLogarithmPP
   -> Integer -- ^ a
   -> Integer -- ^ b
   -> Natural -- ^ result
-discreteLogarithmPP p 1 a b = discreteLogarithmPrime p (a `rem` p) (b `rem` p)
+discreteLogarithmPP p 1 a b = discreteLogarithmPrime p a b
 discreteLogarithmPP p k a b = fromInteger result
   where
-    baseCase = toInteger $ discreteLogarithmPrime p (a `rem` p) (b `rem` p)
-    thetaA = theta p k (a `rem` p^k)
-    thetaB = theta p k (b `rem` p^k)
-    c = (recipModInteger thetaA (p^(k-1)) * thetaB) `rem` p^(k-1)
-    result = chineseRemainder2 (baseCase, p-1) (c, p^(k-1))
+    baseSol = toInteger $ discreteLogarithmPrime p (a `rem` p) (b `rem` p)
+    thetaA  = theta p k a
+    thetaB  = theta p k b
+    c       = (recipModInteger thetaA (p^(k-1)) * thetaB) `rem` p^(k-1)
+    result  = chineseRemainder2 (baseSol, p-1) (c, p^(k-1))
 
 discreteLogarithmPrime
   :: Integer -- ^ prime
@@ -79,12 +81,13 @@ discreteLogarithmPrime p a b = fromInteger $ head [i*m + j | (v,i) <- zip giants
     x .* y   = x * y `rem` p
 
 -- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
+{-# INLINE theta #-}
 theta
   :: Integer -- ^ prime
   -> Word    -- ^ power
-  -> Integer -- ^ k
+  -> Integer -- ^ a
   -> Integer -- ^ result
-theta p s k = (numerator `quot` (p^s)) `rem` (p^(s-1))
+theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
   where
-    numeratorMod = p^(2*s - 1)
-    numerator = (powModInteger k ((p-1)*p^(s-1)) numeratorMod - 1) `rem` numeratorMod
+    numeratorMod = p^(2*k - 1)
+    numerator    = (powModInteger a ((p-1)*p^(k-1)) numeratorMod - 1) `rem` numeratorMod
