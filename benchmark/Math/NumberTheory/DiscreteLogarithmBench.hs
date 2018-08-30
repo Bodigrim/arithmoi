@@ -18,26 +18,26 @@ import Math.NumberTheory.Moduli.Class (isMultElement, KnownNat, MultMod, multEle
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithm)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot, isPrimitiveRoot, unPrimitiveRoot, cyclicGroupFromModulo)
 
-data Case = forall m. KnownNat m => Case (PrimitiveRoot m) (MultMod m)
+data Case = forall m. KnownNat m => Case (PrimitiveRoot m) (MultMod m) String
 
 instance Show Case where
-  show (Case a b) = concat [show (getVal a'), "ⁿ == ", show b', " mod ", show (getMod a')]
+  show (Case a b s) = concat [show (getVal a'), "ⁿ == ", show b', " mod ", s]
     where a' = multElement $ unPrimitiveRoot a
           b' = getVal $ multElement b
 
-makeCase :: (Integer, Integer, Natural) -> Maybe Case
-makeCase (a,b,n) =
+makeCase :: (Integer, Integer, Natural, String) -> Maybe Case
+makeCase (a,b,n,s) =
   case someNatVal n of
     SomeNat (_ :: Proxy m) ->
-      Case <$> isPrimitiveRoot a' <*> isMultElement b'
+      Case <$> isPrimitiveRoot a' <*> isMultElement b' <*> pure s
         where a' = fromInteger a :: Mod m
               b' = fromInteger b
 
 cases :: [Case]
-cases = mapMaybe makeCase [ (5,  8, 10^9 + 7)
-                          , (2,  7, 3^20)
-                          , (2,  3, 10^11 + 3)
-                          , (3, 17, 5^16)
+cases = mapMaybe makeCase [ (5,  8,  10^9 + 7,  "10^9 + 7")
+                          , (2,  7,     3^200,     "3^500")
+                          , (2,  3, 10^11 + 3, "10^11 + 3")
+                          , (3, 17,     5^150,     "5^350")
                           ]
 
 rangeCases :: Natural -> Int -> [Case]
@@ -48,10 +48,10 @@ rangeCases start num = take num $ do
     SomeNat (_ :: Proxy m) -> do
       a <- take 1 $ mapMaybe isPrimitiveRoot [2 :: Mod m .. maxBound]
       b <- take 1 $ filter (/= unPrimitiveRoot a) $ mapMaybe isMultElement [2 .. maxBound]
-      return $ Case a b
+      return $ Case a b (show n)
 
 discreteLogarithm' :: Case -> Natural
-discreteLogarithm' (Case a b) = discreteLogarithm a b
+discreteLogarithm' (Case a b _) = discreteLogarithm a b
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Discrete logarithm"
