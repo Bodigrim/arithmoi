@@ -6,7 +6,7 @@
 -- Stability:   Provisional
 -- Portability: Non-portable (GHC extensions)
 --
--- Some utilities for bit twiddling.
+-- Some utilities, mostly for bit twiddling.
 --
 {-# LANGUAGE CPP, MagicHash, UnboxedTuples, BangPatterns #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -21,6 +21,8 @@ module Math.NumberTheory.Utils
     , uncheckedShiftR
     , splitOff
     , splitOff#
+
+    , mergeBy
     ) where
 
 #include "MachDeps.h"
@@ -173,3 +175,15 @@ splitOff# p n = go 0# n
       (# q, 0## #) -> go (k +# 1#) q
       _            -> (# k, m #)
 {-# INLINABLE splitOff# #-}
+
+-- | Merges two ordered lists into an ordered list. Checks for neither its
+-- precondition or postcondition.
+mergeBy :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
+mergeBy cmp = loop
+  where
+    loop [] ys  = ys
+    loop xs []  = xs
+    loop (x:xs) (y:ys)
+      = case cmp x y of
+         GT -> y : loop (x:xs) ys
+         _  -> x : loop xs (y:ys)

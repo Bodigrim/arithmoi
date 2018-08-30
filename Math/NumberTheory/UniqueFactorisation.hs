@@ -24,6 +24,7 @@ import Data.Coerce
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types (Prime, Prm(..), PrimeNat(..))
+import qualified Math.NumberTheory.EisensteinIntegers as E
 import qualified Math.NumberTheory.GaussianIntegers as G
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -76,3 +77,14 @@ instance UniqueFactorisation G.GaussianInteger where
 
   factorise 0 = []
   factorise g = map (coerce *** intToWord) $ G.factorise g
+
+newtype EisensteinPrime = EisensteinPrime { _unEisensteinPrime :: E.EisensteinInteger }
+  deriving (Eq, Show)
+
+type instance Prime E.EisensteinInteger = EisensteinPrime
+
+instance UniqueFactorisation E.EisensteinInteger where
+  unPrime = coerce
+
+  factorise 0 = []
+  factorise e = map (coerce *** intToWord) $ E.factorise e

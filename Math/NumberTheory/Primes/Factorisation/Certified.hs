@@ -18,9 +18,10 @@ module Math.NumberTheory.Primes.Factorisation.Certified
   ) where
 
 import System.Random
-import Control.Monad.State.Strict
+import Control.Monad.Trans.State.Strict
 import Data.Maybe
 import Data.Bits
+import Data.Traversable
 
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Primes.Factorisation.Montgomery
