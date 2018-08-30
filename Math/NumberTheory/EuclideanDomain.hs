@@ -19,8 +19,13 @@ module Math.NumberTheory.EuclideanDomain
 
 import Prelude hiding (divMod, div, mod, quotRem, quot, rem)
 
+-- | A class to represent a Euclidean domain.
 class EuclideanDomain a where
+  -- | When restriced to a subring of the Euclidean domain @a@ isomorphic to
+  -- @Integer@, this function should match @quotRem@ for Integers.
   quotRem :: a -> a -> (a, a)
+  -- | When restriced to a subring of the Euclidean domain @a@ isomorphic to
+  -- @Integer@, this function should match @divMod@ for Integers.
   divMod  :: a -> a -> (a, a)
 
 quot :: EuclideanDomain a => a -> a -> a
