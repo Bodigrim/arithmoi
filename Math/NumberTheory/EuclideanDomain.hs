@@ -31,11 +31,18 @@ class EuclideanDomain a where
 quot :: EuclideanDomain a => a -> a -> a
 quot x y = fst (quotRem x y)
 
+-- | Remainder of Euclidean division, satisfying
+--
+-- > (x `quot` y)*y + (x `rem` y) == x
+-- for @x, y@ in a Euclidean domain @a@.
 rem :: EuclideanDomain a => a -> a -> a
 rem x y = snd (quotRem x y)
 
 div :: EuclideanDomain a => a -> a -> a
 div x y = fst (divMod x y)
 
+-- | Remainder of Euclidean division, satisfying
+--
+-- > (x `div` y) * y + (x `mod` y) == x
 mod :: EuclideanDomain a => a -> a -> a
 mod x y = snd (divMod x y)
