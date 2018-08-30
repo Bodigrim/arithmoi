@@ -12,7 +12,6 @@ import Test.Tasty
 import Data.Semigroup
 import Data.Proxy
 import GHC.TypeNats.Compat
-import Test.Tasty.HUnit
 
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.PrimitiveRoot
@@ -52,9 +51,4 @@ testSuite = testGroup "Discrete logarithm"
   [ testSmallAndQuick "output is correct range" discreteLogRange
   , testSmallAndQuick "a^(log_a b) == b"        discreteLogarithmProperty
   , testSmallAndQuick "log_a a^k == k"          discreteLogarithmProperty'
-  , testGroup "example cases" [ testCase "large prime" pointTest1
-                              , testCase "prime power" pointTest2
-                              , testCase "larger prime" pointTest3
-                              , testCase "prime to larger power" pointTest4
-                              ]
   ]
