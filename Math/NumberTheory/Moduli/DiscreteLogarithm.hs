@@ -7,8 +7,6 @@
 -- Portability:  Non-portable
 --
 
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.Moduli.DiscreteLogarithm
@@ -28,14 +26,14 @@ import Math.NumberTheory.UniqueFactorisation  (unPrime)
 
 -- | Computes the discrete logarithm. Currently uses the baby-step giant-step method with Bach reduction.
 discreteLogarithm
-  :: forall m. KnownNat m
+  :: KnownNat m
   => PrimitiveRoot m
   -> MultMod m
   -> Natural
 discreteLogarithm a b = discreteLogarithm' (getGroup a) (multElement $ unPrimitiveRoot a) (multElement b)
 
 discreteLogarithm'
-  :: forall m. KnownNat m
+  :: KnownNat m
   => CyclicGroup Natural  -- ^ group structure (must be the multiplicative group mod m)
   -> Mod m                -- ^ a
   -> Mod m                -- ^ b
