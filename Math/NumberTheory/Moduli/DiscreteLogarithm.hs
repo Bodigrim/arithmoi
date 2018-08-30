@@ -25,11 +25,7 @@ import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
 import Math.NumberTheory.UniqueFactorisation  (unPrime)
 
 -- | Computes the discrete logarithm. Currently uses the baby-step giant-step method with Bach reduction.
-discreteLogarithm
-  :: KnownNat m
-  => PrimitiveRoot m
-  -> MultMod m
-  -> Natural
+discreteLogarithm :: KnownNat m => PrimitiveRoot m -> MultMod m -> Natural
 discreteLogarithm a b = discreteLogarithm' (getGroup a) (multElement $ unPrimitiveRoot a) (multElement b)
 
 discreteLogarithm'
@@ -48,12 +44,8 @@ discreteLogarithm' cg a b =
     CGDoubleOddPrimePower (unPrime -> p) k -> discreteLogarithmPP p k (getVal a `rem` p^k) (getVal b `rem` p^k)
        -- we have the isomorphism t -> t `rem` p^k from (Z/2p^kZ)* -> (Z/p^kZ)*
 
-discreteLogarithmPP
-  :: Integer -- ^ prime
-  -> Word    -- ^ power
-  -> Integer -- ^ a
-  -> Integer -- ^ b
-  -> Natural -- ^ result
+-- Implementation of Bach reduction (https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf)
+discreteLogarithmPP :: Integer -> Word -> Integer -> Integer -> Natural
 discreteLogarithmPP p 1 a b = discreteLogarithmPrime p a b
 discreteLogarithmPP p k a b = fromInteger result
   where
@@ -63,11 +55,15 @@ discreteLogarithmPP p k a b = fromInteger result
     c       = (recipModInteger thetaA (p^(k-1)) * thetaB) `rem` p^(k-1)
     result  = chineseRemainder2 (baseSol, p-1) (c, p^(k-1))
 
-discreteLogarithmPrime
-  :: Integer -- ^ prime
-  -> Integer -- ^ a
-  -> Integer -- ^ b
-  -> Natural -- ^ result
+-- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
+{-# INLINE theta #-}
+theta :: Integer -> Word -> Integer -> Integer
+theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
+  where
+    numeratorMod = p^(2*k - 1)
+    numerator    = (powModInteger a ((p-1)*p^(k-1)) numeratorMod - 1) `rem` numeratorMod
+
+discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b = fromInteger $ head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
   where
     m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
@@ -77,15 +73,3 @@ discreteLogarithmPrime p a b = fromInteger $ head [i*m + j | (v,i) <- zip giants
     bigGiant = powModInteger aInv m p
     giants   = fromIntegral <$> iterate (.* bigGiant) b
     x .* y   = x * y `rem` p
-
--- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
-{-# INLINE theta #-}
-theta
-  :: Integer -- ^ prime
-  -> Word    -- ^ power
-  -> Integer -- ^ a
-  -> Integer -- ^ result
-theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
-  where
-    numeratorMod = p^(2*k - 1)
-    numerator    = (powModInteger a ((p-1)*p^(k-1)) numeratorMod - 1) `rem` numeratorMod
