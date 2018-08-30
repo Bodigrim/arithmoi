@@ -19,6 +19,7 @@ import Data.List (groupBy, sort)
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Math.NumberTheory.EuclideanDomain as ED
 import Math.NumberTheory.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt (sqrtModMaybe, FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)
@@ -125,14 +126,14 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
 gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `remG` z == 0 && z2 `remG` z == 0 && z == abs z
+  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
   where
     z = gcdG z1 z2
 
 gcdGProperty2 :: GaussianInteger -> GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty2 z z1 z2
   = z == 0
-  || (gcdG z1' z2') `remG` z == 0
+  || (gcdG z1' z2') `ED.rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
