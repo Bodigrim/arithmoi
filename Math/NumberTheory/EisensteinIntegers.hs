@@ -37,7 +37,7 @@ import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
 import GHC.Generics                                    (Generic)
 
-import qualified Math.NumberTheory.EuclideanDomain      as ED
+import qualified Math.NumberTheory.Euclidean      as ED
 import qualified Math.NumberTheory.Moduli               as Moduli
 import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
@@ -106,7 +106,7 @@ associates e = map (e *) ids
 primary :: EisensteinInteger -> EisensteinInteger
 primary = head . filter (\p -> p `ED.mod` 3 == 2) . associates
 
-instance ED.EuclideanDomain EisensteinInteger where
+instance ED.Euclidean EisensteinInteger where
   quotRem = divHelper quot
   divMod  = divHelper div
 

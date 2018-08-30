@@ -14,7 +14,7 @@ module Math.NumberTheory.EisensteinIntegersTests
   ( testSuite
   ) where
 
-import qualified Math.NumberTheory.EuclideanDomain    as ED
+import qualified Math.NumberTheory.Euclidean    as ED
 import qualified Math.NumberTheory.EisensteinIntegers as E
 import Math.NumberTheory.Primes                       (primes)
 import Test.Tasty                                     (TestTree, testGroup)

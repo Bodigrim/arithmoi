@@ -19,7 +19,7 @@ import Data.List (groupBy, sort)
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Math.NumberTheory.EuclideanDomain as ED
+import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt (sqrtModMaybe, FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)

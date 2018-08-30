@@ -34,7 +34,7 @@ import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
 import GHC.Generics
 
-import qualified Math.NumberTheory.EuclideanDomain as ED
+import qualified Math.NumberTheory.Euclidean as ED
 import qualified Math.NumberTheory.Moduli as Moduli
 import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)
@@ -85,7 +85,7 @@ absSignum z@(a :+ b)
     | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
     | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
-instance ED.EuclideanDomain GaussianInteger where
+instance ED.Euclidean GaussianInteger where
     quotRem = divHelper quot
     divMod  = divHelper div
 
