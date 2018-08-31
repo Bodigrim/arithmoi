@@ -8,10 +8,10 @@
 --
 
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 
-module Math.NumberTheory.Moduli.DiscreteLogarithm
-  ( discreteLogarithm
-  ) where
+module Math.NumberTheory.Moduli.DiscreteLogarithm where
 
 import qualified Data.IntMap.Strict as M
 import Data.Maybe                             (maybeToList)
@@ -20,6 +20,7 @@ import GHC.Integer.GMP.Internals              (recipModInteger, powModInteger)
 
 import Math.NumberTheory.Moduli.Chinese       (chineseRemainder2)
 import Math.NumberTheory.Moduli.Class         (KnownNat, MultMod(..), Mod, getVal)
+import Math.NumberTheory.Moduli.Equations     (solveLinear')
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..))
 import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
 import Math.NumberTheory.UniqueFactorisation  (unPrime)
@@ -63,13 +64,30 @@ theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
     numeratorMod = p^(2*k - 1)
     numerator    = (powModInteger a ((p-1)*p^(k-1)) numeratorMod - 1) `rem` numeratorMod
 
+-- discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
+-- discreteLogarithmPrime p a b = fromInteger $ head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
+--   where
+--     m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
+--     babies   = fromIntegral <$> iterate (.* a) 1
+--     table    = M.fromList (zip babies [0..m-1])
+--     aInv     = recipModInteger a p
+--     bigGiant = powModInteger aInv m p
+--     giants   = fromIntegral <$> iterate (.* bigGiant) b
+--     x .* y   = x * y `rem` p
+
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
-discreteLogarithmPrime p a b = fromInteger $ head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
+discreteLogarithmPrime p a b = fromInteger $ head $ filter check $ begin (starter 0 0)
   where
-    m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
-    babies   = fromIntegral <$> iterate (.* a) 1
-    table    = M.fromList (zip babies [0..m-1])
-    aInv     = recipModInteger a p
-    bigGiant = powModInteger aInv m p
-    giants   = fromIntegral <$> iterate (.* bigGiant) b
-    x .* y   = x * y `rem` p
+    n               = p-1 -- order of the cyclic group
+    step (xi,!ai,!bi) = case xi `rem` 3 of
+                          0 -> (xi^2 `rem` p, 2*ai `rem` n  , 2*bi `rem` n  )
+                          1 -> (a*xi `rem` p, (ai+1) `rem` n, bi            )
+                          _ -> (b*xi `rem` p, ai            , (bi+1) `rem` n)
+    starter x y     = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
+    begin t         = go t t
+    go tort hare    = if xi == x2i
+                        then solveLinear' n ((bi - b2i) `mod` n) ((ai - a2i) `mod` n)
+                        else go (xi,ai,bi) (x2i,a2i,b2i)
+                      where (xi,ai,bi) = step tort
+                            (x2i,a2i,b2i) = step . step $ hare
+    check t         = powModInteger a t p == b
