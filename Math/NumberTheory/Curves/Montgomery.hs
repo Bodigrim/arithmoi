@@ -33,9 +33,10 @@ module Math.NumberTheory.Curves.Montgomery
 
 import Data.Proxy
 import GHC.Exts
-import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms
 import GHC.TypeNats.Compat
+
+import Math.NumberTheory.Utils (recipMod)
 
 -- | We use the Montgomery form of elliptic curve:
 -- b Y² = X³ + a X² + X (mod n).
@@ -90,9 +91,7 @@ instance Show SomePoint where
 -- by K. Gaj, S. Kwon et al.
 newPoint :: Integer -> Integer -> Maybe SomePoint
 newPoint s n = do
-    a24denRecip <- case recipModInteger a24den n of
-      0 -> Nothing
-      t -> Just t
+    a24denRecip <- recipMod a24den n
     a24 <- case a24num * a24denRecip `rem` n of
       -- (a+2)/4 = 0 corresponds to singular curve with A = -2
       0 -> Nothing

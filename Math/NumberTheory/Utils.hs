@@ -23,6 +23,8 @@ module Math.NumberTheory.Utils
     , splitOff#
 
     , mergeBy
+
+    , recipMod
     ) where
 
 #include "MachDeps.h"
@@ -187,3 +189,9 @@ mergeBy cmp = loop
       = case cmp x y of
          GT -> y : loop (x:xs) ys
          _  -> x : loop xs (y:ys)
+
+-- | Work around https://ghc.haskell.org/trac/ghc/ticket/14085
+recipMod :: Integer -> Integer -> Maybe Integer
+recipMod x m = case recipModInteger (x `mod` m) m of
+  0 -> Nothing
+  y -> Just y

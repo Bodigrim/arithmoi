@@ -17,9 +17,9 @@ module Math.NumberTheory.Moduli.Chinese
   ) where
 
 import Control.Monad (foldM)
-import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.GCD (extendedGCD)
+import Math.NumberTheory.Utils (recipMod)
 
 -- | Given a list @[(r_1,m_1), ..., (r_n,m_n)]@ of @(residue,modulus)@
 --   pairs, @chineseRemainder@ calculates the solution to the simultaneous
@@ -52,8 +52,3 @@ chineseRemainder2 :: (Integer,Integer) -> (Integer,Integer) -> Integer
 chineseRemainder2 (r1, md1) (r2,md2)
     = case extendedGCD md1 md2 of
         (_,u,v) -> ((1 - u*md1)*r1 + (1 - v*md2)*r2) `mod` (md1*md2)
-
-recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger x m of
-  0 -> Nothing
-  y -> Just y

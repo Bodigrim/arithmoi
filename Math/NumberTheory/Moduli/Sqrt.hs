@@ -44,7 +44,7 @@ import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
 import Math.NumberTheory.Primes.Testing.Probabilistic (isPrime)
-import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
+import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -303,8 +303,3 @@ findNonSquare n
           MinusOne -> p
           _        -> search ps
         search _ = error "Should never have happened, prime list exhausted."
-
-recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger x m of
-  0 -> Nothing
-  y -> Just y

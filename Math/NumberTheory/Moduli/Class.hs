@@ -143,6 +143,7 @@ invertMod mx
     then Nothing
     else Just $ Mod $ fromInteger y
   where
+    -- first argument of recipModInteger is guaranteed to be positive
     y = recipModInteger (getVal mx) (getMod mx)
 {-# INLINABLE invertMod #-}
 
