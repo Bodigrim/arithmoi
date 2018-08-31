@@ -134,7 +134,9 @@ gcdG g h = gcdG' (abs g) (abs h)
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG' g h
     | h == 0    = g -- done recursing
-    | otherwise = gcdG' h (abs (g `ED.mod` h))
+    | otherwise = gcdG' h (abs (g `mod'` h))
+  where
+    mod' = ED.mod :: GaussianInteger -> GaussianInteger -> GaussianInteger
 {-# DEPRECATED gcdG' "Use 'gcdG' instead." #-}
 
 -- |Find a Gaussian integer whose norm is the given prime number

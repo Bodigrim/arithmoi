@@ -9,6 +9,10 @@
 -- This module exports a class to represent Euclidean domains.
 --
 
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE MonoLocalBinds       #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Math.NumberTheory.Euclidean
   ( Euclidean (..)
   , div
@@ -18,6 +22,7 @@ module Math.NumberTheory.Euclidean
   ) where
 
 import Prelude hiding (divMod, div, mod, quotRem, quot, rem)
+import qualified Prelude as P
 
 -- | A class to represent a Euclidean domain.
 class Euclidean a where
@@ -46,3 +51,7 @@ div x y = fst (divMod x y)
 -- > (x `div` y) * y + (x `mod` y) == x
 mod :: Euclidean a => a -> a -> a
 mod x y = snd (divMod x y)
+
+instance Integral a => Euclidean a where
+  quotRem = P.quotRem
+  divMod  = P.divMod

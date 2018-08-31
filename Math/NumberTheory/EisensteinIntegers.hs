@@ -171,7 +171,9 @@ gcdE g h = gcdE' (abs g) (abs h)
 gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
 gcdE' g h
     | h == 0    = g -- done recursing
-    | otherwise = gcdE' h (abs (g `ED.mod` h)) 
+    | otherwise = gcdE' h (abs (g `mod'` h))
+  where
+    mod' = ED.mod :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
 
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@ using a modification of the
