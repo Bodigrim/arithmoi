@@ -59,6 +59,6 @@ benchSuite = bgroup "Discrete logarithm"
           [ bench (show c) $ nf discreteLogarithm' c | c <- cases]
   , bgroup "range"
           [ bench (show num ++ " cases near " ++ show n) $ nf (map discreteLogarithm') $ rangeCases n num
-            | (n, num) <- [(10000, 100), (1000000, 100), (100000000, 100)]
+            | (n, num) <- [(10000, 100), (1000000, 100), (100000000, 100), (10000000000, 100)]
           ]
   ]
