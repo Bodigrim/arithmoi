@@ -52,6 +52,6 @@ div x y = fst (divMod x y)
 mod :: Euclidean a => a -> a -> a
 mod x y = snd (divMod x y)
 
-instance Integral a => Euclidean a where
+instance {-# OVERLAPPABLE #-} Integral a => Euclidean a where
   quotRem = P.quotRem
   divMod  = P.divMod
