@@ -24,6 +24,7 @@ import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Utils (recipMod)
 
 -------------------------------------------------------------------------------
 -- Linear equations
@@ -49,9 +50,8 @@ solveLinear' m a b = case solveLinearCoprime m' (a `quot` d) (b `quot` d) of
     m' = m `quot` d
 
 solveLinearCoprime :: Integer -> Integer -> Integer -> Maybe Integer
-solveLinearCoprime m a b
-  | m `gcd` a /= 1 = Nothing
-  | otherwise = Just $ negate b * recipModInteger a m `mod` m
+solveLinearCoprime 1 _ _ = Just 0
+solveLinearCoprime m a b = (\a1 -> negate b * a1 `mod` m) <$> recipMod a m
 
 -------------------------------------------------------------------------------
 -- Quadratic equations
@@ -101,11 +101,11 @@ solveQuadraticPrimePower a b c p = go
     -- Hensel lifting
     -- https://en.wikipedia.org/wiki/Hensel%27s_lemma#Hensel_lifting
     liftRoot :: Word -> Integer -> [Integer]
-    liftRoot k r = case recipModInteger (2 * a * r + b) pk of
-      0 -> case fr of
+    liftRoot k r = case recipMod (2 * a * r + b) pk of
+      Nothing -> case fr of
         0 -> map (\i -> r + pk `quot` p' * i) [0 .. p' - 1]
         _ -> []
-      invDeriv -> [(r - fr * invDeriv) `mod` pk]
+      Just invDeriv -> [(r - fr * invDeriv) `mod` pk]
       where
         pk = p' ^ k
         fr = (a * r * r + b * r + c) `mod` pk
