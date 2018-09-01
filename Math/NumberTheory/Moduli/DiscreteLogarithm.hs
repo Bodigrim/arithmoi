@@ -64,19 +64,24 @@ theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
     numeratorMod = p^(2*k - 1)
     numerator    = (powModInteger a ((p-1)*p^(k-1)) numeratorMod - 1) `rem` numeratorMod
 
--- discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
--- discreteLogarithmPrime p a b = fromInteger $ head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
---   where
---     m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
---     babies   = fromIntegral <$> iterate (.* a) 1
---     table    = M.fromList (zip babies [0..m-1])
---     aInv     = recipModInteger a p
---     bigGiant = powModInteger aInv m p
---     giants   = fromIntegral <$> iterate (.* bigGiant) b
---     x .* y   = x * y `rem` p
-
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
-discreteLogarithmPrime p a b = fromInteger $ head $ filter check $ begin (starter 0 0)
+discreteLogarithmPrime p a b
+  | p < 10^8  = fromIntegral $ discreteLogarithmPrimeBSGS (fromInteger p) (fromInteger a) (fromInteger b)
+  | otherwise = discreteLogarithmPrimePollard p a b
+
+discreteLogarithmPrimeBSGS :: Int -> Int -> Int -> Int
+discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
+  where
+    m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
+    babies   = iterate (.* a) 1
+    table    = M.fromList (zip babies [0..m-1])
+    aInv     = recipModInteger (toInteger a) (toInteger p)
+    bigGiant = fromInteger $ powModInteger aInv (toInteger m) (toInteger p)
+    giants   = iterate (.* bigGiant) b
+    x .* y   = x * y `rem` p
+
+discreteLogarithmPrimePollard :: Integer -> Integer -> Integer -> Natural
+discreteLogarithmPrimePollard p a b = fromInteger $ head $ filter check $ begin (starter 0 0)
   where
     n                 = p-1 -- order of the cyclic group
     halfN             = n `quot` 2
@@ -89,5 +94,5 @@ discreteLogarithmPrime p a b = fromInteger $ head $ filter check $ begin (starte
     begin t           = go (step t) (step (step t))
     check t           = powModInteger a t p == b
     go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
-      | xi == x2i = solveLinear' n ((bi - b2i) `mod` n) ((ai - a2i) `mod` n)
+      | xi == x2i = solveLinear' n (bi - b2i) (ai - a2i)
       | otherwise = go (step tort) (step (step hare))
