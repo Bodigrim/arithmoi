@@ -9,7 +9,6 @@
 
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 
 module Math.NumberTheory.Moduli.DiscreteLogarithm where
 
@@ -46,23 +45,26 @@ discreteLogarithm' cg a b =
        -- we have the isomorphism t -> t `rem` p^k from (Z/2p^kZ)* -> (Z/p^kZ)*
 
 -- Implementation of Bach reduction (https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf)
+{-# INLINE discreteLogarithmPP #-}
 discreteLogarithmPP :: Integer -> Word -> Integer -> Integer -> Natural
 discreteLogarithmPP p 1 a b = discreteLogarithmPrime p a b
 discreteLogarithmPP p k a b = fromInteger result
   where
-    baseSol = toInteger $ discreteLogarithmPrime p (a `rem` p) (b `rem` p)
-    thetaA  = theta p k a
-    thetaB  = theta p k b
-    c       = (recipModInteger thetaA (p^(k-1)) * thetaB) `rem` p^(k-1)
-    result  = chineseRemainder2 (baseSol, p-1) (c, p^(k-1))
+    baseSol    = toInteger $ discreteLogarithmPrime p (a `rem` p) (b `rem` p)
+    thetaA     = theta p pkMinusOne a
+    thetaB     = theta p pkMinusOne b
+    pkMinusOne = p^(k-1)
+    c          = (recipModInteger thetaA pkMinusOne * thetaB) `rem` pkMinusOne
+    result     = chineseRemainder2 (baseSol, p-1) (c, pkMinusOne)
 
 -- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
 {-# INLINE theta #-}
-theta :: Integer -> Word -> Integer -> Integer
-theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
+theta :: Integer -> Integer -> Integer -> Integer
+theta p pkMinusOne a = (numerator `quot` pk) `rem` pkMinusOne
   where
-    numeratorMod = p^(2*k - 1)
-    numerator    = (powModInteger a ((p-1)*p^(k-1)) numeratorMod - 1) `rem` numeratorMod
+    pk           = pkMinusOne * p
+    p2kMinusOne  = pkMinusOne * pk
+    numerator    = (powModInteger a (pk - pkMinusOne) p2kMinusOne - 1) `rem` p2kMinusOne
 
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b
