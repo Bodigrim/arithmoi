@@ -79,10 +79,12 @@ discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b = fromInteger $ head $ filter check $ begin (starter 0 0)
   where
     n                 = p-1 -- order of the cyclic group
+    halfN             = n `quot` 2
+    mul2 m            = if m < halfN then m * 2 else m * 2 - n
     step (xi,!ai,!bi) = case xi `rem` 3 of
-                          0 -> (xi*xi `rem` p,  2*ai  `rem` n,  2*bi  `rem` n)
-                          1 -> ( a*xi `rem` p, (ai+1) `rem` n,    bi         )
-                          _ -> ( b*xi `rem` p,    ai         , (bi+1) `rem` n)
+                          0 -> (xi*xi `rem` p, mul2 ai, mul2 bi)
+                          1 -> ( a*xi `rem` p,    ai+1,      bi)
+                          _ -> ( b*xi `rem` p,      ai,    bi+1)
     starter x y       = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
     begin t           = go (step t) (step (step t))
     check t           = powModInteger a t p == b
