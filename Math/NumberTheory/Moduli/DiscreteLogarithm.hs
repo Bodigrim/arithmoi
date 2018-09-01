@@ -78,16 +78,14 @@ theta p k a = (numerator `quot` p^k) `rem` p^(k-1)
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b = fromInteger $ head $ filter check $ begin (starter 0 0)
   where
-    n               = p-1 -- order of the cyclic group
+    n                 = p-1 -- order of the cyclic group
     step (xi,!ai,!bi) = case xi `rem` 3 of
-                          0 -> (xi^2 `rem` p, 2*ai `rem` n  , 2*bi `rem` n  )
-                          1 -> (a*xi `rem` p, (ai+1) `rem` n, bi            )
-                          _ -> (b*xi `rem` p, ai            , (bi+1) `rem` n)
-    starter x y     = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
-    begin t         = go t t
-    go tort hare    = if xi == x2i
-                        then solveLinear' n ((bi - b2i) `mod` n) ((ai - a2i) `mod` n)
-                        else go (xi,ai,bi) (x2i,a2i,b2i)
-                      where (xi,ai,bi) = step tort
-                            (x2i,a2i,b2i) = step . step $ hare
-    check t         = powModInteger a t p == b
+                          0 -> (xi*xi `rem` p,  2*ai  `rem` n,  2*bi  `rem` n)
+                          1 -> ( a*xi `rem` p, (ai+1) `rem` n,    bi         )
+                          _ -> ( b*xi `rem` p,    ai         , (bi+1) `rem` n)
+    starter x y       = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
+    begin t           = go (step t) (step (step t))
+    check t           = powModInteger a t p == b
+    go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
+      | xi == x2i = solveLinear' n ((bi - b2i) `mod` n) ((ai - a2i) `mod` n)
+      | otherwise = go (step tort) (step (step hare))
