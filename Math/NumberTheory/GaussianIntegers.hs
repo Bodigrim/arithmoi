@@ -129,14 +129,11 @@ primes = (1 :+ 1): mergeBy (comparing norm) l r
 -- | Compute the GCD of two Gaussian integers. Result is always
 -- in the first quadrant.
 gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG g h = gcdG' (abs g) (abs h)
+gcdG = ED.gcd
+{-# DEPRECATED gcdG "Use 'Math.NumberTheory.Euclidean.gcd' instead." #-}
 
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG' g h
-    | h == 0    = g -- done recursing
-    | otherwise = gcdG' h (abs (g `mod'` h))
-  where
-    mod' = ED.mod :: GaussianInteger -> GaussianInteger -> GaussianInteger
+gcdG' = ED.gcd
 {-# DEPRECATED gcdG' "Use 'gcdG' instead." #-}
 
 -- |Find a Gaussian integer whose norm is the given prime number

@@ -23,7 +23,6 @@ module Math.NumberTheory.EisensteinIntegers
   , ids
 
   , divideByThree
-  , gcdE
 
   -- * Primality functions
   , factorise
@@ -37,7 +36,7 @@ import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
 import GHC.Generics                                    (Generic)
 
-import qualified Math.NumberTheory.Euclidean      as ED
+import qualified Math.NumberTheory.Euclidean            as ED
 import qualified Math.NumberTheory.Moduli               as Moduli
 import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..))
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
@@ -163,18 +162,6 @@ divideByThree = go 0
         (q1, r1) = divMod (a + a - b) 3
         (q2, r2) = divMod (a + b) 3
 
--- | Compute the GCD of two Eisenstein integers. The result is always
--- in the first sextant.
-gcdE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE g h = gcdE' (abs g) (abs h)
-
-gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE' g h
-    | h == 0    = g -- done recursing
-    | otherwise = gcdE' h (abs (g `mod'` h))
-  where
-    mod' = ED.mod :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@ using a modification of the
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
@@ -196,7 +183,7 @@ gcdE' g h
 findPrime :: Integer -> EisensteinInteger
 findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
     Nothing      -> error "findPrime: argument must be prime p = 6k + 1"
-    Just sqrtMod -> gcdE (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
+    Just sqrtMod -> ED.gcd (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
     where
         k :: Integer
         k = p `div` 6

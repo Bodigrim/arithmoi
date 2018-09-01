@@ -16,12 +16,13 @@
 module Math.NumberTheory.Euclidean
   ( Euclidean (..)
   , div
+  , gcd
   , mod
   , quot
   , rem
   ) where
 
-import Prelude hiding (divMod, div, mod, quotRem, quot, rem)
+import Prelude hiding (divMod, div, gcd, mod, quotRem, quot, rem)
 import qualified Prelude as P
 
 -- | A class to represent a Euclidean domain.
@@ -55,3 +56,12 @@ mod x y = snd (divMod x y)
 instance {-# OVERLAPPABLE #-} Integral a => Euclidean a where
   quotRem = P.quotRem
   divMod  = P.divMod
+
+-- | Taken from @prelude.gcd@.
+gcd :: (Eq a, Euclidean a, Num a) => a -> a -> a
+{-# NOINLINE [1] gcd #-}
+gcd x y =  gcd' (abs x) (abs y)
+  where
+    gcd' :: (Eq a, Euclidean a, Num a) => a -> a -> a
+    gcd' a 0  =  a
+    gcd' a b  =  gcd' b (abs (a `mod` b))

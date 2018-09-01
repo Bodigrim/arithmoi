@@ -77,20 +77,20 @@ gcdEProperty1 z1 z2
   = z1 == 0 && z2 == 0
   || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
   where
-    z = E.gcdE z1 z2
+    z = ED.gcd z1 z2
 
--- | Verify that a common divisor of @z1, z2@ is a always divisor of @gcdE z1 z2@.
+-- | Verify that a common divisor of @z1, z2@ is a always divisor of @gcd z1 z2@.
 gcdEProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty2 z z1 z2
   = z == 0
-  || (E.gcdE z1' z2') `ED.rem` z == 0
+  || (ED.gcd z1' z2') `ED.rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
 
 -- | A special case that tests rounding/truncating in GCD.
 gcdESpecialCase1 :: Assertion
-gcdESpecialCase1 = assertEqual "gcdE" 1 $ E.gcdE (12 E.:+ 23) (23 E.:+ 34)
+gcdESpecialCase1 = assertEqual "gcd" 1 $ ED.gcd (12 E.:+ 23) (23 E.:+ 34)
 
 findPrimesProperty1 :: Positive Int -> Bool
 findPrimesProperty1 (Positive index) =
