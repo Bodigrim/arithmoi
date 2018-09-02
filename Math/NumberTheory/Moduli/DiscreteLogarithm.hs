@@ -68,8 +68,8 @@ theta p pkMinusOne a = (numerator `quot` pk) `rem` pkMinusOne
 
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b
-  | p < 10^8  = fromIntegral $ discreteLogarithmPrimeBSGS (fromInteger p) (fromInteger a) (fromInteger b)
-  | otherwise = discreteLogarithmPrimePollard p a b
+  | p < 100000000 = fromIntegral $ discreteLogarithmPrimeBSGS (fromInteger p) (fromInteger a) (fromInteger b)
+  | otherwise     = discreteLogarithmPrimePollard p a b
 
 discreteLogarithmPrimeBSGS :: Int -> Int -> Int -> Int
 discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
@@ -83,7 +83,10 @@ discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1],
     x .* y   = x * y `rem` p
 
 discreteLogarithmPrimePollard :: Integer -> Integer -> Integer -> Natural
-discreteLogarithmPrimePollard p a b = fromInteger $ head $ filter check $ begin (starter 0 0)
+discreteLogarithmPrimePollard p a b =
+  case concatMap runPollard [(0,0),(0,1),(1,1)] of
+    (t:_)  -> fromInteger t
+    []     -> error ("discreteLogarithm: pollard's rho failed, please report this as a bug. inputs " ++ show [p,a,b])
   where
     n                 = p-1 -- order of the cyclic group
     halfN             = n `quot` 2
@@ -92,9 +95,10 @@ discreteLogarithmPrimePollard p a b = fromInteger $ head $ filter check $ begin 
                           0 -> (xi*xi `rem` p, mul2 ai, mul2 bi)
                           1 -> ( a*xi `rem` p,    ai+1,      bi)
                           _ -> ( b*xi `rem` p,      ai,    bi+1)
-    starter x y       = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
+    initialise (x,y)  = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
     begin t           = go (step t) (step (step t))
     check t           = powModInteger a t p == b
     go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
       | xi == x2i = solveLinear' n (bi - b2i) (ai - a2i)
       | otherwise = go (step tort) (step (step hare))
+    runPollard        = filter check . begin . initialise
