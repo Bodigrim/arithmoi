@@ -99,13 +99,6 @@ ids = take 6 (iterate ((1 + ω) *) 1)
 associates :: EisensteinInteger -> [EisensteinInteger]
 associates e = map (e *) ids
 
--- | Takes an Eisenstein prime whose norm is of the form @3k + 1@ with @k@
--- a nonnegative integer, and return its primary associate.
--- * Does *not* check for this precondition.
--- * @head@ will fail when supplied a number unsatisfying it.
-primary :: EisensteinInteger -> EisensteinInteger
-primary = head . filter (\p -> p `ED.mod` 3 == 2) . associates
-
 instance ED.Euclidean EisensteinInteger where
   quotRem = divHelper quot
   divMod  = divHelper div
@@ -201,11 +194,7 @@ primes = (2 :+ 1) : mergeBy (comparing norm) l r
         l = [p :+ 0 | p <- leftPrimes]
         r = [g | p <- rightPrimes', let x :+ y = findPrime p, g <- [x :+ y, x :+ (x - y)]]
 
--- | Compute the prime factorisation of a Eisenstein integer. This is unique
--- up to units (+/- 1, +/- ω, +/- ω²).
--- * Unit factors are not included in the result.
--- * All prime factors are primary i.e. @e ≡ 2 (modE 3)@, for an Eisenstein
--- prime factor @e@.
+-- | Compute the prime factorisation of a Eisenstein integer.
 --
 -- * This function works by factorising the norm of an Eisenstein integer
 -- and then, for each prime factor, finding the Eisenstein prime whose norm
@@ -219,8 +208,7 @@ primes = (2 :+ 1) : mergeBy (comparing norm) l r
 -- in Theorem 8.4 in Chapter 8, a way is given to express any Eisenstein
 -- integer @μ@ as @(-1)^a * ω^b * (1 - ω)^c * product [π_i^a_i | i <- [1..N]]@
 -- where @a, b, c, a_i@ are nonnegative integers, @N > 1@ is an integer and
--- @π_i@ are primary primes (for a primary Eisenstein prime @p@,
--- @p ≡ 2 (modE 3)@, see @primary@ above).
+-- @π_i@ are primes.
 --
 -- * Aplying @norm@ to both sides of Theorem 8.4:
 --    @norm μ = norm ((-1)^a * ω^b * (1 - ω)^c * product [ π_i^a_i | i <- [1..N]])@
@@ -265,9 +253,9 @@ factorise g = concat $
                 -- This @otherwise@ is mandatorily @`mod` 3 == 1@.
                 | otherwise   = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
       where
-        gp@(x :+ y)      = primary $ findPrime p
+        gp@(x :+ y)      = findPrime p
         -- @gp'@ is @gp@'s conjugate.
-        gp'              = primary $ abs $ x :+ (x - y)
+        gp'              = x :+ (x - y)
         (k, k', z') = divideByPrime gp gp' p e z
 
         quotI (a :+ b) n = (a `quot` n :+ b `quot` n)
