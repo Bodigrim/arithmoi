@@ -14,13 +14,15 @@ module Math.NumberTheory.EisensteinIntegersTests
   ( testSuite
   ) where
 
-import qualified Math.NumberTheory.Euclidean    as ED
-import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
-import Math.NumberTheory.Primes                       (primes)
+import Data.Maybe (fromJust, isJust)
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
                                                       testCase)
 
+import qualified Math.NumberTheory.Euclidean as ED
+import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
+import Math.NumberTheory.Primes                       (primes)
+import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.TestUtils                    (Positive (..),
                                                        testSmallAndQuick)
 
@@ -97,7 +99,7 @@ findPrimesProperty1 (Positive index) =
     let -- Only retain primes that are of the form @6k + 1@, for some nonzero natural @k@.
         prop prime = prime `mod` 6 == 1
         p = (!! index) $ filter prop $ drop 3 primes
-    in E.isPrime $ E.findPrime p
+    in isJust $ isPrime $ E.findPrime p
 
 -- | Checks that the @norm@ of the Euclidean domain of Eisenstein integers
 -- is multiplicative i.e.
@@ -108,7 +110,7 @@ euclideanDomainProperty1 e1 e2 = E.norm (e1 * e2) == E.norm e1 * E.norm e2
 -- | Checks that the numbers produced by @primes@ are actually Eisenstein
 -- primes.
 primesProperty1 :: Positive Int -> Bool
-primesProperty1 (Positive index) = all E.isPrime $ take index $ E.primes
+primesProperty1 (Positive index) = all (isJust . isPrime) $ take index $ E.primes
 
 -- | Checks that the infinite list of Eisenstein primes @primes@ is ordered
 -- by the numbers' norm.
@@ -130,16 +132,16 @@ primesProperty3 (Positive index) =
 factoriseProperty1 :: E.EisensteinInteger -> Bool
 factoriseProperty1 g = g == 0 || abs g == abs g'
   where
-    factors = E.factorise g
-    g' = product $ map (uncurry (^)) factors
+    factors = factorise g
+    g' = product $ map (\(p, k) -> unPrime p ^ k) factors
 
 -- | Check that there are no factors with exponent @0@ in the factorisation.
 factoriseProperty2 :: E.EisensteinInteger -> Bool
-factoriseProperty2 z = z == 0 || all ((> 0) . snd) (E.factorise z)
+factoriseProperty2 z = z == 0 || all ((> 0) . snd) (factorise z)
 
 -- | Check that no factor produced by @factorise@ is a unit.
 factoriseProperty3 :: E.EisensteinInteger -> Bool
-factoriseProperty3 z = z == 0 || all ((> 1) . E.norm . fst) (E.factorise z)
+factoriseProperty3 z = z == 0 || all ((> 1) . E.norm . unPrime . fst) (factorise z)
 
 -- | Check that every prime factor in the factorisation is primary, excluding
 -- @1 - ω@, if it is a factor.
@@ -148,12 +150,14 @@ factoriseProperty4 z =
     z == 0 ||
     (all (\e -> e `ED.mod` 3 == 2) $
      filter (\e -> not $ elem e $ E.associates $ 1 E.:+ (-1)) $
-     map fst $ E.factorise z)
+     map (unPrime . fst) $ factorise z)
 
 factoriseSpecialCase1 :: Assertion
 factoriseSpecialCase1 = assertEqual "should be equal"
-  [(2 E.:+ 1, 3), (2 E.:+ 3, 1)]
-  (E.factorise (15 E.:+ 12))
+  [ (fromJust $ isPrime $ 2 E.:+ 1, 3)
+  , (fromJust $ isPrime $ 2 E.:+ 3, 1)
+  ]
+  (factorise (15 E.:+ 12))
 
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $

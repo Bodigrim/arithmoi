@@ -26,9 +26,7 @@ module Math.NumberTheory.Quadratic.EisensteinIntegers
   , divideByThree
 
   -- * Primality functions
-  , factorise
   , findPrime
-  , isPrime
   , primes
   ) where
 
@@ -330,3 +328,4 @@ instance U.UniqueFactorisation EisensteinInteger where
   factorise 0 = []
   factorise e = map (coerce *** intToWord) $ factorise e
 
+  isPrime e = if isPrime e then Just (EisensteinPrime e) else Nothing

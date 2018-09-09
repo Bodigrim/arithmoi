@@ -16,6 +16,7 @@ module Math.NumberTheory.GaussianIntegersTests
 
 import Control.Monad (zipWithM_)
 import Data.List (groupBy, sort)
+import Data.Maybe (fromJust)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -23,15 +24,15 @@ import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
-import Math.NumberTheory.UniqueFactorisation (unPrime)
+import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.TestUtils
 
-lazyCases :: [(GaussianInteger, [(GaussianInteger, Int)])]
+lazyCases :: [(GaussianInteger, [(Prime GaussianInteger, Word)])]
 lazyCases =
   [ ( 14145130733
     * 10000000000000000000000000000000000000121
     * 100000000000000000000000000000000000000000000000447
-    , [(117058 :+ 21037, 1), (21037 :+ 117058, 1)]
+    , [(fromJust $ isPrime $ 117058 :+ 21037, 1), (fromJust $ isPrime $ 21037 :+ 117058, 1)]
     )
   ]
 
@@ -42,20 +43,23 @@ factoriseProperty1 g
   || abs g == abs g'
   where
     factors = factorise g
-    g' = product $ map (uncurry (^)) factors
+    g' = product $ map (\(p, k) -> unPrime p ^ k) factors
 
 factoriseProperty2 :: GaussianInteger -> Bool
 factoriseProperty2 z = z == 0 || all ((> 0) . snd) (factorise z)
 
 factoriseProperty3 :: GaussianInteger -> Bool
-factoriseProperty3 z = z == 0 || all ((> 1) . norm . fst) (factorise z)
+factoriseProperty3 z = z == 0 || all ((> 1) . norm . unPrime . fst) (factorise z)
 
 factoriseSpecialCase1 :: Assertion
 factoriseSpecialCase1 = assertEqual "should be equal"
-  [(3, 2), (1 :+ 2, 1), (2 :+ 3, 1)]
+  [ (fromJust $ isPrime $ 3 :+ 0, 2)
+  , (fromJust $ isPrime $ 1 :+ 2, 1)
+  , (fromJust $ isPrime $ 2 :+ 3, 1)
+  ]
   (factorise (63 :+ 36))
 
-factoriseSpecialCase2 :: (GaussianInteger, [(GaussianInteger, Int)]) -> Assertion
+factoriseSpecialCase2 :: (GaussianInteger, [(Prime GaussianInteger, Word)]) -> Assertion
 factoriseSpecialCase2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 findPrimeReference :: PrimeWrapper Integer -> GaussianInteger
@@ -79,10 +83,10 @@ findPrimeProperty1 p'@(PrimeWrapper p)
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.
 isPrimeProperty :: GaussianInteger -> Bool
-isPrimeProperty g
-  =  g == 0
-  || isPrime g && n == 1
-  || not (isPrime g) && n /= 1
+isPrimeProperty 0 = True
+isPrimeProperty g = case isPrime g of
+  Nothing -> n /= 1
+  Just{}  -> n == 1
   where
     factors = factorise g
     -- Count factors taking into account multiplicity
@@ -98,7 +102,9 @@ primesSpecialCase1 = assertEqual "primes"
 
 -- | The list of primes should include only primes.
 primesGeneratesPrimesProperty :: NonNegative Int -> Bool
-primesGeneratesPrimesProperty (NonNegative i) = isPrime (primes !! i)
+primesGeneratesPrimesProperty (NonNegative i) = case isPrime (primes !! i) of
+  Nothing -> False
+  Just{}  -> True
 
 -- | Check that primes generates the primes in order.
 orderingPrimes :: Assertion

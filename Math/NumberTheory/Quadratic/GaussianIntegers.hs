@@ -8,13 +8,11 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     conjugate,
     norm,
     (.^),
-    isPrime,
     primes,
     gcdG,
     gcdG',
     findPrime,
     findPrime',
-    factorise,
 ) where
 
 import Control.Arrow
@@ -256,3 +254,5 @@ instance U.UniqueFactorisation GaussianInteger where
 
   factorise 0 = []
   factorise g = map (coerce *** intToWord) $ factorise g
+
+  isPrime g = if isPrime g then Just (GaussianPrime g) else Nothing
