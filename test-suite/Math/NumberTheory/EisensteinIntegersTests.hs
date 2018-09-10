@@ -14,6 +14,7 @@ module Math.NumberTheory.EisensteinIntegersTests
   ( testSuite
   ) where
 
+import qualified Math.NumberTheory.Euclidean    as ED
 import qualified Math.NumberTheory.EisensteinIntegers as E
 import Math.NumberTheory.Primes                       (primes)
 import Test.Tasty                                     (TestTree, testGroup)
@@ -41,55 +42,55 @@ absProperty z = isOrigin || (inFirstSextant && isAssociate)
     inFirstSextant = x' > y' && y' >= 0
     isAssociate = z' `elem` map (\e -> z * (1 E.:+ 1) ^ e) [0 .. 5]
 
--- | Verify that @divE@ and @modE@ are what `divModE` produces.
+-- | Verify that @div@ and @mod@ are what `divMod` produces.
 divModProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 divModProperty1 x y = y == 0 || (q == q' && r == r')
   where
-    (q, r) = E.divModE x y
-    q'     = E.divE x y
-    r'     = E.modE x y
+    (q, r) = ED.divMod x y
+    q'     = ED.div x y
+    r'     = ED.mod x y
 
 -- | Verify that @divModE` produces the right quotient and remainder.
 divModProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-divModProperty2 x y = (y == 0) || (x `E.divE` y) * y + (x `E.modE` y) == x
+divModProperty2 x y = (y == 0) || (x `ED.div` y) * y + (x `ED.mod` y) == x
 
 -- | Verify that @divModE@ produces a remainder smaller than the divisor with
 -- regards to the Euclidean domain's function.
 modProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-modProperty1 x y = (y == 0) || (E.norm $ x `E.modE` y) < (E.norm y)
+modProperty1 x y = (y == 0) || (E.norm $ x `ED.mod` y) < (E.norm y)
 
--- | Verify that @quotE@ and @reE@ are what `quotRemE` produces.
+-- | Verify that @quot@ and @rem@ are what `quotRem` produces.
 quotRemProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 quotRemProperty1 x y = (y == 0) || q == q' && r == r'
   where
-    (q, r) = E.quotRemE x y
-    q'     = E.quotE x y
-    r'     = E.remE x y
+    (q, r) = ED.quotRem x y
+    q'     = ED.quot x y
+    r'     = ED.rem x y
 
 -- | Verify that @quotRemE@ produces the right quotient and remainder.
 quotRemProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-quotRemProperty2 x y = (y == 0) || (x `E.quotE` y) * y + (x `E.remE` y) == x
+quotRemProperty2 x y = (y == 0) || (x `ED.quot` y) * y + (x `ED.rem` y) == x
 
 -- | Verify that @gcd z1 z2@ always divides @z1@ and @z2@.
 gcdEProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `E.remE` z == 0 && z2 `E.remE` z == 0 && z == abs z
+  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
   where
-    z = E.gcdE z1 z2
+    z = ED.gcd z1 z2
 
--- | Verify that a common divisor of @z1, z2@ is a always divisor of @gcdE z1 z2@.
+-- | Verify that a common divisor of @z1, z2@ is a always divisor of @gcd z1 z2@.
 gcdEProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty2 z z1 z2
   = z == 0
-  || (E.gcdE z1' z2') `E.remE` z == 0
+  || (ED.gcd z1' z2') `ED.rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
 
 -- | A special case that tests rounding/truncating in GCD.
 gcdESpecialCase1 :: Assertion
-gcdESpecialCase1 = assertEqual "gcdE" 1 $ E.gcdE (12 E.:+ 23) (23 E.:+ 34)
+gcdESpecialCase1 = assertEqual "gcd" 1 $ ED.gcd (12 E.:+ 23) (23 E.:+ 34)
 
 findPrimesProperty1 :: Positive Int -> Bool
 findPrimesProperty1 (Positive index) =
@@ -145,7 +146,7 @@ factoriseProperty3 z = z == 0 || all ((> 1) . E.norm . fst) (E.factorise z)
 factoriseProperty4 :: E.EisensteinInteger -> Bool
 factoriseProperty4 z =
     z == 0 ||
-    (all (\e -> e `E.modE` 3 == 2) $
+    (all (\e -> e `ED.mod` 3 == 2) $
      filter (\e -> not $ elem e $ E.associates $ 1 E.:+ (-1)) $
      map fst $ E.factorise z)
 

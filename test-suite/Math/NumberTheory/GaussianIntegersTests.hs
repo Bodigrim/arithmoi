@@ -19,6 +19,7 @@ import Data.List (groupBy, sort)
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt (sqrtModMaybe, FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)
@@ -125,21 +126,21 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
 gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `remG` z == 0 && z2 `remG` z == 0 && z == abs z
+  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
   where
-    z = gcdG z1 z2
+    z = ED.gcd z1 z2
 
 gcdGProperty2 :: GaussianInteger -> GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty2 z z1 z2
   = z == 0
-  || (gcdG z1' z2') `remG` z == 0
+  || (ED.gcd z1' z2') `ED.rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
 
 -- | a special case that tests rounding/truncating in GCD.
 gcdGSpecialCase1 :: Assertion
-gcdGSpecialCase1 = assertEqual "gcdG" 1 $ gcdG (12 :+ 23) (23 :+ 34)
+gcdGSpecialCase1 = assertEqual "gcdG" 1 $ ED.gcd (12 :+ 23) (23 :+ 34)
 
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers" $
@@ -161,7 +162,7 @@ testSuite = testGroup "GaussianIntegers" $
   , testCase          "counting primes"          numberOfPrimes
   , testSmallAndQuick "signumAbsProperty"        signumAbsProperty
   , testSmallAndQuick "absProperty"              absProperty
-  , testGroup "gcdG"
+  , testGroup "gcd"
     [ testSmallAndQuick "is divisor"            gcdGProperty1
     , testSmallAndQuick "is greatest"           gcdGProperty2
     , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1

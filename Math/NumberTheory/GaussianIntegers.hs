@@ -18,12 +18,6 @@ module Math.NumberTheory.GaussianIntegers (
     ι,
     conjugate,
     norm,
-    divModG,
-    divG,
-    modG,
-    quotRemG,
-    quotG,
-    remG,
     (.^),
     isPrime,
     primes,
@@ -40,6 +34,7 @@ import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
 import GHC.Generics
 
+import qualified Math.NumberTheory.Euclidean as ED
 import qualified Math.NumberTheory.Moduli as Moduli
 import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)
@@ -90,35 +85,15 @@ absSignum z@(a :+ b)
     | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
     | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
--- |Simultaneous 'quot' and 'rem'.
-quotRemG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
-quotRemG = divHelper quot
+instance ED.Euclidean GaussianInteger where
+    quotRem = divHelper quot
+    divMod  = divHelper div
 
--- |Gaussian integer division, truncating toward zero.
-quotG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-n `quotG` d = q where (q,_) = quotRemG n d
-
--- |Gaussian integer remainder, satisfying
---
--- > (x `quotG` y)*y + (x `remG` y) == x
-remG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-n `remG`  d = r where (_,r) = quotRemG n d
-
--- |Simultaneous 'div' and 'mod'.
-divModG :: GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
-divModG = divHelper div
-
--- |Gaussian integer division, truncating toward negative infinity.
-divG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-n `divG` d = q where (q,_) = divModG n d
-
--- |Gaussian integer remainder, satisfying
---
--- > (x `divG` y)*y + (x `modG` y) == x
-modG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-n `modG` d = r where (_,r) = divModG n d
-
-divHelper :: (Integer -> Integer -> Integer) -> GaussianInteger -> GaussianInteger -> (GaussianInteger, GaussianInteger)
+divHelper
+    :: (Integer -> Integer -> Integer)
+    -> GaussianInteger
+    -> GaussianInteger
+    -> (GaussianInteger, GaussianInteger)
 divHelper divide g h =
     let nr :+ ni = g * conjugate h
         denom = norm h
@@ -154,12 +129,11 @@ primes = (1 :+ 1): mergeBy (comparing norm) l r
 -- | Compute the GCD of two Gaussian integers. Result is always
 -- in the first quadrant.
 gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG g h = gcdG' (abs g) (abs h)
+gcdG = ED.gcd
+{-# DEPRECATED gcdG "Use 'Math.NumberTheory.Euclidean.gcd' instead." #-}
 
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG' g h
-    | h == 0    = g -- done recursing
-    | otherwise = gcdG' h (abs (g `modG` h))
+gcdG' = ED.gcd
 {-# DEPRECATED gcdG' "Use 'gcdG' instead." #-}
 
 -- |Find a Gaussian integer whose norm is the given prime number
