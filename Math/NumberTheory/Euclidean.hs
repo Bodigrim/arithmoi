@@ -11,12 +11,12 @@
 
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE MonoLocalBinds       #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Math.NumberTheory.Euclidean
   ( Euclidean (..)
   , div
-  , gcd
   , mod
   , quot
   , rem
@@ -26,13 +26,22 @@ import Prelude hiding (divMod, div, gcd, mod, quotRem, quot, rem)
 import qualified Prelude as P
 
 -- | A class to represent a Euclidean domain.
-class Euclidean a where
+class (Eq a, Num a) => Euclidean a where
   -- | When restriced to a subring of the Euclidean domain @a@ isomorphic to
   -- @Integer@, this function should match @quotRem@ for Integers.
   quotRem :: a -> a -> (a, a)
   -- | When restriced to a subring of the Euclidean domain @a@ isomorphic to
   -- @Integer@, this function should match @divMod@ for Integers.
   divMod  :: a -> a -> (a, a)
+  -- | Taken from @prelude.gcd@, but the helper function uses `mod` instead of
+  -- `rem`. This is because the property @(x `quot` y)*y + (x `rem` y) == x@
+  -- does not hold for any two @x, y@ @EisenteinInteger@s/@GaussianInteger@s.
+  gcd :: a -> a -> a
+  gcd x y =  gcd' (abs x) (abs y)
+    where
+      gcd' :: a -> a -> a
+      gcd' a 0  =  a
+      gcd' a b  =  gcd' b (abs (a `mod` b))
 
 quot :: Euclidean a => a -> a -> a
 quot x y = fst (quotRem x y)
@@ -53,15 +62,7 @@ div x y = fst (divMod x y)
 mod :: Euclidean a => a -> a -> a
 mod x y = snd (divMod x y)
 
-instance {-# OVERLAPPABLE #-} Integral a => Euclidean a where
+instance {-# OVERLAPPABLE #-} (Eq a, Integral a, Num a) => Euclidean a where
   quotRem = P.quotRem
   divMod  = P.divMod
-
--- | Taken from @prelude.gcd@.
-gcd :: (Eq a, Euclidean a, Num a) => a -> a -> a
-{-# NOINLINE [1] gcd #-}
-gcd x y =  gcd' (abs x) (abs y)
-  where
-    gcd' :: (Eq a, Euclidean a, Num a) => a -> a -> a
-    gcd' a 0  =  a
-    gcd' a b  =  gcd' b (abs (a `mod` b))
+  gcd     = P.gcd
