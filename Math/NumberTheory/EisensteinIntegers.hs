@@ -22,16 +22,7 @@ module Math.NumberTheory.EisensteinIntegers
   , associates
   , ids
 
-  -- * Division and remainder functions
-  , divE
-  , divModE
-  , modE
-  , quotRemE
-  , quotE
-  , remE
-
   , divideByThree
-  , gcdE
 
   -- * Primality functions
   , factorise
@@ -45,6 +36,7 @@ import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
 import GHC.Generics                                    (Generic)
 
+import qualified Math.NumberTheory.Euclidean            as ED
 import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..), sqrtModMaybe)
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import Math.NumberTheory.Primes.Types                   (PrimeNat(..))
@@ -110,41 +102,11 @@ associates e = map (e *) ids
 -- * Does *not* check for this precondition.
 -- * @head@ will fail when supplied a number unsatisfying it.
 primary :: EisensteinInteger -> EisensteinInteger
-primary = head . filter (\p -> p `modE` 3 == 2) . associates
+primary = head . filter (\p -> p `ED.mod` 3 == 2) . associates
 
--- | Simultaneous 'quot' and 'rem'.
-quotRemE
-    :: EisensteinInteger
-    -> EisensteinInteger
-    -> (EisensteinInteger, EisensteinInteger)
-quotRemE = divHelper quot
-
--- | Eisenstein integer division, truncating toward zero.
-quotE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-n `quotE` d = q where (q,_) = quotRemE n d
-
--- | Eisenstein integer remainder, satisfying
---
--- > (x `quotE` y)*y + (x `remE` y) == x
-remE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-n `remE`  d = r where (_,r) = quotRemE n d
-
--- | Simultaneous 'div' and 'mod' of Eisenstein integers.
-divModE
-    :: EisensteinInteger
-    -> EisensteinInteger
-    -> (EisensteinInteger, EisensteinInteger)
-divModE = divHelper div
-
--- | Eisenstein integer division, truncating toward negative infinity.
-divE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-n `divE` d = q where (q,_) = divModE n d
-
--- | Eisenstein integer remainder, satisfying
---
--- > (x `divE` y)*y + (x `modE` y) == x
-modE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-n `modE` d = r where (_,r) = divModE n d
+instance ED.Euclidean EisensteinInteger where
+  quotRem = divHelper quot
+  divMod  = divHelper div
 
 -- | Function that does most of the underlying work for @divMod@ and
 -- @quotRem@, apart from choosing the specific integer division algorithm.
@@ -199,16 +161,6 @@ divideByThree = go 0
         (q1, r1) = divMod (a + a - b) 3
         (q2, r2) = divMod (a + b) 3
 
--- | Compute the GCD of two Eisenstein integers. The result is always
--- in the first sextant.
-gcdE :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE g h = gcdE' (abs g) (abs h)
-
-gcdE' :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger
-gcdE' g h
-    | h == 0    = g -- done recursing
-    | otherwise = gcdE' h (abs (g `modE` h))
-
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@ using a modification of the
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
@@ -230,7 +182,7 @@ gcdE' g h
 findPrime :: Integer -> EisensteinInteger
 findPrime p = case sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
     Nothing      -> error "findPrime: argument must be prime p = 6k + 1"
-    Just sqrtMod -> gcdE (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
+    Just sqrtMod -> ED.gcd (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
     where
         k :: Integer
         k = p `div` 6
