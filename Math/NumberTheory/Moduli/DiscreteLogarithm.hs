@@ -84,13 +84,14 @@ discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1],
 
 discreteLogarithmPrimePollard :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrimePollard p a b =
-  case concatMap runPollard [(0,0),(0,1),(1,1)] of
+  case concatMap runPollard [(x,y) | x <- [0..n], y <- [0..n]] of
     (t:_)  -> fromInteger t
     []     -> error ("discreteLogarithm: pollard's rho failed, please report this as a bug. inputs " ++ show [p,a,b])
   where
     n                 = p-1 -- order of the cyclic group
     halfN             = n `quot` 2
     mul2 m            = if m < halfN then m * 2 else m * 2 - n
+    sqrtN             = integerSquareRoot n
     step (xi,!ai,!bi) = case xi `rem` 3 of
                           0 -> (xi*xi `rem` p, mul2 ai, mul2 bi)
                           1 -> ( a*xi `rem` p,    ai+1,      bi)
@@ -99,6 +100,7 @@ discreteLogarithmPrimePollard p a b =
     begin t           = go (step t) (step (step t))
     check t           = powModInteger a t p == b
     go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
-      | xi == x2i = solveLinear' n (bi - b2i) (ai - a2i)
-      | otherwise = go (step tort) (step (step hare))
+      | xi == x2i, gcd (bi - b2i) n < sqrtN = solveLinear' n (bi - b2i) (ai - a2i)
+      | xi == x2i                           = []
+      | otherwise                           = go (step tort) (step (step hare))
     runPollard        = filter check . begin . initialise
