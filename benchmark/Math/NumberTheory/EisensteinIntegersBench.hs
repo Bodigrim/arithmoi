@@ -5,13 +5,10 @@ module Math.NumberTheory.EisensteinIntegersBench
   ( benchSuite
   ) where
 
-import Control.DeepSeq
 import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctions (tau)
 import Math.NumberTheory.Quadratic.EisensteinIntegers
-
-instance NFData EisensteinInteger
 
 benchFindPrime :: Integer -> Benchmark
 benchFindPrime n = bench (show n) $ nf findPrime n

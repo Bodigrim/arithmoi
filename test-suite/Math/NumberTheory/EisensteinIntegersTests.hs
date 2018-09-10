@@ -99,7 +99,7 @@ findPrimesProperty1 (Positive index) =
     let -- Only retain primes that are of the form @6k + 1@, for some nonzero natural @k@.
         prop prime = prime `mod` 6 == 1
         p = (!! index) $ filter prop $ drop 3 primes
-    in isJust $ isPrime $ E.findPrime p
+    in isJust (isPrime (unPrime (E.findPrime p) :: E.EisensteinInteger))
 
 -- | Checks that the @norm@ of the Euclidean domain of Eisenstein integers
 -- is multiplicative i.e.
@@ -110,21 +110,21 @@ euclideanDomainProperty1 e1 e2 = E.norm (e1 * e2) == E.norm e1 * E.norm e2
 -- | Checks that the numbers produced by @primes@ are actually Eisenstein
 -- primes.
 primesProperty1 :: Positive Int -> Bool
-primesProperty1 (Positive index) = all (isJust . isPrime) $ take index $ E.primes
+primesProperty1 (Positive index) = all (isJust . isPrime . (unPrime :: Prime E.EisensteinInteger -> E.EisensteinInteger)) $ take index $ E.primes
 
 -- | Checks that the infinite list of Eisenstein primes @primes@ is ordered
 -- by the numbers' norm.
 primesProperty2 :: Positive Int -> Bool
 primesProperty2 (Positive index) =
-    let isOrdered :: [E.EisensteinInteger] -> Bool
-        isOrdered xs = all (\(x,y) -> E.norm x <= E.norm y) . zip xs $ tail xs
+    let isOrdered :: [Prime E.EisensteinInteger] -> Bool
+        isOrdered xs = all (\(x, y) -> E.norm (unPrime x) <= E.norm (unPrime y)) . zip xs $ tail xs
     in isOrdered $ take index E.primes
 
 -- | Checks that the numbers produced by @primes@ are all in the first
 -- sextant.
 primesProperty3 :: Positive Int -> Bool
 primesProperty3 (Positive index) =
-    all (\e -> abs e == e) $ take index $ E.primes
+    all (\e -> abs (unPrime e) == (unPrime e :: E.EisensteinInteger)) $ take index $ E.primes
 
 -- | An Eisenstein integer is either zero or associated (i.e. equal up to
 -- multiplication by a unit) to the product of its factors raised to their

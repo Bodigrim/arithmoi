@@ -16,7 +16,7 @@ module Math.NumberTheory.GaussianIntegersTests
 
 import Control.Monad (zipWithM_)
 import Data.List (groupBy, sort)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, mapMaybe)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -78,7 +78,7 @@ findPrimeProperty1 p'@(PrimeWrapper p)
   || abs (p1 * p2) == fromInteger (unPrime p)
   where
     p1 = findPrimeReference p'
-    p2 = findPrime (unPrime p)
+    p2 = unPrime (findPrime (unPrime p))
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.
@@ -94,27 +94,27 @@ isPrimeProperty g = case isPrime g of
 
 primesSpecialCase1 :: Assertion
 primesSpecialCase1 = assertEqual "primes"
-  (f [1+ι,2+ι,1+2*ι,3,3+2*ι,2+3*ι,4+ι,1+4*ι,5+2*ι,2+5*ι,6+ι,1+6*ι,5+4*ι,4+5*ι,7,7+2*ι,2+7*ι,6+5*ι,5+6*ι,8+3*ι,3+8*ι,8+5*ι,5+8*ι,9+4*ι,4+9*ι,10+ι,1+10*ι,10+3*ι,3+10*ι,8+7*ι,7+8*ι,11,11+4*ι,4+11*ι,10+7*ι,7+10*ι,11+6*ι,6+11*ι,13+2*ι,2+13*ι,10+9*ι,9+10*ι,12+7*ι,7+12*ι,14+ι,1+14*ι,15+2*ι,2+15*ι,13+8*ι,8+13*ι,15+4*ι])
+  (f $ mapMaybe isPrime [1+ι,2+ι,1+2*ι,3,3+2*ι,2+3*ι,4+ι,1+4*ι,5+2*ι,2+5*ι,6+ι,1+6*ι,5+4*ι,4+5*ι,7,7+2*ι,2+7*ι,6+5*ι,5+6*ι,8+3*ι,3+8*ι,8+5*ι,5+8*ι,9+4*ι,4+9*ι,10+ι,1+10*ι,10+3*ι,3+10*ι,8+7*ι,7+8*ι,11,11+4*ι,4+11*ι,10+7*ι,7+10*ι,11+6*ι,6+11*ι,13+2*ι,2+13*ι,10+9*ι,9+10*ι,12+7*ι,7+12*ι,14+ι,1+14*ι,15+2*ι,2+15*ι,13+8*ι,8+13*ι,15+4*ι])
   (f $ take 51 primes)
   where
-    f :: [GaussianInteger] -> [[GaussianInteger]]
-    f = map sort . groupBy (\g1 g2 -> norm g1 == norm g2)
+    f :: [Prime GaussianInteger] -> [[Prime GaussianInteger]]
+    f = map sort . groupBy (\g1 g2 -> norm (unPrime g1) == norm (unPrime g2))
 
 -- | The list of primes should include only primes.
 primesGeneratesPrimesProperty :: NonNegative Int -> Bool
-primesGeneratesPrimesProperty (NonNegative i) = case isPrime (primes !! i) of
+primesGeneratesPrimesProperty (NonNegative i) = case isPrime (unPrime (primes !! i) :: GaussianInteger) of
   Nothing -> False
   Just{}  -> True
 
 -- | Check that primes generates the primes in order.
 orderingPrimes :: Assertion
 orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs))
-  where xs = map norm $ take 1000 primes
+  where xs = map (norm . unPrime) $ take 1000 primes
 
 numberOfPrimes :: Assertion
 numberOfPrimes = assertEqual "counting primes: OEIS A091100"
   [16,100,668,4928,38404,313752,2658344]
-  [4 * (length $ takeWhile ((<= 10^n) . norm) primes) | n <- [1..7]]
+  [4 * (length $ takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..7]]
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
