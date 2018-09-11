@@ -27,7 +27,7 @@ module Math.NumberTheory.Primes.Counting.Impl
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Counting.Approximate
-import Math.NumberTheory.Primes.Types (unPrime)
+import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Logarithms
@@ -87,13 +87,13 @@ nthPrimeMaxArg = 150000000000000000
 --
 --   Requires @/O/((n*log n)^0.5)@ space, the time complexity is roughly @/O/((n*log n)^0.7@.
 --   The argument must be strictly positive, and must not exceed 'nthPrimeMaxArg'.
-nthPrime :: Integer -> Integer
+nthPrime :: Integer -> Prime Integer
 nthPrime n
     | n < 1         = error "Prime indexing starts at 1"
     | n > nthPrimeMaxArg = error $ "nthPrime: can't handle index " ++ show n
-    | n < 200000    = nthPrimeCt n
-    | ct0 < n       = tooLow n p0 (n-ct0) approxGap
-    | otherwise     = tooHigh n p0 (ct0-n) approxGap
+    | n < 200000    = Prime $ nthPrimeCt n
+    | ct0 < n       = Prime $ tooLow n p0 (n-ct0) approxGap
+    | otherwise     = Prime $ tooHigh n p0 (ct0-n) approxGap
       where
         p0 = nthPrimeApprox n
         approxGap = (7 * fromIntegral (integerLog2' p0)) `quot` 10
