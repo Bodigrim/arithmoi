@@ -40,6 +40,7 @@ import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Powers.Squares
 
 -- | A certificate of either compositeness or primality of an
@@ -299,7 +300,7 @@ findDecomposition n = go 1 n [] prms
   where
     sr = integerSquareRoot' n
     pbd = min 1000000 (sr+20)
-    prms = primeList (primeSieve $ pbd)
+    prms = map unPrime $ primeList (primeSieve $ pbd)
     go a b afs (p:ps)
         | a > b     = (a,afs,b)
         | otherwise = case splitOff p b of

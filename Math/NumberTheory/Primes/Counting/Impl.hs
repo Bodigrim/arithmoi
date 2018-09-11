@@ -27,6 +27,7 @@ module Math.NumberTheory.Primes.Counting.Impl
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Counting.Approximate
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Logarithms
@@ -61,7 +62,7 @@ primeCount :: Integer -> Integer
 primeCount n
     | n > primeCountMaxArg = error $ "primeCount: can't handle bound " ++ show n
     | n < 2     = 0
-    | n < 1000  = fromIntegral . length . takeWhile (<= n) . primeList . primeSieve $ max 242 n
+    | n < 1000  = fromIntegral . length . takeWhile (<= n) . map unPrime . primeList . primeSieve $ max 242 n
     | n < 30000 = runST $ do
         ba <- sieveTo n
         (s,e) <- getBounds ba

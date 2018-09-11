@@ -96,7 +96,7 @@ gcdESpecialCase1 = assertEqual "gcd" 1 $ ED.gcd (12 E.:+ 23) (23 E.:+ 34)
 findPrimesProperty1 :: Positive Int -> Bool
 findPrimesProperty1 (Positive index) =
     let -- Only retain primes that are of the form @6k + 1@, for some nonzero natural @k@.
-        prop prime = prime `mod` 6 == 1
+        prop prime = unPrime prime `mod` 6 == 1
         p = (!! index) $ filter prop $ drop 3 primes
     in isJust (isPrime (unPrime (E.findPrime p) :: E.EisensteinInteger))
 

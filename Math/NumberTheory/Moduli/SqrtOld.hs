@@ -35,6 +35,7 @@ import GHC.Integer.GMP.Internals
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -224,7 +225,7 @@ findNonSquare n
     | otherwise = search primelist
       where
         primelist = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67]
-                        ++ sieveFrom (68 + n `rem` 4) -- prevent sharing
+                        ++ map unPrime (sieveFrom (68 + n `rem` 4)) -- prevent sharing
         search (p:ps) = case jacobi p n of
           MinusOne -> p
           _        -> search ps

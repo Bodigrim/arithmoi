@@ -107,7 +107,7 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         highIndex = lowIndex + len - 1
 
         ps :: [Int]
-        ps = takeWhile (<= integerSquareRoot highIndex) $ map fromInteger primes
+        ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
 
     forM_ ps $ \p -> do
 

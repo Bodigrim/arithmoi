@@ -5,13 +5,15 @@ module Math.NumberTheory.EisensteinIntegersBench
   ( benchSuite
   ) where
 
+import Data.Maybe
 import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctions (tau)
+import Math.NumberTheory.Primes (isPrime)
 import Math.NumberTheory.Quadratic.EisensteinIntegers
 
 benchFindPrime :: Integer -> Benchmark
-benchFindPrime n = bench (show n) $ nf findPrime n
+benchFindPrime n = bench (show n) $ nf findPrime (fromJust (isPrime n))
 
 benchTau :: Integer -> Benchmark
 benchTau n = bench (show n) $ nf (\m -> sum [tau (x :+ y) | x <- [1..m], y <- [0..m]] :: Word) n

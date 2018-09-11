@@ -72,6 +72,7 @@ import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Testing.Probabilistic
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
@@ -348,7 +349,7 @@ smallFactors bd n = case shiftToOddCount n of
                       (0,m) -> go m prms
                       (k,m) -> (2,k) <: if m == 1 then ([],Nothing) else go m prms
   where
-    prms = tail (primeStore >>= primeList)
+    prms = map unPrime $ tail (primeStore >>= primeList)
     x <: ~(l,b) = (x:l,b)
     go m (p:ps)
         | m < p*p   = ([(m,1)], Nothing)

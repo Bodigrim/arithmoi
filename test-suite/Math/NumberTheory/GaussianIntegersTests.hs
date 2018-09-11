@@ -78,7 +78,7 @@ findPrimeProperty1 p
   || abs (p1 * p2) == fromInteger (unPrime p)
   where
     p1 = findPrimeReference p
-    p2 = unPrime (findPrime (unPrime p))
+    p2 = unPrime (findPrime p)
 
 -- | Number is prime iff it is non-zero
 --   and has exactly one (non-unit) factor.

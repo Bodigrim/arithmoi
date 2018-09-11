@@ -27,7 +27,6 @@ import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.Primes.Types
-import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
 import qualified Math.NumberTheory.UniqueFactorisation  as U
@@ -110,9 +109,11 @@ isPrime g@(x :+ y)
 -- magnitude.
 primes :: [U.Prime GaussianInteger]
 primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
-  where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 4 == 3) (tail Sieve.primes)
-        l = [p :+ 0 | p <- leftPrimes]
-        r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
+  where
+    leftPrimes, rightPrimes :: [Prime Integer]
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) (tail Sieve.primes)
+    l = [unPrime p :+ 0 | p <- leftPrimes]
+    r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
 
 
 -- | Compute the GCD of two Gaussian integers. Result is always
@@ -128,20 +129,20 @@ gcdG' = ED.gcd
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
-findPrime :: Integer -> U.Prime GaussianInteger
-findPrime p = case sqrtsModPrime (-1) (Prime p) of
+findPrime :: Prime Integer -> U.Prime GaussianInteger
+findPrime p = case sqrtsModPrime (-1) p of
     []    -> error "findPrime: an argument must be prime p = 4k + 1"
-    z : _ -> Prime $ go p z -- Effectively we calculate gcdG' (p :+ 0) (z :+ 1)
+    z : _ -> Prime $ go (unPrime p) z -- Effectively we calculate gcdG' (p :+ 0) (z :+ 1)
     where
         sqrtp :: Integer
-        sqrtp = integerSquareRoot p
+        sqrtp = integerSquareRoot (unPrime p)
 
         go :: Integer -> Integer -> GaussianInteger
         go g h
             | g <= sqrtp = g :+ h
             | otherwise  = go h (g `mod` h)
 
-findPrime' :: Integer -> U.Prime GaussianInteger
+findPrime' :: Prime Integer -> U.Prime GaussianInteger
 findPrime' = findPrime
 {-# DEPRECATED findPrime' "Use 'findPrime' instead." #-}
 
@@ -166,18 +167,18 @@ a .^ e
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.
 factorise :: GaussianInteger -> [(Prime GaussianInteger, Word)]
-factorise g = concat $ snd $ mapAccumL go g (Factorisation.factorise $ norm g)
+factorise g = concat $ snd $ mapAccumL go g (U.factorise $ norm g)
     where
-        go :: GaussianInteger -> (Integer, Word) -> (GaussianInteger, [(Prime GaussianInteger, Word)])
-        go z (2, e) = (divideByTwo z, [(Prime (1 :+ 1), e)])
+        go :: GaussianInteger -> (Prime Integer, Word) -> (GaussianInteger, [(Prime GaussianInteger, Word)])
+        go z (Prime 2, e) = (divideByTwo z, [(Prime (1 :+ 1), e)])
         go z (p, e)
-            | p `mod` 4 == 3
-            = let e' = e `quot` 2 in (z `quotI` (p ^ e'), [(Prime (p :+ 0), e')])
+            | unPrime p `mod` 4 == 3
+            = let e' = e `quot` 2 in (z `quotI` (unPrime p ^ e'), [(Prime (unPrime p :+ 0), e')])
             | otherwise
             = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
                 where
                     gp = findPrime p
-                    (k, k', z') = divideByPrime gp p e z
+                    (k, k', z') = divideByPrime gp (unPrime p) e z
                     gp' = Prime (abs (conjugate (unPrime gp)))
 
 -- | Remove all (1:+1) factors from the argument,

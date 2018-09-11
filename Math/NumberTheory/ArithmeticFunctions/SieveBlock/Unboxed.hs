@@ -30,7 +30,7 @@ import GHC.Exts
 
 import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius)
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Primes (primes)
+import Math.NumberTheory.Primes (primes, unPrime)
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils (splitOff#)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
@@ -100,7 +100,7 @@ sieveBlockUnboxed (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         highIndex = lowIndex + len - 1
 
         ps :: [Int]
-        ps = takeWhile (<= integerSquareRoot highIndex) $ map fromInteger primes
+        ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
 
     forM_ ps $ \p -> do
 

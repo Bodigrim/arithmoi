@@ -37,7 +37,6 @@ import GHC.Generics                                    (Generic)
 
 import qualified Math.NumberTheory.Euclidean            as ED
 import Math.NumberTheory.Moduli.Sqrt
-import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import qualified Math.NumberTheory.Primes.Sieve         as Sieve
 import qualified Math.NumberTheory.Primes.Testing       as Testing
 import Math.NumberTheory.Primes.Types
@@ -174,13 +173,13 @@ divideByThree = go 0
 -- * For example, let @p = 7@, then @k = 1@. Square root of @9*1^2-1 modulo 7@ is @1@.
 -- * And @z = 1 - 3*1 = -2 ≡ 5 (mod 7)@.
 -- * Truly, @norm (5 :+ 1) = 25 - 5 + 1 = 21 ≡ 0 (mod 7)@.
-findPrime :: Integer -> U.Prime EisensteinInteger
-findPrime p = case sqrtsModPrime (9*k*k - 1) (Prime p) of
+findPrime :: Prime Integer -> U.Prime EisensteinInteger
+findPrime p = case sqrtsModPrime (9*k*k - 1) p of
     []    -> error "findPrime: argument must be prime p = 6k + 1"
-    z : _ -> Prime $ ED.gcd (p :+ 0) ((z - 3 * k) :+ 1)
+    z : _ -> Prime $ ED.gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
     where
         k :: Integer
-        k = p `div` 6
+        k = unPrime p `div` 6
 
 -- | An infinite list of Eisenstein primes. Uses primes in Z to exhaustively
 -- generate all Eisenstein primes in order of ascending magnitude.
@@ -189,10 +188,12 @@ findPrime p = case sqrtsModPrime (9*k*k - 1) (Prime p) of
 -- applying @associates@ to each prime in this list.
 primes :: [Prime EisensteinInteger]
 primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
-  where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 3 == 2) Sieve.primes
-        rightPrimes' = filter (\prime -> prime `mod` 3 == 1) $ tail rightPrimes
-        l = [p :+ 0 | p <- leftPrimes]
-        r = [g | p <- rightPrimes', let x :+ y = unPrime (findPrime p), g <- [x :+ y, x :+ (x - y)]]
+  where
+    leftPrimes, rightPrimes :: [Prime Integer]
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) Sieve.primes
+    rightPrimes' = filter (\prime -> unPrime prime `mod` 3 == 1) $ tail rightPrimes
+    l = [unPrime p :+ 0 | p <- leftPrimes]
+    r = [g | p <- rightPrimes', let x :+ y = unPrime (findPrime p), g <- [x :+ y, x :+ (x - y)]]
 
 -- | Compute the prime factorisation of a Eisenstein integer.
 --
@@ -231,33 +232,34 @@ primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
 factorise :: EisensteinInteger -> [(Prime EisensteinInteger, Word)]
 factorise g = concat $
               snd $
-              mapAccumL go (abs g) (Factorisation.factorise $ norm g)
+              mapAccumL go (abs g) (U.factorise $ norm g)
   where
-    go :: EisensteinInteger -> (Integer, Word) -> (EisensteinInteger, [(Prime EisensteinInteger, Word)])
-    go z (3, e) | e == n    = (q, [(Prime (2 :+ 1), e)])
-                | otherwise = error $ "3 is a prime factor of the norm of z\
-                                      \ == " ++ show z ++ " with multiplicity\
-                                      \ " ++ show e ++ " but (1 - ω) only\
-                                      \ divides z " ++ show n ++ "times."
+    go :: EisensteinInteger -> (Prime Integer, Word) -> (EisensteinInteger, [(Prime EisensteinInteger, Word)])
+    go z (Prime 3, e)
+      | e == n    = (q, [(Prime (2 :+ 1), e)])
+      | otherwise = error $ "3 is a prime factor of the norm of z = " ++ show z
+                          ++ " with multiplicity " ++ show e
+                          ++ " but (1 - ω) only divides z " ++ show n ++ "times."
       where
         -- Remove all @1 :+ (-1)@ (which is associated to @2 :+ 1@) factors
         -- from the argument.
         (n, q) = divideByThree z
-    go z (p, e) | p `mod` 3 == 2 =
-                    let e' = e `quot` 2 in (z `quotI` (p ^ e'), [(Prime (p :+ 0), e')])
+    go z (p, e)
+      | unPrime p `mod` 3 == 2
+      = let e' = e `quot` 2 in (z `quotI` (unPrime p ^ e'), [(Prime (unPrime p :+ 0), e')])
 
-                -- The @`mod` 3 == 0@ case need not be verified because the
-                -- only Eisenstein primes whose norm are a multiple of 3
-                -- are @1 - ω@ and its associates, which have already been
-                -- removed by the above @go z (3, e)@ pattern match.
-                -- This @otherwise@ is mandatorily @`mod` 3 == 1@.
-                | otherwise   = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
+      -- The @`mod` 3 == 0@ case need not be verified because the
+      -- only Eisenstein primes whose norm are a multiple of 3
+      -- are @1 - ω@ and its associates, which have already been
+      -- removed by the above @go z (3, e)@ pattern match.
+      -- This @otherwise@ is mandatorily @`mod` 3 == 1@.
+      | otherwise   = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
       where
         gp = findPrime p
         x :+ y = unPrime gp
         -- @gp'@ is @gp@'s conjugate.
         gp' = Prime (x :+ (x - y))
-        (k, k', z') = divideByPrime gp gp' p e z
+        (k, k', z') = divideByPrime gp gp' (unPrime p) e z
 
         quotI (a :+ b) n = (a `quot` n :+ b `quot` n)
 
