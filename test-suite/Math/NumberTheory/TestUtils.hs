@@ -62,8 +62,8 @@ import Math.NumberTheory.Euclidean
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
+import Math.NumberTheory.Primes (UniqueFactorisation, Prime, unPrime)
 import qualified Math.NumberTheory.SmoothNumbers as SN
-import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, Prime, unPrime)
 
 import Math.NumberTheory.TestUtils.MyCompose
 import Math.NumberTheory.TestUtils.Wrappers

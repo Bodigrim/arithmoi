@@ -21,7 +21,7 @@ import Test.Tasty
 
 import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Quadratic.GaussianIntegers
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
 
 import Numeric.Natural

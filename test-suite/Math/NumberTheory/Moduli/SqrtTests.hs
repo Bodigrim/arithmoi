@@ -26,7 +26,7 @@ import Data.Maybe (fromJust)
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli hiding (invertMod)
-import Math.NumberTheory.UniqueFactorisation (unPrime, isPrime, Prime)
+import Math.NumberTheory.Primes (unPrime, isPrime, Prime)
 import Math.NumberTheory.TestUtils
 
 unwrapPP :: (Prime Integer, Power Word) -> (Prime Integer, Word)

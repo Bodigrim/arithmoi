@@ -24,7 +24,7 @@ import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes (Prime, unPrime, UniqueFactorisation(..))
 import Math.NumberTheory.TestUtils
 
 lazyCases :: [(GaussianInteger, [(Prime GaussianInteger, Word)])]

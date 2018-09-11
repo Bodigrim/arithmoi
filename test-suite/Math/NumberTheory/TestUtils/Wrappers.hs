@@ -34,7 +34,7 @@ import Data.Functor.Classes
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
 -------------------------------------------------------------------------------
 -- AnySign
