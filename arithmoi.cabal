@@ -95,7 +95,6 @@ library
     Math.NumberTheory.Zeta
     Math.NumberTheory.Zeta.Dirichlet
     Math.NumberTheory.Zeta.Riemann
-    Math.NumberTheory.Zeta.Utils
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
     Math.NumberTheory.Primes.Counting.Approximate
@@ -113,6 +112,7 @@ library
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.FromIntegral
     Math.NumberTheory.Utils.Hyperbola
+    Math.NumberTheory.Zeta.Utils
   default-language: Haskell2010
   ghc-options: -O2 -Wall
   if flag(check-bounds)
