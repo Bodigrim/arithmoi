@@ -27,6 +27,7 @@ import Data.Semigroup
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes.Types
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
 -- factorisation.
@@ -120,10 +121,8 @@ instance (Euclidean a, Ord a) => Num (Prefactored a) where
   fromInteger n = fromValue (fromInteger n)
 
 instance (Eq a, Num a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
-  type Prime (Prefactored a) = Prime a
-  unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
-    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (unCoprimes f)
+    = concatMap (\(x, xm) -> map (\(p, k) -> (Prime $ fromValue $ unPrime p, k * xm)) (factorise x)) (unCoprimes f)
   isPrime (Prefactored _ f) = case unCoprimes f of
-    [(n, 1)] -> isPrime n
+    [(n, 1)] -> Prime . fromValue . unPrime <$> isPrime n
     _        -> Nothing

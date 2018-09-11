@@ -28,6 +28,7 @@
 module Math.NumberTheory.TestUtils.Wrappers where
 
 import Control.Applicative
+import Data.Coerce
 import Data.Functor.Classes
 
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
@@ -171,32 +172,22 @@ instance Show1 Odd where
 -------------------------------------------------------------------------------
 -- Prime
 
-newtype PrimeWrapper a = PrimeWrapper { getPrime :: Prime a }
+instance (Arbitrary a, UniqueFactorisation a) => Arbitrary (Prime a) where
+  arbitrary = (arbitrary :: Gen a) `suchThatMap` isPrime
 
-deriving instance Eq   (Prime a) => Eq   (PrimeWrapper a)
-deriving instance Ord  (Prime a) => Ord  (PrimeWrapper a)
-deriving instance Show (Prime a) => Show (PrimeWrapper a)
-
-instance (Arbitrary a, UniqueFactorisation a) => Arbitrary (PrimeWrapper a) where
-  arbitrary = PrimeWrapper <$> (arbitrary :: Gen a) `suchThatMap` isPrime
-
-instance (Monad m, Serial m a, UniqueFactorisation a) => Serial m (PrimeWrapper a) where
-  series = PrimeWrapper <$> (series :: Series m a) `suchThatMapSerial` isPrime
+instance (Monad m, Serial m a, UniqueFactorisation a) => Serial m (Prime a) where
+  series = (series :: Series m a) `suchThatMapSerial` isPrime
 
 -------------------------------------------------------------------------------
 -- UniqueFactorisation
 
 instance UniqueFactorisation a => UniqueFactorisation (Large a) where
-  type Prime (Large a) = Prime a
-  unPrime p = Large (unPrime p)
-  factorise (Large x) = factorise x
-  isPrime (Large x) = isPrime x
+  factorise (Large x) = coerce $ factorise x
+  isPrime (Large x) = coerce $ isPrime x
 
 instance UniqueFactorisation a => UniqueFactorisation (Huge a) where
-  type Prime (Huge a) = Prime a
-  unPrime p = Huge (unPrime p)
-  factorise (Huge x) = factorise x
-  isPrime (Huge x) = isPrime x
+  factorise (Huge x) = coerce $ factorise x
+  isPrime (Huge x) = coerce $ isPrime x
 
 -------------------------------------------------------------------------------
 -- Utils

@@ -62,8 +62,8 @@ factoriseSpecialCase1 = assertEqual "should be equal"
 factoriseSpecialCase2 :: (GaussianInteger, [(Prime GaussianInteger, Word)]) -> Assertion
 factoriseSpecialCase2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
-findPrimeReference :: PrimeWrapper Integer -> GaussianInteger
-findPrimeReference (PrimeWrapper p) =
+findPrimeReference :: Prime Integer -> GaussianInteger
+findPrimeReference p =
     let c : _ = sqrtsModPrime (-1) p
         k  = integerSquareRoot (unPrime p)
         bs = [1 .. k]
@@ -71,13 +71,13 @@ findPrimeReference (PrimeWrapper p) =
         (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
     in a :+ b
 
-findPrimeProperty1 :: PrimeWrapper Integer -> Bool
-findPrimeProperty1 p'@(PrimeWrapper p)
+findPrimeProperty1 :: Prime Integer -> Bool
+findPrimeProperty1 p
   = unPrime p `mod` 4 /= (1 :: Integer)
   || p1 == p2
   || abs (p1 * p2) == fromInteger (unPrime p)
   where
-    p1 = findPrimeReference p'
+    p1 = findPrimeReference p
     p2 = unPrime (findPrime (unPrime p))
 
 -- | Number is prime iff it is non-zero

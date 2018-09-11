@@ -14,7 +14,9 @@
 {-# LANGUAGE DefaultSignatures #-}
 
 module Math.NumberTheory.UniqueFactorisation
-  ( UniqueFactorisation(..)
+  ( Prime
+  , unPrime
+  , UniqueFactorisation(..)
   ) where
 
 import Control.Arrow
@@ -22,50 +24,62 @@ import Data.Coerce
 
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
-import Math.NumberTheory.Primes.Types (Prm(..), PrimeNat(..))
+import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
 
--- | The following invariant must hold for @n /= 0@:
---
--- > abs n == abs (product (map (\(p, k) -> unPrime p ^ k) (factorise n)))
---
--- The result of 'factorise' should not contain zero powers and should not change after multiplication of the argument by domain's unit.
+-- | A class for unique factorisation domains.
 class UniqueFactorisation a where
-  type Prime a
-  unPrime   :: Prime a -> a
+  -- | Factorise a number into a product of prime powers.
+  -- Factorisation of 0 is an undefined behaviour. Otherwise
+  -- following invariants hold:
+  --
+  -- > abs n == abs (product (map (\(p, k) -> unPrime p ^ k) (factorise n)))
+  -- > all ((> 0) . snd) (factorise n)
+  --
+  -- >>> factorise (1 :: Integer)
+  -- []
+  -- >>> factorise (-1 :: Integer)
+  -- []
+  -- >>> factorise (6 :: Integer)
+  -- [(Prime 2,1),(Prime 3,1)]
+  -- >>> factorise (-108 :: Integer)
+  -- [(Prime 2,2),(Prime 3,3)]
+  --
+  -- This function is a replacement
+  -- for 'Math.NumberTheory.Primes.Factorisation.factorise'.
+  -- If you were looking for the latter, please import
+  -- "Math.NumberTheory.Primes.Factorisation" instead of this module.
   factorise :: a -> [(Prime a, Word)]
+  -- | Check whether an argument is prime.
+  -- If it is then return an associated prime.
+  --
+  -- >>> isPrime (3 :: Integer)
+  -- Just (Prime 3)
+  -- >>> isPrime (4 :: Integer)
+  -- Nothing
+  -- >>> isPrime (-5 :: Integer)
+  -- Just (Prime 5)
+  --
+  -- This function is a replacement
+  -- for 'Math.NumberTheory.Primes.Testing.isPrime'.
+  -- If you were looking for the latter, please import
+  -- "Math.NumberTheory.Primes.Testing" instead of this module.
   isPrime   :: a -> Maybe (Prime a)
 
-  default isPrime :: (Eq a, Num a) => a -> Maybe (Prime a)
-  isPrime 0 = Nothing
-  isPrime n = case factorise n of
-    [(p, 1)] -> Just p
-    _        -> Nothing
-
-  {-# MINIMAL unPrime, factorise #-}
-
 instance UniqueFactorisation Int where
-  type Prime Int = Prm
-  unPrime   = coerce wordToInt
-  factorise = map (coerce integerToWord *** id) . F.factorise . intToInteger
-  isPrime n = if T.isPrime (toInteger n) then Just (coerce $ intToWord $ abs n) else Nothing
+  factorise = map (Prime . integerToInt *** id) . F.factorise . intToInteger
+  isPrime n = if T.isPrime (toInteger n) then Just (Prime $ abs n) else Nothing
 
 instance UniqueFactorisation Word where
-  type Prime Word = Prm
-  unPrime   = coerce
   factorise = map (coerce integerToWord *** id) . F.factorise . wordToInteger
-  isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
+  isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing
 
 instance UniqueFactorisation Integer where
-  type Prime Integer = PrimeNat
-  unPrime   = coerce naturalToInteger
-  factorise = map (coerce integerToNatural *** id) . F.factorise
-  isPrime n = if T.isPrime n then Just (coerce $ integerToNatural $ abs n) else Nothing
+  factorise = coerce . F.factorise
+  isPrime n = if T.isPrime n then Just (Prime $ abs n) else Nothing
 
 instance UniqueFactorisation Natural where
-  type Prime Natural = PrimeNat
-  unPrime   = coerce
   factorise = map (coerce integerToNatural *** id) . F.factorise . naturalToInteger
-  isPrime n = if T.isPrime (toInteger n) then Just (coerce n) else Nothing
+  isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing

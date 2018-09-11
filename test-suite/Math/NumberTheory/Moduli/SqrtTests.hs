@@ -29,46 +29,43 @@ import Math.NumberTheory.Moduli hiding (invertMod)
 import Math.NumberTheory.UniqueFactorisation (unPrime, isPrime, Prime)
 import Math.NumberTheory.TestUtils
 
-unwrapP :: PrimeWrapper Integer -> Prime Integer
-unwrapP (PrimeWrapper p) = p
-
-unwrapPP :: (PrimeWrapper Integer, Power Word) -> (Prime Integer, Word)
-unwrapPP (p, Power e) = (unwrapP p, e `mod` 5)
+unwrapPP :: (Prime Integer, Power Word) -> (Prime Integer, Word)
+unwrapPP (p, Power e) = (p, e `mod` 5)
 
 nubOrd :: Ord a => [a] -> [a]
 nubOrd = map head . group . sort
 
 -- | Check that 'sqrtMod' is defined iff a quadratic residue exists.
 --   Also check that the result is a solution of input modular equation.
-sqrtsModPrimeProperty1 :: AnySign Integer -> PrimeWrapper Integer -> Bool
-sqrtsModPrimeProperty1 (AnySign n) (unwrapP -> p'@(unPrime -> p)) = case sqrtsModPrime n p' of
+sqrtsModPrimeProperty1 :: AnySign Integer -> Prime Integer -> Bool
+sqrtsModPrimeProperty1 (AnySign n) p'@(unPrime -> p) = case sqrtsModPrime n p' of
   []     -> jacobi n p == MinusOne
   rt : _ -> (p == 2 || jacobi n p /= MinusOne) && rt ^ 2 `mod` p == n `mod` p
 
-sqrtsModPrimeProperty2 :: AnySign Integer -> PrimeWrapper Integer -> Bool
-sqrtsModPrimeProperty2 (AnySign n) (unwrapP -> p'@(unPrime -> p)) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtsModPrime n p')
+sqrtsModPrimeProperty2 :: AnySign Integer -> Prime Integer -> Bool
+sqrtsModPrimeProperty2 (AnySign n) p'@(unPrime -> p) = all (\rt -> rt ^ 2 `mod` p == n `mod` p) (sqrtsModPrime n p')
 
-sqrtsModPrimeProperty3 :: AnySign Integer -> PrimeWrapper Integer -> Bool
-sqrtsModPrimeProperty3 (AnySign n) (unwrapP -> p'@(unPrime -> p)) = nubOrd rts == sort rts
+sqrtsModPrimeProperty3 :: AnySign Integer -> Prime Integer -> Bool
+sqrtsModPrimeProperty3 (AnySign n) p'@(unPrime -> p) = nubOrd rts == sort rts
   where
     rts = map (`mod` p) $ sqrtsModPrime n p'
 
-sqrtsModPrimeProperty4 :: AnySign Integer -> PrimeWrapper Integer -> Bool
-sqrtsModPrimeProperty4 (AnySign n) (unwrapP -> p'@(unPrime -> p)) = all (\rt -> rt >= 0 && rt < p) (sqrtsModPrime n p')
+sqrtsModPrimeProperty4 :: AnySign Integer -> Prime Integer -> Bool
+sqrtsModPrimeProperty4 (AnySign n) p'@(unPrime -> p) = all (\rt -> rt >= 0 && rt < p) (sqrtsModPrime n p')
 
-tonelliShanksProperty1 :: Positive Integer -> PrimeWrapper Integer -> Bool
-tonelliShanksProperty1 (Positive n) (unwrapP -> p'@(unPrime -> p)) = p `mod` 4 /= 1 || jacobi n p /= One || rt ^ 2 `mod` p == n `mod` p
+tonelliShanksProperty1 :: Positive Integer -> Prime Integer -> Bool
+tonelliShanksProperty1 (Positive n) p'@(unPrime -> p) = p `mod` 4 /= 1 || jacobi n p /= One || rt ^ 2 `mod` p == n `mod` p
   where
     rt : _ = sqrtsModPrime n p'
 
-tonelliShanksProperty2 :: PrimeWrapper Integer -> Bool
-tonelliShanksProperty2 (unwrapP -> p'@(unPrime -> p)) = p `mod` 4 /= 1 || rt ^ 2 `mod` p == n `mod` p
+tonelliShanksProperty2 :: Prime Integer -> Bool
+tonelliShanksProperty2 p'@(unPrime -> p) = p `mod` 4 /= 1 || rt ^ 2 `mod` p == n `mod` p
   where
     n  = head $ filter (\s -> jacobi s p == One) [2..p-1]
     rt : _ = sqrtsModPrime n p'
 
-tonelliShanksProperty3 :: PrimeWrapper Integer -> Bool
-tonelliShanksProperty3 (unwrapP -> p'@(unPrime -> p))
+tonelliShanksProperty3 :: Prime Integer -> Bool
+tonelliShanksProperty3 p'@(unPrime -> p)
   = p `mod` 4 /= 1
   || rt ^ 2 `mod` p == p - 1
   where
@@ -82,32 +79,32 @@ tonelliShanksSpecialCases =
     ps = [17, 73, 241, 1009, 2689, 8089, 33049, 53881, 87481, 483289, 515761, 1083289, 3818929, 9257329, 22000801, 48473881, 175244281, 427733329, 898716289, 8114538721, 9176747449, 23616331489]
     rts = map (head . sqrtsModPrime 2 . fromJust . isPrime) ps
 
-sqrtsModPrimePowerProperty1 :: AnySign Integer -> (PrimeWrapper Integer, Power Word) -> Bool
-sqrtsModPrimePowerProperty1 (AnySign n) (unwrapP -> p'@(unPrime -> p), Power e) = gcd n p > 1
+sqrtsModPrimePowerProperty1 :: AnySign Integer -> (Prime Integer, Power Word) -> Bool
+sqrtsModPrimePowerProperty1 (AnySign n) (p'@(unPrime -> p), Power e) = gcd n p > 1
   || all (\rt -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) (sqrtsModPrimePower n p' e)
 
 sqrtsModPrimePowerProperty2 :: AnySign Integer -> Power Word -> Bool
-sqrtsModPrimePowerProperty2 n e = sqrtsModPrimePowerProperty1 n (PrimeWrapper $ fromJust $ isPrime (2 :: Integer), e)
+sqrtsModPrimePowerProperty2 n e = sqrtsModPrimePowerProperty1 n (fromJust $ isPrime (2 :: Integer), e)
 
-sqrtsModPrimePowerProperty3 :: AnySign Integer -> (PrimeWrapper Integer, Power Word) -> Bool
-sqrtsModPrimePowerProperty3 (AnySign n) (unwrapP -> p'@(unPrime -> p), Power e') = nubOrd rts == sort rts
+sqrtsModPrimePowerProperty3 :: AnySign Integer -> (Prime Integer, Power Word) -> Bool
+sqrtsModPrimePowerProperty3 (AnySign n) (p'@(unPrime -> p), Power e') = nubOrd rts == sort rts
   where
     e = e' `mod` 5
     m = p ^ e
     rts = map (`mod` m) $ sqrtsModPrimePower n p' e
 
 sqrtsModPrimePowerProperty4 :: AnySign Integer -> Power Word -> Bool
-sqrtsModPrimePowerProperty4 n e = sqrtsModPrimePowerProperty3 n (PrimeWrapper $ fromJust $ isPrime (2 :: Integer), e)
+sqrtsModPrimePowerProperty4 n e = sqrtsModPrimePowerProperty3 n (fromJust $ isPrime (2 :: Integer), e)
 
-sqrtsModPrimePowerProperty5 :: AnySign Integer -> (PrimeWrapper Integer, Power Word) -> Bool
-sqrtsModPrimePowerProperty5 (AnySign n) (unwrapP -> p'@(unPrime -> p), Power e') = all (\rt -> rt >= 0 && rt < m) rts
+sqrtsModPrimePowerProperty5 :: AnySign Integer -> (Prime Integer, Power Word) -> Bool
+sqrtsModPrimePowerProperty5 (AnySign n) (p'@(unPrime -> p), Power e') = all (\rt -> rt >= 0 && rt < m) rts
   where
     e = e' `mod` 5
     m = p ^ e
     rts = sqrtsModPrimePower n p' e
 
 sqrtsModPrimePowerProperty6 :: AnySign Integer -> Power Word -> Bool
-sqrtsModPrimePowerProperty6 n e = sqrtsModPrimePowerProperty5 n (PrimeWrapper $ fromJust $ isPrime (2 :: Integer), e)
+sqrtsModPrimePowerProperty6 n e = sqrtsModPrimePowerProperty5 n (fromJust $ isPrime (2 :: Integer), e)
 
 sqrtsModPrimePowerSpecialCase1 :: Assertion
 sqrtsModPrimePowerSpecialCase1 =
@@ -153,7 +150,7 @@ sqrtsModPrimePowerSpecialCase11 :: Assertion
 sqrtsModPrimePowerSpecialCase11 =
   assertEqual "should be equal" [4,12,20,28,36,44,52,60] (sort (sqrtsModPrimePower 16 (fromJust (isPrime (2 :: Integer))) 6))
 
-sqrtsModFactorisationProperty1 :: AnySign Integer -> [(PrimeWrapper Integer, Power Word)] -> Bool
+sqrtsModFactorisationProperty1 :: AnySign Integer -> [(Prime Integer, Power Word)] -> Bool
 sqrtsModFactorisationProperty1 (AnySign n) (take 10 . map unwrapPP -> pes'@(map (first unPrime) -> pes))
   = nubOrd ps /= sort ps || all
     (\rt -> all (\(p, e) -> rt ^ 2 `mod` (p ^ e) == n `mod` (p ^ e)) pes)
@@ -161,7 +158,7 @@ sqrtsModFactorisationProperty1 (AnySign n) (take 10 . map unwrapPP -> pes'@(map 
   where
     ps = map fst pes
 
-sqrtsModFactorisationProperty2 :: AnySign Integer -> [(PrimeWrapper Integer, Power Word)] -> Bool
+sqrtsModFactorisationProperty2 :: AnySign Integer -> [(Prime Integer, Power Word)] -> Bool
 sqrtsModFactorisationProperty2 (AnySign n) (take 10 . map unwrapPP -> pes'@(map (first unPrime) -> pes))
   = nubOrd ps /= sort ps || nubOrd rts == sort rts
   where
@@ -169,7 +166,7 @@ sqrtsModFactorisationProperty2 (AnySign n) (take 10 . map unwrapPP -> pes'@(map 
     m = product $ map (\(p, e) -> p ^ e) pes
     rts = map (`mod` m) $ take 1000 $ sqrtsModFactorisation n pes'
 
-sqrtsModFactorisationProperty3 :: AnySign Integer -> [(PrimeWrapper Integer, Power Word)] -> Bool
+sqrtsModFactorisationProperty3 :: AnySign Integer -> [(Prime Integer, Power Word)] -> Bool
 sqrtsModFactorisationProperty3 (AnySign n) (take 10 . map unwrapPP -> pes'@(map (first unPrime) -> pes))
   = nubOrd ps /= sort ps || all (\rt -> rt >= 0 && rt < m) rts
   where

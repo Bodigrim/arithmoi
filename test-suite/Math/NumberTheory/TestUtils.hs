@@ -94,10 +94,10 @@ instance (Eq a, Num a, UniqueFactorisation a, Arbitrary a) => Arbitrary (CyclicG
     [ (1, pure CG2)
     , (1, pure CG4)
     , (9, CGOddPrimePower
-      <$> (arbitrary :: Gen (PrimeWrapper a)) `suchThatMap` isOddPrime
+      <$> (arbitrary :: Gen (Prime a)) `suchThatMap` isOddPrime
       <*> (getPower <$> arbitrary))
     , (9, CGDoubleOddPrimePower
-      <$> (arbitrary :: Gen (PrimeWrapper a)) `suchThatMap` isOddPrime
+      <$> (arbitrary :: Gen (Prime a)) `suchThatMap` isOddPrime
       <*> (getPower <$> arbitrary))
     ]
 
@@ -105,17 +105,17 @@ instance (Monad m, Eq a, Num a, UniqueFactorisation a, Serial m a) => Serial m (
   series = pure CG2
         \/ pure CG4
         \/ (CGOddPrimePower
-           <$> (series :: Series m (PrimeWrapper a)) `suchThatMapSerial` isOddPrime
+           <$> (series :: Series m (Prime a)) `suchThatMapSerial` isOddPrime
            <*> (getPower <$> series))
         \/ (CGDoubleOddPrimePower
-           <$> (series :: Series m (PrimeWrapper a)) `suchThatMapSerial` isOddPrime
+           <$> (series :: Series m (Prime a)) `suchThatMapSerial` isOddPrime
            <*> (getPower <$> series))
 
 isOddPrime
   :: forall a. (Eq a, Num a, UniqueFactorisation a)
-  => PrimeWrapper a
+  => Prime a
   -> Maybe (Prime a)
-isOddPrime (PrimeWrapper p) = if (unPrime p :: a) == 2 then Nothing else Just p
+isOddPrime p = if (unPrime p :: a) == 2 then Nothing else Just p
 
 -------------------------------------------------------------------------------
 -- SmoothNumbers

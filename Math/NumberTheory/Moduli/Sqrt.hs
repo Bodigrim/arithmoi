@@ -30,7 +30,6 @@ module Math.NumberTheory.Moduli.Sqrt
   , Old.sqrtModFList
   ) where
 
-import Control.Arrow hiding (loop)
 import Control.Monad (liftM2)
 import Data.Bits
 
@@ -38,10 +37,9 @@ import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class (Mod, getVal, getMod, KnownNat)
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Powers.Modular (powMod)
-import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
-import Math.NumberTheory.UniqueFactorisation (Prime)
+import Math.NumberTheory.UniqueFactorisation (Prime, factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -54,8 +52,6 @@ import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 -- > [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
 sqrtsMod :: KnownNat m => Mod m -> [Mod m]
 sqrtsMod a = map fromInteger $ sqrtsModFactorisation (getVal a) (factorise (getMod a))
-  where
-    factorise = map (PrimeNat . integerToNatural *** id) . F.factorise
 
 -- | List all square roots modulo a number, which factorisation is passed as a second argument.
 --
@@ -66,7 +62,7 @@ sqrtsModFactorisation _ []  = [0]
 sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
   where
     ms :: [Integer]
-    ms = map (\(PrimeNat p, pow) -> toInteger p ^ pow) pps
+    ms = map (\(Prime p, pow) -> p ^ pow) pps
 
     rs :: [[Integer]]
     rs = map (\(p, pow) -> sqrtsModPrimePower n p pow) pps
@@ -84,7 +80,7 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
 -- [3,12,21,24,6,15]
 sqrtsModPrimePower :: Integer -> Prime Integer -> Word -> [Integer]
 sqrtsModPrimePower nn p 1 = sqrtsModPrime nn p
-sqrtsModPrimePower nn (PrimeNat (toInteger -> prime)) expo = let primeExpo = prime ^ expo in
+sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
   case splitOff prime (nn `mod` primeExpo) of
     (_, 0) -> [0, prime ^ ((expo + 1) `quot` 2) .. primeExpo - 1]
     (kk, n)
@@ -116,8 +112,8 @@ sqrtsModPrimePower nn (PrimeNat (toInteger -> prime)) expo = let primeExpo = pri
 -- >>> sqrtsModPrime 2 (fromJust (isPrime 5))
 -- []
 sqrtsModPrime :: Integer -> Prime Integer -> [Integer]
-sqrtsModPrime n (PrimeNat 2) = [n `mod` 2]
-sqrtsModPrime n (PrimeNat (toInteger -> prime)) = case jacobi n prime of
+sqrtsModPrime n (Prime 2) = [n `mod` 2]
+sqrtsModPrime n (Prime prime) = case jacobi n prime of
   MinusOne -> []
   Zero     -> [0]
   One      -> let r = sqrtModP' (n `mod` prime) prime in [r, prime - r]
@@ -177,7 +173,7 @@ tonelliShanks square prime = loop rc t1 generator log2
 
 -- | prime must be odd, n must be coprime with prime
 sqrtModPP' :: Integer -> Integer -> Word -> Maybe Integer
-sqrtModPP' n prime expo = case sqrtsModPrime n (PrimeNat (fromInteger prime)) of
+sqrtModPP' n prime expo = case sqrtsModPrime n (Prime prime) of
                             []    -> Nothing
                             r : _ -> fixup r
   where
