@@ -2,6 +2,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.DiscreteLogarithmBench
   ( benchSuite
   , rangeCases
@@ -14,7 +16,7 @@ import GHC.TypeNats.Compat
 import Data.Proxy
 import Numeric.Natural
 
-import Math.NumberTheory.Moduli.Class (isMultElement, KnownNat, MultMod, multElement, getVal, getMod, Mod)
+import Math.NumberTheory.Moduli.Class (isMultElement, KnownNat, MultMod, multElement, getVal,Mod)
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithm)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot, isPrimitiveRoot, unPrimitiveRoot, cyclicGroupFromModulo)
 
