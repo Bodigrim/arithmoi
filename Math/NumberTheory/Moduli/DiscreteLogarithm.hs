@@ -10,7 +10,9 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE BangPatterns #-}
 
-module Math.NumberTheory.Moduli.DiscreteLogarithm where
+module Math.NumberTheory.Moduli.DiscreteLogarithm
+  ( discreteLogarithm
+  ) where
 
 import qualified Data.IntMap.Strict as M
 import Data.Maybe                             (maybeToList)
@@ -24,7 +26,8 @@ import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..
 import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
 import Math.NumberTheory.UniqueFactorisation  (unPrime)
 
--- | Computes the discrete logarithm. Currently uses the baby-step giant-step method with Bach reduction.
+-- | Computes the discrete logarithm. Currently uses a combination of the baby-step
+-- giant-step method and Pollard's rho algorithm, with Bach reduction.
 discreteLogarithm :: KnownNat m => PrimitiveRoot m -> MultMod m -> Natural
 discreteLogarithm a b = discreteLogarithm' (getGroup a) (multElement $ unPrimitiveRoot a) (multElement b)
 
@@ -66,6 +69,12 @@ theta p pkMinusOne a = (numerator `quot` pk) `rem` pkMinusOne
     p2kMinusOne  = pkMinusOne * pk
     numerator    = (powModInteger a (pk - pkMinusOne) p2kMinusOne - 1) `rem` p2kMinusOne
 
+-- TODO: Use Pollig-Hellman to reduce the problem further into groups of prime order.
+-- While Bach reduction simplifies the problem into groups of the form (Z/pZ)*, these
+-- have non-prime order, and the Pollig-Hellman algorithm can reduce the problem into
+-- smaller groups of prime order.
+-- In addition, the gcd check before solveLinear is applied in Pollard below will be
+-- made redundant, since n would be prime.
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b
   | p < 100000000 = fromIntegral $ discreteLogarithmPrimeBSGS (fromInteger p) (fromInteger a) (fromInteger b)
@@ -82,6 +91,10 @@ discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1],
     giants   = iterate (.* bigGiant) b
     x .* y   = x * y `rem` p
 
+-- TODO: Use more advanced walks, in order to reduce divisions, cf
+-- https://maths-people.anu.edu.au/~brent/pd/rpb231.pdf
+-- This will slightly improve the expected time to collision, and can reduce the
+-- number of divisions performed.
 discreteLogarithmPrimePollard :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrimePollard p a b =
   case concatMap runPollard [(x,y) | x <- [0..n], y <- [0..n]] of
