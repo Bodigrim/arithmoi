@@ -36,8 +36,9 @@ import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Unsafe.Coerce
 
-import Math.NumberTheory.Primes (primes, unPrime)
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
+import Math.NumberTheory.Primes (unPrime)
+import Math.NumberTheory.Primes.Sieve (primes)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt)
 
 import Math.NumberTheory.Logarithms

@@ -10,11 +10,6 @@ module Math.NumberTheory.Primes
     , UniqueFactorisation(..)
     , nextPrime
     , precPrime
-    , module Math.NumberTheory.Primes.Sieve
-    , module Math.NumberTheory.Primes.Counting
     ) where
-
-import Math.NumberTheory.Primes.Sieve
-import Math.NumberTheory.Primes.Counting
 
 import Math.NumberTheory.UniqueFactorisation

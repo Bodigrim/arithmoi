@@ -21,6 +21,7 @@ import Test.Tasty.HUnit                               (Assertion, assertEqual,
 import qualified Math.NumberTheory.Euclidean as ED
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.Primes
+import Math.NumberTheory.Primes.Sieve (primes)
 import Math.NumberTheory.TestUtils                    (Positive (..),
                                                        testSmallAndQuick)
 

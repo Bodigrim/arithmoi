@@ -31,6 +31,7 @@ module Math.NumberTheory.Utils
 #include "MachDeps.h"
 
 import Prelude hiding (mod, quotRem)
+import qualified Prelude as P
 
 import GHC.Base
 
@@ -209,7 +210,7 @@ bigNatToNatural bn
 toWheel30 :: (Integral a, Bits a) => a -> a
 toWheel30 i = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
   where
-    (q, r) = i `quotRem` 30
+    (q, r) = i `P.quotRem` 30
 
 fromWheel30 :: (Num a, Bits a) => a -> a
 fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)

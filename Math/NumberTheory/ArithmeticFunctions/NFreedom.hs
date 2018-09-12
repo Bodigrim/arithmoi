@@ -22,7 +22,8 @@ import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
 import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
-import Math.NumberTheory.Primes              (primes, unPrime)
+import Math.NumberTheory.Primes              (unPrime)
+import Math.NumberTheory.Primes.Sieve        (primes)
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation)
 import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
