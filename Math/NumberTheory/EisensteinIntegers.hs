@@ -37,8 +37,7 @@ import Data.Ord                                        (comparing)
 import GHC.Generics                                    (Generic)
 
 import qualified Math.NumberTheory.Euclidean            as ED
-import qualified Math.NumberTheory.Moduli               as Moduli
-import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..))
+import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..), sqrtModMaybe)
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import Math.NumberTheory.Primes.Types                   (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Sieve         as Sieve
@@ -176,12 +175,12 @@ divideByThree = go 0
 -- @(z+3k)^2 ≡ 9k^2-1 (mod 6k+1)@
 -- @z+3k = sqrtMod(9k^2-1)@
 -- @z = sqrtMod(9k^2-1) - 3k@
--- 
+--
 -- * For example, let @p = 7@, then @k = 1@. Square root of @9*1^2-1 modulo 7@ is @1@.
 -- * And @z = 1 - 3*1 = -2 ≡ 5 (mod 7)@.
 -- * Truly, @norm (5 :+ 1) = 25 - 5 + 1 = 21 ≡ 0 (mod 7)@.
 findPrime :: Integer -> EisensteinInteger
-findPrime p = case Moduli.sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
+findPrime p = case sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
     Nothing      -> error "findPrime: argument must be prime p = 6k + 1"
     Just sqrtMod -> ED.gcd (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
     where

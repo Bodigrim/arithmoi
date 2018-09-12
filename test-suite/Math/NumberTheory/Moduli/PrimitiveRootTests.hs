@@ -21,7 +21,7 @@ import Test.Tasty
 
 import qualified Data.Set as S
 import Data.List (genericTake, genericLength)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust, isNothing, mapMaybe)
 import Control.Arrow (first)
 import Numeric.Natural
 import Data.Proxy
@@ -73,19 +73,19 @@ isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty1 (AnySign n) (Positive m)
   = case n `modulo` m of
     SomeMod n' -> gcd n (toInteger m) == 1
-               || not (isPrimitiveRoot n')
+               || isNothing (isPrimitiveRoot n')
     InfMod{}   -> False
 
 isPrimitiveRootProperty2 :: Positive Natural -> Bool
 isPrimitiveRootProperty2 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
   || case someNatVal m of
-    SomeNat (_ :: Proxy t) -> any isPrimitiveRoot [(minBound :: Mod t) .. maxBound]
+    SomeNat (_ :: Proxy t) -> any (isJust . isPrimitiveRoot) [(minBound :: Mod t) .. maxBound]
 
 isPrimitiveRootProperty3 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty3 (AnySign n) (Positive m)
   = case n `modulo` m of
-    SomeMod n' -> not (isPrimitiveRoot n')
+    SomeMod n' -> isNothing (isPrimitiveRoot n')
                || allUnique (genericTake (totient m - 1) (iterate (* n') 1))
     InfMod{}   -> False
 
@@ -93,14 +93,14 @@ isPrimitiveRootProperty4 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty4 (AnySign n) (Positive m)
   = isJust (cyclicGroupFromModulo m)
   || case n `modulo` m of
-    SomeMod n' -> not (isPrimitiveRoot n')
+    SomeMod n' -> isNothing (isPrimitiveRoot n')
     InfMod{}   -> False
 
 isPrimitiveRootProperty5 :: Positive Natural -> Bool
 isPrimitiveRootProperty5 (Positive m)
   = isNothing (cyclicGroupFromModulo m)
   || case someNatVal m of
-       SomeNat (_ :: Proxy t) -> genericLength (filter isPrimitiveRoot [(minBound :: Mod t) .. maxBound]) == totient (totient m)
+       SomeNat (_ :: Proxy t) -> genericLength (mapMaybe isPrimitiveRoot [(minBound :: Mod t) .. maxBound]) == totient (totient m)
 
 testSuite :: TestTree
 testSuite = testGroup "Primitive root"

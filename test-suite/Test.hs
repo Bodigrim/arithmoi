@@ -8,6 +8,7 @@ import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinea
 
 import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
 import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
+import qualified Math.NumberTheory.Moduli.DiscreteLogarithmTests as ModuliDiscreteLogarithm
 import qualified Math.NumberTheory.Moduli.EquationsTests as ModuliEquations
 import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
 import qualified Math.NumberTheory.Moduli.PrimitiveRootTests as ModuliPrimitiveRoot
@@ -65,6 +66,7 @@ tests = testGroup "All"
   , testGroup "Moduli"
     [ ModuliChinese.testSuite
     , ModuliClass.testSuite
+    , ModuliDiscreteLogarithm.testSuite
     , ModuliEquations.testSuite
     , ModuliJacobi.testSuite
     , ModuliPrimitiveRoot.testSuite

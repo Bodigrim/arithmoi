@@ -18,29 +18,36 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Math.NumberTheory.Moduli.PrimitiveRoot
-  ( isPrimitiveRoot
-    -- * Cyclic groups
-  , CyclicGroup(..)
+  ( -- * Cyclic groups
+    CyclicGroup(..)
   , cyclicGroupFromModulo
   , cyclicGroupToModulo
+  , groupSize
+    -- * Primitive roots
+  , PrimitiveRoot
+  , unPrimitiveRoot
+  , getGroup
+  , isPrimitiveRoot
   , isPrimitiveRoot'
   ) where
 
-import Control.DeepSeq
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.GCD as Coprimes
-import Math.NumberTheory.Moduli (Mod, getNatMod, getNatVal, KnownNat)
+import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
 
+import Control.DeepSeq
+import Control.Monad (guard)
 import GHC.Generics
+import Numeric.Natural
 
 -- | A multiplicative group of residues is called cyclic,
 -- if there is a primitive root @g@,
@@ -58,8 +65,8 @@ data CyclicGroup a
 
 instance NFData (Prime a) => NFData (CyclicGroup a)
 
-deriving instance Eq      (Prime a) => Eq      (CyclicGroup a)
-deriving instance Show    (Prime a) => Show    (CyclicGroup a)
+deriving instance Eq   (Prime a) => Eq   (CyclicGroup a)
+deriving instance Show (Prime a) => Show (CyclicGroup a)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.
@@ -112,6 +119,13 @@ cyclicGroupToModulo = fromFactors . \case
   CGOddPrimePower p k       -> Coprimes.singleton (unPrime p) k
   CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1 <> Coprimes.singleton (unPrime p) k
 
+-- | 'PrimitiveRoot m' is a type which is only inhabited by primitive roots of n.
+data PrimitiveRoot m = PrimitiveRoot
+  { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
+  , getGroup        :: CyclicGroup Natural -- ^ Get cyclic group structure.
+  }
+  deriving (Eq, Show)
+
 -- | 'isPrimitiveRoot'' @cg@ @a@ checks whether @a@ is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>
 -- of a given cyclic multiplicative group of residues @cg@.
@@ -153,7 +167,7 @@ isPrimitiveRoot' cg r =
 --
 -- Here is how to list all primitive roots:
 --
--- >>> filter isPrimitiveRoot [minBound .. maxBound] :: [Mod 13]
+-- >>> mapMaybe isPrimitiveRoot [minBound .. maxBound] :: [Mod 13]
 -- [(2 `modulo` 13), (6 `modulo` 13), (7 `modulo` 13), (11 `modulo` 13)]
 --
 -- This function is a convenient wrapper around 'isPrimitiveRoot''. The latter
@@ -161,7 +175,13 @@ isPrimitiveRoot' cg r =
 isPrimitiveRoot
   :: KnownNat n
   => Mod n
-  -> Bool
-isPrimitiveRoot r = case cyclicGroupFromModulo (getNatMod r) of
-  Nothing -> False
-  Just cg -> isPrimitiveRoot' cg (getNatVal r)
+  -> Maybe (PrimitiveRoot n)
+isPrimitiveRoot r = do
+  r' <- isMultElement r
+  cg <- cyclicGroupFromModulo (getNatMod r)
+  guard $ isPrimitiveRoot' cg (getNatVal r)
+  return $ PrimitiveRoot r' cg
+
+-- | Calculate the size of a given cyclic group.
+groupSize :: (Integral a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
+groupSize = totient . cyclicGroupToModulo
