@@ -21,7 +21,7 @@ import Test.Tasty.HUnit
 
 import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Quadratic.GaussianIntegers
-import Math.NumberTheory.Moduli.Sqrt (sqrtModMaybe, FieldCharacteristic(..))
+import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.UniqueFactorisation (unPrime)
 import Math.NumberTheory.TestUtils
@@ -60,7 +60,7 @@ factoriseSpecialCase2 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n
 
 findPrimeReference :: PrimeWrapper Integer -> GaussianInteger
 findPrimeReference (PrimeWrapper p) =
-    let (Just c) = sqrtModMaybe (-1) (FieldCharacteristic p 1)
+    let c : _ = sqrtsModPrime (-1) p
         k  = integerSquareRoot (unPrime p)
         bs = [1 .. k]
         asbs = map (\b' -> ((b' * c) `mod` (unPrime p), b')) bs

@@ -37,7 +37,7 @@ import Data.Ord                                        (comparing)
 import GHC.Generics                                    (Generic)
 
 import qualified Math.NumberTheory.Euclidean            as ED
-import Math.NumberTheory.Moduli.Sqrt                    (FieldCharacteristic(..), sqrtModMaybe)
+import Math.NumberTheory.Moduli.Sqrt
 import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
 import Math.NumberTheory.Primes.Types                   (PrimeNat(..))
 import qualified Math.NumberTheory.Primes.Sieve         as Sieve
@@ -180,9 +180,9 @@ divideByThree = go 0
 -- * And @z = 1 - 3*1 = -2 ≡ 5 (mod 7)@.
 -- * Truly, @norm (5 :+ 1) = 25 - 5 + 1 = 21 ≡ 0 (mod 7)@.
 findPrime :: Integer -> EisensteinInteger
-findPrime p = case sqrtModMaybe (9*k*k - 1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
-    Nothing      -> error "findPrime: argument must be prime p = 6k + 1"
-    Just sqrtMod -> ED.gcd (p :+ 0) ((sqrtMod - 3 * k) :+ 1)
+findPrime p = case sqrtsModPrime (9*k*k - 1) (PrimeNat . integerToNatural $ p) of
+    []    -> error "findPrime: argument must be prime p = 6k + 1"
+    z : _ -> ED.gcd (p :+ 0) ((z - 3 * k) :+ 1)
     where
         k :: Integer
         k = p `div` 6

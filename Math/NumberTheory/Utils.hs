@@ -158,7 +158,7 @@ bitCountWord = popCount
 bitCountInt :: Int -> Int
 bitCountInt = popCount
 
-splitOff :: Integer -> Integer -> (Int, Integer)
+splitOff :: Integral a => a -> a -> (Int, a)
 splitOff _ 0 = (0, 0) -- prevent infinite loop
 splitOff p n = go 0 n
   where
