@@ -15,14 +15,19 @@ module Math.NumberTheory.UniqueFactorisation
   ( Prime
   , unPrime
   , UniqueFactorisation(..)
+  , nextPrime
+  , precPrime
   ) where
 
 import Control.Arrow
+import Data.Bits
 import Data.Coerce
+import Data.Maybe
 
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
-import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
+import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types
+import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
@@ -81,3 +86,33 @@ instance UniqueFactorisation Integer where
 instance UniqueFactorisation Natural where
   factorise = map (coerce integerToNatural *** id) . F.factorise . naturalToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing
+
+-- | Smallest prime, greater or equal to argument.
+--
+-- > nextPrime (-100) ==    2
+-- > nextPrime  1000  == 1009
+-- > nextPrime  1009  == 1009
+nextPrime :: (Bits a, Integral a, UniqueFactorisation a) => a -> Prime a
+nextPrime n
+  | n <= 2    = Prime 2
+  | n <= 3    = Prime 3
+  | n <= 5    = Prime 5
+  | otherwise = head $ mapMaybe isPrime $
+                  dropWhile (< n) $ map fromWheel30 [toWheel30 n ..]
+                  -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be < n.
+                  -- E. g., fromWheel30 (toWheel30 94) == 97
+
+-- | Largest prime, less or equal to argument. Undefined, when argument < 2.
+--
+-- > precPrime 100 == 97
+-- > precPrime  97 == 97
+precPrime :: (Bits a, Integral a, UniqueFactorisation a) => a -> Prime a
+precPrime n
+  | n < 2     = error $ "precPrime: tried to take `precPrime` of an argument less than 2"
+  | n < 3     = Prime 2
+  | n < 5     = Prime 3
+  | n < 7     = Prime 5
+  | otherwise = head $ mapMaybe isPrime $
+                  dropWhile (> n) $ map fromWheel30 [toWheel30 n, toWheel30 n - 1 ..]
+                  -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be > n.
+                  -- E. g., fromWheel30 (toWheel30 100) == 101

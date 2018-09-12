@@ -8,6 +8,8 @@ module Math.NumberTheory.Primes
     ( Prime
     , unPrime
     , UniqueFactorisation(..)
+    , nextPrime
+    , precPrime
     , module Math.NumberTheory.Primes.Sieve
     , module Math.NumberTheory.Primes.Counting
     ) where

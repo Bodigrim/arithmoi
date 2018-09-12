@@ -28,6 +28,7 @@ import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
+import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 
 data Algorithm = IsPrime | Sieve
 
@@ -142,46 +143,3 @@ instance Enum (Prime Word) where
   enumFromTo = enumFromToGeneric
   enumFromThen = enumFromThenGeneric -- FIXME
   enumFromThenTo = enumFromThenToGeneric
-
--- | Smallest prime, greater or equal to argument.
---
--- > nextPrime (-100) ==    2
--- > nextPrime  1000  == 1009
--- > nextPrime  1009  == 1009
-nextPrime :: (Bits a, Integral a, UniqueFactorisation a) => a -> Prime a
-nextPrime n
-  | n <= 2    = Prime 2
-  | n <= 3    = Prime 3
-  | n <= 5    = Prime 5
-  | otherwise = head $ mapMaybe isPrime $
-                  dropWhile (< n) $ map fromWheel30 [toWheel30 n ..]
-                  -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be < n.
-                  -- E. g., fromWheel30 (toWheel30 94) == 97
-
--- | Largest prime, less or equal to argument. Undefined, when argument < 2.
---
--- > precPrime 100 == 97
--- > precPrime  97 == 97
-precPrime :: (Bits a, Integral a, UniqueFactorisation a) => a -> Prime a
-precPrime n
-  | n < 2     = error $ "precPrime: tried to take `precPrime` of an argument less than 2"
-  | n < 3     = Prime 2
-  | n < 5     = Prime 3
-  | n < 7     = Prime 5
-  | otherwise = head $ mapMaybe isPrime $
-                  dropWhile (> n) $ map fromWheel30 [toWheel30 n, toWheel30 n - 1 ..]
-                  -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be > n.
-                  -- E. g., fromWheel30 (toWheel30 100) == 101
-
--------------------------------------------------------------------------------
--- Helpers for mapping to rough numbers and back.
--- Copypasted from Data.BitStream.WheelMapping
-
-toWheel30 :: (Integral a, Bits a) => a -> a
-toWheel30 i = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
-  where
-    (q, r) = i `quotRem` 30
-
-fromWheel30 :: (Num a, Bits a) => a -> a
-fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)
-              + ((i `shiftL` 1 - i `shiftR` 1) .&. 2)
