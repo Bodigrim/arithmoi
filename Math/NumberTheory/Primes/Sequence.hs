@@ -24,7 +24,7 @@ import Numeric.Natural
 import Math.NumberTheory.Primes.Counting
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.FromIntegral
 import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 

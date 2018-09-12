@@ -24,7 +24,7 @@ import Data.Semigroup
 
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)

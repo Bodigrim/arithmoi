@@ -40,8 +40,8 @@ import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Powers
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Sieve (primes)
-import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS
 import Math.NumberTheory.Utils.FromIntegral

@@ -37,7 +37,7 @@ import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Powers.Modular (powMod)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
-import Math.NumberTheory.UniqueFactorisation (Prime, factorise)
+import Math.NumberTheory.Primes (Prime, factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
 

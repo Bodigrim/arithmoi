@@ -24,7 +24,7 @@ import Control.Applicative
 import Data.Semigroup
 #endif
 
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 
 -- | A typical arithmetic function operates on the canonical factorisation of
 -- a number into prime's powers and consists of two rules. The first one

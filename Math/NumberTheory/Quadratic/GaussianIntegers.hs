@@ -35,7 +35,7 @@ import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.Primes.Types
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
-import qualified Math.NumberTheory.UniqueFactorisation  as U
+import qualified Math.NumberTheory.Primes  as U
 import Math.NumberTheory.Utils              (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 

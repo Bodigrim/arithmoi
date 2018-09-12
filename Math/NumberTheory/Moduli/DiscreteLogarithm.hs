@@ -25,7 +25,7 @@ import Math.NumberTheory.Moduli.Class         (KnownNat, MultMod(..), Mod, getVa
 import Math.NumberTheory.Moduli.Equations     (solveLinear)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..))
 import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
-import Math.NumberTheory.UniqueFactorisation  (unPrime)
+import Math.NumberTheory.Primes  (unPrime)
 
 -- | Computes the discrete logarithm. Currently uses a combination of the baby-step
 -- giant-step method and Pollard's rho algorithm, with Bach reduction.

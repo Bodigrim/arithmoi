@@ -113,7 +113,6 @@ library
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
     Math.NumberTheory.Recurrences.Pentagonal
-    Math.NumberTheory.UniqueFactorisation
     Math.NumberTheory.Unsafe
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.DirichletSeries

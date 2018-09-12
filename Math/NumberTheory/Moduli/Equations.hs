@@ -20,7 +20,7 @@ import GHC.Integer.GMP.Internals
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Sqrt
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils (recipMod)
 
 -------------------------------------------------------------------------------
