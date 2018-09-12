@@ -15,14 +15,12 @@ module Math.NumberTheory.UniqueFactorisation
   ( Prime
   , unPrime
   , UniqueFactorisation(..)
-  , module Math.NumberTheory.Primes.Sequence
   ) where
 
 import Control.Arrow
 import Data.Coerce
 
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
-import Math.NumberTheory.Primes.Sequence
 import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils.FromIntegral
