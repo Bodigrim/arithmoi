@@ -14,9 +14,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Math.NumberTheory.Primes.Sequence
-  ( nextPrime
-  , precPrime
-  ) where
+  () where
 
 import Data.Bits
 import Data.Coerce
