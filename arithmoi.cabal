@@ -52,11 +52,9 @@ library
   exposed-modules:
     GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
-    Math.NumberTheory.ArithmeticFunctions.Class
     Math.NumberTheory.ArithmeticFunctions.Mertens
     Math.NumberTheory.ArithmeticFunctions.Moebius
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
-    Math.NumberTheory.ArithmeticFunctions.Standard
     Math.NumberTheory.Curves.Montgomery
     Math.NumberTheory.EisensteinIntegers
     Math.NumberTheory.Euclidean
@@ -97,7 +95,9 @@ library
     Math.NumberTheory.Zeta.Dirichlet
     Math.NumberTheory.Zeta.Riemann
   other-modules:
+    Math.NumberTheory.ArithmeticFunctions.Class
     Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
+    Math.NumberTheory.ArithmeticFunctions.Standard
     Math.NumberTheory.Primes.Counting.Approximate
     Math.NumberTheory.Primes.Counting.Impl
     Math.NumberTheory.Primes.Factorisation.Montgomery
