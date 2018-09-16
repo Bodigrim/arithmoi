@@ -19,7 +19,7 @@ module Math.NumberTheory.UniqueFactorisationTests
 
 import Test.Tasty
 
-import Math.NumberTheory.GaussianIntegers hiding (factorise)
+import Math.NumberTheory.Quadratic.GaussianIntegers hiding (factorise)
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.TestUtils
 

@@ -14,7 +14,7 @@
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE RankNTypes     #-}
 
-module Math.NumberTheory.EisensteinIntegers
+module Math.NumberTheory.Quadratic.EisensteinIntegers
   ( EisensteinInteger(..)
   , ω
   , conjugate
