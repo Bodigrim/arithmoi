@@ -9,7 +9,7 @@ import Control.DeepSeq
 import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctions (tau)
-import Math.NumberTheory.EisensteinIntegers
+import Math.NumberTheory.Quadratic.EisensteinIntegers
 
 instance NFData EisensteinInteger
 

@@ -14,7 +14,6 @@
 
 module Math.NumberTheory.Moduli.Equations
   ( solveLinear
-  , solveLinear'
   , solveQuadratic
   ) where
 

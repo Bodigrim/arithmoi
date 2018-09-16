@@ -7,7 +7,7 @@ module Math.NumberTheory.GaussianIntegersBench
 import Gauge.Main
 
 import Math.NumberTheory.ArithmeticFunctions (tau)
-import Math.NumberTheory.GaussianIntegers
+import Math.NumberTheory.Quadratic.GaussianIntegers
 
 benchFindPrime :: Integer -> Benchmark
 benchFindPrime n = bench (show n) $ nf findPrime n

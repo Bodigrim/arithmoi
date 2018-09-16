@@ -15,7 +15,7 @@ module Math.NumberTheory.EisensteinIntegersTests
   ) where
 
 import qualified Math.NumberTheory.Euclidean    as ED
-import qualified Math.NumberTheory.EisensteinIntegers as E
+import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.Primes                       (primes)
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
@@ -114,7 +114,7 @@ primesProperty1 (Positive index) = all E.isPrime $ take index $ E.primes
 -- by the numbers' norm.
 primesProperty2 :: Positive Int -> Bool
 primesProperty2 (Positive index) =
-    let isOrdered :: [E.EisensteinInteger] -> Bool 
+    let isOrdered :: [E.EisensteinInteger] -> Bool
         isOrdered xs = all (\(x,y) -> E.norm x <= E.norm y) . zip xs $ tail xs
     in isOrdered $ take index E.primes
 

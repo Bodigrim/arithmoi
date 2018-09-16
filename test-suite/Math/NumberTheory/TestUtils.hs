@@ -58,8 +58,8 @@ import Data.Bits
 import GHC.Exts
 import Numeric.Natural
 
-import qualified Math.NumberTheory.EisensteinIntegers as E (EisensteinInteger(..))
-import Math.NumberTheory.GaussianIntegers (GaussianInteger(..))
+import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
+import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
 import qualified Math.NumberTheory.SmoothNumbers as SN
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, Prime, unPrime)

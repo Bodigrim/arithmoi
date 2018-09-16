@@ -57,7 +57,6 @@ library
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.Curves.Montgomery
     Math.NumberTheory.DirichletCharacters
-    Math.NumberTheory.EisensteinIntegers
     Math.NumberTheory.Euclidean
     Math.NumberTheory.GaussianIntegers
     Math.NumberTheory.GCD
@@ -87,6 +86,8 @@ library
     Math.NumberTheory.Primes.Sieve
     Math.NumberTheory.Primes.Testing
     Math.NumberTheory.Primes.Testing.Certificates
+    Math.NumberTheory.Quadratic.GaussianIntegers
+    Math.NumberTheory.Quadratic.EisensteinIntegers
     Math.NumberTheory.Recurrencies
     Math.NumberTheory.Recurrencies.Bilinear
     Math.NumberTheory.Recurrencies.Linear

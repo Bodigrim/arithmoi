@@ -20,7 +20,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Math.NumberTheory.Euclidean as ED
-import Math.NumberTheory.GaussianIntegers
+import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt (sqrtModMaybe, FieldCharacteristic(..))
 import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.UniqueFactorisation (unPrime)

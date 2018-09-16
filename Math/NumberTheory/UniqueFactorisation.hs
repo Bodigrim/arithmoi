@@ -24,8 +24,8 @@ import Data.Coerce
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Types (Prime, Prm(..), PrimeNat(..))
-import qualified Math.NumberTheory.EisensteinIntegers as E
-import qualified Math.NumberTheory.GaussianIntegers as G
+import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
+import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
