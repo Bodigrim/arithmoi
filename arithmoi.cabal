@@ -56,6 +56,7 @@ library
     Math.NumberTheory.ArithmeticFunctions.Moebius
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.Curves.Montgomery
+    Math.NumberTheory.DirichletCharacters
     Math.NumberTheory.EisensteinIntegers
     Math.NumberTheory.Euclidean
     Math.NumberTheory.GaussianIntegers
