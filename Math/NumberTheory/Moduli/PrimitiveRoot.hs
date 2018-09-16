@@ -34,20 +34,19 @@ module Math.NumberTheory.Moduli.PrimitiveRoot
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import Control.DeepSeq                       (NFData)
+import Control.Monad                         (guard)
+import GHC.Generics                          (Generic)
+import Numeric.Natural                       (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.GCD as Coprimes
-import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
-import Math.NumberTheory.Powers.General (highestPower)
-import Math.NumberTheory.Powers.Modular
-import Math.NumberTheory.Prefactored
-import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.Utils.FromIntegral
-
-import Control.DeepSeq
-import Control.Monad (guard)
-import GHC.Generics
-import Numeric.Natural
+import Math.NumberTheory.Moduli.Class        (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
+import Math.NumberTheory.Powers.General      (highestPower)
+import Math.NumberTheory.Powers.Modular      (powMod)
+import Math.NumberTheory.Prefactored         (Prefactored, fromFactors)
+import Math.NumberTheory.UniqueFactorisation (Prime, UniqueFactorisation, isPrime, unPrime, factorise)
+import Math.NumberTheory.Utils.FromIntegral  (intToWord)
 
 -- | A multiplicative group of residues is called cyclic,
 -- if there is a primitive root @g@,
