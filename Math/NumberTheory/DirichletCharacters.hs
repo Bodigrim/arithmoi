@@ -43,7 +43,7 @@ canonGenHelp (p, k)
   where p'   = unPrime p
         modP = head $ filter (isPrimitiveRoot' (CGOddPrimePower p 1)) [2..p' - 1]
 
-generators :: (Integral a, UniqueFactorisation a) => a -> [a]
+generators :: Natural -> [Natural]
 generators 1 = [1]
 generators 2 = [1] -- special cases of trivial group
 generators n = do
@@ -51,4 +51,7 @@ generators n = do
   let factor = unPrime p ^ k
       rest = n `div` factor
   g <- canonGenHelp (p,k)
-  return $ chineseRemainder2 (g,factor) (1,rest)
+  return $ crt (g,factor) (1,rest)
+
+crt :: (Natural, Natural) -> (Natural,Natural) -> Natural
+crt (r1,md1) (r2,md2) = fromInteger $ chineseRemainder2 (toInteger r1,toInteger md1) (toInteger r2,toInteger md2)

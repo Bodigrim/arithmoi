@@ -48,8 +48,7 @@ chineseRemainder remainders = foldM addRem 0 remainders
 -- > r ≡ r_k (mod m_k)
 --
 --   if @m_1@ and @m_2@ are coprime.
-{-# SPECIALISE chineseRemainder2 :: (Integer,Integer) -> (Integer,Integer) -> Integer #-}
-chineseRemainder2 :: Integral a => (a,a) -> (a,a) -> a
+chineseRemainder2 :: (Integer,Integer) -> (Integer,Integer) -> Integer
 chineseRemainder2 (r1, md1) (r2,md2)
     = case extendedGCD md1 md2 of
         (_,u,v) -> ((1 - u*md1)*r1 + (1 - v*md2)*r2) `mod` (md1*md2)
