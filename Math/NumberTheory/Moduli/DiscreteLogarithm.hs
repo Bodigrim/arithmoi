@@ -7,8 +7,9 @@
 -- Portability:  Non-portable
 --
 
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Math.NumberTheory.Moduli.DiscreteLogarithm
   ( discreteLogarithm
@@ -16,12 +17,14 @@ module Math.NumberTheory.Moduli.DiscreteLogarithm
 
 import qualified Data.IntMap.Strict as M
 import Data.Maybe                             (maybeToList)
+import Data.Proxy
 import Numeric.Natural                        (Natural)
 import GHC.Integer.GMP.Internals              (recipModInteger, powModInteger)
+import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.Chinese       (chineseRemainder2)
 import Math.NumberTheory.Moduli.Class         (KnownNat, MultMod(..), Mod, getVal)
-import Math.NumberTheory.Moduli.Equations     (solveLinear')
+import Math.NumberTheory.Moduli.Equations     (solveLinear)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..))
 import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
 import Math.NumberTheory.UniqueFactorisation  (unPrime)
@@ -113,7 +116,8 @@ discreteLogarithmPrimePollard p a b =
     begin t           = go (step t) (step (step t))
     check t           = powModInteger a t p == b
     go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
-      | xi == x2i, gcd (bi - b2i) n < sqrtN = solveLinear' n (bi - b2i) (ai - a2i)
+      | xi == x2i, gcd (bi - b2i) n < sqrtN = case someNatVal (fromInteger n) of
+        SomeNat (Proxy :: Proxy n) -> map getVal $ solveLinear (fromInteger (bi - b2i) :: Mod n) (fromInteger (ai - a2i))
       | xi == x2i                           = []
       | otherwise                           = go (step tort) (step (step hare))
     runPollard        = filter check . begin . initialise
