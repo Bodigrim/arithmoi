@@ -17,6 +17,7 @@ module Math.NumberTheory.Moduli.PrimitiveRootTests
   ( testSuite
   ) where
 
+import Prelude hiding (gcd)
 import Test.Tasty
 
 import qualified Data.Set as S
@@ -29,13 +30,14 @@ import GHC.TypeNats.Compat
 
 import qualified Math.NumberTheory.GCD as GCD
 import Math.NumberTheory.ArithmeticFunctions (totient)
+import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefactored)
 import Math.NumberTheory.TestUtils
 import Math.NumberTheory.UniqueFactorisation
 
-cyclicGroupProperty1 :: (Integral a, UniqueFactorisation a) => AnySign a -> Bool
+cyclicGroupProperty1 :: (Euclidean a, Integral a, UniqueFactorisation a) => AnySign a -> Bool
 cyclicGroupProperty1 (AnySign n) = case cyclicGroupFromModulo n of
   Nothing -> True
   Just cg -> prefValue (cyclicGroupToModulo cg) == n
@@ -60,7 +62,7 @@ allUnique = go S.empty
     go acc (x : xs) = if x `S.member` acc then False else go (S.insert x acc) xs
 
 isPrimitiveRoot'Property1
-  :: (Integral a, UniqueFactorisation a)
+  :: (Euclidean a, Integral a, UniqueFactorisation a)
   => AnySign a -> CyclicGroup a -> Bool
 isPrimitiveRoot'Property1 (AnySign n) cg
   = gcd (toInteger n) (prefValue (castPrefactored (cyclicGroupToModulo cg))) == 1

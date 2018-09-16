@@ -14,34 +14,37 @@ module Math.NumberTheory.SmoothNumbersTests
   ( testSuite
   ) where
 
+import Prelude hiding (mod)
 import Test.Tasty
 
-import Data.List (genericDrop)
+import Data.Coerce
+import Data.List (genericDrop, sort)
 import qualified Data.Set as S
 import Numeric.Natural
 
+import Math.NumberTheory.Euclidean
 import Math.NumberTheory.SmoothNumbers
 import Math.NumberTheory.TestUtils
 
-fromSetListProperty :: Integral a => [a] -> Bool
-fromSetListProperty xs = fromSet (S.fromList xs) == fromList xs
+fromSetListProperty :: (Euclidean a, Ord a) => [a] -> Bool
+fromSetListProperty xs = fromSet (S.fromList xs) == fromList (sort xs)
 
 fromSmoothUpperBoundProperty :: Integral a => Positive a -> Bool
 fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of
     Nothing -> n < 2
-    Just sb -> head (genericDrop (n - 1) (smoothOver sb)) == n
+    Just sb -> head (genericDrop (n - 1) (smoothOver (coerce sb))) == n
   where
-    n = n' `mod` 5000
+    n = WrappedIntegral n' `mod` 5000
 
 smoothOverInRangeProperty :: Integral a => SmoothBasis a -> Positive a -> Positive a -> Bool
 smoothOverInRangeProperty s (Positive lo') (Positive diff')
   = xs == ys
   where
-    lo   = lo'   `mod` 2^18
-    diff = diff' `mod` 2^18
+    lo   = WrappedIntegral lo'   `mod` 2^18
+    diff = WrappedIntegral diff' `mod` 2^18
     hi   = lo + diff
-    xs   = smoothOverInRange   s lo hi
-    ys   = smoothOverInRangeBF s lo hi
+    xs   = smoothOverInRange   (coerce s) lo hi
+    ys   = smoothOverInRangeBF (coerce s) lo hi
 
 testSuite :: TestTree
 testSuite = testGroup "SmoothNumbers"

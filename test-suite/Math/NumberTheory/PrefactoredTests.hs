@@ -19,15 +19,15 @@ module Math.NumberTheory.PrefactoredTests
 import Test.Tasty
 
 import Control.Arrow (second)
-import Data.Bits (Bits)
 import Data.List (tails)
 import Numeric.Natural
 
-import Math.NumberTheory.GCD (coprime, splitIntoCoprimes, toList)
+import Math.NumberTheory.Euclidean (Euclidean, coprime)
+import Math.NumberTheory.GCD (splitIntoCoprimes, toList)
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.TestUtils
 
-isValid :: (Bits a, Integral a) => Prefactored a -> Bool
+isValid :: Euclidean a => Prefactored a -> Bool
 isValid pref
   = abs n == abs (product (map (uncurry (^)) fs))
   && and [ coprime g h | ((g, _) : gs) <- tails fs, (h, _) <- gs ]

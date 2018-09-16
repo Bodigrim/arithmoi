@@ -36,7 +36,8 @@ import Data.Semigroup
 #endif
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.GCD as Coprimes
+import qualified Math.NumberTheory.Euclidean as E
+import Math.NumberTheory.GCD as Coprimes (singleton)
 import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
@@ -110,14 +111,15 @@ isPrimePower n = (, intToWord k) <$> isPrime m
 -- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (PrimeNat 13) 3)
 -- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = fromList [(2,1),(13,3)]}}
 cyclicGroupToModulo
-  :: (Integral a, UniqueFactorisation a)
+  :: (E.Euclidean a, Ord a, UniqueFactorisation a)
   => CyclicGroup a
   -> Prefactored a
 cyclicGroupToModulo = fromFactors . \case
   CG2                       -> Coprimes.singleton 2 1
   CG4                       -> Coprimes.singleton 2 2
   CGOddPrimePower p k       -> Coprimes.singleton (unPrime p) k
-  CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1 <> Coprimes.singleton (unPrime p) k
+  CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1
+                            <> Coprimes.singleton (unPrime p) k
 
 -- | 'PrimitiveRoot m' is a type which is only inhabited by primitive roots of n.
 data PrimitiveRoot m = PrimitiveRoot
@@ -183,5 +185,5 @@ isPrimitiveRoot r = do
   return $ PrimitiveRoot r' cg
 
 -- | Calculate the size of a given cyclic group.
-groupSize :: (Integral a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
+groupSize :: (E.Euclidean a, Ord a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
 groupSize = totient . cyclicGroupToModulo

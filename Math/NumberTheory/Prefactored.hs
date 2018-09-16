@@ -24,6 +24,7 @@ import Control.Arrow
 
 import Data.Semigroup
 
+import Math.NumberTheory.Euclidean
 import Math.NumberTheory.GCD (Coprimes, splitIntoCoprimes, toList, singleton)
 import Math.NumberTheory.UniqueFactorisation
 
@@ -106,7 +107,7 @@ fromValue a = Prefactored a (singleton a 1)
 fromFactors :: Num a => Coprimes a Word -> Prefactored a
 fromFactors as = Prefactored (product (map (uncurry (^)) (toList as))) as
 
-instance Integral a => Num (Prefactored a) where
+instance (Euclidean a, Ord a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
     = fromValue (v1 + v2)
   Prefactored v1 _ - Prefactored v2 _

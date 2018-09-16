@@ -48,6 +48,7 @@ import qualified Data.Map.Strict as Map
 import GHC.Word
 import GHC.Int
 
+import qualified Math.NumberTheory.Euclidean as E
 import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.Utils
 
@@ -91,7 +92,7 @@ gw64 (W64# x#) (W64# y#) = W64# (gcdWord# x# y#)
 binaryGCD :: (Integral a, Bits a) => a -> a -> a
 binaryGCD = binaryGCDImpl
 
-{-# DEPRECATED binaryGCD "Use Prelude.gcd" #-}
+{-# DEPRECATED binaryGCD "Use 'Math.NumberTheory.Euclidean.gcd'" #-}
 
 #if WORD_SIZE_IN_BITS < 64
 {-# SPECIALISE binaryGCDImpl :: Word64 -> Word64 -> Word64,
@@ -149,6 +150,7 @@ extendedGCD a b = (d, u, v)
       | s == 0    = (r, o1, o2)
       | otherwise = case r `quotRem` s of
                       (q, t) -> eGCD (o1 - q*n1) n1 (o2 - q*n2) n2 s t
+{-# DEPRECATED extendedGCD "Use 'Math.NumberTheory.Euclidean.extendedGCD'" #-}
 
 {-# RULES
 "coprime/Int"       coprime = coprimeInt
@@ -183,6 +185,7 @@ cw64 (W64# x#) (W64# y#) = coprimeWord# x# y#
 --   Relies on twos complement or sign and magnitude representaion for signed types.
 coprime :: (Integral a, Bits a) => a -> a -> Bool
 coprime = coprimeImpl
+{-# DEPRECATED coprime "Use 'Math.NumberTheory.Euclidean.coprime'" #-}
 
 -- Separate implementation to give the rules a chance to fire by not inlining
 -- before phase 1, and yet have a specialisation for the types without rules
@@ -274,19 +277,19 @@ singleton a b = Coprimes (Map.singleton a b)
 toList :: Coprimes a b -> [(a, b)]
 toList x = Map.assocs $ unCoprimes x
 
-insert :: (Integral a, Bits a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
+insert :: (E.Euclidean a, Ord a, Bits a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
 insert a b cs@(Coprimes m) = if isCoprimeBase
   then Coprimes (Map.insert a b m)
   else splitIntoCoprimes ps
-  where isCoprimeBase = all (coprime a) (Map.keys m)
+  where isCoprimeBase = all (E.coprime a) (Map.keys m)
         ps' = toList cs
         ps = (a, b) : ps'
 
-instance (Integral a, Eq b, Num b) => Semigroup (Coprimes a b) where
+instance (E.Euclidean a, Ord a, Eq b, Num b) => Semigroup (Coprimes a b) where
   (Coprimes l) <> (Coprimes r) = splitIntoCoprimes allTuples
     where allTuples = (Map.assocs l) ++ (Map.assocs r)
 
-instance (Integral a, Eq b, Num b) => Monoid (Coprimes a b) where
+instance (E.Euclidean a, Ord a, Eq b, Num b) => Monoid (Coprimes a b) where
   mempty = Coprimes Map.empty
   mappend = (<>)
 
@@ -302,10 +305,10 @@ instance (Integral a, Eq b, Num b) => Monoid (Coprimes a b) where
 -- Coprimes {unCoprimes = fromList [(5,2),(28,1),(33,1)]}
 -- >>> splitIntoCoprimes [(360, 1), (210, 1)]
 -- Coprimes {unCoprimes = fromList [(2,4),(3,3),(5,2),(7,1)]}
-splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
+splitIntoCoprimes :: (E.Euclidean a, Ord a, Eq b, Num b) => [(a, b)] -> Coprimes a b
 splitIntoCoprimes xs = Coprimes (Map.fromList $ splitIntoCoprimes' xs)
 
-splitIntoCoprimes' :: (Integral a, Eq b, Num b) => [(a, b)] -> [(a, b)]
+splitIntoCoprimes' :: (E.Euclidean a, Eq b, Num b) => [(a, b)] -> [(a, b)]
 splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
   where
     ys = filter (/= (0, 0)) xs
@@ -313,10 +316,10 @@ splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
     go = \case
       [] -> []
       ((1,  _) : rest) -> go rest
-      ((x, xm) : rest) -> case popSuchThat (\(r, _) -> gcd x r /= 1) rest of
+      ((x, xm) : rest) -> case popSuchThat (\(r, _) -> not $ E.coprime x r) rest of
         Nothing            -> (x, xm) : go rest
-        Just ((y, ym), zs) -> let g = gcd x y in
-          go ((g, xm + ym) : (x `quot` g, xm) : (y `quot` g, ym) : zs)
+        Just ((y, ym), zs) -> let g = E.gcd x y in
+          go ((g, xm + ym) : (x `E.quot` g, xm) : (y `E.quot` g, ym) : zs)
 
 popSuchThat :: (a -> Bool) -> [a] -> Maybe (a, [a])
 popSuchThat predicate = go

@@ -12,6 +12,8 @@
 -- over a set {3, 4}, and 24 is not.
 --
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Math.NumberTheory.SmoothNumbers
   ( -- * Create a smooth basis
     SmoothBasis
@@ -24,8 +26,11 @@ module Math.NumberTheory.SmoothNumbers
   , smoothOverInRangeBF
   ) where
 
-import Data.List (sort, nub)
+import Prelude hiding (div, mod, gcd)
+import Data.Coerce
+import Data.List (nub)
 import qualified Data.Set as S
+import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes.Sieve (primes)
 
 -- | An abstract representation of a smooth basis.
@@ -41,7 +46,7 @@ newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 -- Nothing
 -- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
 -- Nothing
-fromSet :: Integral a => S.Set a -> Maybe (SmoothBasis a)
+fromSet :: Euclidean a => S.Set a -> Maybe (SmoothBasis a)
 fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
 
 -- | Build a 'SmoothBasis' from a list of coprime numbers ≥2.
@@ -54,8 +59,10 @@ fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elem
 -- Nothing
 -- >>> fromList [1, 3] -- should be >= 2
 -- Nothing
-fromList :: Integral a => [a] -> Maybe (SmoothBasis a)
-fromList l = if isValid l' then Just (SmoothBasis l') else Nothing where l' = nub $ sort l
+fromList :: Euclidean a => [a] -> Maybe (SmoothBasis a)
+fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
+  where
+    l' = nub l
 
 -- | Build a 'SmoothBasis' from a list of primes below given bound.
 --
@@ -66,8 +73,7 @@ fromList l = if isValid l' then Just (SmoothBasis l') else Nothing where l' = nu
 fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
 fromSmoothUpperBound n = if (n < 2)
                          then Nothing
-                         else Just $ SmoothBasis $ map fromInteger $ takeWhile (<= nI) primes
-                         where nI = toInteger n
+                         else Just $ SmoothBasis $ takeWhile (<= n) primes
 
 -- | Generate an infinite ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -78,16 +84,19 @@ fromSmoothUpperBound n = if (n < 2)
 -- [1, 2, 4, 5, 8, 10, 16, 20, 25, 32]
 smoothOver :: Integral a => SmoothBasis a -> [a]
 smoothOver pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmoothBasis pl)
-                where
-                      {-# INLINE mergeListLists #-}
-                      mergeListLists      = foldr go1 []
-                        where go1 (h:t) b = h:(go2 t b)
-                              go1 _     b = b
+  where
+    {-# INLINE mergeListLists #-}
+    mergeListLists      = foldr go1 []
+      where
+        go1 :: Ord a => [a] -> [a] -> [a]
+        go1 (h:t) b = h:(go2 t b)
+        go1 _     b = b
 
-                              go2 a@(ah:at) b@(bh:bt)
-                                | bh < ah   = bh : (go2 a bt)
-                                | otherwise = ah : (go2 at b) -- no possibility of duplicates
-                              go2 a b = if null a then b else a
+        go2 :: Ord a => [a] -> [a] -> [a]
+        go2 a@(ah:at) b@(bh:bt)
+          | bh < ah   = bh : (go2 a bt)
+          | otherwise = ah : (go2 at b) -- no possibility of duplicates
+        go2 a b = if null a then b else a
 
 -- | Generate an ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -100,8 +109,12 @@ smoothOver pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmo
 -- >>> import Data.Maybe
 -- >>> smoothOverInRange (fromJust (fromList [2, 5])) 100 200
 -- [100, 125, 128, 160, 200]
-smoothOverInRange   :: Integral a => SmoothBasis a -> a -> a -> [a]
-smoothOverInRange s lo hi = takeWhile (<= hi) $ dropWhile (< lo) (smoothOver s)
+smoothOverInRange :: forall a. Integral a => SmoothBasis a -> a -> a -> [a]
+smoothOverInRange s lo hi
+  = takeWhile (<= hi)
+  $ dropWhile (< lo)
+  $ coerce
+  $ smoothOver (coerce s :: SmoothBasis (WrappedIntegral a))
 
 -- | Generate an ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -116,19 +129,24 @@ smoothOverInRange s lo hi = takeWhile (<= hi) $ dropWhile (< lo) (smoothOver s)
 -- >>> import Data.Maybe
 -- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
 -- [100, 125, 128, 160, 200]
-smoothOverInRangeBF :: Integral a => SmoothBasis a -> a -> a -> [a]
-smoothOverInRangeBF prs lo hi = filter (mf prs') [lo..hi]
-                                where mf []     n    = (n == 1) -- mf means manually factor
-                                      mf pl@(p:ps) n = if (mod n p == 0)
-                                                       then mf pl (div n p)
-                                                       else mf ps n
-                                      prs'           = unSmoothBasis prs
+smoothOverInRangeBF :: forall a. Integral a => SmoothBasis a -> a -> a -> [a]
+smoothOverInRangeBF prs lo hi
+  = coerce
+  $ filter (mf prs')
+  $ coerce [lo..hi]
+  where
+    mf :: [WrappedIntegral a] -> WrappedIntegral a -> Bool
+    mf _         0 = False
+    mf []        n = n == 1 -- mf means manually factor
+    mf pl@(p:ps) n = if mod n p == 0
+                     then mf pl (div n p)
+                     else mf ps n
+    prs'           = coerce $ unSmoothBasis prs
 
 -- | isValid assumes that the list is sorted and unique and then checks if the list is suitable to be a SmoothBasis.
-isValid :: (Integral a) => [a] -> Bool
-isValid pl = if (length pl == 0) then False else v' pl
-             where v' []        = True
-                   v' (x:xs)    = if (x < 2 || (not $ rpl x xs)) then False else v' xs
-                   rpl _ []     = True  -- rpl means relatively prime to the rest of the list
-                   rpl n (x:xs) = if (gcd n x > 1) then False else rpl n xs
-
+isValid :: Euclidean a => [a] -> Bool
+isValid pl = length pl /= 0 && v' pl
+  where
+    v' :: Euclidean a => [a] -> Bool
+    v' []     = True
+    v' (x:xs) = x /= 0 && abs x /= 1 && abs x == x && all (coprime x) xs && v' xs

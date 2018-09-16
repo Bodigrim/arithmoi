@@ -58,6 +58,7 @@ import Data.Bits
 import GHC.Exts
 import Numeric.Natural
 
+import Math.NumberTheory.Euclidean
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
@@ -119,10 +120,10 @@ isOddPrime (PrimeWrapper p) = if (unPrime p :: a) == 2 then Nothing else Just p
 -------------------------------------------------------------------------------
 -- SmoothNumbers
 
-instance (Integral a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
+instance (Ord a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
   arbitrary = (fmap getPositive <$> arbitrary) `suchThatMap` SN.fromList
 
-instance (Monad m, Integral a, Serial m a) => Serial m (SN.SmoothBasis a) where
+instance (Ord a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
   series = (fmap getPositive <$> series) `suchThatMapSerial` SN.fromList
 
 -------------------------------------------------------------------------------
@@ -153,7 +154,7 @@ type TestableIntegral wrapper =
 
 testIntegralProperty
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
+  => String -> (forall a. (Euclidean a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
 testIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> bool)
