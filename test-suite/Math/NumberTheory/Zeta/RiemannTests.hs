@@ -22,7 +22,7 @@ import Math.NumberTheory.Zeta
 import Math.NumberTheory.TestUtils
 
 epsilon :: Double
-epsilon = 1e-40
+epsilon = 1e-14
 
 zetasEvenSpecialCase1 :: Assertion
 zetasEvenSpecialCase1

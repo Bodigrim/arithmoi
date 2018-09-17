@@ -14,6 +14,8 @@ module Math.NumberTheory.Zeta.Hurwitz
   ( zeta
   ) where
 
+import Data.List                      (zipWith4)
+
 import Math.NumberTheory.Recurrencies (bernoulli, factorial)
 import Math.NumberTheory.Zeta.Utils   (skipOdds, suminf)
 
@@ -24,7 +26,7 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds, suminf)
 -- by the <https://www.nist.gov/ National Institute of Standards and Technology (NIST)>,
 -- formula 25.11.5.
 zeta :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
-zeta eps s a = firstSum + constant1 + constant2 + second
+zeta eps s a = s' + i + t
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
     -- (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14 == 15@,
@@ -40,55 +42,43 @@ zeta eps s a = firstSum + constant1 + constant2 + second
     powOfAPlusN :: a
     powOfAPlusN = aPlusN ^^ s
 
+    --                   [      1      ]
+    -- \sum_{k=0}^\(n-1) | ----------- |
+    --                   [ (a + k) ^ s ]
+    s' :: a
+    s' = sum .
+         take digitsOfPrecision .
+         map (recip . (^^ s) . (a +) . fromInteger) $ [0..]
+
     -- (a + n) ^ (1 - s)            a + n
     -- ----------------- = ----------------------
     --       s - 1          (a + n) ^ s * (s - 1)
-    constant1 :: a
-    constant1 = aPlusN / (powOfAPlusN * ((fromIntegral s) - 1))
+    i :: a
+    i = aPlusN / (powOfAPlusN * ((fromIntegral s) - 1))
 
-    --        1
-    -- ---------------
-    -- 2 * (a + n) ^ s
+    --      1
+    -- -----------
+    -- (a + n) ^ s
     constant2 :: a
-    constant2 = recip $ 2 * powOfAPlusN
+    constant2 = recip $ powOfAPlusN
 
-    --               [      1      ]
-    -- \sum_{k=0}^\n | ----------- |
-    --               [ (a + k) ^ s ]
-    firstSum :: a
-    firstSum = sum .
-               take digitsOfPrecision .
-               map (recip . (^^ s) . (a +) . fromInteger) $ [0..]
+    -- [(s)_(2*k - 1) | k <- [1 ..]]
+    pochhammer :: [a]
+    pochhammer = map fromIntegral $ skipOdds $ scanl1 (*) [s ..]
 
-    -- [0!, 1!, 2!, 3! ..]
-    factorial' :: [a]
-    factorial' = map fromInteger factorial
+    -- [(a + n) ^ (2*k - 1) | k <- [1 ..]]
+    powers :: [a]
+    powers = iterate ((aPlusN * aPlusN) *) aPlusN
 
-    -- [ B_2k                ]
-    -- | ----- | k <- [1 ..] |
-    -- [ (2k)!               ]
-    evenBernoulliDivByFac :: [a]
-    evenBernoulliDivByFac = zipWith
-                            (\bern fac -> fromRational $ bern / fromInteger fac)
-                            (tail $ skipOdds bernoulli)
-                            (tail $ skipOdds factorial)
-
-    -- [(s + 2*k - 2)! | k <- [1 ..]]
-    secondSumNum :: [a]
-    secondSumNum = skipOdds $ drop (fromIntegral s) factorial'
-
-    -- [(s - 1)! * (a + n) ^ s * (a + n) ^ (2*k - 1) | k <- [1 ..]]
-    secondSumDenom :: [a]
-    secondSumDenom = map ((factorial' !! (fromEnum s - 1) *))
-                         (iterate ((aPlusN * aPlusN) *) (aPlusN * powOfAPlusN))
-
-    -- [ B_2k           (s + 2*k - 2)!           |             ]
-    -- | ----- --------------------------------- | k <- [1 ..] |
-    -- [ (2k)! (s - 1)! * (a + n) ^ (s + 2*k -1) |             ]
+    -- [ B_2k     (s)_(2*k - 1)    |             ]
+    -- | ----- ------------------- | k <- [1 ..] |
+    -- [ (2k)! (a + n) ^ (2*k -1)  |             ]
     second :: a
-    second = suminf eps $ zipWith3
-                           (\bernFac num denom -> bernFac * (num / denom))
-                           evenBernoulliDivByFac
-                           secondSumNum
-                           secondSumDenom
+    second = suminf eps $ zipWith4
+                           (\bern evenFac poch denom -> (fromRational bern * poch) / (denom * fromInteger evenFac))
+                           (tail $ skipOdds bernoulli)
+                           (tail $ skipOdds factorial)
+                           pochhammer
+                           powers
 
+    t = constant2 * (0.5 + second)
