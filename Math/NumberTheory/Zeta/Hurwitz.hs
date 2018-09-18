@@ -32,7 +32,9 @@ zeta eps s a = s' + i + t
     -- (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14 == 15@,
     -- meaning @n@ in formula 25.11.5 will be @15@.
     digitsOfPrecision :: Int
-    digitsOfPrecision = length . takeWhile (>= 1) . iterate (/ 10) . recip $ eps
+    digitsOfPrecision =
+       let magnitude = length . takeWhile (>= 1) . iterate (/ 10) . recip $ eps
+       in  div (magnitude * 33) 10
 
     -- @a + n@
     aPlusN :: a
@@ -72,9 +74,9 @@ zeta eps s a = s' + i + t
 
     -- [ B_2k     (s)_(2*k - 1)    |             ]
     -- | ----- ------------------- | k <- [1 ..] |
-    -- [ (2k)! (a + n) ^ (2*k -1)  |             ]
+    -- [ (2k)! (a + n) ^ (2*k - 1) |             ]
     second :: a
-    second = suminf eps $ zipWith4
+    second = sum $ take digitsOfPrecision $ zipWith4
                            (\bern evenFac poch denom -> (fromRational bern * poch) / (denom * fromInteger evenFac))
                            (tail $ skipOdds bernoulli)
                            (tail $ skipOdds factorial)
