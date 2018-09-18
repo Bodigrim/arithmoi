@@ -10,28 +10,53 @@
 --
 
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 
-{-# OPTIONS -fno-warn-unused-imports #-}
+{-# OPTIONS -fno-warn-unused-imports -fno-warn-unused-top-binds #-}
 
-module Math.NumberTheory.DirichletCharacters
-  ( DirichletCharacter
-  , generators
-  ) where
+module Math.NumberTheory.DirichletCharacters where
 
+#if __GLASGOW_HASKELL__ < 803
+import Data.Semigroup
+#endif
 import qualified Data.Map as M
 import Data.Map                              (Map, (!))
 import GHC.TypeNats.Compat                   (Nat)
 import Numeric.Natural                       (Natural)
+import Data.Ratio
+import Data.Complex
 
-import Math.NumberTheory.Moduli              (PrimitiveRoot, CyclicGroup(..), isPrimitiveRoot', chineseRemainder2)
+import Math.NumberTheory.Moduli              (PrimitiveRoot, CyclicGroup(..), isPrimitiveRoot', chineseRemainder2, KnownNat, MultMod)
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers              (powMod)
 
-data DirichletCharacter (n :: Nat) = Generated (Map Natural Natural)
-  deriving (Eq)
+-- data DirichletCharacter (n :: Nat) = Generated (Map Natural Natural)
+--   deriving (Eq)
+data DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
+
+newtype RootOfUnity = RootOfUnity { getFraction :: Rational }
+  deriving (Eq, Show)
+  -- RootOfUnity q represents e^(2pi i * q)
+  -- I am happy with a custom Show instance if that's preferred
+
+toRootOfUnity :: Rational -> RootOfUnity
+toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
+  where n = numerator q
+        d = denominator q
+        -- effectively q `mod` 1
+
+instance Semigroup RootOfUnity where
+  (RootOfUnity q1) <> (RootOfUnity q2) = toRootOfUnity (q1 + q2)
+
+instance Monoid RootOfUnity where
+  mappend = (<>)
+  mempty = RootOfUnity 0
+
+fromRootOfUnity :: Floating a => RootOfUnity -> Complex a
+fromRootOfUnity = cis . fromRational . getFraction
 
 canonGenHelp :: (Integral a, UniqueFactorisation a) => (Prime a, Word) -> [a]
 canonGenHelp (p, k)
