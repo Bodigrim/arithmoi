@@ -28,9 +28,9 @@ import Numeric.Natural
 import Data.Proxy
 import GHC.TypeNats.Compat
 
-import qualified Math.NumberTheory.GCD as GCD
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.Euclidean
+import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefactored)
@@ -69,7 +69,7 @@ isPrimitiveRoot'Property1 (AnySign n) cg
   || not (isPrimitiveRoot' cg n)
 
 castPrefactored :: Integral a => Prefactored a -> Prefactored Integer
-castPrefactored = fromFactors . GCD.splitIntoCoprimes . map (first toInteger) . GCD.toList . prefFactors
+castPrefactored = fromFactors . splitIntoCoprimes . map (first toInteger) . unCoprimes . prefFactors
 
 isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty1 (AnySign n) (Positive m)

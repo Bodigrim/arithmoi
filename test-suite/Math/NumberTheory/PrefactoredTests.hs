@@ -23,7 +23,7 @@ import Data.List (tails)
 import Numeric.Natural
 
 import Math.NumberTheory.Euclidean (Euclidean, coprime)
-import Math.NumberTheory.GCD (splitIntoCoprimes, toList)
+import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.TestUtils
 
@@ -33,7 +33,7 @@ isValid pref
   && and [ coprime g h | ((g, _) : gs) <- tails fs, (h, _) <- gs ]
   where
     n  = prefValue   pref
-    fs = toList $ prefFactors pref
+    fs = unCoprimes $ prefFactors pref
 
 fromValueProperty :: Integer -> Bool
 fromValueProperty n = isValid pref && prefValue pref == n

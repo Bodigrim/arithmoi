@@ -37,7 +37,7 @@ import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import qualified Math.NumberTheory.Euclidean as E
-import Math.NumberTheory.GCD as Coprimes (singleton)
+import Math.NumberTheory.Euclidean.Coprimes as Coprimes (singleton)
 import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular

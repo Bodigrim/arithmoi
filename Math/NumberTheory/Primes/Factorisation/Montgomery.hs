@@ -65,7 +65,7 @@ import Data.Traversable
 import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
-import Math.NumberTheory.GCD (splitIntoCoprimes, toList)
+import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
@@ -217,7 +217,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
             SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
               Nothing -> workFact m b1 b2 (count - 1)
               Just d  -> do
-                let cs = toList $ splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
+                let cs = unCoprimes $ splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
                 -- Since all @cs@ are coprime, we can factor each of
                 -- them and just concat results, without summing up
                 -- powers of the same primes in different elements.

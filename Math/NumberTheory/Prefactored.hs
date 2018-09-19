@@ -25,7 +25,7 @@ import Control.Arrow
 import Data.Semigroup
 
 import Math.NumberTheory.Euclidean
-import Math.NumberTheory.GCD (Coprimes, splitIntoCoprimes, toList, singleton)
+import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.UniqueFactorisation
 
 -- | A container for a number and its pairwise coprime (but not neccessarily prime)
@@ -94,7 +94,7 @@ data Prefactored a = Prefactored
 --
 -- >>> fromValue 123
 -- Prefactored {prefValue = 123, prefFactors = Coprimes {unCoprimes = fromList [(123,1)]}}
-fromValue :: a -> Prefactored a
+fromValue :: (Eq a, Num a) => a -> Prefactored a
 fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
@@ -105,7 +105,7 @@ fromValue a = Prefactored a (singleton a 1)
 -- >>> fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
 -- Prefactored {prefValue = 88045650000, prefFactors = Coprimes {unCoprimes = fromList [(5,5),(28,2),(33,3)]}}
 fromFactors :: Num a => Coprimes a Word -> Prefactored a
-fromFactors as = Prefactored (product (map (uncurry (^)) (toList as))) as
+fromFactors as = Prefactored (product (map (uncurry (^)) (unCoprimes as))) as
 
 instance (Euclidean a, Ord a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
@@ -121,10 +121,10 @@ instance (Euclidean a, Ord a) => Num (Prefactored a) where
 
 type instance Prime (Prefactored a) = Prime a
 
-instance UniqueFactorisation a => UniqueFactorisation (Prefactored a) where
+instance (Eq a, Num a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
   unPrime p = fromValue (unPrime p)
   factorise (Prefactored _ f)
-    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (toList f)
-  isPrime (Prefactored _ f) = case toList f of
+    = concatMap (\(x, xm) -> map (second (* xm)) (factorise x)) (unCoprimes f)
+  isPrime (Prefactored _ f) = case unCoprimes f of
     [(n, 1)] -> isPrime n
     _        -> Nothing

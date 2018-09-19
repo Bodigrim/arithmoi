@@ -21,10 +21,10 @@
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops and the rewrite rules.
 
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE LambdaCase   #-}
-{-# LANGUAGE MagicHash    #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MagicHash           #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-deprecations   #-}
@@ -33,22 +33,14 @@ module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
     , coprime
-    , splitIntoCoprimes
-    , Coprimes
-    , toList
-    , singleton
-    , insert
     ) where
 
 import Data.Bits
 import Data.Semigroup
 
-import qualified Data.Map.Strict as Map
-
 import GHC.Word
 import GHC.Int
 
-import qualified Math.NumberTheory.Euclidean as E
 import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.Utils
 
@@ -267,65 +259,3 @@ cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
 
 cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
-
-
-newtype Coprimes a b = Coprimes { unCoprimes :: Map.Map a b } deriving (Eq, Show)
-
-singleton :: a -> b -> Coprimes a b
-singleton a b = Coprimes (Map.singleton a b)
-
-toList :: Coprimes a b -> [(a, b)]
-toList x = Map.assocs $ unCoprimes x
-
-insert :: (E.Euclidean a, Ord a, Bits a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
-insert a b cs@(Coprimes m) = if isCoprimeBase
-  then Coprimes (Map.insert a b m)
-  else splitIntoCoprimes ps
-  where isCoprimeBase = all (E.coprime a) (Map.keys m)
-        ps' = toList cs
-        ps = (a, b) : ps'
-
-instance (E.Euclidean a, Ord a, Eq b, Num b) => Semigroup (Coprimes a b) where
-  (Coprimes l) <> (Coprimes r) = splitIntoCoprimes allTuples
-    where allTuples = (Map.assocs l) ++ (Map.assocs r)
-
-instance (E.Euclidean a, Ord a, Eq b, Num b) => Monoid (Coprimes a b) where
-  mempty = Coprimes Map.empty
-  mappend = (<>)
-
--- | The input list is assumed to be a factorisation of some number
--- into a list of powers of (possibly, composite) non-zero factors. The output
--- list is a factorisation of the same number such that all factors
--- are coprime. Such transformation is crucial to continue factorisation
--- (lazily, in parallel or concurrent fashion) without
--- having to merge multiplicities of primes, which occurs more than in one
--- composite factor.
---
--- >>> splitIntoCoprimes [(140, 1), (165, 1)]
--- Coprimes {unCoprimes = fromList [(5,2),(28,1),(33,1)]}
--- >>> splitIntoCoprimes [(360, 1), (210, 1)]
--- Coprimes {unCoprimes = fromList [(2,4),(3,3),(5,2),(7,1)]}
-splitIntoCoprimes :: (E.Euclidean a, Ord a, Eq b, Num b) => [(a, b)] -> Coprimes a b
-splitIntoCoprimes xs = Coprimes (Map.fromList $ splitIntoCoprimes' xs)
-
-splitIntoCoprimes' :: (E.Euclidean a, Eq b, Num b) => [(a, b)] -> [(a, b)]
-splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
-  where
-    ys = filter (/= (0, 0)) xs
-
-    go = \case
-      [] -> []
-      ((1,  _) : rest) -> go rest
-      ((x, xm) : rest) -> case popSuchThat (\(r, _) -> not $ E.coprime x r) rest of
-        Nothing            -> (x, xm) : go rest
-        Just ((y, ym), zs) -> let g = E.gcd x y in
-          go ((g, xm + ym) : (x `E.quot` g, xm) : (y `E.quot` g, ym) : zs)
-
-popSuchThat :: (a -> Bool) -> [a] -> Maybe (a, [a])
-popSuchThat predicate = go
-  where
-    go = \case
-      [] -> Nothing
-      (x : xs)
-        | predicate x -> Just (x, xs)
-        | otherwise   -> fmap (fmap (x :)) (go xs)

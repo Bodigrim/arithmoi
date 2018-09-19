@@ -25,9 +25,10 @@ import Test.Tasty.HUnit
 import Control.Arrow
 import Data.Bits
 import Data.Semigroup
-import Data.List (tails)
+import Data.List (tails, sort)
 import Numeric.Natural
 
+import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.GCD
 import Math.NumberTheory.TestUtils
 
@@ -51,13 +52,13 @@ coprimeProperty :: (Integral a, Bits a) => AnySign a -> AnySign a -> Bool
 coprimeProperty (AnySign a) (AnySign b) = coprime a b == (gcd a b == 1)
 
 splitIntoCoprimesProperty1 :: [(Positive Natural, Power Word)] -> Bool
-splitIntoCoprimesProperty1 fs' = factorback fs == factorback (toList $ splitIntoCoprimes fs)
+splitIntoCoprimesProperty1 fs' = factorback fs == factorback (unCoprimes $ splitIntoCoprimes fs)
   where
     fs = map (getPositive *** getPower) fs'
     factorback = product . map (uncurry (^))
 
 splitIntoCoprimesProperty2 :: [(Positive Natural, Power Word)] -> Bool
-splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (toList $ splitIntoCoprimes fs)
+splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (unCoprimes $ splitIntoCoprimes fs)
   where
     fs = map (getPositive *** getPower) fs'
     multiplicities = sum . map snd . filter ((/= 1) . fst)
@@ -65,7 +66,7 @@ splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (toList $ s
 splitIntoCoprimesProperty3 :: [(Positive Natural, Power Word)] -> Bool
 splitIntoCoprimesProperty3 fs' = and [ coprime x y | (x : xs) <- tails fs, y <- xs ]
   where
-    fs = map fst $ toList $ splitIntoCoprimes $ map (getPositive *** getPower) fs'
+    fs = map fst $ unCoprimes $ splitIntoCoprimes $ map (getPositive *** getPower) fs'
 
 -- | Check that evaluation never freezes.
 splitIntoCoprimesProperty4 :: [(Integer, Word)] -> Bool
@@ -88,7 +89,7 @@ splitIntoCoprimesSpecialCase2 =
 toListReturnsCorrectValues :: Assertion
 toListReturnsCorrectValues = assertEqual
   "should be equal"
-  (toList $ splitIntoCoprimes [(140, 1), (165, 1)])
+  (sort $ unCoprimes $ splitIntoCoprimes [(140, 1), (165, 1)])
   ([(5,2),(28,1),(33,1)] :: [(Integer, Word)])
 
 unionReturnsCorrectValues :: Assertion
@@ -98,22 +99,29 @@ unionReturnsCorrectValues = assertEqual "should be equal" expected actual
     a = splitIntoCoprimes [(700, 1), (165, 1)] -- [(5,3),(28,1),(33,1)]
     b = splitIntoCoprimes [(360, 1), (210, 1)] -- [(2,4),(3,3),(5,2),(7,1)]
     expected = [(2,6),(3,4),(5,5),(7,2),(11,1)]
-    actual = toList (a <> b)
+    actual = sort $ unCoprimes (a <> b)
 
 insertReturnsCorrectValuesWhenCoprimeBase :: Assertion
 insertReturnsCorrectValuesWhenCoprimeBase =
   let a = insert 5 2 (singleton 4 3)
       expected = [(4,3), (5,2)]
-      actual = toList a :: [(Int, Int)]
+      actual = sort $ unCoprimes a :: [(Int, Int)]
   in assertEqual "should be equal" expected actual
 
 insertReturnsCorrectValuesWhenNotCoprimeBase :: Assertion
 insertReturnsCorrectValuesWhenNotCoprimeBase =
   let a = insert 2 4 (insert 7 1 (insert 5 2 (singleton 4 3)))
-      actual = toList a :: [(Int, Int)]
+      actual = sort $ unCoprimes a :: [(Int, Int)]
       expected = [(2,10), (5,2), (7,1)]
   in assertEqual "should be equal" expected actual
 
+unionProperty1 :: [(Positive Natural, Power Word)] -> [(Positive Natural, Power Word)] -> Bool
+unionProperty1 xs ys
+  =  sort (unCoprimes (splitIntoCoprimes (xs' <> ys')))
+  == sort (unCoprimes (splitIntoCoprimes xs' <> splitIntoCoprimes ys'))
+  where
+    xs' = map (getPositive *** getPower) xs
+    ys' = map (getPositive *** getPower) ys
 
 testSuite :: TestTree
 testSuite = testGroup "GCD"
@@ -134,5 +142,6 @@ testSuite = testGroup "GCD"
     ,  testCase         "test union"                          unionReturnsCorrectValues
     ,  testCase         "test insert with coprime base"       insertReturnsCorrectValuesWhenCoprimeBase
     ,  testCase         "test insert with non-coprime base"   insertReturnsCorrectValuesWhenNotCoprimeBase
+    ,  testSmallAndQuick "property union"                     unionProperty1
     ]
   ]
