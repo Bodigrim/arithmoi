@@ -15,21 +15,19 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 
-{-# OPTIONS -fno-warn-unused-imports -fno-warn-unused-top-binds #-}
+{-# OPTIONS -fno-warn-unused-top-binds #-}
 
 module Math.NumberTheory.DirichletCharacters where
 
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
-import qualified Data.Map as M
-import Data.Map                              (Map, (!))
 import GHC.TypeNats.Compat                   (Nat)
 import Numeric.Natural                       (Natural)
 import Data.Ratio
 import Data.Complex
 
-import Math.NumberTheory.Moduli              (PrimitiveRoot, CyclicGroup(..), isPrimitiveRoot', chineseRemainder2, KnownNat, MultMod)
+import Math.NumberTheory.Moduli              (CyclicGroup(..), isPrimitiveRoot', chineseRemainder2, KnownNat, MultMod, discreteLogarithmPP, getVal, multElement)
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers              (powMod)
 
@@ -80,3 +78,28 @@ generators n = do
 
 crt :: (Natural, Natural) -> (Natural,Natural) -> Natural
 crt (r1,md1) (r2,md2) = fromInteger $ chineseRemainder2 (toInteger r1,toInteger md1) (toInteger r2,toInteger md2)
+
+lambda :: Integer -> Word -> Integer
+lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-2))
+
+data DirichletFactor = OddPrime { getPrime :: Prime Natural
+                                , getPower :: Word
+                                , getGenerator :: Natural
+                                , getValue :: Natural
+                                }
+                      | Four { getValue :: Natural }
+                      | TwoPower { getPower :: Word
+                                 , getFirstValue :: Natural
+                                 , getSecondValue :: Natural
+                                 }
+
+evaluate :: KnownNat n => DirichletCharacter n -> MultMod n -> RootOfUnity
+evaluate (Generated ds) m = foldMap (evalFactor m') ds
+  where m' = getVal $ multElement m
+
+evalFactor :: Integer -> DirichletFactor -> RootOfUnity
+evalFactor m =
+  \case
+    OddPrime (unPrime -> p) k a b -> toRootOfUnity (toInteger (b * discreteLogarithmPP p k (fromIntegral a) (m `rem` p^k)) % (p^(k-1)*(p-1)))
+    Four b                        -> toRootOfUnity (((toInteger b) * (if (m `rem` 4) == 1 then 1 else 0)) % 2)
+    TwoPower k s b                -> toRootOfUnity ((toInteger s) * (if (m `rem` 4) == 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m k % (2^(k-2)))

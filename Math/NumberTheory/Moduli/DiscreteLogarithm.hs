@@ -13,6 +13,7 @@
 
 module Math.NumberTheory.Moduli.DiscreteLogarithm
   ( discreteLogarithm
+  , discreteLogarithmPP
   ) where
 
 import qualified Data.IntMap.Strict as M
