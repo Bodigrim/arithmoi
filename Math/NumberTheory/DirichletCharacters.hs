@@ -15,8 +15,6 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 
-{-# OPTIONS -fno-warn-unused-top-binds #-}
-
 module Math.NumberTheory.DirichletCharacters where
 
 #if __GLASGOW_HASKELL__ < 803
@@ -54,7 +52,7 @@ instance Monoid RootOfUnity where
   mempty = RootOfUnity 0
 
 fromRootOfUnity :: Floating a => RootOfUnity -> Complex a
-fromRootOfUnity = cis . fromRational . getFraction
+fromRootOfUnity = cis . (2*pi*) . fromRational . getFraction
 
 canonGenHelp :: (Integral a, UniqueFactorisation a) => (Prime a, Word) -> [a]
 canonGenHelp (p, k)
@@ -79,6 +77,7 @@ generators n = do
 crt :: (Natural, Natural) -> (Natural,Natural) -> Natural
 crt (r1,md1) (r2,md2) = fromInteger $ chineseRemainder2 (toInteger r1,toInteger md1) (toInteger r2,toInteger md2)
 
+-- TODO: improve using bitshifts
 lambda :: Integer -> Word -> Integer
 lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-2))
 
@@ -102,4 +101,8 @@ evalFactor m =
   \case
     OddPrime (unPrime -> p) k a b -> toRootOfUnity (toInteger (b * discreteLogarithmPP p k (fromIntegral a) (m `rem` p^k)) % (p^(k-1)*(p-1)))
     Four b                        -> toRootOfUnity (((toInteger b) * (if (m `rem` 4) == 1 then 1 else 0)) % 2)
-    TwoPower k s b                -> toRootOfUnity ((toInteger s) * (if (m `rem` 4) == 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m k % (2^(k-2)))
+    TwoPower k s b                -> toRootOfUnity ((toInteger s) * (if (m `rem` 4) == 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m'' k % (2^(k-2)))
+                                       where m' = m `rem` (2^k)
+                                             m'' = if m' `rem` 4 == 1
+                                                      then m'
+                                                      else 2^k - m'
