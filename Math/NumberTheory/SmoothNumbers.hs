@@ -75,6 +75,10 @@ fromSmoothUpperBound n = if (n < 2)
                          then Nothing
                          else Just $ SmoothBasis $ takeWhile (<= n) primes
 
+-- | Helper used by @smoothOver@. Since the typeclass constraint is just
+-- @Euclidean@, with Euclidean domains not being required to have a total
+-- ordering defined, it receives a @norm@ comparison function for the
+-- generated smooth numbers.
 smoothOver' :: forall a b . (E.Euclidean a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
 smoothOver' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmoothBasis pl)
   where
