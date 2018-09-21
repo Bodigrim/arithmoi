@@ -102,7 +102,7 @@ class (Eq a, Num a) => Euclidean a where
 coprimeIntegral :: Integral a => a -> a -> Bool
 coprimeIntegral x y = (odd x || odd y) && P.gcd x y == 1
 
--- | Wrapper around 'Integral', which has an 'Eucledian' instance.
+-- | Wrapper around 'Integral', which has an 'Euclidean' instance.
 newtype WrappedIntegral a = WrappedIntegral { unWrappedIntegral :: a }
   deriving (Eq, Ord, Show, Num, Integral, Real, Enum)
 
