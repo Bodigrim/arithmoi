@@ -14,10 +14,20 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( sqrtsMod
+  ( -- * New interface
+    sqrtsMod
   , sqrtsModFactorisation
   , sqrtsModPrimePower
   , sqrtsModPrime
+    -- * Old interface
+  , Old.sqrtModP
+  , Old.sqrtModPList
+  , Old.sqrtModP'
+  , Old.tonelliShanks
+  , Old.sqrtModPP
+  , Old.sqrtModPPList
+  , Old.sqrtModF
+  , Old.sqrtModFList
   ) where
 
 import Control.Arrow hiding (loop)
@@ -32,8 +42,9 @@ import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
-
 import Math.NumberTheory.Utils.FromIntegral
+
+import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 
 -- | List all modular square roots.
 --
