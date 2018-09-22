@@ -31,8 +31,8 @@ import GHC.Base
 
 import Math.NumberTheory.Utils
 
-{-# DEPRECATED gcdInt, gcdWord, gcdInt#, gcdWord# "Use Prelude.gcd" #-}
-{-# DEPRECATED coprimeInt, coprimeWord, coprimeInt#, coprimeWord# "Use coprime" #-}
+{-# DEPRECATED gcdInt, gcdWord, gcdInt#, gcdWord# "Use Math.NumberTheory.Euclidean.gcd" #-}
+{-# DEPRECATED coprimeInt, coprimeWord, coprimeInt#, coprimeWord# "Math.NumberTheory.Euclidean." #-}
 
 -- | Greatest common divisor of two 'Int's, calculated with the binary gcd algorithm.
 gcdInt :: Int -> Int -> Int

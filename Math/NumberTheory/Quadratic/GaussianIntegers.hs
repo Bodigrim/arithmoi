@@ -134,7 +134,7 @@ gcdG = ED.gcd
 
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG' = ED.gcd
-{-# DEPRECATED gcdG' "Use 'gcdG' instead." #-}
+{-# DEPRECATED gcdG' "Use 'Math.NumberTheory.Euclidean.gcd' instead." #-}
 
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
