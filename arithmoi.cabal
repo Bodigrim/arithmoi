@@ -55,9 +55,6 @@ library
     Math.NumberTheory.Curves.Montgomery
     Math.NumberTheory.Euclidean
     Math.NumberTheory.Euclidean.Coprimes
-    Math.NumberTheory.GaussianIntegers
-    Math.NumberTheory.GCD
-    Math.NumberTheory.GCD.LowLevel
     Math.NumberTheory.Moduli
     Math.NumberTheory.Moduli.Chinese
     Math.NumberTheory.Moduli.Class
@@ -141,7 +138,7 @@ test-suite spec
     Math.NumberTheory.CurvesTests
     Math.NumberTheory.EisensteinIntegersTests
     Math.NumberTheory.GaussianIntegersTests
-    Math.NumberTheory.GCDTests
+    Math.NumberTheory.EuclideanTests
     Math.NumberTheory.Moduli.ChineseTests
     Math.NumberTheory.Moduli.DiscreteLogarithmTests
     Math.NumberTheory.Moduli.ClassTests
@@ -193,7 +190,6 @@ benchmark criterion
     Math.NumberTheory.DiscreteLogarithmBench
     Math.NumberTheory.EisensteinIntegersBench
     Math.NumberTheory.GaussianIntegersBench
-    Math.NumberTheory.GCDBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench
     Math.NumberTheory.PowersBench

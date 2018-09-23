@@ -166,7 +166,7 @@ testIntegralProperty name f = testGroup name
 
 testSameIntegralProperty
   :: forall wrapper1 wrapper2 bool. (TestableIntegral wrapper1, TestableIntegral wrapper2, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
+  => String -> (forall a. (Euclidean a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
 testSameIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper1 Word    -> wrapper2 Word    -> bool)
