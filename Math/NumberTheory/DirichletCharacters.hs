@@ -81,9 +81,9 @@ crt (r1,md1) (r2,md2) = fromInteger $ chineseRemainder2 (toInteger r1,toInteger 
 lambda :: Integer -> Word -> Integer
 lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-2))
 
-data DirichletFactor = OddPrime { getPrime :: Prime Natural
+data DirichletFactor = OddPrime { getPrime :: Prime Integer
                                 , getPower :: Word
-                                , getGenerator :: Natural
+                                , getGenerator :: Integer
                                 , getValue :: Natural
                                 }
                       | Four { getValue :: Natural }

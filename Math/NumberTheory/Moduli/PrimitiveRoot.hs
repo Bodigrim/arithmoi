@@ -46,7 +46,6 @@ import Math.NumberTheory.Powers.General      (highestPower)
 import Math.NumberTheory.Powers.Modular      (powMod)
 import Math.NumberTheory.Moduli.Class        (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
 import Math.NumberTheory.Prefactored         (Prefactored, fromFactors)
-import Math.NumberTheory.Utils.FromIntegral  (intToWord)
 import Math.NumberTheory.UniqueFactorisation (Prime, UniqueFactorisation, isPrime, unPrime, factorise)
 
 -- | A multiplicative group of residues is called cyclic,
