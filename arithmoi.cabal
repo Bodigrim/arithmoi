@@ -35,7 +35,7 @@ flag check-bounds
 
 library
   build-depends:
-    base >=4.7 && <5,
+    base >=4.9 && <5,
     array >=0.5 && <0.6,
     containers >=0.5 && <0.7,
     deepseq,
@@ -118,7 +118,7 @@ library
 
 test-suite spec
   build-depends:
-    base >=4.6 && <5,
+    base >=4.9 && <5,
     arithmoi,
     containers,
     exact-pi >=0.4.1.1,
