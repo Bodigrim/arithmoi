@@ -19,8 +19,9 @@ module Math.NumberTheory.UniqueFactorisationTests
 
 import Test.Tasty
 
-import Math.NumberTheory.Quadratic.GaussianIntegers hiding (factorise)
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Quadratic.EisensteinIntegers
+import Math.NumberTheory.Quadratic.GaussianIntegers
+import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
 
 import Numeric.Natural
@@ -43,5 +44,6 @@ testSuite = testGroup "UniqueFactorisation"
   , testSmallAndQuick "Integer" (testRules :: Integer -> Bool)
   , testSmallAndQuick "Natural" (testRules :: Natural -> Bool)
 
-  , testSmallAndQuick "GaussianInteger" (testRules :: GaussianInteger -> Bool)
+  , testSmallAndQuick "GaussianInteger"   (testRules :: GaussianInteger   -> Bool)
+  , testSmallAndQuick "EisensteinInteger" (testRules :: EisensteinInteger -> Bool)
   ]

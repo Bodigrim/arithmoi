@@ -15,41 +15,21 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Math.NumberTheory.Primes.Types
-  ( Prime
-  , Prm(..)
-  , PrimeNat(..)
+  ( Prime(..)
   ) where
 
-import Numeric.Natural
 import GHC.Generics
 import Control.DeepSeq
 
-newtype Prm = Prm { unPrm :: Word }
+-- | Wrapper for prime elements of @a@.
+newtype Prime a = Prime
+  { unPrime :: a -- ^ Unwrap prime element.
+  }
   deriving (Eq, Ord, Generic)
 
-instance NFData Prm
+instance NFData a => NFData (Prime a)
 
-instance Show Prm where
-  showsPrec d (Prm p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
+instance Show a => Show (Prime a) where
+  showsPrec d (Prime p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
     where
-      s = "Prm " ++ show p
-
-newtype PrimeNat = PrimeNat { unPrimeNat :: Natural }
-  deriving (Eq, Ord, Generic)
-
-instance NFData PrimeNat
-
-instance Show PrimeNat where
-  showsPrec d (PrimeNat p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
-    where
-      s = "PrimeNat " ++ show p
-
--- | Type of primes of a given unique factorisation domain.
---
--- @abs (unPrime n) == unPrime n@ must hold for all @n@ of type @Prime t@
-type family Prime (f :: *) :: *
-
-type instance Prime Int     = Prm
-type instance Prime Word    = Prm
-type instance Prime Integer = PrimeNat
-type instance Prime Natural = PrimeNat
+      s = "Prime " ++ show p

@@ -21,10 +21,10 @@ import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
 
 primesSumWonk :: Int -> Int
-primesSumWonk upto = sum . takeWhile (< upto) . map fromInteger . primeList $ primeSieve (toInteger upto)
+primesSumWonk upto = sum . takeWhile (< upto) . map unPrime . primeList $ primeSieve (toInteger upto)
 
 primesSum :: Int -> Int
-primesSum upto = sum . takeWhile (< upto) . map fromInteger $ primes
+primesSum upto = sum . takeWhile (< upto) . map unPrime $ primes
 
 primesSumProperty :: NonNegative Int -> Bool
 primesSumProperty (NonNegative n) = primesSumWonk n == primesSum n

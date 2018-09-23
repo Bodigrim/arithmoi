@@ -30,7 +30,7 @@ import GHC.Exts
 
 import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius)
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Primes (primes)
+import Math.NumberTheory.Primes (primes, unPrime)
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils (splitOff#)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
@@ -100,7 +100,7 @@ sieveBlockUnboxed (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         highIndex = lowIndex + len - 1
 
         ps :: [Int]
-        ps = takeWhile (<= integerSquareRoot highIndex) $ map fromInteger primes
+        ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
 
     forM_ ps $ \p -> do
 
@@ -118,7 +118,7 @@ sieveBlockUnboxed (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         W# a# <- MV.unsafeRead as ix
         let !(# pow#, a'# #) = splitOff# p# (a# `quotWord#` p#)
         MV.unsafeWrite as ix (W# a'#)
-        MV.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (I# pow#)) ix
+        MV.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (I# (word2Int# pow#))) ix
 
     forM_ [0 .. len - 1] $ \k -> do
       a <- MV.unsafeRead as k

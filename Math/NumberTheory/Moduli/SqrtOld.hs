@@ -11,6 +11,7 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP          #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.Moduli.SqrtOld
   ( sqrtModP
@@ -34,7 +35,9 @@ import GHC.Integer.GMP.Internals
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Primes.Sieve (sieveFrom)
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
+import Math.NumberTheory.Utils.FromIntegral
 
 {-# DEPRECATED sqrtModP, sqrtModP', sqrtModPList, tonelliShanks "Use 'Math.NumberTheory.Moduli.Sqrt.sqrtsModPrime' instead" #-}
 {-# DEPRECATED sqrtModPP, sqrtModPPList "Use 'Math.NumberTheory.Moduli.Sqrt.sqrtsModPrimePower' instead" #-}
@@ -119,12 +122,12 @@ sqrtModPP n (prime,expo) = case sqrtModP n prime of
               in if diff' == 0
                    then Just r
                    else case splitOff prime diff' of
-                          (e,q) | expo <= e -> Just r
+                          (wordToInt -> e,q) | expo <= e -> Just r
                                 | otherwise -> fmap (\inv -> hoist inv r (q `mod` prime) (prime^e)) (recipMod (2*r) prime)
 
     hoist inv root elim pp
         | diff' == 0    = root'
-        | expo <= ex    = root'
+        | expo <= wordToInt ex    = root'
         | otherwise     = hoist inv root' (nelim `mod` prime) (prime^ex)
           where
             root' = (root + (inv*(prime-elim))*pp) `mod` (prime*pp)
@@ -141,7 +144,7 @@ sqM2P n e
       where
         mdl = 1 `shiftL` e
         n' = n `mod` mdl
-        (k,s) = shiftToOddCount n'
+        (wordToInt -> k,s) = shiftToOddCount n'
         k2 = k `quot` 2
         e2 = e-k
         solve _ 1 = Just 1
@@ -149,7 +152,7 @@ sqM2P n e
         solve r _
             | rem4 r == 3   = Nothing  -- otherwise r ≡ 1 (mod 4)
             | rem8 r == 5   = Nothing  -- otherwise r ≡ 1 (mod 8)
-            | otherwise     = fixup r (fst $ shiftToOddCount (r-1))
+            | otherwise     = fixup r (wordToInt $ fst $ shiftToOddCount (r-1))
               where
                 fixup x pw
                     | pw >= e2  = Just x
@@ -157,7 +160,7 @@ sqM2P n e
                       where
                         x' = x + (1 `shiftL` (pw-1))
                         d = x'*x' - r
-                        pw' = if d == 0 then e2 else fst (shiftToOddCount d)
+                        pw' = if d == 0 then e2 else wordToInt (fst (shiftToOddCount d))
 
 -- | @sqrtModF n primePowers@ calculates a square root of @n@ modulo
 --   @product [p^k | (p,k) <- primePowers]@ if one exists and all primes
@@ -222,7 +225,7 @@ findNonSquare n
     | otherwise = search primelist
       where
         primelist = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67]
-                        ++ sieveFrom (68 + n `rem` 4) -- prevent sharing
+                        ++ map unPrime (sieveFrom (68 + n `rem` 4)) -- prevent sharing
         search (p:ps) = case jacobi p n of
           MinusOne -> p
           _        -> search ps

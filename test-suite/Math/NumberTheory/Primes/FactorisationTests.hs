@@ -24,7 +24,7 @@ import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.TestUtils
 
-specialCases :: [(Integer, [(Integer, Int)])]
+specialCases :: [(Integer, [(Integer, Word)])]
 specialCases =
   [ (4181339589500970917,[(15034813,1),(278110515209,1)])
   , (4181339589500970918,[(2,1),(3,2),(7,1),(2595773,1),(12784336241,1)])
@@ -49,7 +49,7 @@ specialCases =
                              (1676321,1),(5070721,1),(5882353,1),(5964848081,1),(19721061166646717498359681,1)])
   ]
 
-lazyCases :: [(Integer, [(Integer, Int)])]
+lazyCases :: [(Integer, [(Integer, Word)])]
 lazyCases =
   [ ( 14145130711
     * 10000000000000000000000000000000000000121
@@ -75,10 +75,10 @@ factoriseProperty4 (Positive n) = bases == nub (sort bases)
 factoriseProperty5 :: Positive Integer -> Bool
 factoriseProperty5 (Positive n) = product (map (uncurry (^)) (factorise n)) == n
 
-factoriseProperty6 :: (Integer, [(Integer, Int)]) -> Assertion
+factoriseProperty6 :: (Integer, [(Integer, Word)]) -> Assertion
 factoriseProperty6 (n, fs) = assertEqual (show n) (sort fs) (sort (factorise n))
 
-factoriseProperty7 :: (Integer, [(Integer, Int)]) -> Assertion
+factoriseProperty7 :: (Integer, [(Integer, Word)]) -> Assertion
 factoriseProperty7 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 testSuite :: TestTree

@@ -38,7 +38,7 @@ import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Unsafe.Coerce
 
-import Math.NumberTheory.Primes (primes)
+import Math.NumberTheory.Primes (primes, unPrime)
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt)
 
@@ -162,7 +162,7 @@ sieveBlockMoebius lowIndex' len'
     -- Bit fiddling in 'mapper' is correct only
     -- if all sufficiently small (<= 191) primes has been sieved out.
     ps :: [Int]
-    ps = takeWhile (<= (191 `max` integerSquareRoot highIndex)) $ map fromInteger primes
+    ps = takeWhile (<= (191 `max` integerSquareRoot highIndex)) $ map unPrime primes
 
     mapper :: Int -> Word8 -> Word8
     mapper ix val

@@ -34,8 +34,8 @@ import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Moduli.Class (Mod, SomeMod(..), modulo)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Prefactored (fromFactors, prefFactors, prefValue, Prefactored)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
-import Math.NumberTheory.UniqueFactorisation
 
 cyclicGroupProperty1 :: (Euclidean a, Integral a, UniqueFactorisation a) => AnySign a -> Bool
 cyclicGroupProperty1 (AnySign n) = case cyclicGroupFromModulo n of

@@ -67,7 +67,7 @@ gcdWord# a# b#  =
     case shiftToOddCount# a# of
       (# za#, oa# #) ->
         case shiftToOddCount# b# of
-          (# zb#, ob# #) -> gcdWordOdd# oa# ob# `uncheckedShiftL#` (if isTrue# (za# <# zb#) then za# else zb#)
+          (# zb#, ob# #) -> gcdWordOdd# oa# ob# `uncheckedShiftL#` word2Int# (if isTrue# (za# `ltWord#` zb#) then za# else zb#)
 
 -- | Test whether two 'Word#'s are coprime.
 coprimeWord# :: Word# -> Word# -> Bool
