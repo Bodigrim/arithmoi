@@ -21,10 +21,10 @@
 -- When using this module, always compile with optimisations turned on to
 -- benefit from GHC's primops and the rewrite rules.
 
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE LambdaCase   #-}
-{-# LANGUAGE MagicHash    #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MagicHash           #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-deprecations   #-}
@@ -33,23 +33,17 @@ module Math.NumberTheory.GCD
     ( binaryGCD
     , extendedGCD
     , coprime
-    , splitIntoCoprimes
-    , Coprimes
-    , toList
-    , singleton
-    , insert
     ) where
 
 import Data.Bits
 import Data.Semigroup
-
-import qualified Data.Map.Strict as Map
 
 import GHC.Word
 import GHC.Int
 
 import Math.NumberTheory.GCD.LowLevel
 import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.FromIntegral (wordToInt)
 
 #include "MachDeps.h"
 
@@ -91,7 +85,7 @@ gw64 (W64# x#) (W64# y#) = W64# (gcdWord# x# y#)
 binaryGCD :: (Integral a, Bits a) => a -> a -> a
 binaryGCD = binaryGCDImpl
 
-{-# DEPRECATED binaryGCD "Use Prelude.gcd" #-}
+{-# DEPRECATED binaryGCD "Use 'Math.NumberTheory.Euclidean.gcd'" #-}
 
 #if WORD_SIZE_IN_BITS < 64
 {-# SPECIALISE binaryGCDImpl :: Word64 -> Word64 -> Word64,
@@ -105,7 +99,7 @@ binaryGCDImpl a b =
     case shiftToOddCount a' of
       (!za, !oa) ->
         case shiftToOddCount b' of
-          (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` min za zb
+          (!zb, !ob) -> gcdOdd (abs oa) (abs ob) `shiftL` wordToInt (min za zb)
     where
       a' = abs a
       b' = abs b
@@ -149,6 +143,7 @@ extendedGCD a b = (d, u, v)
       | s == 0    = (r, o1, o2)
       | otherwise = case r `quotRem` s of
                       (q, t) -> eGCD (o1 - q*n1) n1 (o2 - q*n2) n2 s t
+{-# DEPRECATED extendedGCD "Use 'Math.NumberTheory.Euclidean.extendedGCD'" #-}
 
 {-# RULES
 "coprime/Int"       coprime = coprimeInt
@@ -183,6 +178,7 @@ cw64 (W64# x#) (W64# y#) = coprimeWord# x# y#
 --   Relies on twos complement or sign and magnitude representaion for signed types.
 coprime :: (Integral a, Bits a) => a -> a -> Bool
 coprime = coprimeImpl
+{-# DEPRECATED coprime "Use 'Math.NumberTheory.Euclidean.coprime'" #-}
 
 -- Separate implementation to give the rules a chance to fire by not inlining
 -- before phase 1, and yet have a specialisation for the types without rules
@@ -264,65 +260,3 @@ cw16 (W16# x#) (W16# y#) = coprimeWord# x# y#
 
 cw32 :: Word32 -> Word32 -> Bool
 cw32 (W32# x#) (W32# y#) = coprimeWord# x# y#
-
-
-newtype Coprimes a b = Coprimes { unCoprimes :: Map.Map a b } deriving (Eq, Show)
-
-singleton :: a -> b -> Coprimes a b
-singleton a b = Coprimes (Map.singleton a b)
-
-toList :: Coprimes a b -> [(a, b)]
-toList x = Map.assocs $ unCoprimes x
-
-insert :: (Integral a, Bits a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
-insert a b cs@(Coprimes m) = if isCoprimeBase
-  then Coprimes (Map.insert a b m)
-  else splitIntoCoprimes ps
-  where isCoprimeBase = all (coprime a) (Map.keys m)
-        ps' = toList cs
-        ps = (a, b) : ps'
-
-instance (Integral a, Eq b, Num b) => Semigroup (Coprimes a b) where
-  (Coprimes l) <> (Coprimes r) = splitIntoCoprimes allTuples
-    where allTuples = (Map.assocs l) ++ (Map.assocs r)
-
-instance (Integral a, Eq b, Num b) => Monoid (Coprimes a b) where
-  mempty = Coprimes Map.empty
-  mappend = (<>)
-
--- | The input list is assumed to be a factorisation of some number
--- into a list of powers of (possibly, composite) non-zero factors. The output
--- list is a factorisation of the same number such that all factors
--- are coprime. Such transformation is crucial to continue factorisation
--- (lazily, in parallel or concurrent fashion) without
--- having to merge multiplicities of primes, which occurs more than in one
--- composite factor.
---
--- >>> splitIntoCoprimes [(140, 1), (165, 1)]
--- Coprimes {unCoprimes = fromList [(5,2),(28,1),(33,1)]}
--- >>> splitIntoCoprimes [(360, 1), (210, 1)]
--- Coprimes {unCoprimes = fromList [(2,4),(3,3),(5,2),(7,1)]}
-splitIntoCoprimes :: (Integral a, Eq b, Num b) => [(a, b)] -> Coprimes a b
-splitIntoCoprimes xs = Coprimes (Map.fromList $ splitIntoCoprimes' xs)
-
-splitIntoCoprimes' :: (Integral a, Eq b, Num b) => [(a, b)] -> [(a, b)]
-splitIntoCoprimes' xs = if any ((== 0) . fst) ys then [(0, 1)] else go ys
-  where
-    ys = filter (/= (0, 0)) xs
-
-    go = \case
-      [] -> []
-      ((1,  _) : rest) -> go rest
-      ((x, xm) : rest) -> case popSuchThat (\(r, _) -> gcd x r /= 1) rest of
-        Nothing            -> (x, xm) : go rest
-        Just ((y, ym), zs) -> let g = gcd x y in
-          go ((g, xm + ym) : (x `quot` g, xm) : (y `quot` g, ym) : zs)
-
-popSuchThat :: (a -> Bool) -> [a] -> Maybe (a, [a])
-popSuchThat predicate = go
-  where
-    go = \case
-      [] -> Nothing
-      (x : xs)
-        | predicate x -> Just (x, xs)
-        | otherwise   -> fmap (fmap (x :)) (go xs)

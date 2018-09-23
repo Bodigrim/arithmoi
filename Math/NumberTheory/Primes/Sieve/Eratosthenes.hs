@@ -38,6 +38,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Control.Monad.ST
 import Data.Array.ST
 import Data.Array.Unboxed
+import Data.Coerce
 import Data.Proxy
 import Control.Monad (when)
 import Data.Bits
@@ -51,6 +52,7 @@ import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
+import Math.NumberTheory.Primes.Types
 
 #define IX_MASK     0xFFFFF
 #define IX_BITS     20
@@ -112,12 +114,14 @@ primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
 
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
-primeList :: forall a. Integral a => PrimeSieve -> [a]
+primeList :: forall a. Integral a => PrimeSieve -> [Prime a]
 primeList ps@(PS v _)
   | doesNotFit (Proxy :: Proxy a) v
               = [] -- has an overflow already happened?
-  | v == 0    = takeWhileIncreasing $ 2 : 3 : 5 : primeListInternal ps
-  | otherwise = takeWhileIncreasing $ primeListInternal ps
+  | v == 0    = (coerce :: [a] -> [Prime a])
+              $ takeWhileIncreasing $ 2 : 3 : 5 : primeListInternal ps
+  | otherwise = (coerce :: [a] -> [Prime a])
+              $ takeWhileIncreasing $ primeListInternal ps
 
 primeListInternal :: Num a => PrimeSieve -> [a]
 primeListInternal (PS v0 bs)
@@ -143,7 +147,7 @@ takeWhileIncreasing = \case
 -- | Ascending list of primes.
 --
 -- >>> take 10 primes
--- [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+-- [Prime 2,Prime 3,Prime 5,Prime 7,Prime 11,Prime 13,Prime 17,Prime 19,Prime 23,Prime 29]
 --
 -- 'primes' is a polymorphic list, so the results of computations are not retained in memory.
 -- Make it monomorphic to take advantages of memoization. Compare
@@ -165,8 +169,10 @@ takeWhileIncreasing = \case
 -- >>> primes' !! 1000000 :: Int
 -- 15485867
 -- (0.02 secs, 336,232 bytes)
-primes :: (Ord a, Num a) => [a]
-primes = takeWhileIncreasing $ 2 : 3 : 5 : concatMap primeListInternal psieveList
+primes :: Integral a => [Prime a]
+primes
+  = (coerce :: [a] -> [Prime a])
+  $ takeWhileIncreasing $ 2 : 3 : 5 : concatMap primeListInternal psieveList
 
 -- | List of primes in the form of a list of 'PrimeSieve's, more compact than
 --   'primes', thus it may be better to use @'psieveList' >>= 'primeList'@
@@ -366,9 +372,9 @@ countFromTo start end ba = do
           return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
 
 -- | @'sieveFrom' n@ creates the list of primes not less than @n@.
-sieveFrom :: Integer -> [Integer]
+sieveFrom :: Integer -> [Prime Integer]
 sieveFrom n = case psieveFrom n of
-                        ps -> dropWhile (< n) (ps >>= primeList)
+                        ps -> dropWhile ((< n) . unPrime) (ps >>= primeList)
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain

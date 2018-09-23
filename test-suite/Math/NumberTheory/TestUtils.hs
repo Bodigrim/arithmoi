@@ -58,11 +58,12 @@ import Data.Bits
 import GHC.Exts
 import Numeric.Natural
 
+import Math.NumberTheory.Euclidean
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
+import Math.NumberTheory.Primes (UniqueFactorisation, Prime, unPrime)
 import qualified Math.NumberTheory.SmoothNumbers as SN
-import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, Prime, unPrime)
 
 import Math.NumberTheory.TestUtils.MyCompose
 import Math.NumberTheory.TestUtils.Wrappers
@@ -93,10 +94,10 @@ instance (Eq a, Num a, UniqueFactorisation a, Arbitrary a) => Arbitrary (CyclicG
     [ (1, pure CG2)
     , (1, pure CG4)
     , (9, CGOddPrimePower
-      <$> (arbitrary :: Gen (PrimeWrapper a)) `suchThatMap` isOddPrime
+      <$> (arbitrary :: Gen (Prime a)) `suchThatMap` isOddPrime
       <*> (getPower <$> arbitrary))
     , (9, CGDoubleOddPrimePower
-      <$> (arbitrary :: Gen (PrimeWrapper a)) `suchThatMap` isOddPrime
+      <$> (arbitrary :: Gen (Prime a)) `suchThatMap` isOddPrime
       <*> (getPower <$> arbitrary))
     ]
 
@@ -104,25 +105,25 @@ instance (Monad m, Eq a, Num a, UniqueFactorisation a, Serial m a) => Serial m (
   series = pure CG2
         \/ pure CG4
         \/ (CGOddPrimePower
-           <$> (series :: Series m (PrimeWrapper a)) `suchThatMapSerial` isOddPrime
+           <$> (series :: Series m (Prime a)) `suchThatMapSerial` isOddPrime
            <*> (getPower <$> series))
         \/ (CGDoubleOddPrimePower
-           <$> (series :: Series m (PrimeWrapper a)) `suchThatMapSerial` isOddPrime
+           <$> (series :: Series m (Prime a)) `suchThatMapSerial` isOddPrime
            <*> (getPower <$> series))
 
 isOddPrime
   :: forall a. (Eq a, Num a, UniqueFactorisation a)
-  => PrimeWrapper a
+  => Prime a
   -> Maybe (Prime a)
-isOddPrime (PrimeWrapper p) = if (unPrime p :: a) == 2 then Nothing else Just p
+isOddPrime p = if (unPrime p :: a) == 2 then Nothing else Just p
 
 -------------------------------------------------------------------------------
 -- SmoothNumbers
 
-instance (Integral a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
+instance (Ord a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
   arbitrary = (fmap getPositive <$> arbitrary) `suchThatMap` SN.fromList
 
-instance (Monad m, Integral a, Serial m a) => Serial m (SN.SmoothBasis a) where
+instance (Ord a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
   series = (fmap getPositive <$> series) `suchThatMapSerial` SN.fromList
 
 -------------------------------------------------------------------------------
@@ -153,7 +154,7 @@ type TestableIntegral wrapper =
 
 testIntegralProperty
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
+  => String -> (forall a. (Euclidean a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
 testIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> bool)

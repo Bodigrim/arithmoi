@@ -30,12 +30,12 @@ import Math.NumberTheory.Primes.Testing.Probabilistic
 
 -- | @'certifiedFactorisation' n@ produces the prime factorisation
 --   of @n@, proving the primality of the factors, but doesn't report the proofs.
-certifiedFactorisation :: Integer -> [(Integer,Int)]
+certifiedFactorisation :: Integer -> [(Integer, Word)]
 certifiedFactorisation = map fst . certificateFactorisation
 
 -- | @'certificateFactorisation' n@ produces a 'provenFactorisation'
 --   with a default bound of @100000@.
-certificateFactorisation :: Integer -> [((Integer,Int),PrimalityProof)]
+certificateFactorisation :: Integer -> [((Integer, Word),PrimalityProof)]
 certificateFactorisation n = provenFactorisation 100000 n
 
 -- | @'provenFactorisation' bound n@ constructs a the prime factorisation of @n@
@@ -47,7 +47,7 @@ certificateFactorisation n = provenFactorisation 100000 n
 --   Construction of primality proofs can take a /very/ long time, so this
 --   will usually be slow (but should be faster than using 'factorise' and
 --   proving the primality of the factors from scratch).
-provenFactorisation :: Integer -> Integer -> [((Integer,Int),PrimalityProof)]
+provenFactorisation :: Integer -> Integer -> [((Integer, Word),PrimalityProof)]
 provenFactorisation _ 1 = []
 provenFactorisation bd n
     | n < 2     = error "provenFactorisation: argument not positive"
@@ -61,7 +61,7 @@ provenFactorisation bd n
                                                 (mkStdGen $ fromIntegral n `xor` 0xdeadbeef) Nothing k
 
 -- | verify that we indeed have a correct primality proof
-test :: [((Integer,Int),PrimalityProof)] -> [((Integer,Int),PrimalityProof)]
+test :: [((Integer, Word),PrimalityProof)] -> [((Integer, Word),PrimalityProof)]
 test (t@((p,_),prf):more)
     | p == cprime prf && checkPrimalityProof prf    = t : test more
     | otherwise = error (invalid p prf)
@@ -89,7 +89,7 @@ certiFactorisation :: Maybe Integer                 -- ^ Lower bound for composi
                    -> g                             -- ^ Initial PRNG state
                    -> Maybe Int                     -- ^ Estimated number of digits of the smallest prime factor
                    -> Integer                       -- ^ The number to factorise
-                   -> [((Integer,Int),PrimalityProof)]
+                   -> [((Integer, Word),PrimalityProof)]
                                                     -- ^ List of prime factors, exponents and primality proofs
 certiFactorisation primeBound primeTest prng seed mbdigs n
     = case ptest n of
@@ -147,7 +147,7 @@ certiFactorisation primeBound primeTest prng seed mbdigs n
                             return  (mergeAll [dp,cp,gp], dc ++ cc ++ gc)
 
 -- | merge two lists of factors, so that the result is strictly increasing (wrt the primes)
-merge :: [((Integer,Int),PrimalityProof)] -> [((Integer,Int),PrimalityProof)] -> [((Integer,Int),PrimalityProof)]
+merge :: [((Integer, Word), PrimalityProof)] -> [((Integer, Word), PrimalityProof)] -> [((Integer, Word), PrimalityProof)]
 merge xxs@(x@((p,e),c):xs) yys@(y@((q,d),_):ys)
     = case compare p q of
         LT -> x : merge xs yys
@@ -157,7 +157,7 @@ merge [] ys = ys
 merge xs _  = xs
 
 -- | merge a list of lists of factors so that the result is strictly increasing (wrt the primes)
-mergeAll :: [[((Integer,Int),PrimalityProof)]] -> [((Integer,Int),PrimalityProof)]
+mergeAll :: [[((Integer, Word), PrimalityProof)]] -> [((Integer, Word), PrimalityProof)]
 mergeAll [] = []
 mergeAll [xs] = xs
 mergeAll (xs:ys:zss) = merge (merge xs ys) (mergeAll zss)

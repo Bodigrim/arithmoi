@@ -129,10 +129,8 @@ solveQuadraticPrime a b c p
   = solveLinear' p' b c
   | otherwise
   = map (\n -> n * recipModInteger (2 * a) p' `mod` p')
-  $ case sqrtModMaybe (b * b - 4 * a * c) (FieldCharacteristic p 1) of
-    Nothing -> []
-    Just 0  -> [- b]
-    Just rt -> [rt - b, - rt - b]
+  $ map (subtract b)
+  $ sqrtsModPrime (b * b - 4 * a * c) p
     where
       p' :: Integer
       p' = unPrime p

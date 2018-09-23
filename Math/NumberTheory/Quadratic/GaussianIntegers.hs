@@ -1,17 +1,6 @@
--- |
--- Module:      Math.NumberTheory.GaussianIntegers
--- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
--- Licence:     MIT
--- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
---
--- This module exports functions for manipulating Gaussian integers, including
--- computing their prime factorisations.
---
-
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 module Math.NumberTheory.Quadratic.GaussianIntegers (
     GaussianInteger(..),
@@ -19,16 +8,15 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     conjugate,
     norm,
     (.^),
-    isPrime,
     primes,
     gcdG,
     gcdG',
     findPrime,
     findPrime',
-    factorise,
 ) where
 
 import Control.DeepSeq (NFData)
+import Data.Coerce
 import Data.List (mapAccumL, partition)
 import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
@@ -36,14 +24,14 @@ import GHC.Generics
 
 
 import qualified Math.NumberTheory.Euclidean as ED
-import Math.NumberTheory.Moduli.Sqrt (FieldCharacteristic(..), sqrtModMaybe)
+import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
-import Math.NumberTheory.Primes.Types (PrimeNat(..))
-import qualified Math.NumberTheory.Primes.Factorisation as Factorisation
+import Math.NumberTheory.Primes.Types
 import qualified Math.NumberTheory.Primes.Sieve as Sieve
 import qualified Math.NumberTheory.Primes.Testing as Testing
+import qualified Math.NumberTheory.UniqueFactorisation  as U
 import Math.NumberTheory.Utils              (mergeBy)
-import Math.NumberTheory.Utils.FromIntegral (integerToNatural)
+import Math.NumberTheory.Utils.FromIntegral
 
 infix 6 :+
 infixr 8 .^
@@ -119,11 +107,13 @@ isPrime g@(x :+ y)
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes (up to associates), in order of ascending
 -- magnitude.
-primes :: [GaussianInteger]
-primes = (1 :+ 1): mergeBy (comparing norm) l r
-  where (leftPrimes, rightPrimes) = partition (\p -> p `mod` 4 == 3) (tail Sieve.primes)
-        l = [p :+ 0 | p <- leftPrimes]
-        r = [g | p <- rightPrimes, let x :+ y = findPrime p, g <- [x :+ y, y :+ x]]
+primes :: [U.Prime GaussianInteger]
+primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
+  where
+    leftPrimes, rightPrimes :: [Prime Integer]
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) (tail Sieve.primes)
+    l = [unPrime p :+ 0 | p <- leftPrimes]
+    r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
 
 
 -- | Compute the GCD of two Gaussian integers. Result is always
@@ -134,25 +124,25 @@ gcdG = ED.gcd
 
 gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
 gcdG' = ED.gcd
-{-# DEPRECATED gcdG' "Use 'gcdG' instead." #-}
+{-# DEPRECATED gcdG' "Use 'Math.NumberTheory.Euclidean.gcd' instead." #-}
 
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
-findPrime :: Integer -> GaussianInteger
-findPrime p = case sqrtModMaybe (-1) (FieldCharacteristic (PrimeNat . integerToNatural $ p) 1) of
-    Nothing -> error "findPrime: an argument must be prime p = 4k + 1"
-    Just z  -> go p z -- Effectively we calculate gcdG' (p :+ 0) (z :+ 1)
+findPrime :: Prime Integer -> U.Prime GaussianInteger
+findPrime p = case sqrtsModPrime (-1) p of
+    []    -> error "findPrime: an argument must be prime p = 4k + 1"
+    z : _ -> Prime $ go (unPrime p) z -- Effectively we calculate gcdG' (p :+ 0) (z :+ 1)
     where
         sqrtp :: Integer
-        sqrtp = integerSquareRoot p
+        sqrtp = integerSquareRoot (unPrime p)
 
         go :: Integer -> Integer -> GaussianInteger
         go g h
             | g <= sqrtp = g :+ h
             | otherwise  = go h (g `mod` h)
 
-findPrime' :: Integer -> GaussianInteger
+findPrime' :: Prime Integer -> U.Prime GaussianInteger
 findPrime' = findPrime
 {-# DEPRECATED findPrime' "Use 'findPrime' instead." #-}
 
@@ -176,20 +166,20 @@ a .^ e
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.
-factorise :: GaussianInteger -> [(GaussianInteger, Int)]
-factorise g = concat $ snd $ mapAccumL go g (Factorisation.factorise $ norm g)
+factorise :: GaussianInteger -> [(Prime GaussianInteger, Word)]
+factorise g = concat $ snd $ mapAccumL go g (U.factorise $ norm g)
     where
-        go :: GaussianInteger -> (Integer, Int) -> (GaussianInteger, [(GaussianInteger, Int)])
-        go z (2, e) = (divideByTwo z, [(1 :+ 1, e)])
+        go :: GaussianInteger -> (Prime Integer, Word) -> (GaussianInteger, [(Prime GaussianInteger, Word)])
+        go z (Prime 2, e) = (divideByTwo z, [(Prime (1 :+ 1), e)])
         go z (p, e)
-            | p `mod` 4 == 3
-            = let e' = e `quot` 2 in (z `quotI` (p ^ e'), [(p :+ 0, e')])
+            | unPrime p `mod` 4 == 3
+            = let e' = e `quot` 2 in (z `quotI` (unPrime p ^ e'), [(Prime (unPrime p :+ 0), e')])
             | otherwise
             = (z', filter ((> 0) . snd) [(gp, k), (gp', k')])
                 where
                     gp = findPrime p
-                    (k, k', z') = divideByPrime gp p e z
-                    gp' = abs (conjugate gp)
+                    (k, k', z') = divideByPrime gp (unPrime p) e z
+                    gp' = Prime (abs (conjugate (unPrime gp)))
 
 -- | Remove all (1:+1) factors from the argument,
 -- avoiding complex division.
@@ -205,18 +195,18 @@ divideByTwo z@(x :+ y)
 -- | Remove p and conj p factors from the argument,
 -- avoiding complex division.
 divideByPrime
-    :: GaussianInteger   -- ^ Gaussian prime p
-    -> Integer           -- ^ Precomputed norm of p, of form 4k + 1
-    -> Int               -- ^ Expected number of factors (either p or conj p)
-                         --   in Gaussian integer z
-    -> GaussianInteger   -- ^ Gaussian integer z
-    -> ( Int             -- Multiplicity of factor p in z
-       , Int             -- Multiplicity of factor conj p in z
-       , GaussianInteger -- Remaining Gaussian integer
+    :: Prime GaussianInteger -- ^ Gaussian prime p
+    -> Integer               -- ^ Precomputed norm of p, of form 4k + 1
+    -> Word                  -- ^ Expected number of factors (either p or conj p)
+                             --   in Gaussian integer z
+    -> GaussianInteger       -- ^ Gaussian integer z
+    -> ( Word                -- Multiplicity of factor p in z
+       , Word                -- Multiplicity of factor conj p in z
+       , GaussianInteger     -- Remaining Gaussian integer
        )
 divideByPrime p np k = go k 0
     where
-        go :: Int -> Int -> GaussianInteger -> (Int, Int, GaussianInteger)
+        go :: Word -> Word -> GaussianInteger -> (Word, Word, GaussianInteger)
         go 0 d z = (d, d, z)
         go c d z
             | c >= 2
@@ -226,13 +216,13 @@ divideByPrime p np k = go k 0
             where
                 (d1, z') = go1 c 0 z
                 d2 = c - d1
-                z'' = head $ drop d2
-                    $ iterate (\g -> fromMaybe err $ (g * p) `quotEvenI` np) z'
+                z'' = head $ drop (wordToInt d2)
+                    $ iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z'
 
-        go1 :: Int -> Int -> GaussianInteger -> (Int, GaussianInteger)
+        go1 :: Word -> Word -> GaussianInteger -> (Word, GaussianInteger)
         go1 0 d z = (d, z)
         go1 c d z
-            | Just z' <- (z * conjugate p) `quotEvenI` np
+            | Just z' <- (z * conjugate (unPrime p)) `quotEvenI` np
             = go1 (c - 1) (d + 1) z'
             | otherwise
             = (d, z)
@@ -252,3 +242,11 @@ quotEvenI (x :+ y) n
     where
         (xq, xr) = x `quotRem` n
         (yq, yr) = y `quotRem` n
+
+-------------------------------------------------------------------------------
+
+instance U.UniqueFactorisation GaussianInteger where
+  factorise 0 = []
+  factorise g = coerce $ factorise g
+
+  isPrime g = if isPrime g then Just (Prime g) else Nothing

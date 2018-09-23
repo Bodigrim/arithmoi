@@ -18,7 +18,7 @@ module Math.NumberTheory.Moduli.Chinese
 
 import Control.Monad (foldM)
 
-import Math.NumberTheory.GCD (extendedGCD)
+import Math.NumberTheory.Euclidean (extendedGCD)
 import Math.NumberTheory.Utils (recipMod)
 
 -- | Given a list @[(r_1,m_1), ..., (r_n,m_n)]@ of @(residue,modulus)@

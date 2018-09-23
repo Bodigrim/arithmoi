@@ -40,13 +40,14 @@ import GHC.Generics                          (Generic)
 import Numeric.Natural                       (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.GCD as Coprimes
-import Math.NumberTheory.Moduli.Class        (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
+import qualified Math.NumberTheory.Euclidean as E
+import Math.NumberTheory.Euclidean.Coprimes as Coprimes (singleton)
 import Math.NumberTheory.Powers.General      (highestPower)
 import Math.NumberTheory.Powers.Modular      (powMod)
+import Math.NumberTheory.Moduli.Class        (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
 import Math.NumberTheory.Prefactored         (Prefactored, fromFactors)
-import Math.NumberTheory.UniqueFactorisation (Prime, UniqueFactorisation, isPrime, unPrime, factorise)
 import Math.NumberTheory.Utils.FromIntegral  (intToWord)
+import Math.NumberTheory.UniqueFactorisation (Prime, UniqueFactorisation, isPrime, unPrime, factorise)
 
 -- | A multiplicative group of residues is called cyclic,
 -- if there is a primitive root @g@,
@@ -60,12 +61,9 @@ data CyclicGroup a
   -- ^ Residues modulo @p@^@k@ for __odd__ prime @p@.
   | CGDoubleOddPrimePower (Prime a) Word
   -- ^ Residues modulo 2@p@^@k@ for __odd__ prime @p@.
-  deriving (Generic)
+  deriving (Eq, Show, Generic)
 
-instance NFData (Prime a) => NFData (CyclicGroup a)
-
-deriving instance Eq   (Prime a) => Eq   (CyclicGroup a)
-deriving instance Show (Prime a) => Show (CyclicGroup a)
+instance NFData a => NFData (CyclicGroup a)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.
@@ -95,7 +93,7 @@ isPrimePower
   :: (Integral a, UniqueFactorisation a)
   => a
   -> Maybe (Prime a, Word)
-isPrimePower n = (, intToWord k) <$> isPrime m
+isPrimePower n = (, k) <$> isPrime m
   where
     (m, k) = highestPower n
 
@@ -109,14 +107,15 @@ isPrimePower n = (, intToWord k) <$> isPrime m
 -- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (PrimeNat 13) 3)
 -- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = fromList [(2,1),(13,3)]}}
 cyclicGroupToModulo
-  :: (Integral a, UniqueFactorisation a)
+  :: (E.Euclidean a, Ord a, UniqueFactorisation a)
   => CyclicGroup a
   -> Prefactored a
 cyclicGroupToModulo = fromFactors . \case
   CG2                       -> Coprimes.singleton 2 1
   CG4                       -> Coprimes.singleton 2 2
   CGOddPrimePower p k       -> Coprimes.singleton (unPrime p) k
-  CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1 <> Coprimes.singleton (unPrime p) k
+  CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1
+                            <> Coprimes.singleton (unPrime p) k
 
 -- | 'PrimitiveRoot m' is a type which is only inhabited by primitive roots of n.
 data PrimitiveRoot m = PrimitiveRoot
@@ -182,5 +181,5 @@ isPrimitiveRoot r = do
   return $ PrimitiveRoot r' cg
 
 -- | Calculate the size of a given cyclic group.
-groupSize :: (Integral a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
+groupSize :: (E.Euclidean a, Ord a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
 groupSize = totient . cyclicGroupToModulo

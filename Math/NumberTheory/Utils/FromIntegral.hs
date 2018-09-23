@@ -19,6 +19,7 @@ module Math.NumberTheory.Utils.FromIntegral
   , naturalToInteger
   , integerToNatural
   , integerToWord
+  , integerToInt
   ) where
 
 import Numeric.Natural
@@ -50,3 +51,7 @@ integerToNatural = fromIntegral
 integerToWord :: Integer -> Word
 integerToWord = fromIntegral
 {-# INLINE integerToWord #-}
+
+integerToInt :: Integer -> Int
+integerToInt = fromIntegral
+{-# INLINE integerToInt #-}

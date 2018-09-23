@@ -31,8 +31,8 @@ import GHC.Base
 
 import Math.NumberTheory.Utils
 
-{-# DEPRECATED gcdInt, gcdWord, gcdInt#, gcdWord# "Use Prelude.gcd" #-}
-{-# DEPRECATED coprimeInt, coprimeWord, coprimeInt#, coprimeWord# "Use coprime" #-}
+{-# DEPRECATED gcdInt, gcdWord, gcdInt#, gcdWord# "Use Math.NumberTheory.Euclidean.gcd" #-}
+{-# DEPRECATED coprimeInt, coprimeWord, coprimeInt#, coprimeWord# "Math.NumberTheory.Euclidean." #-}
 
 -- | Greatest common divisor of two 'Int's, calculated with the binary gcd algorithm.
 gcdInt :: Int -> Int -> Int
@@ -67,7 +67,7 @@ gcdWord# a# b#  =
     case shiftToOddCount# a# of
       (# za#, oa# #) ->
         case shiftToOddCount# b# of
-          (# zb#, ob# #) -> gcdWordOdd# oa# ob# `uncheckedShiftL#` (if isTrue# (za# <# zb#) then za# else zb#)
+          (# zb#, ob# #) -> gcdWordOdd# oa# ob# `uncheckedShiftL#` word2Int# (if isTrue# (za# `ltWord#` zb#) then za# else zb#)
 
 -- | Test whether two 'Word#'s are coprime.
 coprimeWord# :: Word# -> Word# -> Bool

@@ -1,3 +1,64 @@
+0.8.0.0
+    This release supports GHC 7.10, 8.0, 8.2, 8.4 and 8.6.
+
+    Breaking changes:
+
+        Stop reporting units (1, -1, i, -i) as a part of factorisation
+        for integers and Gaussian integers (#101). Now `factorise (-2)`
+        is `[(2, 1)]` and not `[(-1, 1), (2, 1)]`.
+
+        Deprecate an old interface of 'Math.NumberTheory.Moduli.Sqrt'
+        and roll out a new one, more robust and type safe (#87).
+
+        Deprecate 'Math.NumberTheory.GCD' and 'Math.NumberTheory.GCD.LowLevel' (#80).
+        Use 'Math.NumberTheory.Euclidean' instead (#128).
+        Move 'splitIntoCoprimes' to 'Math.NumberTheory.Euclidean.Coprimes'.
+
+        Change types of 'splitIntoCoprimes', 'fromFactors' and 'prefFactors'
+        using newtype 'Coprimes' (#89).
+
+        Redesign API to modular square roots (#108)
+
+        Deprecate 'jacobi'' (#103).
+
+        Sort Gaussian primes by norm (#124).
+
+        Deprecate 'Math.NumberTheory.GaussianIntegers' in favor of
+        'Math.NumberTheory.Quadratic.GaussianIntegers'.
+
+    New features:
+
+        Implement Ramanujan tau function (#112):
+
+        > map ramanujan [1..10]
+        [1,-24,252,-1472,4830,-6048,-16744,84480,-113643,-115920]
+
+        Implement partition function (#115):
+
+        > take 10 partition
+        [1,1,2,3,5,7,11,15,22,30]
+
+        Add the Dirichlet beta function on non-negative integer arguments (#120).
+        E. g.,
+
+        > take 5 $ Math.NumberTheory.Zeta.Dirichlet.betas 1e-15
+        [0.5,0.7853981633974483,0.9159655941772191,0.9689461462593693,0.9889445517411055]
+
+        Solve linear and quadratic congruences (#129).
+
+        Support Eisenstein integers (#121).
+
+        Implement discrete logarithm (#88).
+
+    Improvements:
+
+        Make return type of 'primes' and 'primeList' polymorphic instead of
+        being limited to 'Integer' only (#109).
+
+        Speed up factorisation of Gaussian integers (#116).
+
+        Speed up computation of primitive roots for prime powers (#127).
+
 0.7.0.0
     This release supports GHC 7.8, 7.10, 8.0, 8.2 and 8.4.
 
