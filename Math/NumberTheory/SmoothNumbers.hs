@@ -24,6 +24,9 @@ module Math.NumberTheory.SmoothNumbers
   , smoothOver
   , smoothOverInRange
   , smoothOverInRangeBF
+
+  -- * Verify if a number is smooth
+  , isSmooth
   ) where
 
 import Prelude hiding (div, mod, gcd)
