@@ -19,7 +19,7 @@ description:
   powers (integer roots and tests, modular exponentiation).
 category:      Math, Algorithms, Number Theory
 author:        Daniel Fischer
-tested-with:   GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
+tested-with:   GHC==8.0.2, GHC==8.2.2, GHC==8.4.3, GHC==8.6.1
 extra-source-files:
   Changes
 
@@ -46,9 +46,6 @@ library
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
     vector >= 0.12
-  if impl(ghc <8.0)
-    build-depends:
-      semigroups >=0.8
   exposed-modules:
     GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
@@ -137,9 +134,6 @@ test-suite spec
     tasty-smallcheck >=0.8 && <0.9,
     transformers >=0.5,
     vector
-  if impl(ghc <8.0)
-    build-depends:
-      semigroups >=0.8
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsTests
     Math.NumberTheory.ArithmeticFunctions.MertensTests
@@ -194,9 +188,6 @@ benchmark criterion
     integer-logarithms,
     random,
     vector
-  if impl(ghc <8.0)
-    build-depends:
-      semigroups >=0.8
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.DiscreteLogarithmBench
