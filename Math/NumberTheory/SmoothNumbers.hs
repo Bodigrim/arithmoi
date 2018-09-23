@@ -34,6 +34,7 @@ import Data.Coerce
 import Data.List (nub)
 import qualified Data.Set as S
 import qualified Math.NumberTheory.Euclidean as E
+import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Sieve (primes)
 
 -- | An abstract representation of a smooth basis.
@@ -76,7 +77,7 @@ fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
 fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
 fromSmoothUpperBound n = if (n < 2)
                          then Nothing
-                         else Just $ SmoothBasis $ takeWhile (<= n) primes
+                         else Just $ SmoothBasis $ takeWhile (<= n) $ map unPrime primes
 
 -- | Helper used by @smoothOver@. Since the typeclass constraint is just
 -- @Euclidean@, with Euclidean domains not being required to have a total

@@ -7,13 +7,14 @@
 -- Portability: Non-portable (GHC extensions)
 --
 module Math.NumberTheory.Primes
-    ( module Math.NumberTheory.Primes.Sieve
+    ( Prime
+    , unPrime
+    , UniqueFactorisation(..)
+    , module Math.NumberTheory.Primes.Sieve
     , module Math.NumberTheory.Primes.Counting
-    , module Math.NumberTheory.Primes.Testing
-    , module Math.NumberTheory.Primes.Factorisation
     ) where
 
 import Math.NumberTheory.Primes.Sieve
 import Math.NumberTheory.Primes.Counting
-import Math.NumberTheory.Primes.Testing
-import Math.NumberTheory.Primes.Factorisation
+
+import Math.NumberTheory.UniqueFactorisation

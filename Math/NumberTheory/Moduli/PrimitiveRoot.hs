@@ -43,7 +43,6 @@ import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.Utils.FromIntegral
 
 import Control.DeepSeq
 import Control.Monad (guard)
@@ -62,12 +61,9 @@ data CyclicGroup a
   -- ^ Residues modulo @p@^@k@ for __odd__ prime @p@.
   | CGDoubleOddPrimePower (Prime a) Word
   -- ^ Residues modulo 2@p@^@k@ for __odd__ prime @p@.
-  deriving (Generic)
+  deriving (Eq, Show, Generic)
 
-instance NFData (Prime a) => NFData (CyclicGroup a)
-
-deriving instance Eq   (Prime a) => Eq   (CyclicGroup a)
-deriving instance Show (Prime a) => Show (CyclicGroup a)
+instance NFData a => NFData (CyclicGroup a)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.
@@ -97,7 +93,7 @@ isPrimePower
   :: (Integral a, UniqueFactorisation a)
   => a
   -> Maybe (Prime a, Word)
-isPrimePower n = (, intToWord k) <$> isPrime m
+isPrimePower n = (, k) <$> isPrime m
   where
     (m, k) = highestPower n
 

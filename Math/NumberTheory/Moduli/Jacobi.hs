@@ -20,7 +20,6 @@
 module Math.NumberTheory.Moduli.Jacobi
   ( JacobiSymbol(..)
   , jacobi
-  , jacobi'
   ) where
 
 import Data.Bits
@@ -91,7 +90,6 @@ jacobi' a b
                                 s = if evenI z || rem8is1or7 b then r else negJS r
                             in jacOL s b o
   | otherwise = jacOL (if rem4is3 a && rem4is3 b then MinusOne else One) b a
-{-# DEPRECATED jacobi' "Use 'jacobi' instead" #-}
 
 -- numerator positive and smaller than denominator
 jacPS :: (Integral a, Bits a) => JacobiSymbol -> a -> a -> JacobiSymbol

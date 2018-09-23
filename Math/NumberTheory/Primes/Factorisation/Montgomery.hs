@@ -72,13 +72,14 @@ import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Testing.Probabilistic
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
 --   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
 --   an arbitrary manner from the bit-pattern of @n@.
-factorise :: Integer -> [(Integer,Int)]
+factorise :: Integer -> [(Integer, Word)]
 factorise n
     | abs n == 1 = []
     | n < 0      = factorise (-n)
@@ -86,14 +87,14 @@ factorise n
     | otherwise  = factorise' n
 
 -- | Like 'factorise', but without input checking, hence @n > 1@ is required.
-factorise' :: Integer -> [(Integer,Int)]
+factorise' :: Integer -> [(Integer, Word)]
 factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdeadbeef) n
 
 -- | @'stepFactorisation'@ is like 'factorise'', except that it doesn't use a
 --   pseudo random generator but steps through the curves in order.
 --   This strategy turns out to be surprisingly fast, on average it doesn't
 --   seem to be slower than the 'StdGen' based variant.
-stepFactorisation :: Integer -> [(Integer,Int)]
+stepFactorisation :: Integer -> [(Integer, Word)]
 stepFactorisation n
     = let (sfs,mb) = smallFactors 100000 n
       in sfs ++ case mb of
@@ -106,7 +107,7 @@ stepFactorisation n
 --   For negative numbers, a factor of @-1@ is included, the factorisation of @1@
 --   is empty. Since @0@ has no prime factorisation, a zero argument causes
 --   an error.
-defaultStdGenFactorisation :: StdGen -> Integer -> [(Integer,Int)]
+defaultStdGenFactorisation :: StdGen -> Integer -> [(Integer, Word)]
 defaultStdGenFactorisation sg n
     | n == 0    = error "0 has no prime factorisation"
     | n < 0     = (-1,1) : defaultStdGenFactorisation sg (-n)
@@ -115,7 +116,7 @@ defaultStdGenFactorisation sg n
 
 -- | Like 'defaultStdGenFactorisation', but without input checking, so
 --   @n@ must be larger than @1@.
-defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer,Int)]
+defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer, Word)]
 defaultStdGenFactorisation' sg n
     = let (sfs,mb) = smallFactors 100000 n
       in sfs ++ case mb of
@@ -130,11 +131,11 @@ defaultStdGenFactorisation' sg n
 --   The primality test is 'bailliePSW', the @prng@ function - naturally -
 --   'randomR'. This function also requires small prime factors to have been
 --   stripped before.
-stdGenFactorisation :: Maybe Integer    -- ^ Lower bound for composite divisors
-                    -> StdGen           -- ^ Standard PRNG
-                    -> Maybe Int        -- ^ Estimated number of digits of smallest prime factor
-                    -> Integer          -- ^ The number to factorise
-                    -> [(Integer,Int)]  -- ^ List of prime factors and exponents
+stdGenFactorisation :: Maybe Integer     -- ^ Lower bound for composite divisors
+                    -> StdGen            -- ^ Standard PRNG
+                    -> Maybe Int         -- ^ Estimated number of digits of smallest prime factor
+                    -> Integer           -- ^ The number to factorise
+                    -> [(Integer, Word)] -- ^ List of prime factors and exponents
 stdGenFactorisation primeBound sg digits n
     = curveFactorisation primeBound bailliePSW (\m -> randomR (6,m-2)) sg digits n
 
@@ -164,7 +165,7 @@ curveFactorisation
   -> g                              -- ^ Initial PRNG state
   -> Maybe Int                      -- ^ Estimated number of digits of the smallest prime factor
   -> Integer                        -- ^ The number to factorise
-  -> [(Integer, Int)]               -- ^ List of prime factors and exponents
+  -> [(Integer, Word)]              -- ^ List of prime factors and exponents
 curveFactorisation primeBound primeTest prng seed mbdigs n
     | n == 1    = []
     | ptest n   = [(n, 1)]
@@ -179,10 +180,10 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         rndR :: Integer -> State g Integer
         rndR k = state (prng k)
 
-        perfPw :: Integer -> (Integer, Int)
+        perfPw :: Integer -> (Integer, Word)
         perfPw = maybe highestPower (largePFPower . integerSquareRoot') primeBound
 
-        fact :: Integer -> Int -> State g [(Integer, Int)]
+        fact :: Integer -> Int -> State g [(Integer, Word)]
         fact 1 _ = return mempty
         fact m digs = do
           let (b1, b2, ct) = findParms digs
@@ -227,14 +228,14 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                               else repFact x b1 b2 (count - 1)
 
 data Factors = Factors
-  { _primeFactors     :: [(Integer, Int)]
-  , _compositeFactors :: [(Integer, Int)]
+  { _primeFactors     :: [(Integer, Word)]
+  , _compositeFactors :: [(Integer, Word)]
   }
 
-singlePrimeFactor :: Integer -> Int -> Factors
+singlePrimeFactor :: Integer -> Word -> Factors
 singlePrimeFactor a b = Factors [(a, b)] []
 
-singleCompositeFactor :: Integer -> Int -> Factors
+singleCompositeFactor :: Integer -> Word -> Factors
 singleCompositeFactor a b = Factors [] [(a, b)]
 
 instance Semigroup Factors where
@@ -245,7 +246,7 @@ instance Monoid Factors where
   mempty = Factors [] []
   mappend = (<>)
 
-modifyPowers :: (Int -> Int) -> Factors -> Factors
+modifyPowers :: (Word -> Word) -> Factors -> Factors
 modifyPowers f (Factors pfs cfs)
   = Factors (map (second f) pfs) (map (second f) cfs)
 
@@ -343,12 +344,12 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 
 -- | @'smallFactors' bound n@ finds all prime divisors of @n > 1@ up to @bound@ by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
-smallFactors :: Integer -> Integer -> ([(Integer,Int)], Maybe Integer)
+smallFactors :: Integer -> Integer -> ([(Integer, Word)], Maybe Integer)
 smallFactors bd n = case shiftToOddCount n of
                       (0,m) -> go m prms
                       (k,m) -> (2,k) <: if m == 1 then ([],Nothing) else go m prms
   where
-    prms = tail (primeStore >>= primeList)
+    prms = map unPrime $ tail (primeStore >>= primeList)
     x <: ~(l,b) = (x:l,b)
     go m (p:ps)
         | m < p*p   = ([(m,1)], Nothing)

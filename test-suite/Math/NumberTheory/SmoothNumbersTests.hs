@@ -23,7 +23,8 @@ import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean
+import Math.NumberTheory.Euclidean (Euclidean (..), WrappedIntegral (..))
+import Math.NumberTheory.Primes (Prime (..))
 import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.SmoothNumbers
@@ -40,11 +41,11 @@ isSmoothPropertyHelper primes' i1 i2 =
 
 isSmoothProperty1 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty1 (Positive i1) (Positive i2) =
-    isSmoothPropertyHelper G.primes i1 i2
+    isSmoothPropertyHelper (map unPrime G.primes) i1 i2
 
 isSmoothProperty2 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty2 (Positive i1) (Positive i2) =
-    isSmoothPropertyHelper E.primes i1 i2
+    isSmoothPropertyHelper (map unPrime E.primes) i1 i2
 
 fromSmoothUpperBoundProperty :: Integral a => Positive a -> Bool
 fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of

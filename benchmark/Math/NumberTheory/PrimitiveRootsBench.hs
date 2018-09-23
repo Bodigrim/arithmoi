@@ -8,7 +8,7 @@ import Gauge.Main
 import Data.Maybe
 
 import Math.NumberTheory.Moduli.PrimitiveRoot
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 
 primRootWrap :: Integer -> Word -> Integer -> Bool
 primRootWrap p k g = isPrimitiveRoot' (CGOddPrimePower p' k) g

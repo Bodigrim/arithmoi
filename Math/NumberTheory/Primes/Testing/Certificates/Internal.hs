@@ -40,6 +40,7 @@ import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Powers.Squares
 
 -- | A certificate of either compositeness or primality of an
@@ -81,7 +82,7 @@ data CompositenessArgument
 data PrimalityProof
     = Pocklington { cprime :: !Integer          -- ^ The number whose primality is proved.
                   , factorisedPart, cofactor :: !Integer
-                  , knownFactors :: ![(Integer,Int,Integer,PrimalityProof)]
+                  , knownFactors :: ![(Integer, Word, Integer, PrimalityProof)]
                   }
     | TrialDivision { cprime :: !Integer        -- ^ The number whose primality is proved.
                     , tdLimit :: !Integer }
@@ -98,7 +99,7 @@ data PrimalityProof
 data PrimalityArgument
     = Pock { aprime :: Integer
            , largeFactor, smallFactor :: Integer
-           , factorList :: [(Integer,Int,Integer,PrimalityArgument)]
+           , factorList :: [(Integer, Word, Integer, PrimalityArgument)]
            }                                 -- ^ A suggested Pocklington certificate
     | Division { aprime, alimit :: Integer } -- ^ Primality should be provable by trial division to @alimit@
     | Obvious { aprime :: Integer }          -- ^ @aprime@ is said to be obviously prime, that holds for primes @< 30@
@@ -294,12 +295,12 @@ certifyBPSW n = Pocklington n a b kfcts
 
 -- | Find a decomposition of p-1 for the pocklington certificate.
 --   Usually bloody slow if p-1 has two (or more) /large/ prime divisors.
-findDecomposition :: Integer -> (Integer, [(Integer,Int,Bool)], Integer)
+findDecomposition :: Integer -> (Integer, [(Integer, Word, Bool)], Integer)
 findDecomposition n = go 1 n [] prms
   where
     sr = integerSquareRoot' n
     pbd = min 1000000 (sr+20)
-    prms = primeList (primeSieve $ pbd)
+    prms = map unPrime $ primeList (primeSieve $ pbd)
     go a b afs (p:ps)
         | a > b     = (a,afs,b)
         | otherwise = case splitOff p b of
