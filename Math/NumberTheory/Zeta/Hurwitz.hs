@@ -22,15 +22,18 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds, suminf)
 -- | Value of Hurwitz zeta function evaluated at @ζ(s, a)@ with
 -- @forall t1 t2 . (Floating t1, Ord t1, Integral t2) => s ∈ t2, a ∈ t1@.
 -- The algorithm used was based on the Euler-Maclaurin formula and was derived
--- from the <https://dlmf.nist.gov/25.11#iii Digital Library of Mathematical Functions>
--- by the <https://www.nist.gov/ National Institute of Standards and Technology (NIST)>,
--- formula 25.11.5.
+-- from <http://fredrikj.net/thesis/thesis.pdf Fast and Rigorous Computation of Special Functions to High Precision>
+-- by F. Johansson, chapter 4.8, formula 4.8.5.
 zetaHurwitz :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
 zetaHurwitz eps s a = s' + i + t
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
-    -- (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14 == 15@,
-    -- meaning @n@ in formula 25.11.5 will be @15@.
+    -- @div (33 * (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14) 10 == div (33 * 14) 10@
+    -- @div (33 * 14) 10 == 46.
+    -- meaning @N,M@ in formula 4.8.5 will be @46@.
+    -- Multiplying by 33 and dividing by 10 is because asking for @14@ digits
+    -- of decimal precision equals asking for @(log 10 / log 2) * 14 ~ 3.3 * 14 ~ 46@
+    -- bits of precision.
     digitsOfPrecision :: Int
     digitsOfPrecision =
        let magnitude = length . takeWhile (>= 1) . iterate (/ 10) . recip $ eps
@@ -47,6 +50,7 @@ zetaHurwitz eps s a = s' + i + t
     --                   [      1      ]
     -- \sum_{k=0}^\(n-1) | ----------- |
     --                   [ (a + k) ^ s ]
+    -- @S@ value in 4.8.5 formula.
     s' :: a
     s' = sum .
          take digitsOfPrecision .
@@ -55,6 +59,7 @@ zetaHurwitz eps s a = s' + i + t
     -- (a + n) ^ (1 - s)            a + n
     -- ----------------- = ----------------------
     --       s - 1          (a + n) ^ s * (s - 1)
+    -- @I@ value in 4.8.5 formula.
     i :: a
     i = aPlusN / (powOfAPlusN * ((fromIntegral s) - 1))
 
@@ -83,4 +88,5 @@ zetaHurwitz eps s a = s' + i + t
                            pochhammer
                            powers
 
+    -- @T@ value in 4.8.5 formula.
     t = constant2 * (0.5 + second)
