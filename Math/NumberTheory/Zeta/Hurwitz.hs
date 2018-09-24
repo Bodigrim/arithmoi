@@ -11,7 +11,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Zeta.Hurwitz
-  ( zeta
+  ( zetaHurwitz
   ) where
 
 import Data.List                      (zipWith4)
@@ -25,8 +25,8 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds, suminf)
 -- from the <https://dlmf.nist.gov/25.11#iii Digital Library of Mathematical Functions>
 -- by the <https://www.nist.gov/ National Institute of Standards and Technology (NIST)>,
 -- formula 25.11.5.
-zeta :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
-zeta eps s a = s' + i + t
+zetaHurwitz :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
+zetaHurwitz eps s a = s' + i + t
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
     -- (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14 == 15@,

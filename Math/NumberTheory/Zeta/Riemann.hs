@@ -18,7 +18,7 @@ import Data.ExactPi                    (ExactPi (..), approximateValue)
 import Data.Ratio                      ((%))
 
 import Math.NumberTheory.Recurrencies   (bernoulli)
-import Math.NumberTheory.Zeta.Hurwitz   (zeta)
+import Math.NumberTheory.Zeta.Hurwitz   (zetaHurwitz)
 import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds)
 
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
@@ -42,7 +42,7 @@ zetasEven' :: Floating a => [a]
 zetasEven' = map approximateValue zetasEven
 
 zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
-zetasOdd eps = (1 / 0) : map (\s -> zeta eps s 1) ([3, 5 ..] :: [Integer])
+zetasOdd eps = (1 / 0) : map (\s -> zetaHurwitz eps s 1) ([3, 5 ..] :: [Integer])
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Riemann zeta-function at integer arguments, starting with @ζ(0)@.

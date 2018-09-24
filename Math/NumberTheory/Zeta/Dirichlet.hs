@@ -19,7 +19,7 @@ import Data.List                       (zipWith4)
 import Data.Ratio                      ((%))
 
 import Math.NumberTheory.Recurrencies   (euler, factorial)
-import Math.NumberTheory.Zeta.Hurwitz   (zeta)
+import Math.NumberTheory.Zeta.Hurwitz   (zetaHurwitz)
 import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds)
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
@@ -50,7 +50,7 @@ betasEven :: forall a. (Floating a, Ord a) => a -> [a]
 betasEven eps = (1 / 2) : zipWith hurwitz [2, 4 ..] (iterate (16 *) 16)
   where
     hurwitz :: Integer -> a -> a
-    hurwitz s fours = (zeta eps s 0.25 - zeta eps s 0.75) / fours
+    hurwitz s fours = (zetaHurwitz eps s 0.25 - zetaHurwitz eps s 0.75) / fours
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.
