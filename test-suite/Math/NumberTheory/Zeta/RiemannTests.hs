@@ -95,8 +95,8 @@ zetasProperty2 (NonNegative e1) (NonNegative e2)
   = maximum (take 25 $ drop 2 $ zipWith ((abs .) . (-)) (zetas eps1) (zetas eps2)) < eps1 + eps2
   where
     eps1, eps2 :: Double
-    eps1 = 1.0 / 2 ^ e1
-    eps2 = 1.0 / 2 ^ e2
+    eps1 = max ((1.0 / 2) ^ e1) ((1.0 / 2) ^ 53)
+    eps2 = max ((1.0 / 2) ^ e2) ((1.0 / 2) ^ 53)
 
 testSuite :: TestTree
 testSuite = testGroup "Zeta"
