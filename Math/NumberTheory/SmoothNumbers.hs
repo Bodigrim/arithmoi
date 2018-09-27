@@ -39,29 +39,29 @@ import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Sieve (primes)
 
 -- | An abstract representation of a smooth basis.
--- It consists of a set of coprime numbers ≥2.
+-- It consists of a set of numbers ≥2.
 newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 
--- | Build a 'SmoothBasis' from a set of coprime numbers ≥2.
+-- | Build a 'SmoothBasis' from a set of numbers ≥2.
 --
 -- >>> import qualified Data.Set as Set
 -- >>> fromSet (Set.fromList [2, 3])
 -- Just (SmoothBasis [2, 3])
--- >>> fromSet (Set.fromList [2, 4]) -- should be coprime
--- Nothing
+-- >>> fromSet (Set.fromList [2, 4])
+-- Just (SmoothBasis [2, 4])
 -- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
 -- Nothing
 fromSet :: E.Euclidean a => S.Set a -> Maybe (SmoothBasis a)
 fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
 
--- | Build a 'SmoothBasis' from a list of coprime numbers ≥2.
+-- | Build a 'SmoothBasis' from a list of numbers ≥2.
 --
 -- >>> fromList [2, 3]
 -- Just (SmoothBasis [2, 3])
 -- >>> fromList [2, 2]
 -- Just (SmoothBasis [2])
--- >>> fromList [2, 4] -- should be coprime
--- Nothing
+-- >>> fromList [2, 4]
+-- Just (SmoothBasis [2, 4])
 -- >>> fromList [1, 3] -- should be >= 2
 -- Nothing
 fromList :: E.Euclidean a => [a] -> Maybe (SmoothBasis a)
@@ -87,8 +87,12 @@ fromSmoothUpperBound n = if (n < 2)
 -- This function relies on the fact that for any element of a smooth basis @p@
 -- and any @a@ it is true that @norm (a * p) > norm a@.
 -- This condition is not checked.
-smoothOver'' :: forall a b . (Num a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
-smoothOver'' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmoothBasis pl)
+smoothOver' :: forall a b . (Eq a, Num a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
+smoothOver' norm pl =
+    foldr
+    (\p l -> mergeListLists $ iterate (map (p*)) l)
+    [1]
+    (nub $ unSmoothBasis pl)
   where
     {-# INLINE mergeListLists #-}
     mergeListLists      = foldr go1 []
@@ -103,9 +107,6 @@ smoothOver'' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1]
           | otherwise = ah : (go2 at b) -- no possibility of duplicates
         go2 a b = if null a then b else a
 
-smoothOver' :: (E.Euclidean a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
-smoothOver' = smoothOver''
-
 -- | Generate an infinite ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
 -- over a given smooth basis.
@@ -114,7 +115,7 @@ smoothOver' = smoothOver''
 -- >>> take 10 (smoothOver (fromJust (fromList [2, 5])))
 -- [1, 2, 4, 5, 8, 10, 16, 20, 25, 32]
 smoothOver :: Integral a => SmoothBasis a -> [a]
-smoothOver = smoothOver'' abs
+smoothOver = smoothOver' abs
 
 -- | Generate an ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -159,12 +160,12 @@ smoothOverInRangeBF prs lo hi
   $ coerce [lo..hi]
 
 -- | isValid assumes that the list is sorted and unique and then checks if the list is suitable to be a SmoothBasis.
-isValid :: E.Euclidean a => [a] -> Bool
+isValid :: (Eq a, Num a) => [a] -> Bool
 isValid pl = length pl /= 0 && v' pl
   where
-    v' :: E.Euclidean a => [a] -> Bool
+    v' :: (Eq a, Num a) => [a] -> Bool
     v' []     = True
-    v' (x:xs) = x /= 0 && abs x /= 1 && abs x == x && all (E.coprime x) xs && v' xs
+    v' (x:xs) = x /= 0 && abs x /= 1 && abs x == x && v' xs
 
 -- | @isSmooth@ checks if a given number is smooth under a certain @SmoothBasis@.
 -- Does not check if the @SmoothBasis@ is valid.
@@ -173,7 +174,7 @@ isSmooth prs x = mf (unSmoothBasis prs) x
   where
     mf :: [a] -> a -> Bool
     mf _         0 = False
-    mf []        n = n == 1 -- mf means manually factor
+    mf []        n = abs n == 1 -- mf means manually factor
     mf pl@(p:ps) n = if E.mod n p == 0
                      then mf pl (E.div n p)
                      else mf ps n
