@@ -33,19 +33,19 @@ import Math.NumberTheory.TestUtils
 fromSetListProperty :: (Euclidean a, Ord a) => [a] -> Bool
 fromSetListProperty xs = fromSet (S.fromList xs) == fromList (sort xs)
 
-isSmoothPropertyHelper :: (Euclidean a, Ord a) => [a] -> Int -> Int -> Bool
-isSmoothPropertyHelper primes' i1 i2 =
+isSmoothPropertyHelper :: Euclidean a => (a -> Integer) -> [a] -> Int -> Int -> Bool
+isSmoothPropertyHelper norm primes' i1 i2 =
     let primes = take i1 primes'
         basis  = fromJust (fromList primes)
-    in all (isSmooth basis) $ take i2 $ smoothOver basis 
+    in all (isSmooth basis) $ take i2 $ smoothOver' norm basis 
 
 isSmoothProperty1 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty1 (Positive i1) (Positive i2) =
-    isSmoothPropertyHelper (map unPrime G.primes) i1 i2
+    isSmoothPropertyHelper G.norm (map unPrime G.primes) i1 i2
 
 isSmoothProperty2 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty2 (Positive i1) (Positive i2) =
-    isSmoothPropertyHelper (map unPrime E.primes) i1 i2
+    isSmoothPropertyHelper E.norm (map unPrime E.primes) i1 i2
 
 fromSmoothUpperBoundProperty :: Integral a => Positive a -> Bool
 fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of

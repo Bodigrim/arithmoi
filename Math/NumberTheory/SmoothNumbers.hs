@@ -22,6 +22,7 @@ module Math.NumberTheory.SmoothNumbers
   , fromSmoothUpperBound
     -- * Generate smooth numbers
   , smoothOver
+  , smoothOver'
   , smoothOverInRange
   , smoothOverInRangeBF
 
@@ -79,12 +80,15 @@ fromSmoothUpperBound n = if (n < 2)
                          then Nothing
                          else Just $ SmoothBasis $ takeWhile (<= n) $ map unPrime primes
 
--- | Helper used by @smoothOver@. Since the typeclass constraint is just
--- @Euclidean@, with Euclidean domains not being required to have a total
--- ordering defined, it receives a @norm@ comparison function for the
--- generated smooth numbers.
-smoothOver' :: forall a b . (E.Euclidean a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
-smoothOver' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmoothBasis pl)
+-- | Helper used by @smoothOver@ (@Integral@ constraint) and @smoothOver'@
+-- (@Euclidean@ constraint) Since the typeclass constraint is just
+-- @Num@, it receives a @norm@ comparison function for the generated smooth
+-- numbers.
+-- This function relies on the fact that for any element of a smooth basis @p@
+-- and any @a@ it is true that @norm (a * p) > norm a@.
+-- This condition is not checked.
+smoothOver'' :: forall a b . (Num a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
+smoothOver'' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] (unSmoothBasis pl)
   where
     {-# INLINE mergeListLists #-}
     mergeListLists      = foldr go1 []
@@ -99,6 +103,9 @@ smoothOver' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] 
           | otherwise = ah : (go2 at b) -- no possibility of duplicates
         go2 a b = if null a then b else a
 
+smoothOver' :: (E.Euclidean a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
+smoothOver' = smoothOver''
+
 -- | Generate an infinite ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
 -- over a given smooth basis.
@@ -106,8 +113,8 @@ smoothOver' norm pl = foldr (\p l -> mergeListLists $ iterate (map (p*)) l) [1] 
 -- >>> import Data.Maybe
 -- >>> take 10 (smoothOver (fromJust (fromList [2, 5])))
 -- [1, 2, 4, 5, 8, 10, 16, 20, 25, 32]
-smoothOver :: (E.Euclidean a, Ord a) => SmoothBasis a -> [a]
-smoothOver = smoothOver' abs
+smoothOver :: Integral a => SmoothBasis a -> [a]
+smoothOver = smoothOver'' abs
 
 -- | Generate an ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
