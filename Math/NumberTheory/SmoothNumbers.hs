@@ -104,6 +104,7 @@ smoothOver' norm pl =
         go2 :: [a] -> [a] -> [a]
         go2 a@(ah:at) b@(bh:bt)
           | norm bh < norm ah   = bh : (go2 a bt)
+          | ah == bh            = ah : (go2 at bt)
           | otherwise = ah : (go2 at b) -- no possibility of duplicates
         go2 a b = if null a then b else a
 
