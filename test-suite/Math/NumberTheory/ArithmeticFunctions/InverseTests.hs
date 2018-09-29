@@ -18,6 +18,9 @@ module Math.NumberTheory.ArithmeticFunctions.InverseTests
   ) where
 
 import Test.Tasty
+import Data.Semigroup
+import Data.Semiring (Semiring(..))
+import qualified Data.Set as S
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
@@ -26,11 +29,11 @@ import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
 
-totientProperty1 :: forall a. (Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
-totientProperty1 (Positive x) = x `elem` (inverseTotient (totient x) :: [a])
+totientProperty1 :: forall a. (Semiring a, Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
+totientProperty1 (Positive x) = Product x `S.member` (inverseTotient (S.singleton . Product) (totient x))
 
-totientProperty2 :: (Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
-totientProperty2 (Positive x) = all (== x) (map totient (inverseTotient x))
+totientProperty2 :: (Semiring a, Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
+totientProperty2 (Positive x) = all (== x) (S.map (totient . getProduct) (inverseTotient (S.singleton . Product) x))
 
 testSuite :: TestTree
 testSuite = testGroup "Inverse"

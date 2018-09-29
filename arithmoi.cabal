@@ -45,6 +45,7 @@ library
     integer-logarithms >=1.0,
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
+    semirings >= 0.2,
     vector >= 0.12
   exposed-modules:
     GHC.TypeNats.Compat
@@ -114,6 +115,7 @@ library
     Math.NumberTheory.UniqueFactorisation
     Math.NumberTheory.Unsafe
     Math.NumberTheory.Utils
+    Math.NumberTheory.Utils.Series
     Math.NumberTheory.Utils.FromIntegral
     Math.NumberTheory.Utils.Hyperbola
     Math.NumberTheory.Zeta.Utils
@@ -130,6 +132,7 @@ test-suite spec
     exact-pi >=0.4.1.1,
     integer-gmp <1.1,
     QuickCheck >=2.10 && <2.13,
+    semirings >= 0.2,
     smallcheck >=1.1.3 && <1.2,
     tasty >=0.10,
     tasty-hunit >=0.9 && <0.11,
