@@ -50,7 +50,8 @@ betasEven :: forall a. (Floating a, Ord a) => a -> [a]
 betasEven eps = (1 / 2) : zipWith hurwitz [2, 4 ..] (iterate (16 *) 16)
   where
     hurwitz :: Integer -> a -> a
-    hurwitz s fours = (zetaHurwitz eps s 0.25 - zetaHurwitz eps s 0.75) / fours
+    hurwitz s' fours = (zetaHurwitz eps s 0.25 - zetaHurwitz eps s 0.75) / fours
+      where s = fromIntegral s'
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.
