@@ -90,11 +90,7 @@ testSuite = testGroup "SmoothNumbers"
       (smoothOverInRangeProperty :: SmoothBasis Natural -> Positive Natural -> Positive Natural -> Bool)
     ]
   , testGroup "smoothOver generates a list withouth duplicates"
-    [ testSmallAndQuick "Int"
-      (smoothNumbersAreUniqueProperty :: SmoothBasis Int -> Positive Int -> Bool)
-    , testSmallAndQuick "Word"
-      (smoothNumbersAreUniqueProperty :: SmoothBasis Word -> Positive Int -> Bool)
-    , testSmallAndQuick "Integer"
+    [ testSmallAndQuick "Integer"
       (smoothNumbersAreUniqueProperty :: SmoothBasis Integer -> Positive Int -> Bool)
     , testSmallAndQuick "Natural"
       (smoothNumbersAreUniqueProperty :: SmoothBasis Natural -> Positive Int -> Bool)
