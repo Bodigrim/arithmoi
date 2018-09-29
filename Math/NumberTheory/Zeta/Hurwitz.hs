@@ -24,7 +24,7 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds)
 -- The algorithm used was based on the Euler-Maclaurin formula and was derived
 -- from <http://fredrikj.net/thesis/thesis.pdf Fast and Rigorous Computation of Special Functions to High Precision>
 -- by F. Johansson, chapter 4.8, formula 4.8.5.
-zetaHurwitz :: forall a . (Floating a, Ord a, Integral b) => a -> b -> a -> a
+zetaHurwitz :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
 zetaHurwitz eps s a = s' + i + t
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
