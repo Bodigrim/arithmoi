@@ -24,7 +24,7 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds)
 -- The algorithm used was based on the Euler-Maclaurin formula and was derived
 -- from <http://fredrikj.net/thesis/thesis.pdf Fast and Rigorous Computation of Special Functions to High Precision>
 -- by F. Johansson, chapter 4.8, formula 4.8.5.
-zetaHurwitz :: forall a . (Floating a, Ord a) => a -> a -> a -> a
+zetaHurwitz :: forall a . (Floating a, Ord a, Integral b) => a -> b -> a -> a
 zetaHurwitz eps s a = s' + i + t
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
@@ -45,7 +45,7 @@ zetaHurwitz eps s a = s' + i + t
 
     -- @(a + n)^s@
     powOfAPlusN :: a
-    powOfAPlusN = aPlusN ** s
+    powOfAPlusN = aPlusN ^^ s
 
     --                   [      1      ]
     -- \sum_{k=0}^\(n-1) | ----------- |
@@ -54,14 +54,14 @@ zetaHurwitz eps s a = s' + i + t
     s' :: a
     s' = sum .
          take digitsOfPrecision .
-         map (recip . (** s) . (a +) . fromInteger) $ [0..]
+         map (recip . (^^ s) . (a +) . fromInteger) $ [0..]
 
     -- (a + n) ^ (1 - s)            a + n
     -- ----------------- = ----------------------
     --       s - 1          (a + n) ^ s * (s - 1)
     -- @I@ value in 4.8.5 formula.
     i :: a
-    i = aPlusN / (powOfAPlusN * (s - 1))
+    i = aPlusN / (powOfAPlusN * ((fromIntegral s) - 1))
 
     --      1
     -- -----------
@@ -71,9 +71,7 @@ zetaHurwitz eps s a = s' + i + t
 
     -- [(s)_(2*k - 1) | k <- [1 ..]]
     pochhammer :: [a]
-    pochhammer = skipOdds $
-                 scanl1 (*) $
-                 map (\n -> s - fromIntegral n) ([0 ..] :: [Integer])
+    pochhammer = map fromIntegral $ skipOdds $ scanl1 (*) [s ..]
 
     -- [(a + n) ^ (2*k - 1) | k <- [1 ..]]
     powers :: [a]
