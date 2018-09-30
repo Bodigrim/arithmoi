@@ -14,24 +14,43 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.DirichletCharacters where
 
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
-import GHC.TypeNats.Compat                   (Nat)
-import Numeric.Natural                       (Natural)
+import GHC.TypeNats.Compat
+import Numeric.Natural                            (Natural)
+import Data.Bits
 import Data.Ratio
 import Data.Complex
+import Data.Proxy
+import Data.List (mapAccumL)
 
-import Math.NumberTheory.Moduli              (CyclicGroup(..), isPrimitiveRoot', chineseRemainder2, KnownNat, MultMod, discreteLogarithmPP, getVal, multElement)
-import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation, unPrime, Prime, factorise)
-import Math.NumberTheory.Powers              (powMod)
+import Math.NumberTheory.ArithmeticFunctions      (totient)
+import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod, getVal, multElement, Mod, isMultElement)
+import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
+import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
+import Math.NumberTheory.Powers                   (powMod)
+import Math.NumberTheory.Utils.FromIntegral
 
--- data DirichletCharacter (n :: Nat) = Generated (Map Natural Natural)
---   deriving (Eq)
+import Math.NumberTheory.Moduli.PrimitiveRoot
+
 data DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
+  deriving Show
+
+data DirichletFactor = OddPrime { getPrime :: Prime Natural
+                                , getPower :: Word
+                                , getGenerator :: Natural
+                                , getValue :: Natural
+                                }
+                      | TwoPower { getPower :: Word
+                                 , getFirstValue :: Natural
+                                 , getSecondValue :: Natural
+                                 }
+                                 deriving Show
 
 newtype RootOfUnity = RootOfUnity { getFraction :: Rational }
   deriving (Eq, Show)
@@ -64,33 +83,19 @@ canonGenHelp (p, k)
   where p'   = unPrime p
         modP = head $ filter (isPrimitiveRoot' (CGOddPrimePower p 1)) [2..p' - 1]
 
-generators :: Natural -> [Natural]
-generators 1 = [1]
-generators 2 = [1] -- special cases of trivial group
-generators n = do
-  (p,k) <- factorise n
-  let factor = unPrime p ^ k
-      rest = n `div` factor
-  g <- canonGenHelp (p,k)
-  return $ crt (g,factor) (1,rest)
-
-crt :: (Natural, Natural) -> (Natural,Natural) -> Natural
-crt (r1,md1) (r2,md2) = fromInteger $ chineseRemainder2 (toInteger r1,toInteger md1) (toInteger r2,toInteger md2)
+generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
+generator p k
+  | k == 1 = modP
+  | otherwise = if powMod modP (p'-1) (p'*p') == 1 then modP + p' else modP
+  where p' = unPrime p
+        modP = head $ filter (isPrimitiveRoot' (CGOddPrimePower p 1)) [2..p'-1]
 
 -- TODO: improve using bitshifts
 lambda :: Integer -> Word -> Integer
 lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-2))
 
-data DirichletFactor = OddPrime { getPrime :: Prime Integer
-                                , getPower :: Word
-                                , getGenerator :: Integer
-                                , getValue :: Natural
-                                }
-                      | Four { getValue :: Natural }
-                      | TwoPower { getPower :: Word
-                                 , getFirstValue :: Natural
-                                 , getSecondValue :: Natural
-                                 }
+generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
+generalEval chi = fmap (evaluate chi) . isMultElement
 
 evaluate :: KnownNat n => DirichletCharacter n -> MultMod n -> RootOfUnity
 evaluate (Generated ds) m = foldMap (evalFactor m') ds
@@ -99,10 +104,73 @@ evaluate (Generated ds) m = foldMap (evalFactor m') ds
 evalFactor :: Integer -> DirichletFactor -> RootOfUnity
 evalFactor m =
   \case
-    OddPrime (unPrime -> p) k a b -> toRootOfUnity (toInteger (b * discreteLogarithmPP p k (fromIntegral a) (m `rem` p^k)) % (p^(k-1)*(p-1)))
-    Four b                        -> toRootOfUnity (((toInteger b) * (if (m `rem` 4) == 1 then 1 else 0)) % 2)
-    TwoPower k s b                -> toRootOfUnity ((toInteger s) * (if (m `rem` 4) == 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m'' k % (2^(k-2)))
-                                       where m' = m `rem` (2^k)
-                                             m'' = if m' `rem` 4 == 1
-                                                      then m'
-                                                      else 2^k - m'
+    OddPrime (unPrime -> p) k a b -> toRootOfUnity (toInteger (b * discreteLogarithmPP p' k a' (m `rem` p'^k)) % (p'^(k-1)*(p'-1)))
+      where p' = toInteger p
+            a' = toInteger a
+    TwoPower k s b                -> toRootOfUnity (toInteger s * (if testBit m 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m'' k % (2^(k-2)))
+                                       where m' = m .&. kBits
+                                             m'' = if testBit m 1
+                                                      then bit (wordToInt k) - m'
+                                                      else m'
+                                             kBits = bit (wordToInt k) - 1
+
+-- data DirichletFactor = OddPrime { getPrime :: Prime Integer
+--                                 , getPower :: Word
+--                                 , getGenerator :: Integer
+--                                 , getValue :: Natural
+--                                 }
+--                       | TwoPower { getPower :: Word
+--                                  , getFirstValue :: Natural
+--                                  , getSecondValue :: Natural
+--                                  }
+
+trivialChar :: KnownNat n => DirichletCharacter n
+trivialChar = intToDChar 0
+
+mulChars :: DirichletCharacter n -> DirichletCharacter n -> DirichletCharacter n
+mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
+  where combine :: DirichletFactor -> DirichletFactor -> DirichletFactor
+        combine (OddPrime p k g n) (OddPrime _ _ _ m) = OddPrime p k g ((n + m) `mod` unPrime p ^ k)
+        combine (TwoPower k a n) (TwoPower _ b m) = TwoPower k ((a + b) `mod` 2) ((n + m) `mod` 2^(k-2))
+        combine _ _ = error "Malformed DirichletCharacter"
+
+instance Semigroup (DirichletCharacter n) where
+  (<>) = mulChars
+
+instance KnownNat n => Monoid (DirichletCharacter n) where
+  mempty = trivialChar
+
+instance KnownNat n => Enum (DirichletCharacter n) where
+  toEnum = intToDChar
+  fromEnum = dCharToInt
+  -- TODO: we can write better succ and pred, by re-using the existing generators instead of recalculating them each time
+
+dCharToInt :: DirichletCharacter n -> Int
+dCharToInt (Generated y) = foldr go 0 y
+  where go :: DirichletFactor -> Int -> Int
+        go = \case
+               OddPrime p k _ a -> \x -> x * (p'^(k-1)*(p'-1)) + (fromIntegral a)
+                 where p' = fromIntegral (unPrime p)
+               TwoPower k a b   -> \x -> (x * (2^(k-2)) + fromIntegral b) * 2 + (fromIntegral a)
+
+intToDChar :: forall n. KnownNat n => Int -> DirichletCharacter n
+intToDChar m
+  | m < 0 = error "Enum DirichletCharacter: negative input"
+  | m >= maxi = error "Enum DirichletCharacter: input too large"
+  | otherwise = Generated (go (factorise n))
+  where n = natVal (Proxy :: Proxy n)
+        maxi = fromIntegral $ totient n
+        m' = fromIntegral m
+        go :: [(Prime Natural, Word)] -> [DirichletFactor]
+        go [] = []
+        go f@((p,k):xs) = case (unPrime p, k) of
+                            (2,1) -> odds m' xs
+                            (2,_) -> TwoPower k a2 b2: odds b1 xs
+                                       where (a1,a2) = quotRem (fromIntegral m) 2
+                                             (b1,b2) = quotRem a1 (2^(k-2))
+                            _ -> odds m' f
+        odds :: Natural -> [(Prime Natural, Word)] -> [DirichletFactor]
+        odds t = snd . mapAccumL func t
+          where func a (p,k) = (q, OddPrime p k (generator p k) r)
+                  where (q,r) = quotRem a (p'^(k-1)*(p'-1))
+                        p' = unPrime p
