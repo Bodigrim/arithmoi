@@ -30,6 +30,10 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds)
 -- the type chosen. For instance, when using @Double@s, it does not make sense
 -- to provide a number @ε >= 1e-53@ as the desired precision. For @Float@s,
 -- providing an @ε >= 1e-24@ also does not make sense.
+-- Example of how to call the function:
+--
+-- >>> zetaHurwitz 1e-15 5 0.25
+-- 1024.3489745265808
 zetaHurwitz :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
 zetaHurwitz eps s a = s' + i + t
   where
