@@ -1,6 +1,6 @@
 import Test.Tasty
 
-import qualified Math.NumberTheory.GCDTests as GCD
+import qualified Math.NumberTheory.EuclideanTests as Euclidean
 
 import qualified Math.NumberTheory.Recurrencies.PentagonalTests as RecurrenciesPentagonal
 import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
@@ -59,7 +59,7 @@ tests = testGroup "All"
     , Modular.testSuite
     , Squares.testSuite
     ]
-  , GCD.testSuite
+  , Euclidean.testSuite
   , testGroup "Recurrencies"
     [ RecurrenciesPentagonal.testSuite
     , RecurrenciesLinear.testSuite

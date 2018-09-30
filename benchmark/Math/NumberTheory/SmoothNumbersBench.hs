@@ -8,9 +8,10 @@ import Data.List (genericTake)
 import Data.Maybe
 import Gauge.Main
 
+import Math.NumberTheory.Euclidean (Euclidean)
 import Math.NumberTheory.SmoothNumbers
 
-doBench :: Integral a => a -> a
+doBench :: (Euclidean a, Integral a) => a -> a
 doBench lim = sum $ genericTake lim $ smoothOver $ fromJust $ fromSmoothUpperBound lim
 
 benchSuite :: Benchmark

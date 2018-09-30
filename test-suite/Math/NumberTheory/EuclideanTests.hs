@@ -1,11 +1,11 @@
 -- |
--- Module:      Math.NumberTheory.GCDTests
+-- Module:      Math.NumberTheory.EuclideanTests
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.GCD
+-- Tests for Math.NumberTheory.Euclidean
 --
 
 {-# LANGUAGE CPP                 #-}
@@ -15,10 +15,11 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-deprecations   #-}
 
-module Math.NumberTheory.GCDTests
+module Math.NumberTheory.EuclideanTests
   ( testSuite
   ) where
 
+import Prelude hiding (gcd)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -28,20 +29,12 @@ import Data.Semigroup
 import Data.List (tails, sort)
 import Numeric.Natural
 
+import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
-import Math.NumberTheory.GCD
 import Math.NumberTheory.TestUtils
 
--- | Check that 'binaryGCD' matches 'gcd'.
-binaryGCDProperty :: (Integral a, Bits a) => AnySign a -> AnySign a -> Bool
-binaryGCDProperty (AnySign a) (AnySign b) = binaryGCD a b == gcd a b
-
-binaryGCDSpecialCase1 :: Assertion
-binaryGCDSpecialCase1 = assertEqual "should be equal" (1 :: Integer) $
-  binaryGCD (-9223372036854775809) (-170141183460469231740910675752738881536)
-
 -- | Check that 'extendedGCD' is consistent with documentation.
-extendedGCDProperty :: forall a. Integral a => AnySign a -> AnySign a -> Bool
+extendedGCDProperty :: forall a. (Euclidean a, Ord a) => AnySign a -> AnySign a -> Bool
 extendedGCDProperty (AnySign a) (AnySign b) =
   u * a + v * b == d
   && d == gcd a b
@@ -52,7 +45,7 @@ extendedGCDProperty (AnySign a) (AnySign b) =
     (d, u, v) = extendedGCD a b
 
 -- | Check that numbers are coprime iff their gcd equals to 1.
-coprimeProperty :: (Integral a, Bits a) => AnySign a -> AnySign a -> Bool
+coprimeProperty :: (Euclidean a) => AnySign a -> AnySign a -> Bool
 coprimeProperty (AnySign a) (AnySign b) = coprime a b == (gcd a b == 1)
 
 splitIntoCoprimesProperty1 :: [(Positive Natural, Power Word)] -> Bool
@@ -128,10 +121,8 @@ unionProperty1 xs ys
     ys' = map (getPositive *** getPower) ys
 
 testSuite :: TestTree
-testSuite = testGroup "GCD"
-  [ testCase "binaryGCD special case 1"    binaryGCDSpecialCase1
-  , testSameIntegralProperty "binaryGCD"   binaryGCDProperty
-  , testSameIntegralProperty "extendedGCD" extendedGCDProperty
+testSuite = testGroup "Euclidean"
+  [ testSameIntegralProperty "extendedGCD" extendedGCDProperty
   , testSameIntegralProperty "coprime"     coprimeProperty
   , testGroup "splitIntoCoprimes"
     [ testSmallAndQuick "preserves product of factors"        splitIntoCoprimesProperty1

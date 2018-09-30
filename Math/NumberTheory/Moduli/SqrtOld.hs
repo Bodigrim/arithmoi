@@ -27,9 +27,6 @@ module Math.NumberTheory.Moduli.SqrtOld
 import Control.Monad (liftM2)
 import Data.Bits
 import Data.List (nub)
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Chinese

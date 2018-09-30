@@ -7,12 +7,8 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     ι,
     conjugate,
     norm,
-    (.^),
     primes,
-    gcdG,
-    gcdG',
     findPrime,
-    findPrime',
 ) where
 
 import Control.DeepSeq (NFData)
@@ -34,7 +30,6 @@ import Math.NumberTheory.Utils              (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
 infix 6 :+
-infixr 8 .^
 -- |A Gaussian integer is a+bi, where a and b are both integers.
 data GaussianInteger = (:+) { real :: !Integer, imag :: !Integer }
     deriving (Eq, Ord, Generic)
@@ -116,16 +111,6 @@ primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
     r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
 
 
--- | Compute the GCD of two Gaussian integers. Result is always
--- in the first quadrant.
-gcdG :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG = ED.gcd
-{-# DEPRECATED gcdG "Use 'Math.NumberTheory.Euclidean.gcd' instead." #-}
-
-gcdG' :: GaussianInteger -> GaussianInteger -> GaussianInteger
-gcdG' = ED.gcd
-{-# DEPRECATED gcdG' "Use 'Math.NumberTheory.Euclidean.gcd' instead." #-}
-
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
@@ -141,28 +126,6 @@ findPrime p = case sqrtsModPrime (-1) p of
         go g h
             | g <= sqrtp = g :+ h
             | otherwise  = go h (g `mod` h)
-
-findPrime' :: Prime Integer -> U.Prime GaussianInteger
-findPrime' = findPrime
-{-# DEPRECATED findPrime' "Use 'findPrime' instead." #-}
-
--- |Raise a Gaussian integer to a given power.
-(.^) :: (Integral a) => GaussianInteger -> a -> GaussianInteger
-a .^ e
-    | e < 0 && norm a == 1 =
-        case a of
-            1    :+ 0 -> 1
-            (-1) :+ 0 -> if even e then 1 else (-1)
-            0    :+ 1 -> (0 :+ (-1)) .^ (abs e `mod` 4)
-            _         -> (0 :+ 1) .^ (abs e `mod` 4)
-    | e < 0     = error "Cannot exponentiate non-unit Gaussian Int to negative power"
-    | a == 0    = 0
-    | e == 0    = 1
-    | even e    = s * s
-    | otherwise = a * a .^ (e - 1)
-    where
-    s = a .^ div e 2
-{-# DEPRECATED (.^) "Use (^) instead." #-}
 
 -- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.
