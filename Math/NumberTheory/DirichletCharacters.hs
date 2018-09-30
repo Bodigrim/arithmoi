@@ -23,18 +23,18 @@ import Data.Semigroup
 #endif
 import GHC.TypeNats.Compat
 import Numeric.Natural                            (Natural)
-import Data.Bits
-import Data.Ratio
-import Data.Complex
-import Data.Proxy
-import Data.List (mapAccumL)
+import Data.Bits                                  (testBit, (.&.), bit)
+import Data.Ratio                                 (Rational, (%), numerator, denominator)
+import Data.Complex                               (Complex, cis)
+import Data.Proxy                                 (Proxy(..))
+import Data.List                                  (mapAccumL)
 
 import Math.NumberTheory.ArithmeticFunctions      (totient)
 import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod, getVal, multElement, Mod, isMultElement)
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
 import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers                   (powMod)
-import Math.NumberTheory.Utils.FromIntegral
+import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
 
 import Math.NumberTheory.Moduli.PrimitiveRoot
 
@@ -73,16 +73,6 @@ instance Monoid RootOfUnity where
 fromRootOfUnity :: Floating a => RootOfUnity -> Complex a
 fromRootOfUnity = cis . (2*pi*) . fromRational . getFraction
 
-canonGenHelp :: (Integral a, UniqueFactorisation a) => (Prime a, Word) -> [a]
-canonGenHelp (p, k)
-  | p' == 2, k == 1 = []
-  | p' == 2, k == 2 = [3]
-  | p' == 2         = [5, p'^k - 1]
-  | k == 1          = [modP]
-  | otherwise       = [if powMod modP (p'-1) (p'*p') == 1 then modP + p' else modP]
-  where p'   = unPrime p
-        modP = head $ filter (isPrimitiveRoot' (CGOddPrimePower p 1)) [2..p' - 1]
-
 generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
 generator p k
   | k == 1 = modP
@@ -114,16 +104,6 @@ evalFactor m =
                                                       else m'
                                              kBits = bit (wordToInt k) - 1
 
--- data DirichletFactor = OddPrime { getPrime :: Prime Integer
---                                 , getPower :: Word
---                                 , getGenerator :: Integer
---                                 , getValue :: Natural
---                                 }
---                       | TwoPower { getPower :: Word
---                                  , getFirstValue :: Natural
---                                  , getSecondValue :: Natural
---                                  }
-
 trivialChar :: KnownNat n => DirichletCharacter n
 trivialChar = intToDChar 0
 
@@ -143,7 +123,7 @@ instance KnownNat n => Monoid (DirichletCharacter n) where
 instance KnownNat n => Enum (DirichletCharacter n) where
   toEnum = intToDChar
   fromEnum = dCharToInt
-  -- TODO: we can write better succ and pred, by re-using the existing generators instead of recalculating them each time
+  -- TODO: write better succ and pred, by re-using the existing generators instead of recalculating them each time
 
 dCharToInt :: DirichletCharacter n -> Int
 dCharToInt (Generated y) = foldr go 0 y
@@ -152,6 +132,7 @@ dCharToInt (Generated y) = foldr go 0 y
                OddPrime p k _ a -> \x -> x * (p'^(k-1)*(p'-1)) + (fromIntegral a)
                  where p' = fromIntegral (unPrime p)
                TwoPower k a b   -> \x -> (x * (2^(k-2)) + fromIntegral b) * 2 + (fromIntegral a)
+               -- again use bitshifts to optimise
 
 intToDChar :: forall n. KnownNat n => Int -> DirichletCharacter n
 intToDChar m

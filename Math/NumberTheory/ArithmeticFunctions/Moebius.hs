@@ -46,7 +46,7 @@ import Math.NumberTheory.Logarithms
 
 -- | Represents three possible values of <https://en.wikipedia.org/wiki/Möbius_function Möbius function>.
 data Moebius
-  = MoebiusN -- ^ −1
+  = MoebiusN -- ^ -1
   | MoebiusZ -- ^  0
   | MoebiusP -- ^  1
   deriving (Eq, Ord, Show)
