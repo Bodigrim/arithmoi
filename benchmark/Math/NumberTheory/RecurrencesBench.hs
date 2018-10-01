@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Math.NumberTheory.RecurrenciesBench
+module Math.NumberTheory.RecurrencesBench
   ( benchSuite
   ) where
 

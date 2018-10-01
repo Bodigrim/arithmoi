@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies.BilinearTests
+-- Module:      Math.NumberTheory.Recurrences.BilinearTests
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
@@ -10,7 +10,7 @@
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.Recurrencies.BilinearTests
+module Math.NumberTheory.Recurrences.BilinearTests
   ( testSuite
   ) where
 

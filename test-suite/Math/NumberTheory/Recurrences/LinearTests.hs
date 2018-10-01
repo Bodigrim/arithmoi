@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies.LinearTests
+-- Module:      Math.NumberTheory.Recurrences.LinearTests
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
@@ -12,7 +12,7 @@
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.Recurrencies.LinearTests
+module Math.NumberTheory.Recurrences.LinearTests
   ( testSuite
   ) where
 

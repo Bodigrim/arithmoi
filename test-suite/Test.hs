@@ -2,9 +2,9 @@ import Test.Tasty
 
 import qualified Math.NumberTheory.EuclideanTests as Euclidean
 
-import qualified Math.NumberTheory.Recurrencies.PentagonalTests as RecurrenciesPentagonal
-import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
-import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
+import qualified Math.NumberTheory.Recurrences.PentagonalTests as RecurrencesPentagonal
+import qualified Math.NumberTheory.Recurrences.BilinearTests as RecurrencesBilinear
+import qualified Math.NumberTheory.Recurrences.LinearTests as RecurrencesLinear
 
 import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
 import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
@@ -58,10 +58,10 @@ tests = testGroup "All"
     , Squares.testSuite
     ]
   , Euclidean.testSuite
-  , testGroup "Recurrencies"
-    [ RecurrenciesPentagonal.testSuite
-    , RecurrenciesLinear.testSuite
-    , RecurrenciesBilinear.testSuite
+  , testGroup "Recurrences"
+    [ RecurrencesPentagonal.testSuite
+    , RecurrencesLinear.testSuite
+    , RecurrencesBilinear.testSuite
     ]
   , testGroup "Moduli"
     [ ModuliChinese.testSuite

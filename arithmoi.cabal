@@ -159,9 +159,9 @@ test-suite spec
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests
     Math.NumberTheory.PrimesTests
-    Math.NumberTheory.Recurrencies.PentagonalTests
-    Math.NumberTheory.Recurrencies.BilinearTests
-    Math.NumberTheory.Recurrencies.LinearTests
+    Math.NumberTheory.Recurrences.PentagonalTests
+    Math.NumberTheory.Recurrences.BilinearTests
+    Math.NumberTheory.Recurrences.LinearTests
     Math.NumberTheory.SmoothNumbersTests
     Math.NumberTheory.TestUtils
     Math.NumberTheory.TestUtils.MyCompose
@@ -195,7 +195,7 @@ benchmark criterion
     Math.NumberTheory.PowersBench
     Math.NumberTheory.PrimesBench
     Math.NumberTheory.PrimitiveRootsBench
-    Math.NumberTheory.RecurrenciesBench
+    Math.NumberTheory.RecurrencesBench
     Math.NumberTheory.SieveBlockBench
     Math.NumberTheory.SmoothNumbersBench
   type: exitcode-stdio-1.0

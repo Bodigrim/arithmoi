@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies.PentagonalTests
+-- Module:      Math.NumberTheory.Recurrences.PentagonalTests
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
@@ -15,7 +15,7 @@
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.Recurrencies.PentagonalTests
+module Math.NumberTheory.Recurrences.PentagonalTests
   ( testSuite
   ) where
 
