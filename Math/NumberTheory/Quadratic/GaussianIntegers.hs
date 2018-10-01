@@ -127,7 +127,7 @@ findPrime p = case sqrtsModPrime (-1) p of
             | g <= sqrtp = g :+ h
             | otherwise  = go h (g `mod` h)
 
--- |Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
+-- | Compute the prime factorisation of a Gaussian integer. This is unique up to units (+/- 1, +/- i).
 -- Unit factors are not included in the result.
 factorise :: GaussianInteger -> [(Prime GaussianInteger, Word)]
 factorise g = concat $ snd $ mapAccumL go g (U.factorise $ norm g)
