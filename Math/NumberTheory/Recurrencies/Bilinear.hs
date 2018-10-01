@@ -35,7 +35,7 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Math.NumberTheory.Recurrencies.Bilinear
+module Math.NumberTheory.Recurrencies.Bilinear {-# DEPRECATED "Use `Math.NumberTheory.Recurrences.Bilinear` instead." #-}
   ( binomial
   , stirling1
   , stirling2

@@ -19,7 +19,7 @@ module Math.NumberTheory.Recurrences.LinearTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Math.NumberTheory.Recurrencies.Linear
+import Math.NumberTheory.Recurrences.Linear
 import Math.NumberTheory.TestUtils
 
 -- | Check that 'fibonacci' matches the definition of Fibonacci sequence.

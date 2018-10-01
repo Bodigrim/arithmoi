@@ -12,7 +12,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes   #-}
 
-module Math.NumberTheory.Recurrencies.Pentagonal
+module Math.NumberTheory.Recurrencies.Pentagonal {-# DEPRECATED "Use `Math.NumberTheory.Recurrences.Pentagonal` instead." #-}
   ( partition
   , pentagonalSigns
   , pents

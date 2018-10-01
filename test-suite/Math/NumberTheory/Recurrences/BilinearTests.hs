@@ -19,10 +19,10 @@ import Test.Tasty.HUnit
 
 import Data.Ratio
 
-import Math.NumberTheory.Recurrencies.Bilinear (bernoulli, binomial, euler,
-                                                eulerian1, eulerian2,
-                                                eulerPolyAt1, lah, stirling1,
-                                                stirling2)
+import Math.NumberTheory.Recurrences.Bilinear (bernoulli, binomial, euler,
+                                               eulerian1, eulerian2,
+                                               eulerPolyAt1, lah, stirling1,
+                                               stirling2)
 import Math.NumberTheory.TestUtils
 
 binomialProperty1 :: NonNegative Int -> Bool

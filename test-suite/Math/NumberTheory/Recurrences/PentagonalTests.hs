@@ -19,12 +19,12 @@ module Math.NumberTheory.Recurrences.PentagonalTests
   ( testSuite
   ) where
 
-import Data.Proxy                     (Proxy (..))
-import GHC.Natural                    (Natural)
-import GHC.TypeNats.Compat            (SomeNat (..), someNatVal)
+import Data.Proxy                    (Proxy (..))
+import GHC.Natural                   (Natural)
+import GHC.TypeNats.Compat           (SomeNat (..), someNatVal)
 
-import Math.NumberTheory.Moduli       (Mod, getVal)
-import Math.NumberTheory.Recurrencies (partition)
+import Math.NumberTheory.Moduli      (Mod, getVal)
+import Math.NumberTheory.Recurrences (partition)
 import Math.NumberTheory.TestUtils
 
 import Test.Tasty

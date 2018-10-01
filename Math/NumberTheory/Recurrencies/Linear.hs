@@ -9,7 +9,7 @@
 -- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
 
 {-# LANGUAGE CPP #-}
-module Math.NumberTheory.Recurrencies.Linear
+module Math.NumberTheory.Recurrencies.Linear {-# DEPRECATED "Use `Math.NumberTheory.Recurrences.Linear` instead." #-}
   ( factorial
   , fibonacci
   , fibonacciPair

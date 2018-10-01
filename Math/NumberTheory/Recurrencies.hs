@@ -7,7 +7,7 @@
 -- Portability: Non-portable (GHC extensions)
 --
 
-module Math.NumberTheory.Recurrencies
+module Math.NumberTheory.Recurrencies {-# DEPRECATED "Use `Math.NumberTheory.Recurrences` instead." #-}
     ( module Math.NumberTheory.Recurrencies.Linear
     , module Math.NumberTheory.Recurrencies.Bilinear
     , module Math.NumberTheory.Recurrencies.Pentagonal
