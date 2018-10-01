@@ -27,14 +27,13 @@ import Math.NumberTheory.Zeta.Utils     (intertwine, skipEvens, skipOdds,
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
 --
--- > > approximateValue (betasOdd !! 25) :: Double
--- > 0.9999999999999987
+-- >>> approximateValue (betasOdd !! 25) :: Double
+-- 0.9999999999999987
 --
 -- Using 'Data.Number.Fixed.Fixed':
 --
--- > > approximateValue (betasOdd !! 25) :: Fixed Prec50
--- > 0.99999999999999999999999960726927497384196726751694z
---
+-- >>> approximateValue (betasOdd !! 25) :: Fixed Prec50
+-- 0.99999999999999999999999960726927497384196726751694
 betasOdd :: [ExactPi]
 betasOdd = zipWith Exact [1, 3 ..] $ zipWith4
                                      (\sgn denom eul twos -> sgn * (eul % (twos * denom)))
@@ -157,8 +156,8 @@ betasEven eps = (1 / 2) : bets
 -- <https://arxiv.org/pdf/0910.5004.pdf An Euler-type formula for β(2n) and closed-form expressions for a class of zeta series>
 -- by F. M. S. Lima, formula (12).
 --
--- > > take 5 (betas 1e-14) :: [Double]
--- > [0.5,0.7853981633974483,0.9159655941772191,0.9689461462593693,0.988944551741105]
+-- >>> take 5 (betas 1e-14) :: [Double]
+-- [0.5,0.7853981633974483,0.9159655941772191,0.9689461462593693,0.988944551741105]
 betas :: (Floating a, Ord a) => a -> [a]
 betas eps = e : o : scanl1 f (intertwine es os)
   where
