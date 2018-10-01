@@ -16,11 +16,11 @@ module Math.NumberTheory.Zeta.Riemann
   , zetasOdd
   ) where
 
-import Data.ExactPi                     (ExactPi (..), approximateValue)
-import Data.Ratio                       ((%))
+import Data.ExactPi                    (ExactPi (..), approximateValue)
+import Data.Ratio                      ((%))
 
-import Math.NumberTheory.Recurrencies   (bernoulli, factorial)
-import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds, suminf)
+import Math.NumberTheory.Recurrences   (bernoulli, factorial)
+import Math.NumberTheory.Zeta.Utils    (intertwine, skipOdds, suminf)
 
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors conversion to 'Double' may return values below 1:

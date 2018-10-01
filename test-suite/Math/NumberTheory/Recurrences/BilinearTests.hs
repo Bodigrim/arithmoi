@@ -5,7 +5,7 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.Recurrencies.Bilinear
+-- Tests for Math.NumberTheory.Recurrences.Bilinear
 --
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}

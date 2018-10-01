@@ -30,7 +30,7 @@ benchPartition n = bgroup "partition"
     benchAt m = bench ("!!" ++ show m) $  nf (\k -> partition !! k :: Integer) m
 
 benchSuite :: Benchmark
-benchSuite = bgroup "Recurrencies"
+benchSuite = bgroup "Recurrences"
   [
     bgroup "Bilinear"
     [ benchTriangle "binomial"  binomial 1000

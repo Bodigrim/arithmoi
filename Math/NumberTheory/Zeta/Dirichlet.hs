@@ -16,14 +16,14 @@ module Math.NumberTheory.Zeta.Dirichlet
   , betasOdd
   ) where
 
-import Data.ExactPi                     (ExactPi (..), approximateValue)
-import Data.List                        (zipWith4)
-import Data.Ratio                       ((%))
+import Data.ExactPi                    (ExactPi (..), approximateValue)
+import Data.List                       (zipWith4)
+import Data.Ratio                      ((%))
 
-import Math.NumberTheory.Recurrencies   (euler, eulerPolyAt1, factorial)
-import Math.NumberTheory.Zeta.Riemann   (zetasOdd)
-import Math.NumberTheory.Zeta.Utils     (intertwine, skipEvens, skipOdds,
-                                         suminf)
+import Math.NumberTheory.Recurrences   (euler, eulerPolyAt1, factorial)
+import Math.NumberTheory.Zeta.Riemann  (zetasOdd)
+import Math.NumberTheory.Zeta.Utils    (intertwine, skipEvens, skipOdds,
+                                        suminf)
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
 --

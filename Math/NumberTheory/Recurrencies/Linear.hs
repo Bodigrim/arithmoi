@@ -29,7 +29,7 @@ import Numeric.Natural
 -- [1,1,2,6,24]
 --
 -- The time-and-space behaviour of 'factorial' is similar to described in
--- "Math.NumberTheory.Recurrencies.Bilinear#memory".
+-- "Math.NumberTheory.Recurrences.Bilinear#memory".
 factorial :: (Num a, Enum a) => [a]
 factorial = scanl (*) 1 [1..]
 {-# SPECIALIZE factorial :: [Int]     #-}

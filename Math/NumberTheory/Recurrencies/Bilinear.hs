@@ -51,7 +51,7 @@ import Data.List
 import Data.Ratio
 import Numeric.Natural
 
-import Math.NumberTheory.Recurrencies.Linear (factorial)
+import Math.NumberTheory.Recurrences.Linear (factorial)
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle):
 -- @binomial !! n !! k == n! \/ k! \/ (n - k)!@.

@@ -5,7 +5,7 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 -- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.Recurrencies.Linear
+-- Tests for Math.NumberTheory.Recurrences.Linear
 --
 
 {-# LANGUAGE CPP       #-}
