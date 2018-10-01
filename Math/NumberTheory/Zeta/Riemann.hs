@@ -90,9 +90,9 @@ zetasOdd eps = (1 / 0) : zets
 -- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57).
 --
 -- >>> take 5 (zetas 1e-14) :: [Double]
--- > [-0.5,Infinity,1.6449340668482262,1.2020569031595942,1.0823232337111381]
+-- [-0.5,Infinity,1.6449340668482262,1.2020569031595942,1.0823232337111381]
 --
--- Beware to force evaluation of @zetas !! 1@, if the type @a@ does not support infinite values
+-- Beware to force evaluation of @zetas !! 1@ if the type @a@ does not support infinite values
 -- (for instance, 'Data.Number.Fixed.Fixed').
 --
 zetas :: (Floating a, Ord a) => a -> [a]
