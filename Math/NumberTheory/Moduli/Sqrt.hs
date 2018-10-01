@@ -53,7 +53,8 @@ import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 sqrtsMod :: KnownNat m => Mod m -> [Mod m]
 sqrtsMod a = map fromInteger $ sqrtsModFactorisation (getVal a) (factorise (getMod a))
 
--- | List all square roots modulo a number, which factorisation is passed as a second argument.
+-- | List all square roots modulo a number, the factorisation of which is
+-- passed as a second argument.
 --
 -- >>> sqrtsModFactorisation 1 (factorise 60)
 -- [1,49,41,29,31,19,11,59]
@@ -72,7 +73,7 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
 
     comb t1@(_, m1) t2@(_, m2) = (chineseRemainder2 t1 t2, m1 * m2)
 
--- | List all square roots modulo power of a prime.
+-- | List all square roots modulo the power of a prime.
 --
 -- >>> sqrtsModPrimePower 7 (fromJust (isPrime 3)) 2
 -- [4,5]
@@ -132,7 +133,7 @@ sqrtModP' square prime
                     = sqrtOfMinusOne prime
     | otherwise     = tonelliShanks square prime
 
--- | p must be of form 4k + 1
+-- | @p@ must be of form @4k + 1@
 sqrtOfMinusOne :: Integer -> Integer
 sqrtOfMinusOne p
   = head
