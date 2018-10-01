@@ -16,26 +16,47 @@ module Math.NumberTheory.DirichletCharactersTests where
 import Test.Tasty
 
 import Data.Proxy
+import Data.Ratio
 import Numeric.Natural
+import Data.Semigroup
+import Data.Complex
 
-import Data.List (sort)
 import GHC.TypeNats.Compat (SomeNat(..), someNatVal)
 
-import Math.NumberTheory.DirichletCharacters (generators)
-import Math.NumberTheory.Moduli (Mod, getNatVal)
+import Math.NumberTheory.ArithmeticFunctions (totient)
+import Math.NumberTheory.DirichletCharacters
+-- import Math.NumberTheory.Moduli (Mod, getNatVal)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
 
-generatingTest :: Positive Natural -> Bool
-generatingTest (Positive 1) = [1] == generators 1
-generatingTest (Positive n) =
-  case someNatVal n of
-    SomeNat (_ :: Proxy m) -> [a | a <- [1..n], gcd a n == 1] == generated
-      where generated = sort $ map (getNatVal . product) $ traverse helper [fromIntegral g :: Mod m | g <- generators n]
+rootOfUnityTest :: Integer -> Positive Integer -> Bool
+rootOfUnityTest n (Positive d) = toComplex ((d `div` gcd n d) `stimes` toRootOfUnity (n % d)) == (1 :: Complex Double)
 
-helper :: (Eq a, Num a) => a -> [a]
-helper m = 1: (takeWhile (/= 1) $ iterate (*m) m)
+-- | This tests property 6 from https://en.wikipedia.org/wiki/Dirichlet_character#Axiomatic_definition
+dirCharOrder :: Positive Natural -> Natural -> Bool
+dirCharOrder (Positive n) i = case someNatVal n of
+                                SomeNat (Proxy :: Proxy n) -> (totient n) `stimes` chi == trivialChar
+                                  where chi = fromIndex (i `mod` (totient n)) :: DirichletCharacter n
+
+-- | Tests wikipedia's property 3 (note 1,2,5 are essentially enforced by the type system).
+dirCharMultiplicative :: Positive Natural -> Natural -> Natural -> Natural -> Bool
+dirCharMultiplicative (Positive n) i a b = case someNatVal n of
+                                             SomeNat (Proxy :: Proxy n) -> let chiAchiB = (<>) <$> chi' a' <*> chi' b'
+                                                                               chiAB = chi' (a'*b')
+                                                                            in chiAB == chiAchiB
+                                               where chi = fromIndex (i `mod` (totient n)) :: DirichletCharacter n
+                                                     chi' = generalEval chi
+                                                     a' = fromIntegral a
+                                                     b' = fromIntegral b
+
+dirCharAtOne :: Positive Natural -> Natural -> Bool
+dirCharAtOne (Positive n) i = case someNatVal n of
+                                SomeNat (Proxy :: Proxy n) -> evaluate chi mempty == mempty
+                                  where chi = fromIndex (i `mod` (totient n)) :: DirichletCharacter n
 
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
-  [ testSmallAndQuick "check generators work" generatingTest
+  [ testSmallAndQuick "RootOfUnity contains roots of unity" rootOfUnityTest
+  , testSmallAndQuick "Dirichlet characters have the right order" dirCharOrder
+  , testSmallAndQuick "Dirichlet characters are multiplicative" dirCharMultiplicative
+  , testSmallAndQuick "Dirichlet characters are 1 at 1" dirCharMultiplicative
   ]
