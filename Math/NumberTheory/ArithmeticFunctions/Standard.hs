@@ -34,7 +34,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
     -- * Misc
   , carmichael, carmichaelA
   , expMangoldt, expMangoldtA
-  , isNFree, isNFreeA
+  , isNFree, isNFreeA, nFrees
   ) where
 
 import Data.Coerce
@@ -263,6 +263,9 @@ isNFree n = runFunction (isNFreeA n)
 -- equal to @n@.
 isNFreeA :: UniqueFactorisation n => Word -> ArithmeticFunction n Bool
 isNFreeA n = ArithmeticFunction (\_ pow -> All $ pow < n) getAll
+
+nFrees :: forall a . (Enum a, Num a, UniqueFactorisation a) => Word -> [a]
+nFrees n = filter (isNFree n) [1..]
 
 newtype LCM a = LCM { getLCM :: a }
 
