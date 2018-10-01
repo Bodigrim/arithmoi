@@ -39,7 +39,7 @@ import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 
 data DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
-  deriving Show
+  deriving (Eq, Show)
 
 data DirichletFactor = OddPrime { getPrime :: Prime Natural
                                 , getPower :: Word
@@ -50,12 +50,11 @@ data DirichletFactor = OddPrime { getPrime :: Prime Natural
                                  , getFirstValue :: Natural
                                  , getSecondValue :: Natural
                                  }
-                                 deriving Show
+                                 deriving (Eq, Show)
 
 newtype RootOfUnity = RootOfUnity { getFraction :: Rational }
   deriving (Eq, Show)
   -- RootOfUnity q represents e^(2pi i * q)
-  -- I am happy with a custom Show instance if that's preferred
 
 toRootOfUnity :: Rational -> RootOfUnity
 toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
@@ -94,10 +93,9 @@ evaluate (Generated ds) m = foldMap (evalFactor m') ds
 evalFactor :: Integer -> DirichletFactor -> RootOfUnity
 evalFactor m =
   \case
-    OddPrime (unPrime -> p) k a b -> toRootOfUnity (toInteger (b * discreteLogarithmPP p' k a' (m `rem` p'^k)) % (p'^(k-1)*(p'-1)))
-      where p' = toInteger p
-            a' = toInteger a
-    TwoPower k s b                -> toRootOfUnity (toInteger s * (if testBit m 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m'' k % (2^(k-2)))
+    OddPrime (toInteger . unPrime -> p) k (toInteger -> a) b ->
+      toRootOfUnity (toInteger (b * discreteLogarithmPP p k a (m `rem` p^k)) % (p^(k-1)*(p-1)))
+    TwoPower k s b -> toRootOfUnity (toInteger s * (if testBit m 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m'' k % (2^(k-2)))
                                        where m' = m .&. kBits
                                              m'' = if testBit m 1
                                                       then bit (wordToInt k) - m'
@@ -105,7 +103,7 @@ evalFactor m =
                                              kBits = bit (wordToInt k) - 1
 
 trivialChar :: KnownNat n => DirichletCharacter n
-trivialChar = intToDChar 0
+trivialChar = minBound
 
 mulChars :: DirichletCharacter n -> DirichletCharacter n -> DirichletCharacter n
 mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
@@ -121,21 +119,25 @@ instance KnownNat n => Monoid (DirichletCharacter n) where
   mempty = trivialChar
 
 instance KnownNat n => Enum (DirichletCharacter n) where
-  toEnum = intToDChar
-  fromEnum = dCharToInt
+  toEnum = fromIndex
+  fromEnum = characterNumber
   -- TODO: write better succ and pred, by re-using the existing generators instead of recalculating them each time
 
-dCharToInt :: DirichletCharacter n -> Int
-dCharToInt (Generated y) = foldr go 0 y
-  where go :: DirichletFactor -> Int -> Int
-        go = \case
+instance KnownNat n => Bounded (DirichletCharacter n) where
+  minBound = fromIndex (0 :: Int)
+  maxBound = fromIndex (totient n - 1)
+    where n = natVal (Proxy :: Proxy n)
+
+characterNumber :: Integral a => DirichletCharacter n -> a
+characterNumber (Generated y) = foldr go 0 y
+  where go = \case
                OddPrime p k _ a -> \x -> x * (p'^(k-1)*(p'-1)) + (fromIntegral a)
                  where p' = fromIntegral (unPrime p)
                TwoPower k a b   -> \x -> (x * (2^(k-2)) + fromIntegral b) * 2 + (fromIntegral a)
-               -- again use bitshifts to optimise
+               -- TODO: again use bitshifts to optimise
 
-intToDChar :: forall n. KnownNat n => Int -> DirichletCharacter n
-intToDChar m
+fromIndex :: forall a n. (KnownNat n, Integral a) => a -> DirichletCharacter n
+fromIndex m
   | m < 0 = error "Enum DirichletCharacter: negative input"
   | m >= maxi = error "Enum DirichletCharacter: input too large"
   | otherwise = Generated (go (factorise n))
