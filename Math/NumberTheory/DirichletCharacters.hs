@@ -16,7 +16,19 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Math.NumberTheory.DirichletCharacters where
+module Math.NumberTheory.DirichletCharacters
+  ( DirichletCharacter
+  , RootOfUnity
+  , toRootOfUnity
+  , fromRootOfUnity
+  , toComplex
+  , evaluate
+  , generalEval
+  , toFunction
+  , trivialChar
+  , fromIndex
+  , characterNumber
+  ) where
 
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
@@ -52,7 +64,7 @@ data DirichletFactor = OddPrime { getPrime :: Prime Natural
                                  }
                                  deriving (Eq, Show)
 
-newtype RootOfUnity = RootOfUnity { getFraction :: Rational }
+newtype RootOfUnity = RootOfUnity { fromRootOfUnity :: Rational }
   deriving (Eq, Show)
   -- RootOfUnity q represents e^(2pi i * q)
 
@@ -69,8 +81,8 @@ instance Monoid RootOfUnity where
   mappend = (<>)
   mempty = RootOfUnity 0
 
-fromRootOfUnity :: Floating a => RootOfUnity -> Complex a
-fromRootOfUnity = cis . (2*pi*) . fromRational . getFraction
+toComplex :: Floating a => RootOfUnity -> Complex a
+toComplex = cis . (2*pi*) . fromRational . fromRootOfUnity
 
 generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
 generator p k
@@ -85,6 +97,9 @@ lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-
 
 generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
 generalEval chi = fmap (evaluate chi) . isMultElement
+
+toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
+toFunction chi = maybe 0 toComplex . generalEval chi . fromIntegral
 
 evaluate :: KnownNat n => DirichletCharacter n -> MultMod n -> RootOfUnity
 evaluate (Generated ds) m = foldMap (evalFactor m') ds
@@ -108,9 +123,10 @@ trivialChar = minBound
 mulChars :: DirichletCharacter n -> DirichletCharacter n -> DirichletCharacter n
 mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
   where combine :: DirichletFactor -> DirichletFactor -> DirichletFactor
-        combine (OddPrime p k g n) (OddPrime _ _ _ m) = OddPrime p k g ((n + m) `mod` unPrime p ^ k)
+        combine (OddPrime p k g n) (OddPrime _ _ _ m) = OddPrime p k g ((n + m) `mod` (p'^(k-1)*(p'-1)))
+          where p' = unPrime p
         combine (TwoPower k a n) (TwoPower _ b m) = TwoPower k ((a + b) `mod` 2) ((n + m) `mod` 2^(k-2))
-        combine _ _ = error "Malformed DirichletCharacter"
+        combine _ _ = error "internal error: malformed DirichletCharacter"
 
 instance Semigroup (DirichletCharacter n) where
   (<>) = mulChars
