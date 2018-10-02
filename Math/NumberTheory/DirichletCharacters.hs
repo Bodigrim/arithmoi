@@ -15,6 +15,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Math.NumberTheory.DirichletCharacters
   ( DirichletCharacter
@@ -29,11 +30,15 @@ module Math.NumberTheory.DirichletCharacters
   , fromIndex
   , characterNumber
   , isPrincipal
+  , induced
+  , jacobiCharacter
+  , isRealCharacter
+  , getRealChar
+  , toRealFunction
   ) where
 
-#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
-#endif
+import qualified GHC.TypeLits as TL
 import GHC.TypeNats.Compat
 import Numeric.Natural                            (Natural)
 import Data.Bits                                  (testBit, (.&.), bit)
@@ -44,6 +49,7 @@ import Data.List                                  (mapAccumL)
 
 import Math.NumberTheory.ArithmeticFunctions      (totient)
 import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod, getVal, multElement, Mod, isMultElement)
+import Math.NumberTheory.Moduli.Jacobi            (jacobi, JacobiSymbol(..))
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
 import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers                   (powMod)
@@ -84,6 +90,8 @@ toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
 
 instance Semigroup RootOfUnity where
   (RootOfUnity q1) <> (RootOfUnity q2) = toRootOfUnity (q1 + q2)
+  stimes k (RootOfUnity q) = toRootOfUnity (q * fromIntegral k)
+  -- ^ This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 
 instance Monoid RootOfUnity where
   mappend = (<>)
@@ -109,7 +117,7 @@ generalEval chi = fmap (evaluate chi) . isMultElement
 toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
 toFunction chi = maybe 0 toComplex . generalEval chi . fromIntegral
 
-evaluate :: KnownNat n => DirichletCharacter n -> MultMod n -> RootOfUnity
+evaluate :: DirichletCharacter n -> MultMod n -> RootOfUnity
 evaluate (Generated ds) m = foldMap (evalFactor m') ds
   where m' = getVal $ multElement m
 
@@ -184,3 +192,33 @@ fromIndex m
 
 isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
 isPrincipal chi = chi == principalChar
+
+induced :: (KnownNat d, KnownNat n, TL.Mod n d ~ 0) => DirichletCharacter d -> DirichletCharacter n
+induced = error "TODO"
+
+jacobiCharacter :: forall n. (KnownNat n, TL.Mod n 2 ~ 1) => RealCharacter n
+jacobiCharacter = RealChar (Generated (func <$> factorise n))
+  where n = natVal (Proxy :: Proxy n)
+        func :: (Prime Natural, Word) -> DirichletFactor
+        func (p,k) = OddPrime p k g val -- we know p is odd since n is odd and p | n
+          where p' = unPrime p
+                g = generator p k
+                val = case k `stimes` jacobi g p' of
+                        One -> 0
+                        MinusOne -> p'^(k-1)*((p'-1) `div` 2) -- p is odd so this is fine
+                        Zero -> error "internal error in jacobiCharacter: please report this as a bug"
+
+newtype RealCharacter n = RealChar { getRealChar :: DirichletCharacter n }
+
+isRealCharacter :: DirichletCharacter n -> Maybe (RealCharacter n)
+isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else Nothing
+  where real :: DirichletFactor -> Bool
+        real (OddPrime (unPrime -> p) k _ a) = a == 0 || a*2 == p^(k-1)*(p-1)
+        real (TwoPower k _ b) = b == 0 || b == 2^(k-3)
+
+toRealFunction :: KnownNat n => RealCharacter n -> Natural -> Int
+toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
+                                    Nothing -> 0
+                                    Just t | t == mempty -> 1
+                                    Just t | t == RootOfUnity (1 % 2) -> -1
+                                    _ -> error "internal error in toRealFunction: please report this as a bug"
