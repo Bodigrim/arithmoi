@@ -25,9 +25,10 @@ module Math.NumberTheory.DirichletCharacters
   , evaluate
   , generalEval
   , toFunction
-  , trivialChar
+  , principalChar
   , fromIndex
   , characterNumber
+  , isPrincipal
   ) where
 
 #if __GLASGOW_HASKELL__ < 803
@@ -51,7 +52,7 @@ import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 
 data DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
-  deriving (Eq, Show)
+  deriving (Show)
 
 data DirichletFactor = OddPrime { getPrime :: Prime Natural
                                 , getPower :: Word
@@ -62,7 +63,14 @@ data DirichletFactor = OddPrime { getPrime :: Prime Natural
                                  , getFirstValue :: Natural
                                  , getSecondValue :: Natural
                                  }
-                                 deriving (Eq, Show)
+                                 deriving (Show)
+
+instance Eq (DirichletCharacter n) where
+  Generated a == Generated b = go a b
+    where go [] [] = True
+          go (OddPrime _ _ _ x : xs) (OddPrime _ _ _ y : ys) = x == y && go xs ys
+          go (TwoPower _ x1 x2 : xs) (TwoPower _ y1 y2 : ys) = x1 == y1 && x2 == y2 && go xs ys
+          go _ _ = False
 
 newtype RootOfUnity = RootOfUnity { fromRootOfUnity :: Rational }
   deriving (Eq, Show)
@@ -117,8 +125,8 @@ evalFactor m =
                                                       else m'
                                              kBits = bit (wordToInt k) - 1
 
-trivialChar :: KnownNat n => DirichletCharacter n
-trivialChar = minBound
+principalChar :: KnownNat n => DirichletCharacter n
+principalChar = minBound
 
 mulChars :: DirichletCharacter n -> DirichletCharacter n -> DirichletCharacter n
 mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
@@ -132,7 +140,7 @@ instance Semigroup (DirichletCharacter n) where
   (<>) = mulChars
 
 instance KnownNat n => Monoid (DirichletCharacter n) where
-  mempty = trivialChar
+  mempty = principalChar
 
 instance KnownNat n => Enum (DirichletCharacter n) where
   toEnum = fromIndex
@@ -173,3 +181,6 @@ fromIndex m
           where func a (p,k) = (q, OddPrime p k (generator p k) r)
                   where (q,r) = quotRem a (p'^(k-1)*(p'-1))
                         p' = unPrime p
+
+isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
+isPrincipal chi = chi == principalChar
