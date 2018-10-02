@@ -35,7 +35,6 @@ module Math.NumberTheory.DirichletCharacters
   ) where
 
 import Data.Semigroup
-import qualified GHC.TypeLits as TL
 import GHC.TypeNats.Compat
 import Numeric.Natural                            (Natural)
 import Data.Bits                                  (testBit, (.&.), bit)
@@ -190,11 +189,10 @@ fromIndex m
 isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
 isPrincipal chi = chi == principalChar
 
--- induced :: (KnownNat d, KnownNat n, TL.Mod n d ~ 0) => DirichletCharacter d -> DirichletCharacter n
--- induced = error "TODO"
-
-jacobiCharacter :: forall n. (KnownNat n, TL.Mod n 2 ~ 1) => RealCharacter n
-jacobiCharacter = RealChar (Generated (func <$> factorise n))
+jacobiCharacter :: forall n. KnownNat n => Maybe (RealCharacter n)
+jacobiCharacter = if odd n
+                     then Just (RealChar (Generated (func <$> factorise n)))
+                     else Nothing
   where n = natVal (Proxy :: Proxy n)
         func :: (Prime Natural, Word) -> DirichletFactor
         func (p,k) = OddPrime p k g val -- we know p is odd since n is odd and p | n
