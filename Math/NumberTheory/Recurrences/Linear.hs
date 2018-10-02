@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Recurrences.Pentagonal
+-- Module:      Math.NumberTheory.Recurrences.Linear
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
