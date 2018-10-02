@@ -10,8 +10,6 @@
 --
 
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -30,7 +28,6 @@ module Math.NumberTheory.DirichletCharacters
   , fromIndex
   , characterNumber
   , isPrincipal
-  , induced
   , jacobiCharacter
   , isRealCharacter
   , getRealChar
@@ -193,8 +190,8 @@ fromIndex m
 isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
 isPrincipal chi = chi == principalChar
 
-induced :: (KnownNat d, KnownNat n, TL.Mod n d ~ 0) => DirichletCharacter d -> DirichletCharacter n
-induced = error "TODO"
+-- induced :: (KnownNat d, KnownNat n, TL.Mod n d ~ 0) => DirichletCharacter d -> DirichletCharacter n
+-- induced = error "TODO"
 
 jacobiCharacter :: forall n. (KnownNat n, TL.Mod n 2 ~ 1) => RealCharacter n
 jacobiCharacter = RealChar (Generated (func <$> factorise n))
@@ -216,6 +213,9 @@ isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else No
         real (OddPrime (unPrime -> p) k _ a) = a == 0 || a*2 == p^(k-1)*(p-1)
         real (TwoPower k _ b) = b == 0 || b == 2^(k-3)
 
+-- TODO: it should be possible to calculate this without evaluate/generalEval
+-- and thus avoid using discrete log calculations: consider the order of m
+-- inside each of the factor groups?
 toRealFunction :: KnownNat n => RealCharacter n -> Natural -> Int
 toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
                                     Nothing -> 0
