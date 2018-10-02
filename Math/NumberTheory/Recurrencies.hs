@@ -8,11 +8,11 @@
 --
 
 module Math.NumberTheory.Recurrencies {-# DEPRECATED "Use `Math.NumberTheory.Recurrences` instead." #-}
-    ( module Math.NumberTheory.Recurrencies.Linear
-    , module Math.NumberTheory.Recurrencies.Bilinear
-    , module Math.NumberTheory.Recurrencies.Pentagonal
+    ( module Math.NumberTheory.Recurrences.Linear
+    , module Math.NumberTheory.Recurrences.Bilinear
+    , module Math.NumberTheory.Recurrences.Pentagonal
     ) where
 
-import Math.NumberTheory.Recurrencies.Bilinear
-import Math.NumberTheory.Recurrencies.Linear
-import Math.NumberTheory.Recurrencies.Pentagonal (partition)
+import Math.NumberTheory.Recurrences.Bilinear
+import Math.NumberTheory.Recurrences.Linear
+import Math.NumberTheory.Recurrences.Pentagonal (partition)
