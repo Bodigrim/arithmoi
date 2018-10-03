@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Functions dealing with squares. Efficient calculation of integer square roots
 -- and efficient testing for squareness.

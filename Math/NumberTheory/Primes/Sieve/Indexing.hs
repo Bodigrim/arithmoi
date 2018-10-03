@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.

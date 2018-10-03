@@ -4,8 +4,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
 

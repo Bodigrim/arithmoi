@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Various functions related to prime factorisation.
 -- Many of these functions use the prime factorisation of an 'Integer'.

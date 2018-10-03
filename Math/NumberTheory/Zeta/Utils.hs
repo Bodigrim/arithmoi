@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Shared utilities used by functions from @Math.NumberTheory.Zeta@.
 
@@ -21,8 +19,8 @@ module Math.NumberTheory.Zeta.Utils
 -- >>> take 10 $ intertwine [0, 2 ..] [1, 3 ..]
 -- [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 intertwine :: [a] -> [a] -> [a]
-intertwine [] ys = ys 
-intertwine (x : xs) ys = x : intertwine ys xs 
+intertwine [] ys = ys
+intertwine (x : xs) ys = x : intertwine ys xs
 
 -- | Skips every odd-indexed element from an infinite list.
 -- Do NOT use with finite lists.

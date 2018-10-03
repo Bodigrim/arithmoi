@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- This module exports functions for manipulating Eisenstein integers, including
 -- computing their prime factorisations.

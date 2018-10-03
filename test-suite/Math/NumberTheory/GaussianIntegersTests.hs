@@ -5,7 +5,6 @@
 -- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
 -- Licence:     MIT
 -- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.GaussianIntegers
 --

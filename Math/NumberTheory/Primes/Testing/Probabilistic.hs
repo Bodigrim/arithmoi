@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer, 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Probabilistic primality tests, Miller-Rabin and Baillie-PSW.
 {-# LANGUAGE CPP, MagicHash, BangPatterns #-}

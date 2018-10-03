@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2018 Frederick Schneider
 -- Licence:     MIT
 -- Maintainer:  Frederick Schneider <frederick.schneider2011@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- A <https://en.wikipedia.org/wiki/Smooth_number smooth number>
 -- is an integer, which can be represented as a product of powers of elements
@@ -149,7 +147,7 @@ smoothOverInRange s lo hi
 -- >>> import Data.Maybe
 -- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
 -- [100, 125, 128, 160, 200]
-smoothOverInRangeBF 
+smoothOverInRangeBF
   :: forall a. (Enum a, E.Euclidean a)
   => SmoothBasis a
   -> a

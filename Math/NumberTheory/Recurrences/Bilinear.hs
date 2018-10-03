@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Bilinear recurrent sequences and Bernoulli numbers,
 -- roughly covering Ch. 5-6 of /Concrete Mathematics/

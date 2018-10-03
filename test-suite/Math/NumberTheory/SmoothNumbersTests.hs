@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.SmoothNumbersTests
 --
@@ -37,7 +36,7 @@ isSmoothPropertyHelper :: Euclidean a => (a -> Integer) -> [a] -> Int -> Int -> 
 isSmoothPropertyHelper norm primes' i1 i2 =
     let primes = take i1 primes'
         basis  = fromJust (fromList primes)
-    in all (isSmooth basis) $ take i2 $ smoothOver' norm basis 
+    in all (isSmooth basis) $ take i2 $ smoothOver' norm basis
 
 isSmoothProperty1 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty1 (Positive i1) (Positive i2) =
