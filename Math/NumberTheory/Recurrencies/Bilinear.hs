@@ -1,5 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Recurrencies.Bilinear
+-- Description: Deprecated
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>

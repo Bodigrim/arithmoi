@@ -1,5 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Recurrencies.Linear
+-- Description: Deprecated
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
