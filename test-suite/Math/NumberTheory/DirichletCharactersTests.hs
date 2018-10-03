@@ -67,12 +67,13 @@ countCharacters (Positive n) = case someNatVal n of
 -- | The principal character should be 1 at all phi(n) places
 principalCase :: Positive Natural -> Bool
 principalCase (Positive n) = case someNatVal n of
-                             SomeNat (Proxy :: Proxy n) -> mapMaybe (generalEval chi) [minBound..maxBound] == genericReplicate (totient n) mempty
-                               where chi = principalChar :: DirichletCharacter n
+                             SomeNat (Proxy :: Proxy n) ->
+                               mapMaybe (generalEval chi) [minBound..maxBound] == genericReplicate (totient n) mempty
+                                 where chi = principalChar :: DirichletCharacter n
 
 -- | Test the orthogonality relations https://en.wikipedia.org/wiki/Dirichlet_character#Character_orthogonality
 orthogonality1 :: forall n. KnownNat n => DirichletCharacter n -> Bool
-orthogonality1 chi = magnitude (total - correct) < 1e-14
+orthogonality1 chi = magnitude (total - correct) < (1e-13 :: Double)
   where n = natVal (Proxy :: Proxy n)
         total = sum [toFunction chi a | a <- [0..n-1]]
         correct = if isPrincipal chi
@@ -81,16 +82,28 @@ orthogonality1 chi = magnitude (total - correct) < 1e-14
 
 orthogonality2 :: Positive Natural -> Integer -> Bool
 orthogonality2 (Positive n) a = case a `modulo` n of
-                                  SomeMod a' -> magnitude (total - correct) < 1e-13
+                                  SomeMod a' -> magnitude (total - correct) < (1e-13 :: Double)
                                     where total = sum [maybe 0 toComplex (generalEval chi a') | chi <- [minBound .. maxBound]]
                                           correct = if a' == 1
                                                        then fromIntegral $ totient n
                                                        else 0
                                   InfMod {} -> False
 
+-- | Manually confirm isRealCharacter is correct (in both directions)
 realityCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
 realityCheck chi = isJust (isRealCharacter chi) == isReal'
   where isReal' = nub (mapMaybe (generalEval chi) [minBound..maxBound]) `isSubsequenceOf` [mempty, toRootOfUnity (1 % 2)]
+
+-- | Induced characters agree with the original character.
+inducedCheck :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Bool
+inducedCheck chi (Positive k) =
+  case someNatVal (d*k) of
+    SomeNat (Proxy :: Proxy n) ->
+      case chi2 of
+        Just chi2' -> and [generalEval chi2' (fromIntegral j) == generalEval chi (fromIntegral j) | j <- [0..d*k-1], gcd j (d*k) == 1]
+        _ -> False
+        where chi2 = induced chi :: Maybe (DirichletCharacter n)
+  where d = natVal (Proxy :: Proxy d)
 
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
@@ -103,4 +116,5 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Orthogonality relation 1" (dirCharProperty orthogonality1)
   , testSmallAndQuick "Orthogonality relation 2" orthogonality2
   , testSmallAndQuick "Real character checking is valid" (dirCharProperty realityCheck)
+  , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
   ]

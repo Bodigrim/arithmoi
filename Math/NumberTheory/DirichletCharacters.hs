@@ -32,6 +32,7 @@ module Math.NumberTheory.DirichletCharacters
   , isRealCharacter
   , getRealChar
   , toRealFunction
+  , induced
   ) where
 
 import Data.Semigroup
@@ -188,6 +189,34 @@ fromIndex m
 
 isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
 isPrincipal chi = chi == principalChar
+
+induced :: forall d n. (KnownNat d, KnownNat n) => DirichletCharacter d -> Maybe (DirichletCharacter n)
+induced (Generated start) = if n `rem` d == 0
+                            then Just (Generated (combine n' start))
+                            else Nothing
+  where n = natVal (Proxy :: Proxy n)
+        d = natVal (Proxy :: Proxy d)
+        n' = factorise n
+        combine :: [(Prime Natural, Word)] -> [DirichletFactor] -> [DirichletFactor]
+        combine [] _ = []
+        combine t [] = plain t
+        combine ((p1,k1):xs) (y:ys)
+          | unPrime p1 == 2, TwoPower k2 a b <- y = TwoPower k1 a (b*2^(k1-k2)): combine xs ys
+          | OddPrime p2 1 _g a <- y, p1 == p2 = OddPrime p2 k1 (generator p2 k1) (a*unPrime p1^(k1-1)): combine xs ys
+            -- generator p2 k1 will be g or g + p2, and we already know g is a primroot mod p
+            -- so should be able to save work instead of running generator
+          | OddPrime p2 k2 g a <- y, p1 == p2 = OddPrime p2 k1 g (a*unPrime p1^(k1-k2)): combine xs ys
+          | unPrime p1 == 2, k1 >= 2 = TwoPower k1 0 0: combine xs (y:ys)
+          | unPrime p1 == 2 = combine xs (y:ys)
+          | otherwise = OddPrime p1 k1 (generator p1 k1) 0: combine xs (y:ys)
+        plain :: [(Prime Natural, Word)] -> [DirichletFactor]
+        plain [] = []
+        plain f@((p,k):xs) = case (unPrime p, k) of
+                               (2,1) -> map rest xs
+                               (2,_) -> TwoPower k 0 0: map rest xs
+                               _ -> map rest f
+        rest :: (Prime Natural, Word) -> DirichletFactor
+        rest (p,k) = OddPrime p k (generator p k) 0
 
 jacobiCharacter :: forall n. KnownNat n => Maybe (RealCharacter n)
 jacobiCharacter = if odd n
