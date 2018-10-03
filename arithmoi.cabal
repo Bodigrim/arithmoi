@@ -192,6 +192,7 @@ benchmark criterion
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.DiscreteLogarithmBench
     Math.NumberTheory.EisensteinIntegersBench
+    Math.NumberTheory.EuclideanBench
     Math.NumberTheory.GaussianIntegersBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench
