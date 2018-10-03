@@ -11,7 +11,7 @@ import Math.NumberTheory.MertensBench as Mertens
 import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
 import Math.NumberTheory.PrimitiveRootsBench as PrimitiveRoots
-import Math.NumberTheory.RecurrenciesBench as Recurrencies
+import Math.NumberTheory.RecurrencesBench as Recurrences
 import Math.NumberTheory.SieveBlockBench as SieveBlock
 import Math.NumberTheory.SmoothNumbersBench as SmoothNumbers
 
@@ -26,7 +26,7 @@ main = defaultMain
   , Powers.benchSuite
   , Primes.benchSuite
   , PrimitiveRoots.benchSuite
-  , Recurrencies.benchSuite
+  , Recurrences.benchSuite
   , SieveBlock.benchSuite
   , SmoothNumbers.benchSuite
   ]

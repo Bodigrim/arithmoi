@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies
+-- Module:      Math.NumberTheory.Recurrences
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
@@ -7,7 +7,7 @@
 -- Portability: Non-portable (GHC extensions)
 --
 
-module Math.NumberTheory.Recurrencies {-# DEPRECATED "Use `Math.NumberTheory.Recurrences` instead." #-}
+module Math.NumberTheory.Recurrences
     ( module Math.NumberTheory.Recurrences.Linear
     , module Math.NumberTheory.Recurrences.Bilinear
     , module Math.NumberTheory.Recurrences.Pentagonal

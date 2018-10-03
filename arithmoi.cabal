@@ -82,8 +82,11 @@ library
     Math.NumberTheory.Primes.Testing.Certificates
     Math.NumberTheory.Quadratic.GaussianIntegers
     Math.NumberTheory.Quadratic.EisensteinIntegers
+    Math.NumberTheory.Recurrences
     Math.NumberTheory.Recurrencies
+    Math.NumberTheory.Recurrences.Bilinear
     Math.NumberTheory.Recurrencies.Bilinear
+    Math.NumberTheory.Recurrences.Linear
     Math.NumberTheory.Recurrencies.Linear
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
@@ -104,6 +107,7 @@ library
     Math.NumberTheory.Primes.Testing.Certified
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
+    Math.NumberTheory.Recurrences.Pentagonal
     Math.NumberTheory.Recurrencies.Pentagonal
     Math.NumberTheory.UniqueFactorisation
     Math.NumberTheory.Unsafe
@@ -159,9 +163,9 @@ test-suite spec
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests
     Math.NumberTheory.PrimesTests
-    Math.NumberTheory.Recurrencies.PentagonalTests
-    Math.NumberTheory.Recurrencies.BilinearTests
-    Math.NumberTheory.Recurrencies.LinearTests
+    Math.NumberTheory.Recurrences.PentagonalTests
+    Math.NumberTheory.Recurrences.BilinearTests
+    Math.NumberTheory.Recurrences.LinearTests
     Math.NumberTheory.SmoothNumbersTests
     Math.NumberTheory.TestUtils
     Math.NumberTheory.TestUtils.MyCompose
@@ -195,7 +199,7 @@ benchmark criterion
     Math.NumberTheory.PowersBench
     Math.NumberTheory.PrimesBench
     Math.NumberTheory.PrimitiveRootsBench
-    Math.NumberTheory.RecurrenciesBench
+    Math.NumberTheory.RecurrencesBench
     Math.NumberTheory.SieveBlockBench
     Math.NumberTheory.SmoothNumbersBench
   type: exitcode-stdio-1.0
