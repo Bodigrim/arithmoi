@@ -201,6 +201,7 @@ benchmark criterion
     Math.NumberTheory.RecurrencesBench
     Math.NumberTheory.SieveBlockBench
     Math.NumberTheory.SmoothNumbersBench
+    Math.NumberTheory.ZetaBench
   type: exitcode-stdio-1.0
   main-is: Bench.hs
   default-language: Haskell2010
