@@ -35,7 +35,7 @@ partition' :: Num a => Int -> a
 partition' = (partition !!)
 
 -- | Check that the @k@-th generalized pentagonal number is
--- @div (3 * k² - k) 2@, where @k ∈ {0, 1, −1, 2, −2, 3, −3, 4, ...}@.
+-- @div (3 * k² - k) 2@, where @k ∈ {0, 1, -1, 2, -2, 3, -3, 4, ...}@.
 -- Notice that @-1@ is the @2 * abs (-1) == 2@-nd index in the zero-based list,
 -- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
 pentagonalNumbersProperty1 :: AnySign Int -> Bool
