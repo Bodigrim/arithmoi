@@ -8,17 +8,18 @@
 --
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
-module Math.NumberTheory.MoebiusInversion.Int
-    ( generalInversion
-    , totientSum
-    ) where
 
-import Data.Array.ST
+module Math.NumberTheory.MoebiusInversion.Int
+  ( generalInversion
+  , totientSum
+  ) where
+
 import Control.Monad
 import Control.Monad.ST
+import Data.Vector as V (freeze, unsafeIndex)
+import Data.Vector.Mutable as MV (STVector, replicate, unsafeRead, unsafeWrite)
 
 import Math.NumberTheory.Powers.Squares
-import Math.NumberTheory.Unsafe
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
 --   computed via generalised Möbius inversion.
@@ -29,7 +30,7 @@ totientSum n
   | n < 1 = 0
   | otherwise = generalInversion (triangle . fromIntegral) n
   where
-    triangle k = (k*(k+1)) `quot` 2
+    triangle k = (k * (k + 1)) `quot` 2
 
 -- | @generalInversion g n@ evaluates the generalised Möbius inversion of @g@
 --   at the argument @n@.
@@ -77,64 +78,66 @@ totientSum n
 --   method is only appropriate to compute isolated values of @f@.
 generalInversion :: (Int -> Int) -> Int -> Int
 generalInversion fun n
-    | n < 1     = error "Möbius inversion only defined on positive domain"
-    | n == 1    = fun 1
-    | n == 2    = fun 2 - fun 1
-    | n == 3    = fun 3 - 2*fun 1
-    | otherwise = fastInvert fun n
+  | n < 1 = error "Möbius inversion only defined on positive domain"
+  | n == 1 = fun 1
+  | n == 2 = fun 2 - fun 1
+  | n == 3 = fun 3 - 2 * fun 1
+  | otherwise = fastInvert fun n
 
 fastInvert :: (Int -> Int) -> Int -> Int
-fastInvert fun n = big `unsafeAt` 0
+fastInvert fun n = big `unsafeIndex` 0
   where
     !k0 = integerSquareRoot (n `quot` 2)
-    !mk0 = n `quot` (2*k0+1)
+    !mk0 = n `quot` (2 * k0 + 1)
     kmax a m = (a `quot` m - 1) `quot` 2
-    big = runSTUArray $ do
-        small <- newArray_ (0,mk0) :: ST s (STUArray s Int Int)
-        unsafeWrite small 0 0
-        unsafeWrite small 1 (fun 1)
-        when (mk0 >= 2) $
-            unsafeWrite small 2 (fun 2 - fun 1)
+    big =
+      runST $ do
+        small <- MV.replicate (mk0 + 1) 0 :: ST s (MV.STVector s Int)
+        MV.unsafeWrite small 0 0
+        MV.unsafeWrite small 1 (fun 1)
+        when (mk0 >= 2) $ MV.unsafeWrite small 2 (fun 2 - fun 1)
         let calcit switch change i
-                | mk0 < i   = return (switch,change)
-                | i == change = calcit (switch+1) (change + 4*switch+6) i
-                | otherwise = do
-                    let mloop !acc k !m
-                            | k < switch    = kloop acc k
-                            | otherwise     = do
-                                val <- unsafeRead small m
-                                let nxtk = kmax i (m+1)
-                                mloop (acc - (k-nxtk)*val) nxtk (m+1)
-                        kloop !acc k
-                            | k == 0    = do
-                                unsafeWrite small i acc
-                                calcit switch change (i+1)
-                            | otherwise = do
-                                val <- unsafeRead small (i `quot` (2*k+1))
-                                kloop (acc-val) (k-1)
-                    mloop (fun i - fun (i `quot` 2)) ((i-1) `quot` 2) 1
+              | mk0 < i = return (switch, change)
+              | i == change = calcit (switch + 1) (change + 4 * switch + 6) i
+              | otherwise = do
+                let mloop !acc k !m
+                      | k < switch = kloop acc k
+                      | otherwise = do
+                        val <- MV.unsafeRead small m
+                        let nxtk = kmax i (m + 1)
+                        mloop (acc - (k - nxtk) * val) nxtk (m + 1)
+                    kloop !acc k
+                      | k == 0 = do
+                        MV.unsafeWrite small i acc
+                        calcit switch change (i + 1)
+                      | otherwise = do
+                        val <- MV.unsafeRead small (i `quot` (2 * k + 1))
+                        kloop (acc - val) (k - 1)
+                mloop (fun i - fun (i `quot` 2)) ((i - 1) `quot` 2) 1
         (sw, ch) <- calcit 1 8 3
-        large <- newArray_ (0,k0-1)
+        large <- MV.replicate k0 0 :: ST s (MV.STVector s Int)
         let calcbig switch change j
-                | j == 0    = return large
-                | (2*j-1)*change <= n   = calcbig (switch+1) (change + 4*switch+6) j
-                | otherwise = do
-                    let i = n `quot` (2*j-1)
-                        mloop !acc k m
-                            | k < switch    = kloop acc k
-                            | otherwise     = do
-                                val <- unsafeRead small m
-                                let nxtk = kmax i (m+1)
-                                mloop (acc - (k-nxtk)*val) nxtk (m+1)
-                        kloop !acc k
-                            | k == 0    = do
-                                unsafeWrite large (j-1) acc
-                                calcbig switch change (j-1)
-                            | otherwise = do
-                                let m = i `quot` (2*k+1)
-                                val <- if m <= mk0
-                                         then unsafeRead small m
-                                         else unsafeRead large (k*(2*j-1)+j-1)
-                                kloop (acc-val) (k-1)
-                    mloop (fun i - fun (i `quot` 2)) ((i-1) `quot` 2) 1
-        calcbig sw ch k0
+              | j == 0 = return large
+              | (2 * j - 1) * change <= n =
+                calcbig (switch + 1) (change + 4 * switch + 6) j
+              | otherwise = do
+                let i = n `quot` (2 * j - 1)
+                    mloop !acc k m
+                      | k < switch = kloop acc k
+                      | otherwise = do
+                        val <- MV.unsafeRead small m
+                        let nxtk = kmax i (m + 1)
+                        mloop (acc - (k - nxtk) * val) nxtk (m + 1)
+                    kloop !acc k
+                      | k == 0 = do
+                        MV.unsafeWrite large (j - 1) acc
+                        calcbig switch change (j - 1)
+                      | otherwise = do
+                        let m = i `quot` (2 * k + 1)
+                        val <-
+                          if m <= mk0
+                            then MV.unsafeRead small m
+                            else MV.unsafeRead large (k * (2 * j - 1) + j - 1)
+                        kloop (acc - val) (k - 1)
+                mloop (fun i - fun (i `quot` 2)) ((i - 1) `quot` 2) 1
+        calcbig sw ch k0 >>= freeze
