@@ -15,11 +15,8 @@ module Math.NumberTheory.Powers.Cubes
     , isCube'
     , isPossibleCube
     ) where
-
+ 
 #include "MachDeps.h"
-
-import Data.Array.Unboxed
-import Data.Array.ST
 
 import Data.Bits
 
@@ -27,8 +24,10 @@ import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
-
-import Math.NumberTheory.Unsafe
+import Data.Vector.Mutable as MV (replicate, unsafeWrite)
+import Data.Vector as V (Vector, freeze, unsafeIndex)
+import Control.Monad.ST (runST)
+import Data.Foldable (for_)
 
 -- | Calculate the integer cube root of an integer @n@,
 --   that is the largest integer @r@ such that @r^3 <= n@.
@@ -120,10 +119,10 @@ isCube' !n = isPossibleCube n
   #-}
 isPossibleCube :: Integral a => a -> Bool
 isPossibleCube !n =
-    unsafeAt cr512 (fromIntegral n .&. 511)
-    && unsafeAt cubeRes837 (fromIntegral (n `rem` 837))
-    && unsafeAt cubeRes637 (fromIntegral (n `rem` 637))
-    && unsafeAt cubeRes703 (fromIntegral (n `rem` 703))
+    V.unsafeIndex cr512 (fromIntegral n .&. 511)
+    && V.unsafeIndex cubeRes837 (fromIntegral (n `rem` 837))
+    && V.unsafeIndex cubeRes637 (fromIntegral (n `rem` 637))
+    && V.unsafeIndex cubeRes703 (fromIntegral (n `rem` 703))
 
 ----------------------------------------------------------------------
 --                         Utility Functions                        --
@@ -208,40 +207,38 @@ appCuRt n@(Jp# bn#)
 appCuRt _ = error "integerCubeRoot': negative argument"
 
 -- not very discriminating, but cheap, so it's an overall gain
-cr512 :: UArray Int Bool
-cr512 = runSTUArray $ do
-    ar <- newArray (0,511) True
+cr512 :: V.Vector Bool
+cr512 = runST $ do
+    v <- MV.replicate 512 True
     let note s i
-            | i < 512   = unsafeWrite ar i False >> note s (i+s)
+            | i < 512   = MV.unsafeWrite v i False >> note s (i+s)
             | otherwise = return ()
     note 4 2
     note 8 4
     note 32 16
     note 64 32
     note 256 128
-    unsafeWrite ar 256 False
-    return ar
+    MV.unsafeWrite v 256 False
+    freeze v
 
 -- Remainders modulo @3^3 * 31@
-cubeRes837 :: UArray Int Bool
-cubeRes837 = runSTUArray $ do
-    ar <- newArray (0,836) False
-    let note 837 = return ar
-        note k = unsafeWrite ar ((k*k*k) `rem` 837) True >> note (k+1)
-    note 0
+cubeRes837 :: V.Vector Bool
+cubeRes837 = runST $ do
+    v <- MV.replicate 837 False
+    for_ [0..837] $ \k -> MV.unsafeWrite v ((k*k*k) `rem` 837) True
+    freeze v
 
 -- Remainders modulo @7^2 * 13@
-cubeRes637 :: UArray Int Bool
-cubeRes637 = runSTUArray $ do
-    ar <- newArray (0,636) False
-    let note 637 = return ar
-        note k = unsafeWrite ar ((k*k*k) `rem` 637) True >> note (k+1)
-    note 0
-
+cubeRes637 :: V.Vector Bool
+cubeRes637 = runST $ do
+    v <- MV.replicate 637 False
+    for_ [0..637]$ \k -> MV.unsafeWrite v ((k*k*k) `rem` 637) True
+    freeze v
+    
 -- Remainders modulo @19 * 37@
-cubeRes703 :: UArray Int Bool
-cubeRes703 = runSTUArray $ do
-    ar <- newArray (0,702) False
-    let note 703 = return ar
-        note k = unsafeWrite ar ((k*k*k) `rem` 703) True >> note (k+1)
-    note 0
+cubeRes703 :: V.Vector Bool
+cubeRes703 = runST $ do
+    v <- MV.replicate 703 False
+    for_ [0..703] $ \k -> MV.unsafeWrite v ((k*k*k) `rem` 703) True
+    freeze v
+
