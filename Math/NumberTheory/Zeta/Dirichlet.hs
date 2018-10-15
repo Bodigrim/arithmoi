@@ -14,13 +14,13 @@ module Math.NumberTheory.Zeta.Dirichlet
   , betasOdd
   ) where
 
-import Data.ExactPi                    (ExactPi (..), approximateValue)
-import Data.List                       (zipWith4)
-import Data.Ratio                      ((%))
+import Data.ExactPi                   (ExactPi (..), approximateValue)
+import Data.List                      (zipWith4)
+import Data.Ratio                     ((%))
 
-import Math.NumberTheory.Recurrencies   (euler, factorial)
-import Math.NumberTheory.Zeta.Hurwitz   (zetaHurwitz)
-import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds)
+import Math.NumberTheory.Recurrences  (euler, factorial)
+import Math.NumberTheory.Zeta.Hurwitz (zetaHurwitz)
+import Math.NumberTheory.Zeta.Utils   (intertwine, skipOdds)
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
 --
@@ -40,17 +40,22 @@ betasOdd = zipWith Exact [1, 3 ..] $ zipWith4
                                      (iterate (4 *) 4)
 
 -- | @betasOdd@, but with @forall a . Floating a => a@ instead of @ExactPi@s.
--- Used in @betasEven@.
+-- Used in @betas@.
 betasOdd' :: Floating a => [a]
 betasOdd' = map approximateValue betasOdd
 
 -- | Infinite sequence of approximate values of the Dirichlet @β@ function at
 -- positive even integer arguments, starting with @β(0)@.
 betasEven :: forall a. (Floating a, Ord a) => a -> [a]
-betasEven eps = (1 / 2) : zipWith hurwitz [2, 4 ..] (iterate (16 *) 16)
+betasEven eps = (1 / 2) : hurwitz
   where
-    hurwitz :: Integer -> a -> a
-    hurwitz s fours = (zetaHurwitz eps s 0.25 - zetaHurwitz eps s 0.75) / fours
+    hurwitz :: [a]
+    hurwitz =
+        zipWith3 (\quarter threeQuarters four -> 
+            (quarter - threeQuarters) / four)
+        (skipOdds $ zetaHurwitz eps 0.25)
+        (skipOdds $ zetaHurwitz eps 0.75)
+        (iterate (16 *) 16)
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.

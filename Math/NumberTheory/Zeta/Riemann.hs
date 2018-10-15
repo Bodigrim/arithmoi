@@ -14,12 +14,12 @@ module Math.NumberTheory.Zeta.Riemann
   , zetasOdd
   ) where
 
-import Data.ExactPi                    (ExactPi (..), approximateValue)
-import Data.Ratio                      ((%))
+import Data.ExactPi                   (ExactPi (..), approximateValue)
+import Data.Ratio                     ((%))
 
-import Math.NumberTheory.Recurrencies   (bernoulli)
-import Math.NumberTheory.Zeta.Hurwitz   (zetaHurwitz)
-import Math.NumberTheory.Zeta.Utils     (intertwine, skipOdds)
+import Math.NumberTheory.Recurrences  (bernoulli)
+import Math.NumberTheory.Zeta.Hurwitz (zetaHurwitz)
+import Math.NumberTheory.Zeta.Utils   (intertwine, skipEvens, skipOdds)
 
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors conversion to 'Double' may return values below 1:
@@ -42,7 +42,7 @@ zetasEven' :: Floating a => [a]
 zetasEven' = map approximateValue zetasEven
 
 zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
-zetasOdd eps = (1 / 0) : map (\s -> zetaHurwitz eps s 1) ([3, 5 ..] :: [Integer])
+zetasOdd eps = (1 / 0) : skipEvens (zetaHurwitz eps 1)
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Riemann zeta-function at integer arguments, starting with @ζ(0)@.

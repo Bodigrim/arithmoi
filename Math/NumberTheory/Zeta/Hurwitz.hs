@@ -14,13 +14,11 @@ module Math.NumberTheory.Zeta.Hurwitz
   ( zetaHurwitz
   ) where
 
-import Data.List                      (zipWith4)
+import Math.NumberTheory.Recurrences (bernoulli, factorial)
+import Math.NumberTheory.Zeta.Utils  (skipOdds)
 
-import Math.NumberTheory.Recurrencies (bernoulli, factorial)
-import Math.NumberTheory.Zeta.Utils   (skipOdds)
-
--- | Value of Hurwitz zeta function evaluated at @ζ(s, a)@ with
--- @forall t1 t2 . (Floating t1, Ord t1, Integral t2) => s ∈ t2, a ∈ t1@.
+-- | Values of Hurwitz zeta function evaluated at @ζ(s, a)@ with
+-- @forall t1 . (Floating t1, Ord t1) => a ∈ t1@, and @s ∈ [0, 1 ..]@.
 -- The algorithm used was based on the Euler-Maclaurin formula and was derived
 -- from <http://fredrikj.net/thesis/thesis.pdf Fast and Rigorous Computation of Special Functions to High Precision>
 -- by F. Johansson, chapter 4.8, formula 4.8.5.
@@ -32,10 +30,10 @@ import Math.NumberTheory.Zeta.Utils   (skipOdds)
 -- providing an @ε >= 1e-24@ also does not make sense.
 -- Example of how to call the function:
 --
--- >>> zetaHurwitz 1e-15 5 0.25
+-- >>> zetaHurwitz 1e-15 0.25 !! 5
 -- 1024.3489745265808
-zetaHurwitz :: forall a b . (Floating a, Ord a, Integral b) => a -> b -> a -> a
-zetaHurwitz eps s a = s' + i + t
+zetaHurwitz :: forall a . (Floating a, Ord a) => a -> a -> [a]
+zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
     -- @div (33 * (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14) 10 == div (33 * 14) 10@
@@ -44,61 +42,82 @@ zetaHurwitz eps s a = s' + i + t
     -- Multiplying by 33 and dividing by 10 is because asking for @14@ digits
     -- of decimal precision equals asking for @(log 10 / log 2) * 14 ~ 3.3 * 14 ~ 46@
     -- bits of precision.
-    digitsOfPrecision :: Int
+    digitsOfPrecision :: Integer
     digitsOfPrecision =
-       let magnitude = length . takeWhile (>= 1) . iterate (/ 10) . recip $ eps
+       let magnitude = toInteger . length . takeWhile (>= 1) . iterate (/ 10) . recip $ eps
        in  div (magnitude * 33) 10
 
     -- @a + n@
     aPlusN :: a
     aPlusN = a + fromIntegral digitsOfPrecision
 
-    -- @(a + n)^s@
-    powOfAPlusN :: a
-    powOfAPlusN = aPlusN ^^ s
+    -- @[(a + n)^s | s <- [0, 1, 2 ..]]@
+    powsOfAPlusN :: [a]
+    powsOfAPlusN = iterate (aPlusN *) 1
 
-    --                   [      1      ]
-    -- \sum_{k=0}^\(n-1) | ----------- |
-    --                   [ (a + k) ^ s ]
+    -- [                   [      1      ] |                   ]
+    -- | \sum_{k=0}^\(n-1) | ----------- | | s <- [0, 1, 2 ..] |
+    -- [                   [ (a + k) ^ s ] |                   ]
     -- @S@ value in 4.8.5 formula.
-    s' :: a
-    s' = sum .
-         take digitsOfPrecision .
-         map (recip . (^^ s) . (a +) . fromInteger) $ [0..]
+    ss :: [a]
+    ss = let numbers = map ((a +) . fromInteger) [0..digitsOfPrecision-1]
+             denoms  = replicate (fromInteger digitsOfPrecision) 1 :
+                       iterate (zipWith (*) numbers) numbers
+         in map (sum . map recip) denoms
 
-    -- (a + n) ^ (1 - s)            a + n
-    -- ----------------- = ----------------------
-    --       s - 1          (a + n) ^ s * (s - 1)
+    -- [ (a + n) ^ (1 - s)            a + n         |                   ]
+    -- | ----------------- = ---------------------- | s <- [0, 1, 2 ..] |
+    -- [       s - 1          (a + n) ^ s * (s - 1) |                   ]
     -- @I@ value in 4.8.5 formula.
-    i :: a
-    i = aPlusN / (powOfAPlusN * ((fromIntegral s) - 1))
+    is :: [a]
+    is = let denoms = zipWith
+                      (\powOfA int -> powOfA * fromInteger int)
+                      powsOfAPlusN
+                      [-1, 0..]
+         in zipWith (/) (repeat aPlusN) denoms
 
-    --      1
-    -- -----------
-    -- (a + n) ^ s
-    constant2 :: a
-    constant2 = recip $ powOfAPlusN
+    -- [      1      |             ]
+    -- [ ----------- | s <- [0 ..] ]
+    -- [ (a + n) ^ s |             ]
+    constants2 :: [a]
+    constants2 = map recip powsOfAPlusN
 
-    -- [(s)_(2*k - 1) | k <- [1 ..]]
-    pochhammer :: [a]
-    pochhammer = map fromIntegral $ skipOdds $ scanl1 (*) [s ..]
+    -- [ [(s)_(2*k - 1) | k <- [1 ..]], s <- [0 ..]], i.e. odd indices of
+    -- infinite rising factorial sequences, each sequence starting at a
+    -- positive integer.
+    pochhammers :: [[Integer]]
+    pochhammers = let -- [ [(s)_k | k <- [1 ..]], s <- [1 ..]]
+                      pochhs :: [[Integer]]
+                      pochhs = iterate (\(x : xs) -> map (`div` x) xs) (tail factorial)
+                  in -- When @s@ is @0@, the infinite sequence of rising
+                     -- factorials starting at @s@ is @[0,0,0,0..]@.
+                     repeat 0 : map skipOdds pochhs
 
     -- [(a + n) ^ (2*k - 1) | k <- [1 ..]]
     powers :: [a]
     powers = iterate ((aPlusN * aPlusN) *) aPlusN
 
-    -- [ B_2k     (s)_(2*k - 1)    |             ]
-    -- | ----- ------------------- | k <- [1 ..] |
+    -- [            B_2k           |             ]
+    -- | ------------------------- | k <- [1 ..] |
     -- [ (2k)! (a + n) ^ (2*k - 1) |             ]
-    second :: a
-    second = sum $
-             take digitsOfPrecision $
-             zipWith4
-             (\bern evenFac poch denom -> (fromRational bern * poch) / (denom * fromInteger evenFac))
-             (tail $ skipOdds bernoulli)
-             (tail $ skipOdds factorial)
-             pochhammer
-             powers
+    second :: [a]
+    second =
+        take (fromInteger digitsOfPrecision) $
+        zipWith3
+        (\bern evenFac denom -> fromRational bern / (denom * fromInteger evenFac))
+        (tail $ skipOdds bernoulli)
+        (tail $ skipOdds factorial)
+        powers
+
+    fracs :: [a]
+    fracs = zipWith
+            (\sec pochh -> sum $ zipWith (\s p -> s * fromInteger p) sec pochh)
+            (repeat second)
+            pochhammers
 
     -- @T@ value in 4.8.5 formula.
-    t = constant2 * (0.5 + second)
+    ts :: [a]
+    ts = zipWith
+         (\constant2 frac -> constant2 * (0.5 + frac))
+         constants2
+         fracs
