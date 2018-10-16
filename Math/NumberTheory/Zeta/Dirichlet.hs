@@ -53,8 +53,8 @@ betasEven eps = (1 / 2) : hurwitz
     hurwitz =
         zipWith3 (\quarter threeQuarters four -> 
             (quarter - threeQuarters) / four)
-        (skipOdds $ zetaHurwitz eps 0.25)
-        (skipOdds $ zetaHurwitz eps 0.75)
+        (tail . skipOdds $ zetaHurwitz eps 0.25)
+        (tail . skipOdds $ zetaHurwitz eps 0.75)
         (iterate (16 *) 16)
 
 -- | Infinite sequence of approximate (up to given precision)

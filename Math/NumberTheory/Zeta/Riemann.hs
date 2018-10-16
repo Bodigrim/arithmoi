@@ -42,7 +42,7 @@ zetasEven' :: Floating a => [a]
 zetasEven' = map approximateValue zetasEven
 
 zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
-zetasOdd eps = (1 / 0) : skipEvens (zetaHurwitz eps 1)
+zetasOdd eps = (1 / 0) : tail (skipEvens $ zetaHurwitz eps 1)
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Riemann zeta-function at integer arguments, starting with @ζ(0)@.
