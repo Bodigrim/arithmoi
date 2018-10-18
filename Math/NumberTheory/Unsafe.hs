@@ -6,64 +6,37 @@
 --
 -- Layer to switch between safe and unsafe arrays.
 --
-
 {-# LANGUAGE CPP #-}
 
 module Math.NumberTheory.Unsafe
-  ( UArray
-  , bounds
-  , castSTUArray
-  , unsafeAt
+  ( unsafeIndex
   , unsafeFreeze
-  , unsafeNewArray_
+  , unsafeNew
   , unsafeRead
   , unsafeThaw
   , unsafeWrite
   ) where
-
 #ifdef CheckBounds
+import Data.Vector
 
-import Data.Array.Base
-  ( UArray
-  , castSTUArray
-  )
-import Data.Array.IArray
-  ( IArray
-  , bounds
-  , (!)
-  )
-import Data.Array.MArray
+unsafeIndex :: Vector a -> Int -> a
+unsafeIndex = (!)
 
-unsafeAt :: (IArray a e, Ix i) => a i e -> i -> e
-unsafeAt = (!)
-
-unsafeFreeze :: (Ix i, MArray a e m, IArray b e) => a i e -> m (b i e)
+unsafeFreeze :: PrimMonad m => MVector (PrimState m) a -> m (Vector a)
 unsafeFreeze = freeze
 
-unsafeNewArray_ :: (Ix i, MArray a e m) => (i, i) -> m (a i e)
-unsafeNewArray_ = newArray_
+unsafeNew :: PrimMonad m => Int -> m (MVector (PrimState m) a)
+unsafeNew = new
 
-unsafeRead :: (MArray a e m, Ix i) => a i e -> i -> m e
-unsafeRead = readArray
+unsafeRead :: PrimMonad m => MVector (PrimState m) a -> Int -> m a
+unsafeRead = read
 
-unsafeThaw :: (Ix i, IArray a e, MArray b e m) => a i e -> m (b i e)
+unsafeThaw :: PrimMonad m => Vector a -> m (MVector (PrimState m) a)
 unsafeThaw = thaw
 
-unsafeWrite :: (MArray a e m, Ix i) => a i e -> i -> e -> m ()
-unsafeWrite = writeArray
-
+unsafeWrite :: PrimMonad m => MVector (PrimState m) a -> Int -> a -> m ()
+unsafeWrite = write
 #else
-
-import Data.Array.Base
-  ( UArray
-  , bounds
-  , castSTUArray
-  , unsafeAt
-  , unsafeFreeze
-  , unsafeNewArray_
-  , unsafeRead
-  , unsafeThaw
-  , unsafeWrite
-  )
-
+import Data.Vector (unsafeFreeze, unsafeIndex, unsafeThaw)
+import Data.Vector.Mutable (unsafeNew, unsafeRead, unsafeWrite)
 #endif
