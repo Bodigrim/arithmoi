@@ -18,7 +18,6 @@ module Math.NumberTheory.Unsafe
   , unsafeThaw
   , unsafeWrite
   , replicate
-  , length
   , fromList
   ) where
 

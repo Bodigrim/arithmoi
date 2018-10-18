@@ -41,6 +41,8 @@ import Data.Proxy
 #if WORD_SIZE_IN_BITS == 32
 import Data.Word
 #endif
+import Data.Vector as V (length)
+import Data.Vector.Mutable as MV (length)
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
@@ -128,7 +130,7 @@ primeList ps@(PS v _)
 primeListInternal :: Num a => PrimeSieve -> [a]
 primeListInternal (PS v0 bs) =
   map ((+ fromInteger v0) . toPrim) $
-  filter (unsafeIndex bs) [0 .. (Math.NumberTheory.Unsafe.length bs - 1)]
+  filter (unsafeIndex bs) [0 .. (V.length bs - 1)]
 
 -- | Returns true if integer is beyond representation range of type a.
 doesNotFit ::
@@ -251,7 +253,7 @@ makeSieves plim sqlim bitOff valOff cache
 
 slice :: STVector s CacheWord -> ST s (STVector s Bool)
 slice cache = do
-  let hi = (Math.NumberTheory.Unsafe.length cache) + 1
+  let hi = MV.length cache + 1
   sieve <- replicate (lastIndex + 1) True
   let treat pr
         | hi < pr = return sieve
@@ -327,13 +329,13 @@ sieveTo bound = arr
 growCache ::
      Integer -> Integer -> Vector CacheWord -> ST s (STVector s CacheWord)
 growCache offset plim old = do
-  let num = Math.NumberTheory.Unsafe.length old
+  let num = V.length old
       (bt, ix) = idxPr plim
       !start = 8 * bt + ix + 1
       !nlim = plim + 4800
   let sieveST = sieveTo nlim :: ST s (STVector s Bool) -- Implement SieveFromTo for this, it's pretty wasteful when nlim isn't
   sieve <- sieveST
-  let hi = (length sieve) - 1 -- very small anymore
+  let hi = (MV.length sieve) - 1 -- very small anymore
   more <- countFromToWd start hi sieveST
   new <- unsafeNew (1 + num + 2 * more) :: ST s (STVector s CacheWord)
   let copy i
@@ -440,7 +442,7 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
       runST $ do
         let sieveST = sieveTo plim
         sieve <- sieveST
-        let (lo, hi) = (0, length sieve)
+        let (lo, hi) = (0, MV.length sieve)
         pct <- countFromToWd lo hi sieveST
         new <- unsafeNew (2 * pct) :: ST s (STVector s CacheWord)
         let fill j indx

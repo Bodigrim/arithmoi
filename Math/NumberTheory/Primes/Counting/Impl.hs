@@ -34,6 +34,7 @@ import Math.NumberTheory.Unsafe
 import Control.Monad.ST
 import Data.Bits
 import Data.Int
+import Data.Vector.Mutable as MV (length)
 #if SIZEOF_HSWORD < 8
 #define COUNT_T Int64
 #else
@@ -65,7 +66,7 @@ primeCount n
     runST $ do
       let baST = sieveTo n :: ST s (STVector s Bool)
       ba <- baST
-      ct <- countFromTo 0 (Math.NumberTheory.Unsafe.length ba - 1) baST
+      ct <- countFromTo 0 (MV.length ba - 1) baST
       return (fromIntegral $ ct + 3)
   | otherwise =
     let !ub = cop $ fromInteger n
@@ -237,7 +238,7 @@ calcST :: forall s. COUNT_T -> COUNT_T -> ST s Integer
 calcST lim plim = do
   let !parrST = sieveTo (fromIntegral plim)
   !parr <- parrST
-  !pct <- countFromTo 0 (length parr) parrST
+  !pct <- countFromTo 0 (MV.length parr) parrST
   !ar1 <- unsafeNew end
   unsafeWrite ar1 0 lim
   unsafeWrite ar1 1 1
