@@ -20,6 +20,8 @@ module Math.NumberTheory.Primes.Counting.Impl
   , nthPrimeMaxArg
   ) where
 #include "MachDeps.h"
+import Prelude hiding (replicate)
+
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.Powers.Squares
@@ -27,19 +29,11 @@ import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
+import Math.NumberTheory.Unsafe
 
 import Control.Monad.ST
 import Data.Bits
 import Data.Int
-import Data.Vector as V (Vector, freeze, unsafeIndex, unsafeThaw)
-import Data.Vector.Mutable as MV
-  ( STVector
-  , length
-  , replicate
-  , unsafeNew
-  , unsafeRead
-  , unsafeWrite
-  )
 #if SIZEOF_HSWORD < 8
 #define COUNT_T Int64
 #else
@@ -71,7 +65,7 @@ primeCount n
     runST $ do
       let baST = sieveTo n :: ST s (STVector s Bool)
       ba <- baST
-      ct <- countFromTo 0 (MV.length ba - 1) baST
+      ct <- countFromTo 0 (Math.NumberTheory.Unsafe.length ba - 1) baST
       return (fromIntegral $ ct + 3)
   | otherwise =
     let !ub = cop $ fromInteger n
@@ -163,24 +157,19 @@ sieveCountST ub cr sr = do
       picr = approxPrimeCount cr
       diff = pisr - picr
       size = fromIntegral (diff + diff `quot` 50) + 30
-  store <- unsafeNew size :: ST s (MV.STVector s COUNT_T)
+  store <- unsafeNew size :: ST s (STVector s COUNT_T)
   let feed ::
-           COUNT_T
-        -> Int
-        -> Int
-        -> V.Vector Bool
-        -> [PrimeSieve]
-        -> ST s Integer
+           COUNT_T -> Int -> Int -> Vector Bool -> [PrimeSieve] -> ST s Integer
       feed voff !wi !ri uar sves
         | ri == sieveBits =
           case sves of
             (PS vO ba:more) -> feed (fromInteger vO) wi 0 ba more
             _ -> error "prime stream ended prematurely"
         | pval > sr = do
-          let stuST = V.unsafeThaw uar :: ST s (STVector s Bool)
+          let stuST = unsafeThaw uar :: ST s (STVector s Bool)
           eat 0 0 voff (wi - 1) ri stuST sves
         | uar `unsafeIndex` ri = do
-          MV.unsafeWrite store wi (ub `quot` pval)
+          unsafeWrite store wi (ub `quot` pval)
           feed voff (wi + 1) (ri + 1) uar sves
         | otherwise = feed voff wi (ri + 1) uar sves
         where
@@ -191,7 +180,7 @@ sieveCountST ub cr sr = do
         -> COUNT_T
         -> Int
         -> Int
-        -> ST s (MV.STVector s Bool)
+        -> ST s (STVector s Bool)
         -> [PrimeSieve]
         -> ST s Integer
       eat !acc !btw voff !wi !si stu sves
@@ -199,11 +188,11 @@ sieveCountST ub cr sr = do
           case sves of
             [] -> error "Premature end of prime stream"
             (PS vO ba:more) -> do
-              let nstu = V.unsafeThaw ba :: ST s (STVector s Bool)
+              let nstu = unsafeThaw ba :: ST s (STVector s Bool)
               eat acc btw (fromInteger vO) wi 0 nstu more
         | wi < 0 = return acc
         | otherwise = do
-          qb <- MV.unsafeRead store wi
+          qb <- unsafeRead store wi
           let dist = qb - voff - 7
           if dist < fromIntegral sieveRange
             then do
@@ -220,7 +209,7 @@ sieveCountST ub cr sr = do
                   (b, j) = idxPr (fds + 7)
                   !li = (b `shiftL` 3) .|. j
                   ctLoop !lac 0 (PS vO ba:more) = do
-                    let nstu = V.unsafeThaw ba
+                    let nstu = unsafeThaw ba
                     new <- countFromTo 0 li nstu
                     let nbtw = btw + lac + 1 + fromIntegral new
                     eat
@@ -248,11 +237,11 @@ calcST :: forall s. COUNT_T -> COUNT_T -> ST s Integer
 calcST lim plim = do
   let !parrST = sieveTo (fromIntegral plim)
   !parr <- parrST
-  !pct <- countFromTo 0 (MV.length parr) parrST
-  !ar1 <- MV.unsafeNew end
-  MV.unsafeWrite ar1 0 lim
-  MV.unsafeWrite ar1 1 1
-  !ar2 <- MV.unsafeNew end
+  !pct <- countFromTo 0 (length parr) parrST
+  !ar1 <- unsafeNew end
+  unsafeWrite ar1 0 lim
+  unsafeWrite ar1 1 1
+  !ar2 <- unsafeNew end
   let go ::
            Int
         -> Int
@@ -262,7 +251,7 @@ calcST lim plim = do
       go cap pix old new
         | pix == 2 = coll cap old
         | otherwise = do
-          isp <- MV.unsafeRead parr pix
+          isp <- unsafeRead parr pix
           if isp
             then do
               let !n = fromInteger (toPrim pix)
@@ -273,8 +262,8 @@ calcST lim plim = do
       coll stop ar =
         let cgo !acc i
               | i < stop = do
-                !k <- MV.unsafeRead ar i
-                !v <- MV.unsafeRead ar (i + 1)
+                !k <- unsafeRead ar i
+                !v <- unsafeRead ar (i + 1)
                 cgo (acc + fromIntegral v * cp6 k) (i + 2)
               | otherwise = return (acc + fromIntegral pct + 2)
          in cgo 0 0
@@ -290,33 +279,33 @@ treat end n old new = do
   qi0 <- locate n 0 (end `quot` 2 - 1) old
   let collect stop !acc ix
         | ix < end = do
-          !k <- MV.unsafeRead old ix
+          !k <- unsafeRead old ix
           if k < stop
             then do
-              v <- MV.unsafeRead old (ix + 1)
+              v <- unsafeRead old (ix + 1)
               collect stop (acc - v) (ix + 2)
             else return (acc, ix)
         | otherwise = return (acc, ix)
       goTreat !wi !ci qi
         | qi < end = do
-          !key <- MV.unsafeRead old qi
-          !val <- MV.unsafeRead old (qi + 1)
+          !key <- unsafeRead old qi
+          !val <- unsafeRead old (qi + 1)
           let !q0 = key `quot` n
               !r0 = fromIntegral (q0 `rem` 30030)
               !nkey = q0 - fromIntegral (cpDfAr `unsafeIndex` r0)
               nk0 = q0 + fromIntegral (cpGpAr `unsafeIndex` (r0 + 1) + 1)
               !nlim = n * nk0
           (wi1, ci1) <- copyTo end nkey old ci new wi
-          ckey <- MV.unsafeRead old ci1
+          ckey <- unsafeRead old ci1
           (!acc, !ci2) <-
             if ckey == nkey
               then do
-                !ov <- MV.unsafeRead old (ci1 + 1)
+                !ov <- unsafeRead old (ci1 + 1)
                 return (ov - val, ci1 + 2)
               else return (-val, ci1)
           (!tot, !nqi) <- collect nlim acc (qi + 2)
-          MV.unsafeWrite new wi1 nkey
-          MV.unsafeWrite new (wi1 + 1) tot
+          unsafeWrite new wi1 nkey
+          unsafeWrite new (wi1 + 1) tot
           goTreat (wi1 + 2) ci2 nqi
         | otherwise = copyRem end old ci new wi
   goTreat 0 0 qi0
@@ -329,7 +318,7 @@ locate p low high arr = do
   let go lo hi
         | lo < hi = do
           let !md = (lo + hi) `quot` 2
-          v <- MV.unsafeRead arr (2 * md)
+          v <- unsafeRead arr (2 * md)
           case compare p v of
             LT -> go lo md
             EQ -> return (2 * md)
@@ -349,12 +338,12 @@ copyTo ::
 copyTo end lim old oi new ni = do
   let go ri wi
         | ri < end = do
-          ok <- MV.unsafeRead old ri
+          ok <- unsafeRead old ri
           if ok < lim
             then do
-              !ov <- MV.unsafeRead old (ri + 1)
-              MV.unsafeWrite new wi ok
-              MV.unsafeWrite new (wi + 1) ov
+              !ov <- unsafeRead old (ri + 1)
+              unsafeWrite new wi ok
+              unsafeWrite new (wi + 1) ov
               go (ri + 2) (wi + 2)
             else return (wi, ri)
         | otherwise = return (wi, ri)
@@ -366,7 +355,7 @@ copyRem ::
 copyRem end old oi new ni = do
   let go ri wi
         | ri < end = do
-          MV.unsafeRead old ri >>= MV.unsafeWrite new wi
+          unsafeRead old ri >>= unsafeWrite new wi
           go (ri + 1) (wi + 1)
         | otherwise = return wi
   go oi ni
@@ -384,18 +373,18 @@ cop m = m - fromIntegral (cpDfAr `unsafeIndex` fromIntegral (m `rem` 30030))
 --------------------------------------------------------------------------------
 --                           Ugly helper arrays                               --
 --------------------------------------------------------------------------------
-cpCtAr :: V.Vector Int16
+cpCtAr :: Vector Int16
 cpCtAr =
   runST $ do
-    ar <- MV.replicate 30030 1 :: ST s (MV.STVector s Int16)
+    ar <- replicate 30030 1 :: ST s (STVector s Int16)
     let zilch s i
-          | i < 30030 = MV.unsafeWrite ar i 0 >> zilch s (i + s)
+          | i < 30030 = unsafeWrite ar i 0 >> zilch s (i + s)
           | otherwise = return ()
         accumulate ct i
           | i < 30030 = do
-            v <- MV.unsafeRead ar i
+            v <- unsafeRead ar i
             let !ct' = ct + v
-            MV.unsafeWrite ar i ct'
+            unsafeWrite ar i ct'
             accumulate ct' (i + 1)
           | otherwise = return ar
     zilch 2 0
@@ -405,22 +394,22 @@ cpCtAr =
     zilch 22 11
     zilch 26 13
     _ <- accumulate 1 2
-    V.freeze ar
+    unsafeFreeze ar
 
-cpDfAr :: V.Vector Int8
+cpDfAr :: Vector Int8
 cpDfAr =
   runST $ do
-    ar <- MV.replicate 30030 0 :: ST s (MV.STVector s Int8)
+    ar <- replicate 30030 0 :: ST s (STVector s Int8)
     let note s i
-          | i < 30029 = MV.unsafeWrite ar i 1 >> note s (i + s)
+          | i < 30029 = unsafeWrite ar i 1 >> note s (i + s)
           | otherwise = return ()
         accumulate d i
           | i < 30029 = do
-            v <- MV.unsafeRead ar i
+            v <- unsafeRead ar i
             if v == 0
               then accumulate 2 (i + 2)
               else do
-                MV.unsafeWrite ar i d
+                unsafeWrite ar i d
                 accumulate (d + 1) (i + 1)
           | otherwise = return ar
     note 2 0
@@ -430,24 +419,24 @@ cpDfAr =
     note 22 11
     note 26 13
     _ <- accumulate 2 3
-    V.freeze ar
+    unsafeFreeze ar
 
-cpGpAr :: V.Vector Int8
+cpGpAr :: Vector Int8
 cpGpAr =
   runST $ do
-    ar <- MV.replicate 30031 0
-    MV.unsafeWrite ar 30030 1
+    ar <- replicate 30031 0
+    unsafeWrite ar 30030 1
     let note s i
-          | i < 30029 = MV.unsafeWrite ar i 1 >> note s (i + s)
+          | i < 30029 = unsafeWrite ar i 1 >> note s (i + s)
           | otherwise = return ()
         accumulate d i
           | i < 1 = return ar
           | otherwise = do
-            v <- MV.unsafeRead ar i
+            v <- unsafeRead ar i
             if v == 0
               then accumulate 2 (i - 2)
               else do
-                MV.unsafeWrite ar i d
+                unsafeWrite ar i d
                 accumulate (d + 1) (i - 1)
           | otherwise = return ar
     note 2 0
@@ -457,4 +446,4 @@ cpGpAr =
     note 22 11
     note 26 13
     _ <- accumulate 2 30027
-    V.freeze ar
+    unsafeFreeze ar

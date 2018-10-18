@@ -23,12 +23,13 @@ module Math.NumberTheory.Powers.Squares
 
 #include "MachDeps.h"
 
+import Prelude hiding (replicate)
+
 import Data.Foldable (for_)
 import Data.Bits
-import Data.Vector as V (Vector, unsafeIndex, freeze)
-import Data.Vector.Mutable as MV (replicate, unsafeWrite, STVector)
 import Control.Monad.ST (runST, ST)
 
+import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Powers.Squares.Internal
 
 -- | Calculate the integer square root of a nonnegative number @n@,
@@ -142,9 +143,9 @@ isSquare' n
   #-}
 isPossibleSquare :: Integral a => a -> Bool
 isPossibleSquare n =
-  V.unsafeIndex sr256 (fromIntegral n .&. 255)
-  && V.unsafeIndex sr693 (fromIntegral (n `rem` 693))
-  && V.unsafeIndex sr325 (fromIntegral (n `rem` 325))
+  unsafeIndex sr256 (fromIntegral n .&. 255)
+  && unsafeIndex sr693 (fromIntegral (n `rem` 693))
+  && unsafeIndex sr325 (fromIntegral (n `rem` 325))
 
 -- | Test whether a non-negative number may be a square.
 --   Non-negativity is not checked, passing negative arguments may
@@ -165,49 +166,49 @@ isPossibleSquare n =
   #-}
 isPossibleSquare2 :: Integral a => a -> Bool
 isPossibleSquare2 n =
-  V.unsafeIndex sr256 (fromIntegral n .&. 255)
-  && V.unsafeIndex sr819  (fromIntegral (n `rem` 819))
-  && V.unsafeIndex sr1025 (fromIntegral (n `rem` 1025))
-  && V.unsafeIndex sr2047 (fromIntegral (n `rem` 2047))
-  && V.unsafeIndex sr4097 (fromIntegral (n `rem` 4097))
-  && V.unsafeIndex sr341  (fromIntegral (n `rem` 341))
+  unsafeIndex sr256 (fromIntegral n .&. 255)
+  && unsafeIndex sr819  (fromIntegral (n `rem` 819))
+  && unsafeIndex sr1025 (fromIntegral (n `rem` 1025))
+  && unsafeIndex sr2047 (fromIntegral (n `rem` 2047))
+  && unsafeIndex sr4097 (fromIntegral (n `rem` 4097))
+  && unsafeIndex sr341  (fromIntegral (n `rem` 341))
 
 -----------------------------------------------------------------------------
 --  Auxiliary Stuff
 
 -- Make an array indicating whether a remainder is a square remainder.
-sqRemArray :: Int -> V.Vector Bool
+sqRemArray :: Int -> Vector Bool
 sqRemArray md = runST $ do
-  arr <- MV.replicate md False :: ST s (STVector s Bool)
+  arr <- replicate md False :: ST s (STVector s Bool)
   let !stop = md `quot` 2
   for_ [2..stop] $
-    \k -> MV.unsafeWrite arr ((k*k) `rem` md) True
-  MV.unsafeWrite arr 0 True
-  MV.unsafeWrite arr 1 True
-  freeze arr
+    \k -> unsafeWrite arr ((k*k) `rem` md) True
+  unsafeWrite arr 0 True
+  unsafeWrite arr 1 True
+  unsafeFreeze arr
 
-sr256 :: V.Vector Bool
+sr256 :: Vector Bool
 sr256 = sqRemArray 256
 
-sr819 :: V.Vector Bool
+sr819 :: Vector Bool
 sr819 = sqRemArray 819
 
-sr4097 :: V.Vector Bool
+sr4097 :: Vector Bool
 sr4097 = sqRemArray 4097
 
-sr341 :: V.Vector Bool
+sr341 :: Vector Bool
 sr341 = sqRemArray 341
 
-sr1025 :: V.Vector Bool
+sr1025 :: Vector Bool
 sr1025 = sqRemArray 1025
 
-sr2047 :: V.Vector Bool
+sr2047 :: Vector Bool
 sr2047 = sqRemArray 2047
 
-sr693 :: V.Vector Bool
+sr693 :: Vector Bool
 sr693 = sqRemArray 693
 
-sr325 :: V.Vector Bool
+sr325 :: Vector Bool
 sr325 = sqRemArray 325
 
 -- Specialisations for Int, Word, and Integer

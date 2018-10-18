@@ -18,16 +18,17 @@ module Math.NumberTheory.Powers.Fourth
 
 #include "MachDeps.h"
 
+import Prelude hiding (replicate)
+
 import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
 
-import Data.Vector as V (freeze, Vector, unsafeIndex)
-import Data.Vector.Mutable as MV (unsafeWrite, replicate)
 import Control.Monad.ST (runST)
 import Data.Bits
 
+import Math.NumberTheory.Unsafe
 
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
@@ -148,31 +149,31 @@ appBiSqrt n@(Jp# bn#)
 appBiSqrt _ = error "integerFourthRoot': negative argument"
 
 
-biSqRes256 :: V.Vector Bool
+biSqRes256 :: Vector Bool
 biSqRes256 = runST $ do
-    ar <- MV.replicate 256 False
+    ar <- replicate 256 False
     let note 257 = return ar
-        note i = MV.unsafeWrite ar i True >> note (i+16)
-    MV.unsafeWrite ar 0 True
-    MV.unsafeWrite ar 16 True
+        note i = unsafeWrite ar i True >> note (i+16)
+    unsafeWrite ar 0 True
+    unsafeWrite ar 16 True
     _ <- note 1
-    freeze ar
+    unsafeFreeze ar
 
-biSqRes425 :: V.Vector Bool
+biSqRes425 :: Vector Bool
 biSqRes425 = runST $ do
-    ar <- MV.replicate 425 False
+    ar <- replicate 425 False
     let note 154 = return ar
-        note i = MV.unsafeWrite ar ((i*i*i*i) `rem` 425) True >> note (i+1)
+        note i = unsafeWrite ar ((i*i*i*i) `rem` 425) True >> note (i+1)
     _ <- note 0
-    freeze ar
+    unsafeFreeze ar
 
-biSqRes377 :: V.Vector Bool
+biSqRes377 :: Vector Bool
 biSqRes377 = runST $ do
-    ar <- MV.replicate 377 False
+    ar <- replicate 377 False
     let note 144 = return ar
-        note i = MV.unsafeWrite ar ((i*i*i*i) `rem` 377) True >> note (i+1)
+        note i = unsafeWrite ar ((i*i*i*i) `rem` 377) True >> note (i+1)
     _ <- note 0
-    freeze ar
+    unsafeFreeze ar
 
 biSqrtInt :: Int -> Int
 biSqrtInt 0 = 0

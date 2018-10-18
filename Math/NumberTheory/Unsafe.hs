@@ -9,13 +9,22 @@
 {-# LANGUAGE CPP #-}
 
 module Math.NumberTheory.Unsafe
-  ( unsafeIndex
+  ( STVector
+  , Vector
+  , unsafeIndex
   , unsafeFreeze
   , unsafeNew
   , unsafeRead
   , unsafeThaw
   , unsafeWrite
+  , replicate
+  , length
+  , fromList
   ) where
+
+import Data.Vector (Vector, fromList)
+import Data.Vector.Mutable (STVector, replicate)
+import Prelude hiding (replicate)
 #ifdef CheckBounds
 import Data.Vector
 

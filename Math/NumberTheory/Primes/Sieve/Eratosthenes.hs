@@ -31,28 +31,13 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
   , sieveTo
   ) where
 #include "MachDeps.h"
+import Prelude hiding (replicate)
+
 import Control.Monad (when)
 import Control.Monad.ST
 import Data.Bits
 import Data.Coerce
 import Data.Proxy
-import Data.Vector as V
-  ( Vector
-  , freeze
-  , fromList
-  , length
-  , unsafeFreeze
-  , unsafeIndex
-  , unsafeThaw
-  )
-import Data.Vector.Mutable as MV
-  ( STVector
-  , length
-  , replicate
-  , unsafeNew
-  , unsafeRead
-  , unsafeWrite
-  )
 #if WORD_SIZE_IN_BITS == 32
 import Data.Word
 #endif
@@ -60,6 +45,7 @@ import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
+import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
 import Unsafe.Coerce (unsafeCoerce)
@@ -106,7 +92,7 @@ type CacheWord = Word64
 -- | Compact store of primality flags.
 data PrimeSieve =
   PS !Integer
-     {-# UNPACK #-}!(V.Vector Bool)
+     {-# UNPACK #-}!(Vector Bool)
 
 -- | Sieve primes up to (and including) a bound (or 7, if bound is smaller).
 --   For small enough bounds, this is more efficient than
@@ -122,8 +108,8 @@ primeSieve bound =
   PS
     0
     (runST $ do
-       res <- sieveTo bound :: ST s (MV.STVector s Bool)
-       V.freeze res)
+       res <- sieveTo bound :: ST s (STVector s Bool)
+       unsafeFreeze res)
 
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
@@ -142,7 +128,7 @@ primeList ps@(PS v _)
 primeListInternal :: Num a => PrimeSieve -> [a]
 primeListInternal (PS v0 bs) =
   map ((+ fromInteger v0) . toPrim) $
-  filter (V.unsafeIndex bs) [0 .. (V.length bs - 1)]
+  filter (unsafeIndex bs) [0 .. (Math.NumberTheory.Unsafe.length bs - 1)]
 
 -- | Returns true if integer is beyond representation range of type a.
 doesNotFit ::
@@ -206,11 +192,11 @@ psieveList = makeSieves plim sqlim 0 0 cache
     cache =
       runST $ do
         sieve <- sieveTo (4801 :: Integer)
-        new <- MV.unsafeNew 1288 :: ST s (MV.STVector s CacheWord)
+        new <- unsafeNew 1288 :: ST s (STVector s CacheWord)
         let fill j indx
               | 1279 < indx = return new -- index of 4801 = 159*30 + 31 ~> 159*8+7
               | otherwise = do
-                p <- MV.unsafeRead sieve indx
+                p <- unsafeRead sieve indx
                 if p
                   then do
                     let !i = indx .&. J_MASK
@@ -224,28 +210,28 @@ psieveList = makeSieves plim sqlim 0 0 cache
                           fromIntegral indx `shiftL` IX_J_BITS +
                           strt `shiftL` J_BITS +
                           fromIntegral i
-                    MV.unsafeWrite new j skip
-                    MV.unsafeWrite new (j + 1) ixes
+                    unsafeWrite new j skip
+                    unsafeWrite new (j + 1) ixes
                     fill (j + 2) (indx + 1)
                   else fill j (indx + 1)
         _ <- fill 0 0
-        V.freeze new
+        unsafeFreeze new
 
 makeSieves ::
      Integer
   -> Integer
   -> Integer
   -> Integer
-  -> V.Vector CacheWord
+  -> Vector CacheWord
   -> [PrimeSieve]
 makeSieves plim sqlim bitOff valOff cache
   | valOff' < sqlim =
     let (nc, bs) =
           runST $ do
-            cch <- V.unsafeThaw cache :: ST s (STVector s CacheWord)
+            cch <- unsafeThaw cache :: ST s (STVector s CacheWord)
             bs0 <- slice cch
-            fcch <- V.unsafeFreeze cch
-            fbs0 <- V.unsafeFreeze bs0
+            fcch <- unsafeFreeze cch
+            fbs0 <- unsafeFreeze bs0
             return (fcch, fbs0)
      in PS valOff bs : makeSieves plim sqlim bitOff' valOff' nc
   | otherwise =
@@ -255,8 +241,8 @@ makeSieves plim sqlim bitOff valOff cache
           runST $ do
             cch <- growCache bitOff plim cache
             bs0 <- slice cch
-            fcch <- V.unsafeFreeze cch
-            fbs0 <- V.unsafeFreeze bs0
+            fcch <- unsafeFreeze cch
+            fbs0 <- unsafeFreeze bs0
             return (fcch, fbs0)
      in PS valOff bs : makeSieves plim' sqlim' bitOff' valOff' nc
   where
@@ -265,16 +251,16 @@ makeSieves plim sqlim bitOff valOff cache
 
 slice :: STVector s CacheWord -> ST s (STVector s Bool)
 slice cache = do
-  let hi = (MV.length cache) + 1
-  sieve <- MV.replicate (lastIndex + 1) True
+  let hi = (Math.NumberTheory.Unsafe.length cache) + 1
+  sieve <- replicate (lastIndex + 1) True
   let treat pr
         | hi < pr = return sieve
         | otherwise = do
-          w <- MV.unsafeRead cache pr
+          w <- unsafeRead cache pr
           if w /= 0
-            then MV.unsafeWrite cache pr (w - 1)
+            then unsafeWrite cache pr (w - 1)
             else do
-              ixes <- MV.unsafeRead cache (pr + 1)
+              ixes <- unsafeRead cache (pr + 1)
               let !stj = fromIntegral ixes .&. IX_J_MASK -- position of multiple and index of cofactor
                   !ixw = fromIntegral (ixes `shiftR` IX_J_BITS) -- prime data, up to 41 bits
                   !i = ixw .&. J_MASK
@@ -285,8 +271,8 @@ slice cache = do
               (n, u) <- tick k o j s
               let !skip = fromIntegral (n `shiftR` IX_BITS)
                   !strt = fromIntegral (n .&. IX_MASK)
-              MV.unsafeWrite cache pr skip
-              MV.unsafeWrite
+              unsafeWrite cache pr skip
+              unsafeWrite
                 cache
                 (pr + 1)
                 ((ixes .&. complement IX_J_MASK) .|. strt `shiftL` J_BITS .|.
@@ -295,13 +281,13 @@ slice cache = do
       tick stp off j ix
         | lastIndex < ix = return (ix - sieveBits, j)
         | otherwise = do
-          p <- MV.unsafeRead sieve ix
-          when p (MV.unsafeWrite sieve ix False)
+          p <- unsafeRead sieve ix
+          when p (unsafeWrite sieve ix False)
           tick stp off ((j + 1) .&. J_MASK) (ix + stp * delta j + tau (off + j))
   treat 0
 
 -- | Sieve up to bound in one go.
-sieveTo :: Integer -> ST s (MV.STVector s Bool)
+sieveTo :: Integer -> ST s (STVector s Bool)
 sieveTo bound = arr
   where
     (bytes, lidx) = idxPr bound
@@ -312,13 +298,13 @@ sieveTo bound = arr
     (kr, r) = idxPr mxsve
     !svbd = 8 * kr + r
     arr = do
-      ar <- MV.replicate (mxidx + 1) True
+      ar <- replicate (mxidx + 1) True
       let start k i = 8 * (k * (30 * k + 2 * rho i) + byte i) + idx i
           tick stp off j ix
             | mxidx < ix = return ()
             | otherwise = do
-              p <- MV.unsafeRead ar ix
-              when p (MV.unsafeWrite ar ix False)
+              p <- unsafeRead ar ix
+              when p (unsafeWrite ar ix False)
               tick
                 stp
                 off
@@ -327,7 +313,7 @@ sieveTo bound = arr
           sift ix
             | svbd < ix = return ar
             | otherwise = do
-              p <- MV.unsafeRead ar ix
+              p <- unsafeRead ar ix
               when
                 p
                 (do let i = ix .&. J_MASK
@@ -339,27 +325,27 @@ sieveTo bound = arr
       sift 0
 
 growCache ::
-     Integer -> Integer -> V.Vector CacheWord -> ST s (STVector s CacheWord)
+     Integer -> Integer -> Vector CacheWord -> ST s (STVector s CacheWord)
 growCache offset plim old = do
-  let num = V.length old
+  let num = Math.NumberTheory.Unsafe.length old
       (bt, ix) = idxPr plim
       !start = 8 * bt + ix + 1
       !nlim = plim + 4800
-  let sieveST = sieveTo nlim :: ST s (MV.STVector s Bool) -- Implement SieveFromTo for this, it's pretty wasteful when nlim isn't
+  let sieveST = sieveTo nlim :: ST s (STVector s Bool) -- Implement SieveFromTo for this, it's pretty wasteful when nlim isn't
   sieve <- sieveST
-  let hi = (MV.length sieve) - 1 -- very small anymore
+  let hi = (length sieve) - 1 -- very small anymore
   more <- countFromToWd start hi sieveST
-  new <- MV.unsafeNew (1 + num + 2 * more) :: ST s (MV.STVector s CacheWord)
+  new <- unsafeNew (1 + num + 2 * more) :: ST s (STVector s CacheWord)
   let copy i
         | num < i = return ()
         | otherwise = do
-          MV.unsafeWrite new i (old `unsafeIndex` i)
+          unsafeWrite new i (old `unsafeIndex` i)
           copy (i + 1)
   copy 0
   let fill j indx
         | hi < indx = return new
         | otherwise = do
-          p <- MV.unsafeRead sieve indx
+          p <- unsafeRead sieve indx
           if p
             then do
               let !i = indx .&. J_MASK
@@ -377,8 +363,8 @@ growCache offset plim old = do
                     fromIntegral indx `shiftL` IX_J_BITS .|.
                     strt `shiftL` J_BITS .|.
                     fromIntegral i
-              MV.unsafeWrite new j skip
-              MV.unsafeWrite new (j + 1) ixes
+              unsafeWrite new j skip
+              unsafeWrite new (j + 1) ixes
               fill (j + 2) (indx + 1)
             else fill j (indx + 1)
   fill (num + 1) start
@@ -390,7 +376,7 @@ castSTVector = unsafeCoerce
 -- index in a Word
 -- Do not use except in growCache and psieveFrom
 {-# INLINE countFromToWd #-}
-countFromToWd :: Int -> Int -> ST s (MV.STVector s Bool) -> ST s Int
+countFromToWd :: Int -> Int -> ST s (STVector s Bool) -> ST s Int
 countFromToWd start end ba = do
   wa <- (castSTVector ba)
   let !sb = start `shiftR` WSHFT
@@ -398,13 +384,13 @@ countFromToWd start end ba = do
       count !acc i
         | eb < i = return acc
         | otherwise = do
-          w <- MV.unsafeRead wa i
+          w <- unsafeRead wa i
           count (acc + bitCountWord w) (i + 1)
   count 0 sb
 
 -- count set bits between two indices (inclusive)
 -- start and end must both be valid indices and start <= end
-countFromTo :: Int -> Int -> ST s (MV.STVector s Bool) -> ST s Int
+countFromTo :: Int -> Int -> ST s (STVector s Bool) -> ST s Int
 countFromTo start end ba = do
   wa <- (castSTVector ba)
   let !sb = start `shiftR` WSHFT
@@ -413,17 +399,17 @@ countFromTo start end ba = do
       !ei = end .&. RMASK
       count !acc i
         | i == eb = do
-          w :: Word <- MV.unsafeRead wa i
+          w :: Word <- unsafeRead wa i
           return (acc + bitCountWord (w `shiftL` (RMASK - ei)))
         | otherwise = do
-          w <- MV.unsafeRead wa i
+          w <- unsafeRead wa i
           count (acc + bitCountWord w) (i + 1)
   if sb < eb
     then do
-      w <- MV.unsafeRead wa sb
+      w <- unsafeRead wa sb
       count (bitCountWord (w `shiftR` si)) (sb + 1)
     else do
-      w <- MV.unsafeRead wa sb
+      w <- unsafeRead wa sb
       let !w1 = w `shiftR` si
       return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
 
@@ -454,13 +440,13 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
       runST $ do
         let sieveST = sieveTo plim
         sieve <- sieveST
-        let (lo, hi) = (0, MV.length sieve)
+        let (lo, hi) = (0, length sieve)
         pct <- countFromToWd lo hi sieveST
-        new <- MV.unsafeNew (2 * pct) :: ST s (STVector s CacheWord)
+        new <- unsafeNew (2 * pct) :: ST s (STVector s CacheWord)
         let fill j indx
               | hi < indx = return new
               | otherwise = do
-                isPr <- MV.unsafeRead sieve indx
+                isPr <- unsafeRead sieve indx
                 if isPr
                   then do
                     let !i = indx .&. J_MASK
@@ -498,12 +484,12 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                           fromIntegral indx `shiftL` IX_J_BITS .|.
                           strt `shiftL` J_BITS .|.
                           fromIntegral r2
-                    MV.unsafeWrite new j skip
-                    MV.unsafeWrite new (j + 1) ixes
+                    unsafeWrite new j skip
+                    unsafeWrite new (j + 1) ixes
                     fill (j + 2) (indx + 1)
                   else fill j (indx + 1)
         _ <- fill 0 0
-        V.freeze new
+        unsafeFreeze new
 
 -- prime counting
 nthPrimeCt :: Integer -> Integer
@@ -536,12 +522,12 @@ countDown !n (ps@(PS v0 bs):more)
     ct <- countAll ps
     countDown (n - fromIntegral ct) more
   | otherwise = do
-    let stu = V.unsafeThaw bs :: ST s (MV.STVector s Bool)
+    let stu = unsafeThaw bs :: ST s (STVector s Bool)
     wa <- castSTVector stu
     let go !k i
           | i == sieveWords = countDown k more
           | otherwise = do
-            w <- MV.unsafeRead wa i
+            w <- unsafeRead wa i
             let !bc = fromIntegral $ bitCountWord w
             if bc < k
               then go (k - bc) (i + 1)
@@ -554,12 +540,12 @@ countDown _ [] = error "Prime stream ended prematurely"
 -- count all set bits in a chunk, do it wordwise for speed.
 countAll :: PrimeSieve -> ST s Int
 countAll (PS _ bs) = do
-  let stu = V.unsafeThaw bs
+  let stu = unsafeThaw bs
   wa <- castSTVector stu
   let go !ct i
         | i == sieveWords = return ct
         | otherwise = do
-          w <- MV.unsafeRead wa i
+          w <- unsafeRead wa i
           go (ct + bitCountWord w) (i + 1)
   go 0 0
 
@@ -583,18 +569,18 @@ top w j bc = go 0 TOPB TOPM bn w
 
 {-# INLINE delta #-}
 delta :: Int -> Int
-delta i = V.unsafeIndex deltas i
+delta i = unsafeIndex deltas i
 
-deltas :: V.Vector Int
-deltas = V.fromList [4, 2, 4, 2, 4, 6, 2, 6]
+deltas :: Vector Int
+deltas = fromList [4, 2, 4, 2, 4, 6, 2, 6]
 
 {-# INLINE tau #-}
 tau :: Int -> Int
-tau i = V.unsafeIndex taus i
+tau i = unsafeIndex taus i
 
-taus :: V.Vector Int
+taus :: Vector Int
 taus =
-  V.fromList
+  fromList
     [ 7
     , 4
     , 7
@@ -663,29 +649,29 @@ taus =
 
 {-# INLINE byte #-}
 byte :: Int -> Int
-byte i = V.unsafeIndex startByte i
+byte i = unsafeIndex startByte i
 
-startByte :: V.Vector Int
-startByte = V.fromList [1, 3, 5, 9, 11, 17, 27, 31]
+startByte :: Vector Int
+startByte = fromList [1, 3, 5, 9, 11, 17, 27, 31]
 
 {-# INLINE idx #-}
 idx :: Int -> Int
-idx i = V.unsafeIndex startIdx i
+idx i = unsafeIndex startIdx i
 
-startIdx :: V.Vector Int
+startIdx :: Vector Int
 startIdx = fromList [4, 7, 4, 4, 7, 4, 7, 7]
 
 {-# INLINE mu #-}
 mu :: Int -> Int
-mu i = V.unsafeIndex mArr i
+mu i = unsafeIndex mArr i
 
 {-# INLINE nu #-}
 nu :: Int -> Int
-nu i = V.unsafeIndex nArr i
+nu i = unsafeIndex nArr i
 
-mArr :: V.Vector Int
+mArr :: Vector Int
 mArr =
-  V.fromList
+  fromList
     [ 1
     , 2
     , 2
@@ -752,9 +738,9 @@ mArr =
     , 31
     ]
 
-nArr :: V.Vector Int
+nArr :: Vector Int
 nArr =
-  V.fromList
+  fromList
     [ 4
     , 3
     , 7

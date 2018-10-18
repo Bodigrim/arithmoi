@@ -17,9 +17,7 @@ import Control.Monad
 import Control.Monad.ST
 
 import Math.NumberTheory.Powers.Squares
-
-import Data.Vector as V (freeze, unsafeIndex)
-import Data.Vector.Mutable as MV (STVector, new, unsafeRead, unsafeWrite)
+import Math.NumberTheory.Unsafe
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
 --   computed via generalised Möbius inversion.
@@ -92,9 +90,9 @@ fastInvert fun n = big `unsafeIndex` 0
     kmax a m = (a `quot` m - 1) `quot` 2
     big =
       runST $ do
-        small <- MV.new (mk0 + 1) :: ST s (STVector s Integer)
-        MV.unsafeWrite small 0 0
-        MV.unsafeWrite small 1 $! fun 1
+        small <- unsafeNew (mk0 + 1) :: ST s (STVector s Integer)
+        unsafeWrite small 0 0
+        unsafeWrite small 1 $! fun 1
         when (mk0 >= 2) $ unsafeWrite small 2 $! (fun 2 - fun 1)
         let calcit switch change i
               | mk0 < i = return (switch, change)
@@ -115,7 +113,7 @@ fastInvert fun n = big `unsafeIndex` 0
                         kloop (acc - val) (k - 1)
                 mloop (fun i - fun (i `quot` 2)) ((i - 1) `quot` 2) 1
         (sw, ch) <- calcit 1 8 3
-        large <- MV.new k0 :: ST s (STVector s Integer)
+        large <- unsafeNew k0 :: ST s (STVector s Integer)
         let calcbig switch change j
               | j == 0 = return large
               | (2 * j - 1) * change <= n =
@@ -130,15 +128,15 @@ fastInvert fun n = big `unsafeIndex` 0
                         mloop (acc - fromIntegral (k - nxtk) * val) nxtk (m + 1)
                     kloop !acc k
                       | k == 0 = do
-                        MV.unsafeWrite large (j - 1) $! acc
+                        unsafeWrite large (j - 1) $! acc
                         calcbig switch change (j - 1)
                       | otherwise = do
                         let m = i `quot` (2 * k + 1)
                         val <-
                           if m <= mk0
-                            then MV.unsafeRead small m
-                            else MV.unsafeRead large (k * (2 * j - 1) + j - 1)
+                            then unsafeRead small m
+                            else unsafeRead large (k * (2 * j - 1) + j - 1)
                         kloop (acc - val) (k - 1)
                 mloop (fun i - fun (i `quot` 2)) ((i - 1) `quot` 2) 1
         _ <- calcbig sw ch k0
-        V.freeze large
+        unsafeFreeze large
