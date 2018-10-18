@@ -23,26 +23,28 @@ module Math.NumberTheory.Unsafe
 
 import Data.Vector (Vector, fromList)
 import Data.Vector.Mutable (STVector, replicate)
-import Prelude hiding (replicate)
+import Prelude hiding (read, replicate)
 #ifdef CheckBounds
-import Data.Vector
+import Control.Monad.ST (ST)
+import Data.Vector ((!), freeze, thaw)
+import Data.Vector.Mutable (new, read, write)
 
 unsafeIndex :: Vector a -> Int -> a
 unsafeIndex = (!)
 
-unsafeFreeze :: PrimMonad m => MVector (PrimState m) a -> m (Vector a)
+unsafeFreeze :: STVector s a -> ST s (Vector a)
 unsafeFreeze = freeze
 
-unsafeNew :: PrimMonad m => Int -> m (MVector (PrimState m) a)
+unsafeNew :: Int -> ST s (STVector s a)
 unsafeNew = new
 
-unsafeRead :: PrimMonad m => MVector (PrimState m) a -> Int -> m a
+unsafeRead :: STVector s a -> Int -> ST s a
 unsafeRead = read
 
-unsafeThaw :: PrimMonad m => Vector a -> m (MVector (PrimState m) a)
+unsafeThaw :: Vector a -> ST s (STVector s a)
 unsafeThaw = thaw
 
-unsafeWrite :: PrimMonad m => MVector (PrimState m) a -> Int -> a -> m ()
+unsafeWrite :: STVector s a -> Int -> a -> ST s ()
 unsafeWrite = write
 #else
 import Data.Vector (unsafeFreeze, unsafeIndex, unsafeThaw)
