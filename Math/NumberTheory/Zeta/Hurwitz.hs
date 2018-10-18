@@ -15,15 +15,15 @@ module Math.NumberTheory.Zeta.Hurwitz
   ) where
 
 import Math.NumberTheory.Recurrences (bernoulli, factorial)
-import Math.NumberTheory.Zeta.Utils  (skipOdds)
+import Math.NumberTheory.Zeta.Utils  (skipEvens, skipOdds)
 
 -- | Values of Hurwitz zeta function evaluated at @ζ(s, a)@ with
 -- @forall t1 . (Floating t1, Ord t1) => a ∈ t1@, and @s ∈ [0, 1 ..]@.
 -- The algorithm used was based on the Euler-Maclaurin formula and was derived
 -- from <http://fredrikj.net/thesis/thesis.pdf Fast and Rigorous Computation of Special Functions to High Precision>
 -- by F. Johansson, chapter 4.8, formula 4.8.5.
--- The error for this formula is given in formula 4.8.9 as an indefinite
--- integral, and in formula 4.8.12 as a closed form formula.
+-- The error for each value in this recurrence is given in formula 4.8.9 as an
+--  indefinite integral, and in formula 4.8.12 as a closed form formula.
 -- It is the __user's responsibility__ to provide an appropriate precision for
 -- the type chosen. For instance, when using @Double@s, it does not make sense
 -- to provide a number @ε >= 1e-53@ as the desired precision. For @Float@s,
@@ -93,10 +93,6 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
                      -- factorials starting at @s@ is @[0,0,0,0..]@.
                      repeat 0 : map skipOdds pochhs
 
-    -- [(a + n) ^ (2*k - 1) | k <- [1 ..]]
-    powers :: [a]
-    powers = iterate ((aPlusN * aPlusN) *) aPlusN
-
     -- [            B_2k           |             ]
     -- | ------------------------- | k <- [1 ..] |
     -- [ (2k)! (a + n) ^ (2*k - 1) |             ]
@@ -107,7 +103,9 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
         (\bern evenFac denom -> fromRational bern / (denom * fromInteger evenFac))
         (tail $ skipOdds bernoulli)
         (tail $ skipOdds factorial)
-        powers
+        -- Recall that @powsOfAPlusN = [(a + n) ^ s | s <- [0 ..]]@, so this
+        -- is @[(a + n) ^ (2 * s - 1) | s <- [1 ..]]@
+        (skipEvens powsOfAPlusN)
 
     fracs :: [a]
     fracs = zipWith
@@ -115,7 +113,8 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
             (repeat second)
             pochhammers
 
-    -- @T@ value in 4.8.5 formula.
+    -- Infinite list of @T@ values in 4.8.5 formula, for every @s@ in
+    -- @[0, 1, 2 ..]@.
     ts :: [a]
     ts = zipWith
          (\constant2 frac -> constant2 * (0.5 + frac))
