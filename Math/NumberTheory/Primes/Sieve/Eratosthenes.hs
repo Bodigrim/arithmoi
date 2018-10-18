@@ -60,7 +60,6 @@ import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
 import Unsafe.Coerce (unsafeCoerce)
@@ -229,7 +228,7 @@ psieveList = makeSieves plim sqlim 0 0 cache
                     MV.unsafeWrite new (j + 1) ixes
                     fill (j + 2) (indx + 1)
                   else fill j (indx + 1)
-        fill 0 0
+        _ <- fill 0 0
         V.freeze new
 
 makeSieves ::
@@ -503,7 +502,7 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                     MV.unsafeWrite new (j + 1) ixes
                     fill (j + 2) (indx + 1)
                   else fill j (indx + 1)
-        fill 0 0
+        _ <- fill 0 0
         V.freeze new
 
 -- prime counting
