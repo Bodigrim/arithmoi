@@ -59,9 +59,11 @@ betasEven eps = (1 / 2) : hurwitz
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Dirichlet beta-function at integer arguments, starting with @β(0)@.
+--
 -- The algorithm previously used to compute @β@ for even arguments was derived
 -- from <https://arxiv.org/pdf/0910.5004.pdf An Euler-type formula for β(2n) and closed-form expressions for a class of zeta series>
--- by F. M. S. Lima, formula (12), but is now based on the Hurwitz zeta function.
+-- by F. M. S. Lima, formula (12), but is now based on the
+-- 'Math.NumberTheory.Zeta.Hurwitz.zetaHurwitz' recurrence.
 --
 -- >>> take 5 (betas 1e-14) :: [Double]
 -- [0.5,0.7853981633974483,0.9159655941772191,0.9689461462593693,0.988944551741105]
