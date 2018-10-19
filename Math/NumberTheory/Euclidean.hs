@@ -8,10 +8,12 @@
 --
 
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE UnboxedTuples              #-}
 
 module Math.NumberTheory.Euclidean
   ( Euclidean(..)
@@ -147,9 +149,14 @@ instance Euclidean Integer where
   gcd     = gcdInteger
   lcm     = lcmInteger
   coprime = coprimeIntegral
-  -- Blocked by GHC bug
+
+#if __GLASGOW_HASKELL__ > 805
   -- https://ghc.haskell.org/trac/ghc/ticket/15350
-  -- extendedGCD = gcdExtInteger
+  extendedGCD a b = (d, u, v)
+    where
+      (# d, u #) = gcdExtInteger a b
+      v = if b == 0 then 0 else (d - u * a) `quot` b
+#endif
 
 instance Euclidean Natural where
   quotRem = P.quotRem
