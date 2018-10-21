@@ -26,10 +26,6 @@ module Math.NumberTheory.Moduli.Chinese
   , chineseSomeMod
   , chineseCoprimeSomeMod
 
-  , -- * Type-foo
-    chineseMod
-  , chineseCoprimeMod
-
   , -- * Unsafe interface
     chineseRemainder
   , chineseRemainder2
@@ -38,8 +34,6 @@ module Math.NumberTheory.Moduli.Chinese
 import Prelude hiding (mod, quot, gcd, lcm)
 
 import Control.Monad (foldM)
-import Data.Constraint
-import Data.Constraint.Nat hiding (Mod)
 import Data.Foldable
 import Data.Ratio
 import GHC.TypeNats.Compat
@@ -107,38 +101,6 @@ chinese (n1, m1) (n2, m2)
 
 {-# SPECIALISE chinese :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
 {-# SPECIALISE chinese :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
-
--- | Same as 'chineseCoprime', but operates with moduli on type level.
---
--- >>> :set -XDataKinds -XTypeApplications
--- >>> import Data.Constraint
--- >>> import Data.Constraint.Nat (timesNat)
--- >>> case timesNat @2 @3 of Sub Dict -> fmap SomeMod (chineseCoprimeMod (1 :: Mod 2) (2 :: Mod 3))
--- Just (5 `modulo` 6)
-chineseCoprimeMod
-  :: forall m1 m2.
-     (KnownNat m1, KnownNat m2)
-  => Mod m1
-  -> Mod m2
-  -> Maybe (Mod (m1 * m2))
-chineseCoprimeMod n1 n2 = case timesNat @m1 @m2 of
-  Sub Dict -> fromInteger <$> chineseCoprime (getVal n1, getMod n1) (getVal n2, getMod n2)
-
--- | Same as 'chinese', but operates with moduli on type level.
---
--- >>> :set -XDataKinds -XTypeApplications
--- >>> import Data.Constraint
--- >>> import Data.Constraint.Nat (lcmNat)
--- >>> case lcmNat @4 @6 of Sub Dict -> fmap SomeMod (chineseMod (3 :: Mod 4) (5 :: Mod 6))
--- Just (11 `modulo` 12)
-chineseMod
-  :: forall m1 m2.
-     (KnownNat m1, KnownNat m2)
-  => Mod m1
-  -> Mod m2
-  -> Maybe (Mod (Lcm m1 m2))
-chineseMod n1 n2 = case lcmNat @m1 @m2 of
-  Sub Dict -> fromInteger <$> chinese (getVal n1, getMod n1) (getVal n2, getMod n2)
 
 isCompatible :: KnownNat m => Mod m -> Rational -> Bool
 isCompatible n r = case invertMod (fromInteger (denominator r)) of
