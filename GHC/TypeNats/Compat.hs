@@ -14,15 +14,12 @@ import GHC.TypeNats
 #else
 
 module GHC.TypeNats.Compat
-  ( Nat
-  , KnownNat
-  , SomeNat(..)
+  ( module GHC.TypeLits
   , natVal
   , someNatVal
-  , sameNat
   ) where
 
-import GHC.TypeLits (Nat, KnownNat, SomeNat(..), sameNat)
+import GHC.TypeLits hiding (natVal, someNatVal)
 import qualified GHC.TypeLits as TL
 import Numeric.Natural
 

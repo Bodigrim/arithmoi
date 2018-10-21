@@ -1,123 +1,195 @@
 -- |
 -- Module:      Math.NumberTheory.Moduli.Chinese
--- Copyright:   (c) 2011 Daniel Fischer
+-- Copyright:   (c) 2011 Daniel Fischer, 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- Chinese remainder theorem
 --
-{-# LANGUAGE BangPatterns #-}
+
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeOperators       #-}
+
+#if __GLASGOW_HASKELL__ > 805
+{-# LANGUAGE NoStarIsType #-}
+#endif
 
 module Math.NumberTheory.Moduli.Chinese
-  ( chineseRemainders
-  , chineseRemainders2
-  , chineseRemainder
+  ( -- * Safe interface
+    chinese
+  , chineseCoprime
+  , chineseSomeMod
+  , chineseCoprimeSomeMod
+
+  , -- * Type-foo
+    chineseMod
+  , chineseCoprimeMod
+
+  , -- * Unsafe interface
+    chineseRemainder
   , chineseRemainder2
-  )
-where
+  ) where
 
-import Data.Ratio (numerator, denominator)
+import Prelude hiding (mod, quot, gcd, lcm)
+
 import Control.Monad (foldM)
+import Data.Constraint
+import Data.Constraint.Nat hiding (Mod)
+import Data.Foldable
+import Data.Ratio
+import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Euclidean (extendedGCD)
 import Math.NumberTheory.Moduli.Class
-import Math.NumberTheory.Primes.Factorisation (factorise)
-import Math.NumberTheory.Utils (recipMod)
+import Math.NumberTheory.Euclidean
+import Math.NumberTheory.Euclidean.Coprimes
+import Math.NumberTheory.Utils (recipMod, splitOff)
 
--- [Unsure where to put these.  Does arithmoi keep QuickCheck tests in separate documents?
+-- | 'chineseCoprime' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
+-- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@.
+-- Moduli @m1@ and @m2@ must be coprime, otherwise 'Nothing' is returned.
 --
--- The two tests are slightly different.  The test for the binary function compares to the
--- result of an exhaustive search.  The test for the list function merely tests that the results
--- are consistent with the requirements as exhaustive search over the LCM of the moduli of long
--- lists tends to take an unreasonable amount of time.
+-- This function is slightly faster than 'chinese', but more restricted.
 --
--- import Test.QuickCheck
--- import Data.List (foldl')
-
--- prop_chineseRemainders :: [(Integer, Positive Integer)] -> Bool
--- prop_chineseRemainders rms
---   | Just (SomeMod d) <- c = getMod d == l && all (\ (r, Positive m) -> (getVal d-r) `mod` m==0) rms
---   | otherwise             = or [(r1-r2) `mod` g /= 0|((r1, Positive m1):rms2)<-tails rms, (r2, Positive m2)<-rms2, let g = gcd m1 m2]
---   where
---     l = foldl' lcm 1 $ map (getPositive.snd) rms
---     c = chineseRemainders $ [r `modulo` fromIntegral m|(r,Positive m)<-rms]
-
--- prop_chineseRemainders2 :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
--- prop_chineseRemainders2 xv (Positive xm) yv (Positive ym)
---   | Just (SomeMod d) <- c = getMod d == l && [getVal d] == sols
---   | otherwise             = null sols
---   where
---     l = lcm xm ym
---     c = chineseRemainders2 (xv `modulo` fromIntegral xm) (yv `modulo` fromIntegral ym)
---     sols = [i|i<-[0..l-1],(i-xv) `mod` xm==0,(i-yv) `mod` ym==0]
-
-
-
-
-{-# DEPRECATED chineseRemainder, chineseRemainder2 "Consider switching to the more general and correct *remainders* (note the terminal S) functions" #-}
-
--- | Given a list @[r_1 `modulo` m_1, ..., r_n `modulo` m_n)]@ of @SomeMod@
---   pairs, @chineseRemainders@ calculates the intersection between all the
---   congruence classes represented by the @SomeMod@.
---
---   This result may be another congruence class @Just (r `modulo` n)@ if all
---   congruence classes have a non-empty intersection, @Nothing@ if they do not
---   (such as may, or may not, happen if the moduli are not pairwise co-prime),
---   or a specific rational number @Just (InfMod r)@, if it was one of the parameters
---   and is also a member of all of the other congruence classes.
---
---   n.b. The result will always be @Nothing@ if there are two distinct @InfMod@
---   parameters (they do not intersect) or if a parameter is a non-integral @InfMod@
---   and at least one other is a @SomeMod@ (they too do not intersect).
---
---   On an empty parameter list, @chineseRemainders@ returns @Just (0 `modulo` 1)@, the
---   congruence class of all integers.
-
-chineseRemainders :: [SomeMod] -> Maybe SomeMod
-chineseRemainders (x:xs) = foldM chineseRemainders2 x xs
-chineseRemainders _ = Just (0 `modulo` 1)
-
--- | Given a pair of @SomeMod@, @chineseRemainders2@ determines their intersection.
---   if any.  This function is the underlying worker for @chineseRemainders@.
-
-chineseRemainders2 :: SomeMod -> SomeMod -> Maybe SomeMod
-chineseRemainders2 xsm@(SomeMod x) ysm@(SomeMod y)
-  | xm == 1               = Just ysm
-  | ym == 1               = Just xsm
-  | Just (SomeMod j) <- i = Just $ (xv+(yv-xv)*xm*getVal j) `modulo` (xn*yn)
-  | (xv-yv) `mod` gm == 0 = chineseRemainders2 (xv `modulo` xq) (yv `modulo` yq)
-  | otherwise             = Nothing
+-- >>> chineseCoprime (1, 2) (2, 3)
+-- Just 5
+-- >>> chineseCoprime (3, 4) (5, 6)
+-- Nothing -- moduli must be coprime
+chineseCoprime :: Euclidean a => (a, a) -> (a, a) -> Maybe a
+chineseCoprime (n1, m1) (n2, m2) = case d of
+  1 -> Just $ ((1 - u * m1) * n1 + (1 - v * m2) * n2) `mod` (m1 * m2)
+  _ -> Nothing
   where
-    xv = getVal x
-    xm = getMod x
-    xn = getNatMod x
+    (d, u, v) = extendedGCD m1 m2
 
-    yv = getVal y
-    ym = getMod y
-    yn = getNatMod y
+{-# SPECIALISE chineseCoprime :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
+{-# SPECIALISE chineseCoprime :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
 
-    i = invertSomeMod (xm `modulo` yn)
+-- | 'chinese' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
+-- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@, if exists.
+-- Moduli @m1@ and @m2@ are allowed to have common factors.
+--
+-- >>> chinese (1, 2) (2, 3)
+-- Just 5
+-- >>> chinese (3, 4) (5, 6)
+-- Just 11
+-- >>> chinese (3, 4) (2, 6)
+-- Nothing
+chinese :: forall a. Euclidean a => (a, a) -> (a, a) -> Maybe a
+chinese (n1, m1) (n2, m2)
+  | n1 `mod` g == n2 `mod` g
+  = chineseCoprime (n1 `mod` m1', m1') (n2 `mod` m2', m2')
+  | otherwise
+  = Nothing
+  where
+    g :: a
+    g = gcd m1 m2
 
-    gn = gcd xn yn
-    gm = fromIntegral gn
+    ms :: [(a, Word)]
+    ms = unCoprimes $ splitIntoCoprimes [(m1, 1), (m2 `quot` g, 1)]
 
-    (xq, yq) = foldr distribute (xn `div` gn, yn `div` gn) $ factorise gm
-    distribute (p',a) (xo, yo)
-      | xo `mod` p == 0 = (xo*p^a, yo)
-      | otherwise       = (xo, yo*p^a)
+    m1', m2' :: a
+    (m1', m2') = foldl' go (1, 1) $ map fst ms
+
+    go :: (a, a) -> a -> (a, a)
+    go (t1, t2) p
+      | k1 <= k2
+      = (t1, t2 * p ^ k2)
+      | otherwise
+      = (t1 * p ^ k1, t2)
       where
-        p = fromIntegral p'
+        (k1, _) = splitOff p m1
+        (k2, _) = splitOff p m2
 
-chineseRemainders2 x@(SomeMod x') y@(InfMod y')
-  | denominator y' /= 1                       = Nothing
-  | numerator y' `mod` getMod x' == getVal x' = Just y
-  | otherwise                                 = Nothing
+{-# SPECIALISE chinese :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
+{-# SPECIALISE chinese :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
 
-chineseRemainders2 x@(InfMod _) y@(SomeMod _) = chineseRemainders2 y x
+-- | Same as 'chineseCoprime', but operates with moduli on type level.
+--
+-- >>> :set -XDataKinds -XTypeApplications
+-- >>> import Data.Constraint
+-- >>> import Data.Constraint.Nat (timesNat)
+-- >>> case timesNat @2 @3 of Sub Dict -> fmap SomeMod (chineseCoprimeMod (1 :: Mod 2) (2 :: Mod 3))
+-- Just (5 `modulo` 6)
+chineseCoprimeMod
+  :: forall m1 m2.
+     (KnownNat m1, KnownNat m2)
+  => Mod m1
+  -> Mod m2
+  -> Maybe (Mod (m1 * m2))
+chineseCoprimeMod n1 n2 = case timesNat @m1 @m2 of
+  Sub Dict -> fromInteger <$> chineseCoprime (getVal n1, getMod n1) (getVal n2, getMod n2)
 
-chineseRemainders2 x y
-  | x == y    = Just x
+-- | Same as 'chinese', but operates with moduli on type level.
+--
+-- >>> :set -XDataKinds -XTypeApplications
+-- >>> import Data.Constraint
+-- >>> import Data.Constraint.Nat (lcmNat)
+-- >>> case lcmNat @4 @6 of Sub Dict -> fmap SomeMod (chineseMod (3 :: Mod 4) (5 :: Mod 6))
+-- Just (11 `modulo` 12)
+chineseMod
+  :: forall m1 m2.
+     (KnownNat m1, KnownNat m2)
+  => Mod m1
+  -> Mod m2
+  -> Maybe (Mod (Lcm m1 m2))
+chineseMod n1 n2 = case lcmNat @m1 @m2 of
+  Sub Dict -> fromInteger <$> chinese (getVal n1, getMod n1) (getVal n2, getMod n2)
+
+isCompatible :: KnownNat m => Mod m -> Rational -> Bool
+isCompatible n r = case invertMod (fromInteger (denominator r)) of
+  Nothing -> False
+  Just r' -> r' * fromInteger (numerator r) == n
+
+chineseWrap
+  :: (Integer -> Integer -> Integer)
+  -> ((Integer, Integer) -> (Integer, Integer) -> Maybe Integer)
+  -> SomeMod
+  -> SomeMod
+  -> Maybe SomeMod
+chineseWrap f g (SomeMod n1) (SomeMod n2)
+  = fmap (`modulo` fromInteger (f m1 m2)) (g (getVal n1, m1) (getVal n2, m2))
+  where
+    m1 = getMod n1
+    m2 = getMod n2
+chineseWrap _ _ (SomeMod n) (InfMod r)
+  | isCompatible n r = Just $ InfMod r
+  | otherwise        = Nothing
+chineseWrap _ _ (InfMod r) (SomeMod n)
+  | isCompatible n r = Just $ InfMod r
+  | otherwise        = Nothing
+chineseWrap _ _ (InfMod r1) (InfMod r2)
+  | r1 == r2  = Just $ InfMod r1
   | otherwise = Nothing
+
+-- | Same as 'chineseCoprime', but operates on residues.
+--
+-- >>> :set -XDataKinds
+-- >>> (1 `modulo` 2) `chineseCoprimeSomeMod` (2 `modulo` 3)
+-- Just (5 `modulo` 6)
+-- >>> (3 `modulo` 4) `chineseCoprimeSomeMod` (5 `modulo` 6)
+-- Just (11 `modulo` 12)
+chineseCoprimeSomeMod :: SomeMod -> SomeMod -> Maybe SomeMod
+chineseCoprimeSomeMod = chineseWrap (*) chineseCoprime
+
+-- | Same as 'chinese', but operates on residues.
+--
+-- >>> :set -XDataKinds
+-- >>> (1 `modulo` 2) `chineseSomeMod` (2 `modulo` 3)
+-- Just (5 `modulo` 6)
+-- >>> (3 `modulo` 4) `chineseSomeMod` (5 `modulo` 6)
+-- Just (11 `modulo` 12)
+-- >>> (3 `modulo` 4) `chineseSomeMod` (2 `modulo` 6)
+-- Nothing
+chineseSomeMod :: SomeMod -> SomeMod -> Maybe SomeMod
+chineseSomeMod = chineseWrap lcm chinese
+
+-------------------------------------------------------------------------------
+-- Unsafe interface
 
 -- | Given a list @[(r_1,m_1), ..., (r_n,m_n)]@ of @(residue,modulus)@
 --   pairs, @chineseRemainder@ calculates the solution to the simultaneous
@@ -130,10 +202,7 @@ chineseRemainders2 x y
 --   if all moduli are positive and pairwise coprime. Otherwise
 --   the result is @Nothing@ regardless of whether
 --   a solution exists.
---
---   n.b. the @chineseRemainders@ and @chineseRemainders2@ (note the terminal S) functions
---   will find a solution in this case, if one exist.
-chineseRemainder :: [(Integer,Integer)] -> Maybe Integer
+chineseRemainder :: [(Integer, Integer)] -> Maybe Integer
 chineseRemainder remainders = foldM addRem 0 remainders
   where
     !modulus = product (map snd remainders)
@@ -149,7 +218,7 @@ chineseRemainder remainders = foldM addRem 0 remainders
 -- > r ≡ r_k (mod m_k)
 --
 --   if @m_1@ and @m_2@ are coprime.
-chineseRemainder2 :: (Integer,Integer) -> (Integer,Integer) -> Integer
-chineseRemainder2 (r1, md1) (r2,md2)
-    = case extendedGCD md1 md2 of
-        (_,u,v) -> ((1 - u*md1)*r1 + (1 - v*md2)*r2) `mod` (md1*md2)
+chineseRemainder2 :: (Integer, Integer) -> (Integer, Integer) -> Integer
+chineseRemainder2 (n1, m1) (n2, m2) = ((1 - u * m1) * n1 + (1 - v * m2) * n2) `mod` (m1 * m2)
+  where
+    (_, u, v) = extendedGCD m1 m2

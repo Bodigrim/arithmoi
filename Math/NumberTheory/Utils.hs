@@ -27,12 +27,15 @@ module Math.NumberTheory.Utils
 
 #include "MachDeps.h"
 
+import Prelude hiding (mod, quotRem)
+
 import GHC.Base
 
 import GHC.Integer.GMP.Internals
 import GHC.Natural
 
 import Data.Bits
+import Math.NumberTheory.Euclidean
 
 uncheckedShiftR :: Word -> Int -> Word
 uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
@@ -153,7 +156,7 @@ bitCountWord = popCount
 bitCountInt :: Int -> Int
 bitCountInt = popCount
 
-splitOff :: Integer -> Integer -> (Word, Integer)
+splitOff :: Euclidean a => a -> a -> (Word, a)
 splitOff _ 0 = (0, 0) -- prevent infinite loop
 splitOff p n = go 0 n
   where
