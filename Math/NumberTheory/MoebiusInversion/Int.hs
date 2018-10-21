@@ -3,10 +3,8 @@
 -- Copyright:   (c) 2012 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
--- Generalised Moebius inversion for 'Int' valued functions.
+-- Generalised Möbius inversion for 'Int' valued functions.
 --
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
@@ -23,7 +21,7 @@ import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Unsafe
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
---   computed via generalised Moebius inversion.
+--   computed via generalised Möbius inversion.
 --   See <http://mathworld.wolfram.com/TotientSummatoryFunction.html> for the
 --   formula used for @totientSum@.
 totientSum :: Int -> Int
@@ -33,10 +31,10 @@ totientSum n
   where
     triangle k = (k*(k+1)) `quot` 2
 
--- | @generalInversion g n@ evaluates the generalised Moebius inversion of @g@
+-- | @generalInversion g n@ evaluates the generalised Möbius inversion of @g@
 --   at the argument @n@.
 --
---   The generalised Moebius inversion implemented here allows an efficient
+--   The generalised Möbius inversion implemented here allows an efficient
 --   calculation of isolated values of the function @f : N -> Z@ if the function
 --   @g@ defined by
 --
@@ -44,15 +42,15 @@ totientSum n
 -- > g n = sum [f (n `quot` k) | k <- [1 .. n]]
 -- >
 --
---   can be cheaply computed. By the generalised Moebius inversion formula, then
+--   can be cheaply computed. By the generalised Möbius inversion formula, then
 --
 -- >
 -- > f n = sum [moebius k * g (n `quot` k) | k <- [1 .. n]]
 -- >
 --
 --   which allows the computation in /O/(n) steps, if the values of the
---   Moebius function are known. A slightly different formula, used here,
---   does not need the values of the Moebius function and allows the
+--   Möbius function are known. A slightly different formula, used here,
+--   does not need the values of the Möbius function and allows the
 --   computation in /O/(n^0.75) steps, using /O/(n^0.5) memory.
 --
 --   An example of a pair of such functions where the inversion allows a
@@ -79,7 +77,7 @@ totientSum n
 --   method is only appropriate to compute isolated values of @f@.
 generalInversion :: (Int -> Int) -> Int -> Int
 generalInversion fun n
-    | n < 1     = error "Moebius inversion only defined on positive domain"
+    | n < 1     = error "Möbius inversion only defined on positive domain"
     | n == 1    = fun 1
     | n == 2    = fun 2 - fun 1
     | n == 3    = fun 3 - 2*fun 1

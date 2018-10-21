@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.ArithmeticFunctions
 --
@@ -19,14 +18,10 @@ module Math.NumberTheory.UniqueFactorisationTests
 
 import Test.Tasty
 
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
-import Math.NumberTheory.GaussianIntegers hiding (factorise)
-import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.TestUtils hiding (Prime)
+import Math.NumberTheory.Quadratic.EisensteinIntegers
+import Math.NumberTheory.Quadratic.GaussianIntegers
+import Math.NumberTheory.Primes
+import Math.NumberTheory.TestUtils
 
 import Numeric.Natural
 
@@ -48,5 +43,6 @@ testSuite = testGroup "UniqueFactorisation"
   , testSmallAndQuick "Integer" (testRules :: Integer -> Bool)
   , testSmallAndQuick "Natural" (testRules :: Natural -> Bool)
 
-  , testSmallAndQuick "GaussianInteger" (testRules :: GaussianInteger -> Bool)
+  , testSmallAndQuick "GaussianInteger"   (testRules :: GaussianInteger   -> Bool)
+  , testSmallAndQuick "EisensteinInteger" (testRules :: EisensteinInteger -> Bool)
   ]

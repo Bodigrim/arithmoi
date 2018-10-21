@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Utils to test Math.NumberTheory
 --
@@ -13,11 +11,14 @@
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans       #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -25,17 +26,13 @@
 module Math.NumberTheory.TestUtils.Wrappers where
 
 import Control.Applicative
+import Data.Coerce
 import Data.Functor.Classes
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Foldable (Foldable)
-import Data.Traversable (Traversable)
-#endif
 
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
-import Math.NumberTheory.Primes (isPrime, nthPrime)
+import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
 -------------------------------------------------------------------------------
 -- AnySign
@@ -98,6 +95,12 @@ instance Ord1 NonNegative where
 
 instance Show1 NonNegative where
   liftShowsPrec shw _ p (NonNegative a) = shw p a
+
+-------------------------------------------------------------------------------
+-- NonZero from QuickCheck
+
+instance (Monad m, Num a, Eq a, Serial m a) => Serial m (NonZero a) where
+  series = NonZero <$> series `suchThatSerial` (/= 0)
 
 -------------------------------------------------------------------------------
 -- Huge
@@ -167,19 +170,28 @@ instance Show1 Odd where
 -------------------------------------------------------------------------------
 -- Prime
 
-newtype Prime = Prime { getPrime :: Integer }
-  deriving (Eq, Ord, Show)
+instance (Arbitrary a, UniqueFactorisation a) => Arbitrary (Prime a) where
+  arbitrary = (arbitrary :: Gen a) `suchThatMap` isPrime
 
-instance Arbitrary Prime where
-  arbitrary = do
-    n <- arbitrary
-    return $ Prime $ head $ filter isPrime [abs n ..]
+instance (Monad m, Serial m a, UniqueFactorisation a) => Serial m (Prime a) where
+  series = (series :: Series m a) `suchThatMapSerial` isPrime
 
-instance Monad m => Serial m Prime where
-  series = Prime . nthPrime <$> series `suchThatSerial` (> 0)
+-------------------------------------------------------------------------------
+-- UniqueFactorisation
+
+instance UniqueFactorisation a => UniqueFactorisation (Large a) where
+  factorise (Large x) = coerce $ factorise x
+  isPrime (Large x) = coerce $ isPrime x
+
+instance UniqueFactorisation a => UniqueFactorisation (Huge a) where
+  factorise (Huge x) = coerce $ factorise x
+  isPrime (Huge x) = coerce $ isPrime x
 
 -------------------------------------------------------------------------------
 -- Utils
 
 suchThatSerial :: Series m a -> (a -> Bool) -> Series m a
 suchThatSerial s p = s >>= \x -> if p x then pure x else empty
+
+suchThatMapSerial :: Series m a -> (a -> Maybe b) -> Series m b
+suchThatMapSerial s p = s >>= maybe empty pure . p

@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Factorisation of 'Integer's by the elliptic curve algorithm after Montgomery.
 -- The algorithm is explained at
@@ -21,11 +19,12 @@
 -- Given enough time, the algorithm should be able to factor numbers of 100-120 digits, but it
 -- is best suited for numbers of up to 50-60 digits.
 
-{-# LANGUAGE BangPatterns   #-}
-{-# LANGUAGE CPP            #-}
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase     #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -48,52 +47,52 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
   , findParms
   ) where
 
-#include "MachDeps.h"
-
+import Control.Arrow
+import Control.Monad.Trans.State.Lazy
 import System.Random
-import Control.Monad.State.Strict
-#if __GLASGOW_HASKELL__ < 709
-import Control.Applicative
-import Data.Word
-#endif
 import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
 import Data.Maybe
+#if __GLASGOW_HASKELL__ < 803
+import Data.Semigroup
+#endif
+import Data.Traversable
 
 import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
+import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Testing.Probabilistic
+import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
--- | @'factorise' n@ produces the prime factorisation of @n@, including
---   a factor of @(-1)@ if @n < 0@. @'factorise' 0@ is an error and the
---   factorisation of @1@ is empty. Uses a 'StdGen' produced in an arbitrary
---   manner from the bit-pattern of @n@.
-factorise :: Integer -> [(Integer,Int)]
+-- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
+--   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
+--   an arbitrary manner from the bit-pattern of @n@.
+factorise :: Integer -> [(Integer, Word)]
 factorise n
-    | n < 0     = (-1,1):factorise (-n)
-    | n == 0    = error "0 has no prime factorisation"
-    | n == 1    = []
-    | otherwise = factorise' n
+    | abs n == 1 = []
+    | n < 0      = factorise (-n)
+    | n == 0     = error "0 has no prime factorisation"
+    | otherwise  = factorise' n
 
 -- | Like 'factorise', but without input checking, hence @n > 1@ is required.
-factorise' :: Integer -> [(Integer,Int)]
+factorise' :: Integer -> [(Integer, Word)]
 factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdeadbeef) n
 
 -- | @'stepFactorisation'@ is like 'factorise'', except that it doesn't use a
 --   pseudo random generator but steps through the curves in order.
 --   This strategy turns out to be surprisingly fast, on average it doesn't
 --   seem to be slower than the 'StdGen' based variant.
-stepFactorisation :: Integer -> [(Integer,Int)]
+stepFactorisation :: Integer -> [(Integer, Word)]
 stepFactorisation n
     = let (sfs,mb) = smallFactors 100000 n
       in sfs ++ case mb of
@@ -106,7 +105,7 @@ stepFactorisation n
 --   For negative numbers, a factor of @-1@ is included, the factorisation of @1@
 --   is empty. Since @0@ has no prime factorisation, a zero argument causes
 --   an error.
-defaultStdGenFactorisation :: StdGen -> Integer -> [(Integer,Int)]
+defaultStdGenFactorisation :: StdGen -> Integer -> [(Integer, Word)]
 defaultStdGenFactorisation sg n
     | n == 0    = error "0 has no prime factorisation"
     | n < 0     = (-1,1) : defaultStdGenFactorisation sg (-n)
@@ -115,7 +114,7 @@ defaultStdGenFactorisation sg n
 
 -- | Like 'defaultStdGenFactorisation', but without input checking, so
 --   @n@ must be larger than @1@.
-defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer,Int)]
+defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer, Word)]
 defaultStdGenFactorisation' sg n
     = let (sfs,mb) = smallFactors 100000 n
       in sfs ++ case mb of
@@ -130,15 +129,15 @@ defaultStdGenFactorisation' sg n
 --   The primality test is 'bailliePSW', the @prng@ function - naturally -
 --   'randomR'. This function also requires small prime factors to have been
 --   stripped before.
-stdGenFactorisation :: Maybe Integer    -- ^ Lower bound for composite divisors
-                    -> StdGen           -- ^ Standard PRNG
-                    -> Maybe Int        -- ^ Estimated number of digits of smallest prime factor
-                    -> Integer          -- ^ The number to factorise
-                    -> [(Integer,Int)]  -- ^ List of prime factors and exponents
+stdGenFactorisation :: Maybe Integer     -- ^ Lower bound for composite divisors
+                    -> StdGen            -- ^ Standard PRNG
+                    -> Maybe Int         -- ^ Estimated number of digits of smallest prime factor
+                    -> Integer           -- ^ The number to factorise
+                    -> [(Integer, Word)] -- ^ List of prime factors and exponents
 stdGenFactorisation primeBound sg digits n
     = curveFactorisation primeBound bailliePSW (\m -> randomR (6,m-2)) sg digits n
 
--- | @'curveFactorisation'@ is the driver for the factorisation. Its performance (and success)
+-- | 'curveFactorisation' is the driver for the factorisation. Its performance (and success)
 --   can be influenced by passing appropriate arguments. If you know that @n@ has no prime divisors
 --   below @b@, any divisor found less than @b*b@ must be prime, thus giving @Just (b*b)@ as the
 --   first argument allows skipping the comparatively expensive primality test for those.
@@ -150,77 +149,104 @@ stdGenFactorisation primeBound sg digits n
 --   make a huge difference. So, if the default takes too long, try another one; or you can improve your
 --   chances for a quick result by running several instances in parallel.
 --
---   @'curveFactorisation'@ requires that small prime factors have been stripped before. Also, it is
---   unlikely to succeed if @n@ has more than one (really) large prime factor.
-curveFactorisation :: Maybe Integer                 -- ^ Lower bound for composite divisors
-                   -> (Integer -> Bool)             -- ^ A primality test
-                   -> (Integer -> g -> (Integer,g)) -- ^ A PRNG
-                   -> g                             -- ^ Initial PRNG state
-                   -> Maybe Int                     -- ^ Estimated number of digits of the smallest prime factor
-                   -> Integer                       -- ^ The number to factorise
-                   -> [(Integer,Int)]               -- ^ List of prime factors and exponents
+--   'curveFactorisation' @n@ requires that small (< 100000) prime factors of @n@
+--   have been stripped before. Otherwise it is likely to cycle forever. When in doubt,
+--   use 'defaultStdGenFactorisation'.
+--
+--   'curveFactorisation' is unlikely to succeed if @n@ has more than one (really) large prime factor.
+--
+curveFactorisation
+  :: forall g.
+     Maybe Integer                  -- ^ Lower bound for composite divisors
+  -> (Integer -> Bool)              -- ^ A primality test
+  -> (Integer -> g -> (Integer, g)) -- ^ A PRNG
+  -> g                              -- ^ Initial PRNG state
+  -> Maybe Int                      -- ^ Estimated number of digits of the smallest prime factor
+  -> Integer                        -- ^ The number to factorise
+  -> [(Integer, Word)]              -- ^ List of prime factors and exponents
 curveFactorisation primeBound primeTest prng seed mbdigs n
-    | ptest n   = [(n,1)]
+    | n == 1    = []
+    | ptest n   = [(n, 1)]
     | otherwise = evalState (fact n digits) seed
       where
+        digits :: Int
         digits = fromMaybe 8 mbdigs
-        mult 1 xs = xs
-        mult j xs = [(p,j*k) | (p,k) <- xs]
-        dbl (u,v) = (mult 2 u, mult 2 v)
-        ptest = case primeBound of
-                  Just bd -> \k -> k <= bd || primeTest k
-                  Nothing -> primeTest
-        rndR k = state (\gen -> prng k gen)
-        perfPw = case primeBound of
-                   Nothing -> highestPower
-                   Just bd -> largePFPower (integerSquareRoot' bd)
-        fact m digs = do let (b1,b2,ct) = findParms digs
-                         (pfs,cfs) <- repFact m b1 b2 ct
-                         if null cfs
-                           then return pfs
-                           else do
-                               nfs <- forM cfs $ \(k,j) ->
-                                   mult j <$> fact k (if null pfs then digs+5 else digs)
-                               return (mergeAll $ pfs:nfs)
-        repFact m b1 b2 count = case perfPw m of
-                                  (_,1) -> workFact m b1 b2 count
-                                  (b,e)
-                                    | ptest b -> return ([(b,e)],[])
-                                    | otherwise -> do
-                                      (as,bs) <- workFact b b1 b2 count
-                                      return $ (mult e as, mult e bs)
-        workFact m b1 b2 count
-            | count == 0 = return ([],[(m,1)])
-            | otherwise = do
-                s <- rndR m
-                case s `modulo` fromInteger m of
-                  InfMod{} -> error "impossible case"
-                  SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
-                    Nothing -> workFact m b1 b2 (count-1)
-                    Just d  -> do
-                      let !cof = m `quot` d
-                      case gcd cof d of
-                        1 -> do
-                            (dp,dc) <- if ptest d
-                                         then return ([(d,1)],[])
-                                         else repFact d b1 b2 (count-1)
-                            (cp,cc) <- if ptest cof
-                                         then return ([(cof,1)],[])
-                                         else repFact cof b1 b2 (count-1)
-                            return (merge dp cp, dc ++ cc)
-                        g -> do
-                            let d' = d `quot` g
-                                c' = cof `quot` g
-                            (dp,dc) <- if ptest d'
-                                         then return ([(d',1)],[])
-                                         else repFact d' b1 b2 (count-1)
-                            (cp,cc) <- if ptest c'
-                                         then return ([(c',1)],[])
-                                         else repFact c' b1 b2 (count-1)
-                            (gp,gc) <- if ptest g
-                                         then return ([(g,2)],[])
-                                         else dbl <$> repFact g b1 b2 (count-1)
-                            return  (mergeAll [dp,cp,gp], dc ++ cc ++ gc)
+
+        ptest :: Integer -> Bool
+        ptest = maybe primeTest (\bd k -> k <= bd || primeTest k) primeBound
+
+        rndR :: Integer -> State g Integer
+        rndR k = state (prng k)
+
+        perfPw :: Integer -> (Integer, Word)
+        perfPw = maybe highestPower (largePFPower . integerSquareRoot') primeBound
+
+        fact :: Integer -> Int -> State g [(Integer, Word)]
+        fact 1 _ = return mempty
+        fact m digs = do
+          let (b1, b2, ct) = findParms digs
+          -- All factors (both @pfs@ and @cfs@), are pairwise coprime. This is
+          -- because 'repFact' returns either a single factor, or output of 'workFact'.
+          -- In its turn, 'workFact' returns either a single factor,
+          -- or concats 'repFact's over coprime integers. Induction completes the proof.
+          Factors pfs cfs <- repFact m b1 b2 ct
+          case cfs of
+            [] -> return pfs
+            _  -> do
+              nfs <- forM cfs $ \(k, j) ->
+                  map (second (* j)) <$> fact k (if null pfs then digs + 5 else digs)
+              return $ mconcat (pfs : nfs)
+
+        repFact :: Integer -> Word -> Word -> Word -> State g Factors
+        repFact 1 _ _ _ = return mempty
+        repFact m b1 b2 count =
+          case perfPw m of
+            (_, 1) -> workFact m b1 b2 count
+            (b, e)
+              | ptest b   -> return $ singlePrimeFactor b e
+              | otherwise -> modifyPowers (* e) <$> workFact b b1 b2 count
+
+        workFact :: Integer -> Word -> Word -> Word -> State g Factors
+        workFact 1 _ _ _ = return mempty
+        workFact m _ _ 0 = return $ singleCompositeFactor m 1
+        workFact m b1 b2 count = do
+          s <- rndR m
+          case s `modulo` fromInteger m of
+            InfMod{} -> error "impossible case"
+            SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
+              Nothing -> workFact m b1 b2 (count - 1)
+              Just d  -> do
+                let cs = unCoprimes $ splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
+                -- Since all @cs@ are coprime, we can factor each of
+                -- them and just concat results, without summing up
+                -- powers of the same primes in different elements.
+                fmap mconcat $ flip mapM cs $
+                  \(x, xm) -> if ptest x
+                              then pure $ singlePrimeFactor x xm
+                              else repFact x b1 b2 (count - 1)
+
+data Factors = Factors
+  { _primeFactors     :: [(Integer, Word)]
+  , _compositeFactors :: [(Integer, Word)]
+  }
+
+singlePrimeFactor :: Integer -> Word -> Factors
+singlePrimeFactor a b = Factors [(a, b)] []
+
+singleCompositeFactor :: Integer -> Word -> Factors
+singleCompositeFactor a b = Factors [] [(a, b)]
+
+instance Semigroup Factors where
+  Factors pfs1 cfs1 <> Factors pfs2 cfs2
+    = Factors (pfs1 <> pfs2) (cfs1 <> cfs2)
+
+instance Monoid Factors where
+  mempty = Factors [] []
+  mappend = (<>)
+
+modifyPowers :: (Word -> Word) -> Factors -> Factors
+modifyPowers f (Factors pfs cfs)
+  = Factors (map (second f) pfs) (map (second f) cfs)
 
 ----------------------------------------------------------------------------------------------------
 --                                         The workhorse                                          --
@@ -316,12 +342,12 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 
 -- | @'smallFactors' bound n@ finds all prime divisors of @n > 1@ up to @bound@ by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
-smallFactors :: Integer -> Integer -> ([(Integer,Int)], Maybe Integer)
+smallFactors :: Integer -> Integer -> ([(Integer, Word)], Maybe Integer)
 smallFactors bd n = case shiftToOddCount n of
                       (0,m) -> go m prms
                       (k,m) -> (2,k) <: if m == 1 then ([],Nothing) else go m prms
   where
-    prms = tail (primeStore >>= primeList)
+    prms = map unPrime $ tail (primeStore >>= primeList)
     x <: ~(l,b) = (x:l,b)
     go m (p:ps)
         | m < p*p   = ([(m,1)], Nothing)
@@ -331,22 +357,6 @@ smallFactors bd n = case shiftToOddCount n of
                         (k,r) | r == 1 -> ([(p,k)], Nothing)
                               | otherwise -> (p,k) <: go r ps
     go m [] = ([(m,1)], Nothing)
-
--- helpers: merge sorted lists
-merge :: (Ord a, Num b) => [(a, b)] -> [(a, b)] -> [(a, b)]
-merge xs [] = xs
-merge [] ys = ys
-merge xxs@(x@(p, k) : xs) yys@(y@(q, m) : ys)
-  = case p `compare` q of
-    LT -> x          : merge xs yys
-    EQ -> (p, k + m) : merge xs  ys
-    GT -> y          : merge xxs ys
-
-mergeAll :: (Ord a, Num b) => [[(a, b)]] -> [(a, b)]
-mergeAll = \case
-  []              -> []
-  [xs]            -> xs
-  (xs : ys : zss) -> merge (merge xs ys) (mergeAll zss)
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try

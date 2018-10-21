@@ -1,175 +1,210 @@
-name                : arithmoi
-version             : 0.6.0.0
-cabal-version       : >= 1.10
-author              : Daniel Fischer
-copyright           : (c) 2011 Daniel Fischer, 2016-2017 Andrew Lelechenko, Carter Schonwald
-license             : MIT
-license-file        : LICENSE
-maintainer          : Carter Schonwald  carter at wellposed dot com,
-                      Andrew Lelechenko andrew dot lelechenko at gmail dot com
-build-type          : Simple
-stability           : Provisional
-homepage            : https://github.com/cartazio/arithmoi
-bug-reports         : https://github.com/cartazio/arithmoi/issues
-
-synopsis            : Efficient basic number-theoretic functions.
-description         : A library of basic functionality needed for
-                      number-theoretic calculations. The aim of this library
-                      is to provide efficient implementations of the functions.
-
-                      Primes and related things (totients, factorisation),
-                      powers (integer roots and tests, modular exponentiation).
-
-category            : Math, Algorithms, Number Theory
-
-tested-with         : GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.1
-
-extra-source-files  : Changes
-
-flag check-bounds
-    description         : Replace unsafe array operations with safe ones
-    default             : False
-    manual              : True
-
-library
-    default-language: Haskell2010
-    build-depends       : base >= 4.7 && < 5
-                        , array >= 0.5 && < 0.6
-                        , ghc-prim < 0.6
-                        , integer-gmp < 1.1
-                        , containers >= 0.5 && < 0.6
-                        , random >= 1.0 && < 1.2
-                        , mtl >= 2.0 && < 2.3
-                        , exact-pi >= 0.4.1.1
-                        , integer-logarithms >= 1.0
-    if impl(ghc < 7.10)
-      build-depends     : nats >= 1 && <1.2
-    if impl(ghc < 8.0)
-      build-depends     : semigroups >= 0.8
-
-    exposed-modules     : Math.NumberTheory.ArithmeticFunctions
-                          Math.NumberTheory.ArithmeticFunctions.Class
-                          Math.NumberTheory.ArithmeticFunctions.Standard
-                          Math.NumberTheory.Curves.Montgomery
-                          Math.NumberTheory.Moduli
-                          Math.NumberTheory.Moduli.Chinese
-                          Math.NumberTheory.Moduli.Class
-                          Math.NumberTheory.Moduli.Jacobi
-                          Math.NumberTheory.Moduli.Sqrt
-                          Math.NumberTheory.MoebiusInversion
-                          Math.NumberTheory.MoebiusInversion.Int
-                          Math.NumberTheory.Recurrencies.Bilinear
-                          Math.NumberTheory.Recurrencies.Linear
-                          Math.NumberTheory.GaussianIntegers
-                          Math.NumberTheory.GCD
-                          Math.NumberTheory.GCD.LowLevel
-                          Math.NumberTheory.Powers
-                          Math.NumberTheory.Powers.Squares
-                          Math.NumberTheory.Powers.Squares.Internal
-                          Math.NumberTheory.Powers.Cubes
-                          Math.NumberTheory.Powers.Fourth
-                          Math.NumberTheory.Powers.General
-                          Math.NumberTheory.Powers.Integer
-                          Math.NumberTheory.Primes
-                          Math.NumberTheory.Primes.Sieve
-                          Math.NumberTheory.Primes.Factorisation
-                          Math.NumberTheory.Primes.Factorisation.Certified
-                          Math.NumberTheory.Primes.Counting
-                          Math.NumberTheory.Primes.Testing
-                          Math.NumberTheory.Primes.Testing.Certificates
-                          Math.NumberTheory.Primes.Heap
-                          Math.NumberTheory.UniqueFactorisation
-                          Math.NumberTheory.Zeta
-                          GHC.TypeNats.Compat
-    other-modules       : Math.NumberTheory.Utils
-                          Math.NumberTheory.Unsafe
-                          Math.NumberTheory.Primes.Counting.Impl
-                          Math.NumberTheory.Primes.Counting.Approximate
-                          Math.NumberTheory.Primes.Factorisation.Montgomery
-                          Math.NumberTheory.Primes.Factorisation.TrialDivision
-                          Math.NumberTheory.Primes.Sieve.Eratosthenes
-                          Math.NumberTheory.Primes.Sieve.Indexing
-                          Math.NumberTheory.Primes.Sieve.Misc
-                          Math.NumberTheory.Primes.Testing.Probabilistic
-                          Math.NumberTheory.Primes.Testing.Certified
-                          Math.NumberTheory.Primes.Testing.Certificates.Internal
-    other-extensions          : BangPatterns
-
-    ghc-options         : -O2 -Wall
-    ghc-prof-options    : -O2 -auto
-    if flag(check-bounds)
-        cpp-options     : -DCheckBounds
+name:          arithmoi
+version:       0.8.0.0
+cabal-version: >=1.10
+build-type:    Simple
+license:       MIT
+license-file:  LICENSE
+copyright:     (c) 2011 Daniel Fischer, 2016-2018 Andrew Lelechenko, Carter Schonwald
+maintainer:    Carter Schonwald  carter at wellposed dot com,
+               Andrew Lelechenko andrew dot lelechenko at gmail dot com
+stability:     Provisional
+homepage:      https://github.com/cartazio/arithmoi
+bug-reports:   https://github.com/cartazio/arithmoi/issues
+synopsis:      Efficient basic number-theoretic functions.
+description:
+  A library of basic functionality needed for
+  number-theoretic calculations. The aim of this library
+  is to provide efficient implementations of the functions.
+  Primes and related things (totients, factorisation),
+  powers (integer roots and tests, modular exponentiation).
+category:      Math, Algorithms, Number Theory
+author:        Daniel Fischer
+tested-with:   GHC==8.0.2, GHC==8.2.2, GHC==8.4.3, GHC==8.6.1
+extra-source-files:
+  Changes
 
 source-repository head
-  type:     git
+  type: git
   location: https://github.com/cartazio/arithmoi
 
+flag check-bounds
+  description:
+    Replace unsafe array operations with safe ones
+  default: False
+  manual: True
 
-benchmark criterion
-  build-depends:    base
-                    , arithmoi
-                    , criterion
-                    , containers
-                    , random
-                    , integer-logarithms
-  if impl(ghc < 7.10)
-    build-depends     : nats >= 1 && <1.2
-  other-modules:    Math.NumberTheory.ArithmeticFunctionsBench
-                  , Math.NumberTheory.PowersBench
-                  , Math.NumberTheory.PrimesBench
-                  , Math.NumberTheory.RecurrenciesBench
-  hs-source-dirs:   benchmark
-  main-is:          Bench.hs
-  type:             exitcode-stdio-1.0
+library
+  build-depends:
+    base >=4.9 && <5,
+    array >=0.5 && <0.6,
+    containers >=0.5 && <0.7,
+    deepseq,
+    exact-pi >=0.4.1.1,
+    ghc-prim <0.6,
+    integer-gmp <1.1,
+    integer-logarithms >=1.0,
+    random >=1.0 && <1.2,
+    transformers >=0.4 && <0.6,
+    vector >= 0.12
+  exposed-modules:
+    GHC.TypeNats.Compat
+    Math.NumberTheory.ArithmeticFunctions
+    Math.NumberTheory.ArithmeticFunctions.Mertens
+    Math.NumberTheory.ArithmeticFunctions.Moebius
+    Math.NumberTheory.ArithmeticFunctions.SieveBlock
+    Math.NumberTheory.Curves.Montgomery
+    Math.NumberTheory.Euclidean
+    Math.NumberTheory.Euclidean.Coprimes
+    Math.NumberTheory.Moduli
+    Math.NumberTheory.Moduli.Chinese
+    Math.NumberTheory.Moduli.Class
+    Math.NumberTheory.Moduli.DiscreteLogarithm
+    Math.NumberTheory.Moduli.Equations
+    Math.NumberTheory.Moduli.Jacobi
+    Math.NumberTheory.Moduli.PrimitiveRoot
+    Math.NumberTheory.Moduli.Sqrt
+    Math.NumberTheory.MoebiusInversion
+    Math.NumberTheory.MoebiusInversion.Int
+    Math.NumberTheory.Powers
+    Math.NumberTheory.Powers.Cubes
+    Math.NumberTheory.Powers.Fourth
+    Math.NumberTheory.Powers.General
+    Math.NumberTheory.Powers.Modular
+    Math.NumberTheory.Powers.Squares
+    Math.NumberTheory.Powers.Squares.Internal
+    Math.NumberTheory.Prefactored
+    Math.NumberTheory.Primes
+    Math.NumberTheory.Primes.Counting
+    Math.NumberTheory.Primes.Factorisation
+    Math.NumberTheory.Primes.Factorisation.Certified
+    Math.NumberTheory.Primes.Sieve
+    Math.NumberTheory.Primes.Testing
+    Math.NumberTheory.Primes.Testing.Certificates
+    Math.NumberTheory.Quadratic.GaussianIntegers
+    Math.NumberTheory.Quadratic.EisensteinIntegers
+    Math.NumberTheory.Recurrences
+    Math.NumberTheory.Recurrencies
+    Math.NumberTheory.Recurrences.Bilinear
+    Math.NumberTheory.Recurrencies.Bilinear
+    Math.NumberTheory.Recurrences.Linear
+    Math.NumberTheory.Recurrencies.Linear
+    Math.NumberTheory.SmoothNumbers
+    Math.NumberTheory.Zeta
+    Math.NumberTheory.Zeta.Dirichlet
+    Math.NumberTheory.Zeta.Hurwitz
+    Math.NumberTheory.Zeta.Riemann
+  other-modules:
+    Math.NumberTheory.ArithmeticFunctions.Class
+    Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
+    Math.NumberTheory.ArithmeticFunctions.Standard
+    Math.NumberTheory.Moduli.SqrtOld
+    Math.NumberTheory.Primes.Counting.Approximate
+    Math.NumberTheory.Primes.Counting.Impl
+    Math.NumberTheory.Primes.Factorisation.Montgomery
+    Math.NumberTheory.Primes.Factorisation.TrialDivision
+    Math.NumberTheory.Primes.Sieve.Eratosthenes
+    Math.NumberTheory.Primes.Sieve.Indexing
+    Math.NumberTheory.Primes.Testing.Certificates.Internal
+    Math.NumberTheory.Primes.Testing.Certified
+    Math.NumberTheory.Primes.Testing.Probabilistic
+    Math.NumberTheory.Primes.Types
+    Math.NumberTheory.Recurrences.Pentagonal
+    Math.NumberTheory.UniqueFactorisation
+    Math.NumberTheory.Unsafe
+    Math.NumberTheory.Utils
+    Math.NumberTheory.Utils.FromIntegral
+    Math.NumberTheory.Utils.Hyperbola
+    Math.NumberTheory.Zeta.Utils
   default-language: Haskell2010
+  ghc-options: -O2 -Wall
+  if flag(check-bounds)
+    cpp-options: -DCheckBounds
 
 test-suite spec
-  type:                 exitcode-stdio-1.0
-  hs-source-dirs:       test-suite
-  ghc-options:          -Wall
-  main-is:              Test.hs
+  build-depends:
+    base >=4.9 && <5,
+    arithmoi,
+    containers,
+    exact-pi >=0.4.1.1,
+    integer-gmp <1.1,
+    QuickCheck >=2.10 && <2.13,
+    smallcheck >=1.1.3 && <1.2,
+    tasty >=0.10 && <1.2,
+    tasty-hunit >=0.9 && <0.11,
+    tasty-quickcheck >=0.9 && <0.11,
+    tasty-smallcheck >=0.8 && <0.9,
+    transformers >=0.5,
+    vector
+  other-modules:
+    Math.NumberTheory.ArithmeticFunctionsTests
+    Math.NumberTheory.ArithmeticFunctions.MertensTests
+    Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
+    Math.NumberTheory.CurvesTests
+    Math.NumberTheory.EisensteinIntegersTests
+    Math.NumberTheory.GaussianIntegersTests
+    Math.NumberTheory.EuclideanTests
+    Math.NumberTheory.Moduli.ChineseTests
+    Math.NumberTheory.Moduli.DiscreteLogarithmTests
+    Math.NumberTheory.Moduli.ClassTests
+    Math.NumberTheory.Moduli.EquationsTests
+    Math.NumberTheory.Moduli.JacobiTests
+    Math.NumberTheory.Moduli.PrimitiveRootTests
+    Math.NumberTheory.Moduli.SqrtTests
+    Math.NumberTheory.MoebiusInversion.IntTests
+    Math.NumberTheory.MoebiusInversionTests
+    Math.NumberTheory.Powers.CubesTests
+    Math.NumberTheory.Powers.FourthTests
+    Math.NumberTheory.Powers.GeneralTests
+    Math.NumberTheory.Powers.ModularTests
+    Math.NumberTheory.Powers.SquaresTests
+    Math.NumberTheory.PrefactoredTests
+    Math.NumberTheory.Primes.CountingTests
+    Math.NumberTheory.Primes.FactorisationTests
+    Math.NumberTheory.Primes.SieveTests
+    Math.NumberTheory.Primes.TestingTests
+    Math.NumberTheory.PrimesTests
+    Math.NumberTheory.Recurrences.PentagonalTests
+    Math.NumberTheory.Recurrences.BilinearTests
+    Math.NumberTheory.Recurrences.LinearTests
+    Math.NumberTheory.SmoothNumbersTests
+    Math.NumberTheory.TestUtils
+    Math.NumberTheory.TestUtils.MyCompose
+    Math.NumberTheory.TestUtils.Wrappers
+    Math.NumberTheory.UniqueFactorisationTests
+    Math.NumberTheory.Zeta.DirichletTests
+    Math.NumberTheory.Zeta.RiemannTests
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
   default-language: Haskell2010
-  build-depends:        arithmoi
-                      , base >= 4.6 && < 5
-                      , containers >= 0.5 && < 0.6
-                      , tasty >= 0.10 && < 0.12
-                      , tasty-smallcheck >= 0.8 && < 0.9
-                      , tasty-quickcheck >= 0.9 && < 0.10
-                      , tasty-hunit >= 0.9 && < 0.10
-                      , QuickCheck >= 2.10 && < 2.11
-                      , smallcheck >= 1.1 && < 1.2
-                      , transformers >= 0.5
-                      , integer-gmp < 1.1
-  if impl(ghc < 7.10)
-    build-depends     : nats >= 1 && <1.2
-  if impl(ghc < 8.0)
-    build-depends     : semigroups >= 0.8
+  hs-source-dirs: test-suite
+  ghc-options: -Wall
 
-  other-modules :   Math.NumberTheory.ArithmeticFunctionsTests
-                  , Math.NumberTheory.CurvesTests
-                  , Math.NumberTheory.GaussianIntegersTests
-                  , Math.NumberTheory.GCDTests
-                  , Math.NumberTheory.GCD.LowLevelTests
-                  , Math.NumberTheory.Recurrencies.LinearTests
-                  , Math.NumberTheory.Recurrencies.BilinearTests
-                  , Math.NumberTheory.Moduli.ChineseTests
-                  , Math.NumberTheory.Moduli.ClassTests
-                  , Math.NumberTheory.Moduli.JacobiTests
-                  , Math.NumberTheory.Moduli.SqrtTests
-                  , Math.NumberTheory.Powers.CubesTests
-                  , Math.NumberTheory.MoebiusInversionTests
-                  , Math.NumberTheory.MoebiusInversion.IntTests
-                  , Math.NumberTheory.Powers.FourthTests
-                  , Math.NumberTheory.Powers.GeneralTests
-                  , Math.NumberTheory.Powers.SquaresTests
-                  , Math.NumberTheory.PrimesTests
-                  , Math.NumberTheory.Primes.CountingTests
-                  , Math.NumberTheory.Primes.FactorisationTests
-                  , Math.NumberTheory.Primes.HeapTests
-                  , Math.NumberTheory.Primes.SieveTests
-                  , Math.NumberTheory.Primes.TestingTests
-                  , Math.NumberTheory.TestUtils
-                  , Math.NumberTheory.TestUtils.Wrappers
-                  , Math.NumberTheory.TestUtils.MyCompose
-                  , Math.NumberTheory.UniqueFactorisationTests
-                  , Math.NumberTheory.ZetaTests
+benchmark criterion
+  build-depends:
+    base,
+    arithmoi,
+    containers,
+    deepseq,
+    gauge,
+    integer-logarithms,
+    random,
+    vector
+  other-modules:
+    Math.NumberTheory.ArithmeticFunctionsBench
+    Math.NumberTheory.DiscreteLogarithmBench
+    Math.NumberTheory.EisensteinIntegersBench
+    Math.NumberTheory.EuclideanBench
+    Math.NumberTheory.GaussianIntegersBench
+    Math.NumberTheory.JacobiBench
+    Math.NumberTheory.MertensBench
+    Math.NumberTheory.PowersBench
+    Math.NumberTheory.PrimesBench
+    Math.NumberTheory.PrimitiveRootsBench
+    Math.NumberTheory.RecurrencesBench
+    Math.NumberTheory.SieveBlockBench
+    Math.NumberTheory.SmoothNumbersBench
+    Math.NumberTheory.ZetaBench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  default-language: Haskell2010
+  hs-source-dirs: benchmark

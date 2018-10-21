@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Calculating integer roots and determining perfect powers.
 -- The algorithms are moderately efficient.
@@ -38,6 +36,7 @@ import Math.NumberTheory.Utils  (shiftToOddCount
 import qualified Math.NumberTheory.Powers.Squares as P2
 import qualified Math.NumberTheory.Powers.Cubes as P3
 import qualified Math.NumberTheory.Powers.Fourth as P4
+import Math.NumberTheory.Utils.FromIntegral (intToWord, wordToInt)
 
 -- | Calculate an integer root, @'integerRoot' k n@ computes the (floor of) the @k@-th
 --   root of @n@, where @k@ must be positive.
@@ -155,7 +154,7 @@ isPerfectPower n
 --   remaining factor is examined by trying the divisors of the @gcd@
 --   of the prime exponents if some have been found, otherwise by trying
 --   prime exponents recursively.
-highestPower :: Integral a => a -> (a, Int)
+highestPower :: Integral a => a -> (a, Word)
 highestPower n'
   | abs n <= 1  = (n', 3)
   | n < 0       = case integerHighPower (negate n) of
@@ -167,7 +166,7 @@ highestPower n'
       n :: Integer
       n = toInteger n'
 
-      sqr :: Int -> Integer -> Integer
+      sqr :: Word -> Integer -> Integer
       sqr 0 m = m
       sqr k m = sqr (k-1) (m*m)
 
@@ -180,10 +179,10 @@ highestPower n'
 --   and primality testing, it is not expected to be generally useful.
 --   The assumptions are not checked, if they are not satisfied, wrong
 --   results and wasted work may be the consequence.
-largePFPower :: Integer -> Integer -> (Integer, Int)
+largePFPower :: Integer -> Integer -> (Integer, Word)
 largePFPower bd n = rawPower ln n
   where
-    ln = integerLogBase' (bd+1) n
+    ln = intToWord (integerLogBase' (bd+1) n)
 
 ------------------------------------------------------------------------------------------
 --                                  Auxiliary functions                                 --
@@ -230,7 +229,7 @@ appKthRoot k@(I# k#) n =
                           `shiftLInteger` (h# -# 401#)
 
 -- assumption: argument is > 1
-integerHighPower :: Integer -> (Integer, Int)
+integerHighPower :: Integer -> (Integer, Word)
 integerHighPower n
   | n < 4       = (n,1)
   | otherwise   = case shiftToOddCount n of
@@ -239,7 +238,7 @@ integerHighPower n
                              where
                                r = P2.integerSquareRoot m
 
-findHighPower :: Int -> [(Integer,Int)] -> Integer -> Integer -> [Integer] -> (Integer, Int)
+findHighPower :: Word -> [(Integer, Word)] -> Integer -> Integer -> [Integer] -> (Integer, Word)
 findHighPower 1 pws m _ _ = (foldl' (*) m [p^e | (p,e) <- pws], 1)
 findHighPower e pws 1 _ _ = (foldl' (*) 1 [p^(ex `quot` e) | (p,ex) <- pws], e)
 findHighPower e pws m s (p:ps)
@@ -250,7 +249,7 @@ findHighPower e pws m s (p:ps)
       (k,r) -> findHighPower (gcd k e) ((p,k):pws) r (P2.integerSquareRoot r) ps
 findHighPower e pws m _ [] = finishPower e pws m
 
-spBEx :: Int
+spBEx :: Word
 spBEx = 14
 
 spBound :: Integer
@@ -266,20 +265,20 @@ smallOddPrimes = 3:5:primes'
         go []     = True
 
 -- n large, has no prime divisors < spBound
-finishPower :: Int -> [(Integer, Int)] -> Integer -> (Integer, Int)
+finishPower :: Word -> [(Integer, Word)] -> Integer -> (Integer, Word)
 finishPower e pws n
-  | n < (1 `shiftL` (2*spBEx))  = (foldl' (*) n [p^ex | (p,ex) <- pws], 1)    -- n is prime
+  | n < (1 `shiftL` wordToInt (2*spBEx))  = (foldl' (*) n [p^ex | (p,ex) <- pws], 1)    -- n is prime
   | e == 0  = rawPower maxExp n
   | otherwise = go divs
     where
-      maxExp = (I# (integerLog2# n)) `quot` spBEx
+      maxExp = (W# (int2Word# (integerLog2# n))) `quot` spBEx
       divs = divisorsTo maxExp e
       go [] = (foldl' (*) n [p^ex | (p,ex) <- pws], 1)
       go (d:ds) = case exactRoot d n of
                     Just r -> (foldl' (*) r [p^(ex `quot` d) | (p,ex) <- pws], d)
                     Nothing -> go ds
 
-rawPower :: Int -> Integer -> (Integer, Int)
+rawPower :: Word -> Integer -> (Integer, Word)
 rawPower mx n
   | mx < 2      = (n,1)
   | mx == 2     = case P2.exactSquareRoot n of
@@ -293,7 +292,7 @@ rawPower mx n = case P4.exactFourthRoot n of
                                            (m,e) -> (m, 2*e)
                                Nothing -> rawOddPower mx n
 
-rawOddPower :: Int -> Integer -> (Integer, Int)
+rawOddPower :: Word -> Integer -> (Integer, Word)
 rawOddPower mx n
   | mx < 3       = (n,1)
 rawOddPower mx n = case P3.exactCubeRoot n of
@@ -301,7 +300,7 @@ rawOddPower mx n = case P3.exactCubeRoot n of
                                  (m,e) -> (m, 3*e)
                      Nothing -> badPower mx n
 
-badPower :: Int -> Integer -> (Integer, Int)
+badPower :: Word -> Integer -> (Integer, Word)
 badPower mx n
   | mx < 5      = (n,1)
   | otherwise   = go 1 mx n (takeWhile (<= mx) $ scanl (+) 5 $ cycle [2,4])
@@ -313,25 +312,25 @@ badPower mx n
                         Nothing -> go e b m ks
       go e _ m []   = (m,e)
 
-divisorsTo :: Int -> Int -> [Int]
+divisorsTo :: Word -> Word -> [Word]
 divisorsTo mx n = case shiftToOddCount n of
                     (k,o) | k == 0 -> go (Set.singleton 1) n iops
-                          | otherwise -> go (Set.fromDistinctAscList $ takeWhile (<= mx) $ take (k+1) (iterate (*2) 1)) o iops
+                          | otherwise -> go (Set.fromDistinctAscList $ takeWhile (<= mx) $ take (wordToInt k + 1) (iterate (*2) 1)) o iops
   where
     mset k st = fst (Set.split (mx+1) (Set.mapMonotonic (*k) st))
     -- unP p m = (k, m / p ^ k), where k is as large as possible such that p ^ k still divides m
-    unP :: Int -> Int -> (Int,Int)
+    unP :: Word -> Word -> (Word, Word)
     unP p m = goP 0 m
       where
-        goP :: Int -> Int -> (Int,Int)
+        goP :: Word -> Word -> (Word, Word)
         goP !i j = case j `quotRem` p of
                      (q,r) | r == 0 -> goP (i+1) q
                            | otherwise -> (i,j)
-    iops :: [Int]
+    iops :: [Word]
     iops = 3:5:prs
-    prs :: [Int]
+    prs :: [Word]
     prs = 7:filter prm (scanl (+) 11 $ cycle [2,4,2,4,6,2,6,4])
-    prm :: Int -> Bool
+    prm :: Word -> Bool
     prm k = td prs
       where
         td (p:ps) = (p*p > k) || (k `rem` p /= 0 && td ps)
@@ -343,5 +342,5 @@ divisorsTo mx n = case shiftToOddCount n of
         case unP p m of
           (0,_) -> go st m ps
           -- iterate f x = [x, f x, f (f x)...]
-          (k,r) -> go (Set.unions (take (k + 1) (iterate (mset p) st))) r ps
+          (k,r) -> go (Set.unions (take (wordToInt k + 1) (iterate (mset p) st))) r ps
     go st m [] = go st m [m+1]

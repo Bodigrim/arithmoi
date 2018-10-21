@@ -3,20 +3,18 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Safe modular arithmetic with modulo on type level.
 --
 
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module Math.NumberTheory.Moduli.Class
   ( -- * Known modulo
@@ -28,6 +26,11 @@ module Math.NumberTheory.Moduli.Class
   , invertMod
   , powMod
   , (^%)
+  -- * Multiplicative group
+  , MultMod
+  , multElement
+  , isMultElement
+  , invertGroup
   -- * Unknown modulo
   , SomeMod(..)
   , modulo
@@ -39,13 +42,12 @@ module Math.NumberTheory.Moduli.Class
 
 import Data.Proxy
 import Data.Ratio
+import Data.Semigroup
 import Data.Type.Equality
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
-import Numeric.Natural
+
+import GHC.Natural (Natural, powModNatural)
 
 -- | Wrapper for residues modulo @m@.
 --
@@ -53,17 +55,22 @@ import Numeric.Natural
 -- The modulo is stored on type level, so it is impossible, for example, to add up by mistake
 -- residues with different moduli.
 --
--- > > (3 :: Mod 10) + (4 :: Mod 12)
--- > error: Couldn't match type ‘12’ with ‘10’...
--- > > (3 :: Mod 10) + 8
--- > (1 `modulo` 10)
+-- >>> :set -XDataKinds
+-- >>> (3 :: Mod 10) + (4 :: Mod 12)
+-- error: Couldn't match type ‘12’ with ‘10’...
+-- >>> (3 :: Mod 10) + 8
+-- (1 `modulo` 10)
 --
 -- Note that modulo cannot be negative.
 newtype Mod (m :: Nat) = Mod Natural
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Enum)
 
 instance KnownNat m => Show (Mod m) where
   show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (getMod m) ++ ")"
+
+instance KnownNat m => Bounded (Mod m) where
+  minBound = Mod 0
+  maxBound = let mx = Mod (getNatMod mx - 1) in mx
 
 instance KnownNat m => Num (Mod m) where
   mx@(Mod x) + Mod y =
@@ -117,38 +124,41 @@ getNatMod = natVal
 {-# INLINE getNatMod #-}
 
 -- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-getVal :: KnownNat m => Mod m -> Integer
+getVal :: Mod m -> Integer
 getVal (Mod x) = toInteger x
 {-# INLINE getVal #-}
 
 -- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-getNatVal :: KnownNat m => Mod m -> Natural
+getNatVal :: Mod m -> Natural
 getNatVal (Mod x) = x
 {-# INLINE getNatVal #-}
 
 -- | Computes the modular inverse, if the residue is coprime with the modulo.
 --
--- > > invertMod (3 :: Mod 10)
--- > Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
--- > > invertMod (4 :: Mod 10)
--- > Nothing
+-- >>> :set -XDataKinds
+-- >>> invertMod (3 :: Mod 10)
+-- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- >>> invertMod (4 :: Mod 10)
+-- Nothing
 invertMod :: KnownNat m => Mod m -> Maybe (Mod m)
 invertMod mx
   = if y <= 0
     then Nothing
     else Just $ Mod $ fromInteger y
   where
+    -- first argument of recipModInteger is guaranteed to be positive
     y = recipModInteger (getVal mx) (getMod mx)
 {-# INLINABLE invertMod #-}
 
 -- | Drop-in replacement for '^', with much better performance.
 --
--- > > powMod (3 :: Mod 10) 4
+-- >>> :set -XDataKinds
+-- >>> powMod (3 :: Mod 10) 4
 -- > (1 `modulo` 10)
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx a
   | a < 0     = error $ "^{Mod}: negative exponent"
-  | otherwise = Mod $ fromInteger $ powModInteger (getVal mx) (toInteger a) (getMod mx)
+  | otherwise = Mod $ powModNatural (getNatVal mx) (fromIntegral a) (getNatMod mx)
 {-# INLINABLE [1] powMod #-}
 
 {-# SPECIALISE [1] powMod ::
@@ -174,18 +184,51 @@ infixr 8 ^%
 -- of type classes in Core.
 -- {-# RULES "^%Mod" forall (x :: KnownNat m => Mod m) p. x ^ p = x ^% p #-}
 
+-- | This type represents elements of the multiplicative group mod m, i.e.
+-- those elements which are coprime to m. Use @toMultElement@ to construct.
+newtype MultMod m = MultMod { multElement :: Mod m }
+  deriving (Eq, Ord, Show)
+
+instance KnownNat m => Semigroup (MultMod m) where
+  MultMod a <> MultMod b = MultMod (a * b)
+  stimes k a@(MultMod a')
+    | k >= 0 = MultMod (powMod a' k)
+    | otherwise = invertGroup $ stimes (-k) a
+  -- ^ This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
+
+instance KnownNat m => Monoid (MultMod m) where
+  mempty = MultMod 1
+  mappend = (<>)
+
+instance KnownNat m => Bounded (MultMod m) where
+  minBound = MultMod 1
+  maxBound = MultMod (-1)
+
+-- | Attempt to construct a multiplicative group element.
+isMultElement :: KnownNat m => Mod m -> Maybe (MultMod m)
+isMultElement a = if getNatVal a `gcd` getNatMod a == 1
+                     then Just $ MultMod a
+                     else Nothing
+
+-- | For elements of the multiplicative group, we can safely perform the inverse
+-- without needing to worry about failure.
+invertGroup :: KnownNat m => MultMod m -> MultMod m
+invertGroup (MultMod a) = case invertMod a of
+                            Just b -> MultMod b
+                            Nothing -> error "Math.NumberTheory.Moduli.invertGroup: failed to invert element"
+
 -- | This type represents residues with unknown modulo and rational numbers.
 -- One can freely combine them in arithmetic expressions, but each operation
 -- will spend time on modulo's recalculation:
 --
--- > > 2 `modulo` 10 + 4 `modulo` 15
--- > (1 `modulo` 5)
--- > > 2 `modulo` 10 * 4 `modulo` 15
--- > (3 `modulo` 5)
--- > > 2 `modulo` 10 + fromRational (3 % 7)
--- > (1 `modulo` 10)
--- > > 2 `modulo` 10 * fromRational (3 % 7)
--- > (8 `modulo` 10)
+-- >>> 2 `modulo` 10 + 4 `modulo` 15
+-- (1 `modulo` 5)
+-- >>> 2 `modulo` 10 * 4 `modulo` 15
+-- (3 `modulo` 5)
+-- >>> 2 `modulo` 10 + fromRational (3 % 7)
+-- (1 `modulo` 10)
+-- >>> 2 `modulo` 10 * fromRational (3 % 7)
+-- (8 `modulo` 10)
 --
 -- If performance is crucial, it is recommended to extract @Mod m@ for further processing
 -- by pattern matching. E. g.,
@@ -275,12 +318,12 @@ instance Fractional SomeMod where
 
 -- | Computes the inverse value, if it exists.
 --
--- > > invertSomeMod (3 `modulo` 10)
--- > Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
--- > > invertMod (4 `modulo` 10)
--- > Nothing
--- > > invertSomeMod (fromRational (2 % 5))
--- > Just 5 % 2
+-- >>> invertSomeMod (3 `modulo` 10)
+-- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- >>> invertMod (4 `modulo` 10)
+-- Nothing
+-- >>> invertSomeMod (fromRational (2 % 5))
+-- Just 5 % 2
 invertSomeMod :: SomeMod -> Maybe SomeMod
 invertSomeMod = \case
   SomeMod m -> fmap SomeMod (invertMod m)
@@ -296,8 +339,8 @@ invertSomeMod = \case
 -- | Drop-in replacement for '^', with much better performance.
 -- When -O is enabled, there is a rewrite rule, which specialises '^' to 'powSomeMod'.
 --
--- > > powSomeMod (3 `modulo` 10) 4
--- > (1 `modulo` 10)
+-- >>> powSomeMod (3 `modulo` 10) 4
+-- (1 `modulo` 10)
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
 powSomeMod (SomeMod m) a = SomeMod (m ^% a)
 powSomeMod (InfMod  r) a = InfMod  (r ^  a)

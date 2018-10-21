@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Internal functions dealing with square roots. End-users should not import this module.
 
@@ -13,6 +11,8 @@
 {-# LANGUAGE PatternGuards    #-}
 {-# LANGUAGE CPP              #-}
 {-# LANGUAGE FlexibleContexts #-}
+
+{-# OPTIONS_HADDOCK hide #-}
 
 module Math.NumberTheory.Powers.Squares.Internal
   ( karatsubaSqrt
@@ -66,24 +66,17 @@ heron n a = go (step a)
 -- for large Integers.
 appSqrt :: Integer -> Integer
 appSqrt (S# i#) = S# (double2Int# (sqrtDouble# (int2Double# i#)))
-#if __GLASGOW_HASKELL__ < 709
-appSqrt n@(J# s# _)
-    | isTrue# (s# <# THRESH#) = floor (sqrt $ fromInteger n :: Double)
-#else
 appSqrt n@(Jp# bn#)
     | isTrue# ((sizeofBigNat# bn#) <# THRESH#) =
           floor (sqrt $ fromInteger n :: Double)
-#endif
     | otherwise = case integerLog2# n of
                     l# -> case uncheckedIShiftRA# l# 1# -# 47# of
                             h# -> case shiftRInteger n (2# *# h#) of
                                     m -> case floor (sqrt $ fromInteger m :: Double) of
                                             r -> shiftLInteger r h#
-#if __GLASGOW_HASKELL__ >= 709
 -- There's already a check for negative in integerSquareRoot,
 -- but integerSquareRoot' is exported directly too.
 appSqrt _ = error "integerSquareRoot': negative argument"
-#endif
 
 
 -- Integer square root with remainder, using the Karatsuba Square Root

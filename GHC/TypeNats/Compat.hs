@@ -1,15 +1,16 @@
 {-# LANGUAGE CPP         #-}
 
 {-# OPTIONS_HADDOCK hide #-}
-
 #if MIN_VERSION_base(4,10,0)
-
 module GHC.TypeNats.Compat
   ( module GHC.TypeNats
   ) where
 
+#if MIN_VERSION_base(4,11,0)
+import GHC.TypeNats hiding (Mod)
+#else
 import GHC.TypeNats
-
+#endif
 #else
 
 module GHC.TypeNats.Compat

@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Primes.Factorisation
 --
@@ -17,13 +16,14 @@ module Math.NumberTheory.Primes.FactorisationTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Monad (zipWithM_)
 import Data.List (nub, sort)
 
 import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.TestUtils
 
-specialCases :: [(Integer, [(Integer, Int)])]
+specialCases :: [(Integer, [(Integer, Word)])]
 specialCases =
   [ (4181339589500970917,[(15034813,1),(278110515209,1)])
   , (4181339589500970918,[(2,1),(3,2),(7,1),(2595773,1),(12784336241,1)])
@@ -44,13 +44,24 @@ specialCases =
   , (16757651897802863152387219654541878162,[(2,1),(29,1),(78173,1),(401529283,1),(1995634649,1),(4612433663779,1)])
   , (16757651897802863152387219654541878163,[(11,1),(31,1),(112160981904206269,1),(438144115295608147,1)])
   , (16757651897802863152387219654541878166,[(2,1),(23,1),(277,1),(505353699591289,1),(2602436338718275457,1)])
+  , ((10 ^ 80 - 1) `div` 9, [(11,1),(17,1),(41,1),(73,1),(101,1),(137,1),(271,1),(3541,1),(9091,1),(27961,1),
+                             (1676321,1),(5070721,1),(5882353,1),(5964848081,1),(19721061166646717498359681,1)])
+  ]
+
+lazyCases :: [(Integer, [(Integer, Word)])]
+lazyCases =
+  [ ( 14145130711
+    * 10000000000000000000000000000000000000121
+    * 100000000000000000000000000000000000000000000000447
+    , [(14145130711, 1)]
+    )
   ]
 
 factoriseProperty1 :: Assertion
 factoriseProperty1 = assertEqual "0" [] (factorise 1)
 
 factoriseProperty2 :: Positive Integer -> Bool
-factoriseProperty2 (Positive n) = (-1, 1) : factorise n == factorise (negate n)
+factoriseProperty2 (Positive n) = factorise n == factorise (negate n)
 
 factoriseProperty3 :: Positive Integer -> Bool
 factoriseProperty3 (Positive n) = all (isPrime . fst) (factorise n)
@@ -63,8 +74,11 @@ factoriseProperty4 (Positive n) = bases == nub (sort bases)
 factoriseProperty5 :: Positive Integer -> Bool
 factoriseProperty5 (Positive n) = product (map (uncurry (^)) (factorise n)) == n
 
-factoriseProperty6 :: (Integer, [(Integer, Int)]) -> Assertion
-factoriseProperty6 (n, fs) = assertEqual (show n) fs (factorise n)
+factoriseProperty6 :: (Integer, [(Integer, Word)]) -> Assertion
+factoriseProperty6 (n, fs) = assertEqual (show n) (sort fs) (sort (factorise n))
+
+factoriseProperty7 :: (Integer, [(Integer, Word)]) -> Assertion
+factoriseProperty7 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
 
 testSuite :: TestTree
 testSuite = testGroup "Factorisation"
@@ -76,4 +90,6 @@ testSuite = testGroup "Factorisation"
     , testSmallAndQuick "factorback"                     factoriseProperty5
     ] ++
     map (\x -> testCase ("special case " ++ show (fst x)) (factoriseProperty6 x)) specialCases
+    ++
+    map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseProperty7 x)) lazyCases
   ]

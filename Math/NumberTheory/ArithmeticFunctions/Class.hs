@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Generic type for arithmetic functions over arbitrary unique
 -- factorisation domains.
@@ -21,11 +19,8 @@ module Math.NumberTheory.ArithmeticFunctions.Class
   ) where
 
 import Control.Applicative
+#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
-
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
 #endif
 
 import Math.NumberTheory.UniqueFactorisation

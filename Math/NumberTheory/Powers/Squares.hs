@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Functions dealing with squares. Efficient calculation of integer square roots
 -- and efficient testing for squareness.
@@ -29,9 +27,6 @@ import Data.Array.Unboxed
 import Data.Array.ST
 
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word        -- Moved to GHC.Types
-#endif
 
 import Math.NumberTheory.Unsafe
 

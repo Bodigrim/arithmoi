@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Textbook arithmetic functions.
 --
@@ -26,7 +24,8 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , sigma, sigmaA
   , totient, totientA
   , jordan, jordanA
-  , moebius, moebiusA
+  , ramanujan, ramanujanA
+  , moebius, moebiusA, Moebius(..), runMoebius
   , liouville, liouvilleA
     -- * Additive functions
   , additive
@@ -45,18 +44,11 @@ import qualified Data.Set as S
 import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
+import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural
-
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Foldable
-import Data.Word
-#endif
-
-wordToInt :: Word -> Int
-wordToInt = fromIntegral
 
 -- | Create a multiplicative function from the function on prime's powers. See examples below.
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
@@ -130,38 +122,59 @@ sigmaHelper pa 2 = pa * pa + pa + 1
 sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
-totient :: (UniqueFactorisation n, Integral n) => n -> n
+totient :: (UniqueFactorisation n, Num n) => n -> n
 totient = runFunction totientA
 
 -- | Calculates the totient of a positive number @n@, i.e.
 --   the number of @k@ with @1 <= k <= n@ and @'gcd' n k == 1@,
 --   in other words, the order of the group of units in @&#8484;/(n)@.
-totientA :: forall n. (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
+totientA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
 totientA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper p
 
-jordan :: (UniqueFactorisation n, Integral n) => Word -> n -> n
+jordan :: (UniqueFactorisation n, Num n) => Word -> n -> n
 jordan = runFunction . jordanA
 
 -- | Calculates the k-th Jordan function of an argument.
 --
 -- > jordanA 1 = totientA
-jordanA :: forall n. (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
+jordanA :: forall n. (UniqueFactorisation n, Num n) => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
 jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ wordToInt a)
 
-jordanHelper :: Integral n => n -> Word -> n
+jordanHelper :: Num n => n -> Word -> n
 jordanHelper pa 1 = pa - 1
 jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
 
-moebius :: (UniqueFactorisation n, Num a) => n -> a
+ramanujan :: Integer -> Integer
+ramanujan = runFunction ramanujanA
+
+-- | Calculates the <https://en.wikipedia.org/wiki/Ramanujan_tau_function Ramanujan tau function>
+--   of a positive number @n@, using formulas given <http://www.numbertheory.org/php/tau.html here>
+ramanujanA :: ArithmeticFunction Integer Integer
+ramanujanA = multiplicative $ \(unPrime -> p) -> ramanujanHelper p
+
+ramanujanHelper :: Integer -> Word -> Integer
+ramanujanHelper _ 0 = 1
+ramanujanHelper 2 1 = -24
+ramanujanHelper p 1 = (65 * sigmaHelper (p ^ (11 :: Int)) 1 + 691 * sigmaHelper (p ^ (5 :: Int)) 1 - 691 * 252 * 2 * sum [sigma 5 k * sigma 5 (p-k) | k <- [1..(p `quot` 2)]]) `quot` 756
+ramanujanHelper p k = sum $ zipWith3 (\a b c -> a * b * c) paPowers tpPowers binomials
+  where pa = p ^ (11 :: Int)
+        tp = ramanujanHelper p 1
+        paPowers = iterate (* (-pa)) 1
+        binomials = scanl (\acc j -> acc * (k' - 2 * j) * (k' - 2 * j - 1) `quot` (k' - j) `quot` (j + 1)) 1 [0 .. k' `quot` 2 - 1]
+        k' = fromIntegral k
+        tpPowers = reverse $ take (length binomials) $ iterate (* tp^(2::Int)) (if even k then 1 else tp)
+{-# INLINE ramanujanHelper #-}
+
+moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
 
--- | Calculates the Moebius function of an argument.
-moebiusA :: Num a => ArithmeticFunction n a
-moebiusA = ArithmeticFunction (const f) runMoebius
+-- | Calculates the Möbius function of an argument.
+moebiusA :: ArithmeticFunction n Moebius
+moebiusA = ArithmeticFunction (const f) id
   where
     f 1 = MoebiusN
     f 0 = MoebiusP
@@ -220,28 +233,6 @@ expMangoldt = runFunction expMangoldtA
 -- | The exponent of von Mangoldt function. Use @log expMangoldtA@ to recover von Mangoldt function itself.
 expMangoldtA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
 expMangoldtA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
-
-data Moebius
-  = MoebiusZ
-  | MoebiusP
-  | MoebiusN
-
-runMoebius :: Num a => Moebius -> a
-runMoebius m = case m of
-  MoebiusZ ->  0
-  MoebiusP ->  1
-  MoebiusN -> -1
-
-instance Semigroup Moebius where
-  MoebiusZ <> _ = MoebiusZ
-  _ <> MoebiusZ = MoebiusZ
-  MoebiusP <> a = a
-  a <> MoebiusP = a
-  _ <> _ = MoebiusP
-
-instance Monoid Moebius where
-  mempty = MoebiusP
-  mappend = (<>)
 
 data Mangoldt a
   = MangoldtZero

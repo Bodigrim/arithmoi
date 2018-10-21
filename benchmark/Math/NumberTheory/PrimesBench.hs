@@ -1,14 +1,15 @@
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.PrimesBench
   ( benchSuite
   ) where
 
-import Criterion.Main
+import Gauge.Main
 import System.Random
 
 import Math.NumberTheory.Logarithms (integerLog2)
-import Math.NumberTheory.Primes
+import Math.NumberTheory.Primes.Factorisation
+import Math.NumberTheory.Primes.Testing
 
 genInteger :: Int -> Int -> Integer
 genInteger salt bits

@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.MoebiusInversion
 --
@@ -37,7 +36,7 @@ totientSumZero = assertEqual "totientSum" 0 (totientSum 0)
 generalInversionProperty :: (Int -> Integer) -> Positive Int -> Bool
 generalInversionProperty g (Positive n)
   =  g n == sum [f (n `quot` k) | k <- [1 .. n]]
-  && f n == sum [moebius (toInteger k) * g (n `quot` k) | k <- [1 .. n]]
+  && f n == sum [runMoebius (moebius k) * g (n `quot` k) | k <- [1 .. n]]
   where
     f = generalInversion g
 

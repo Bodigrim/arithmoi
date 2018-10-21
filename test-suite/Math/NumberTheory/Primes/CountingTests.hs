@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Primes.Counting
 --
@@ -17,6 +16,7 @@ module Math.NumberTheory.Primes.CountingTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Counting
 import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.TestUtils
@@ -79,7 +79,7 @@ primeCountSpecialCases = map a table
 -- | Check that values of 'nthPrime' are positive.
 nthPrimeProperty1 :: Positive Integer -> Bool
 nthPrimeProperty1 (Positive n) = n > nthPrimeMaxArg
-  || nthPrime n > 0
+  || unPrime (nthPrime n) > 0
 
 -- | Check that 'nthPrime' is monotonically increasing function.
 nthPrimeProperty2 :: Positive Integer -> Positive Integer -> Bool
@@ -94,13 +94,13 @@ nthPrimeProperty2 (Positive n1) (Positive n2)
 
 -- | Check that values of 'nthPrime' are prime.
 nthPrimeProperty3 :: Positive Integer -> Bool
-nthPrimeProperty3 (Positive n) = isPrime $ nthPrime n
+nthPrimeProperty3 (Positive n) = isPrime $ unPrime $ nthPrime n
 
 -- | Check tabulated values.
 nthPrimeSpecialCases :: [Assertion]
 nthPrimeSpecialCases = map a table
   where
-  a (n, m) = assertBool "nthPrime" $ n > nthPrime m
+  a (n, m) = assertBool "nthPrime" $ n > unPrime (nthPrime m)
 
 
 -- | Check that values of 'approxPrimeCount' are non-negative.
@@ -120,7 +120,7 @@ nthPrimeApproxProperty1 (AnySign a) = nthPrimeApprox a > 0
 -- | Check that 'nthPrimeApprox' is consistent with 'nthPrimeApproxUnderestimateLimit'.
 nthPrimeApproxProperty2 :: Positive Integer -> Bool
 nthPrimeApproxProperty2 (Positive a) = a >= nthPrimeApproxUnderestimateLimit
-  || toInteger (nthPrimeApprox a) <= nthPrime (toInteger a)
+  || toInteger (nthPrimeApprox a) <= unPrime (nthPrime (toInteger a))
 
 
 testSuite :: TestTree

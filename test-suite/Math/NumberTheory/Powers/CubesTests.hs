@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Powers.Cubes
 --
@@ -20,11 +19,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Maybe
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Word
-#endif
-
 
 import Math.NumberTheory.Powers.Cubes
 import Math.NumberTheory.TestUtils

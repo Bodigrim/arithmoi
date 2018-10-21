@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Curves
 --
@@ -21,10 +20,6 @@ import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.TestUtils
-
-#if __GLASGOW_HASKELL__ < 709
-import Data.Word
-#endif
 
 (==>?) :: Maybe a -> (a -> Property) -> Property
 x ==>? f = case x of

@@ -1,8 +1,10 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.PowersBench
   ( benchSuite
   ) where
 
-import Criterion.Main
+import Gauge.Main
 import System.Random
 
 import Math.NumberTheory.Logarithms (integerLog2)
@@ -25,4 +27,5 @@ compareRoots bits = bgroup ("sqrt" ++ show bits)
   where
     n = genInteger 0 bits
 
+benchSuite :: Benchmark
 benchSuite = bgroup "Powers" $ map compareRoots [2300, 2400 .. 2600]

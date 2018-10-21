@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Chinese remainder theorem
 --
@@ -21,11 +19,10 @@ where
 import Data.Ratio (numerator, denominator)
 import Control.Monad (foldM)
 
-import GHC.Integer.GMP.Internals
-
-import Math.NumberTheory.GCD (extendedGCD)
+import Math.NumberTheory.Euclidean (extendedGCD)
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Primes.Factorisation (factorise)
+import Math.NumberTheory.Utils (recipMod)
 
 -- [Unsure where to put these.  Does arithmoi keep QuickCheck tests in separate documents?
 --
@@ -122,7 +119,6 @@ chineseRemainders2 x y
   | x == y    = Just x
   | otherwise = Nothing
 
-
 -- | Given a list @[(r_1,m_1), ..., (r_n,m_n)]@ of @(residue,modulus)@
 --   pairs, @chineseRemainder@ calculates the solution to the simultaneous
 --   congruences
@@ -157,8 +153,3 @@ chineseRemainder2 :: (Integer,Integer) -> (Integer,Integer) -> Integer
 chineseRemainder2 (r1, md1) (r2,md2)
     = case extendedGCD md1 md2 of
         (_,u,v) -> ((1 - u*md1)*r1 + (1 - v*md2)*r2) `mod` (md1*md2)
-
-recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger x m of
-  0 -> Nothing
-  y -> Just y
