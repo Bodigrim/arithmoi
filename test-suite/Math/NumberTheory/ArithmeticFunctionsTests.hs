@@ -24,6 +24,7 @@ import qualified Data.Set as S
 import qualified Data.IntSet as IS
 
 import Math.NumberTheory.ArithmeticFunctions
+import Math.NumberTheory.Primes (UniqueFactorisation (factorise))
 import Math.NumberTheory.TestUtils
 
 import Numeric.Natural
@@ -270,6 +271,10 @@ mangoldtOeis = oeisAssertion "A014963" expMangoldtA
   , 73, 1, 1, 1, 1, 1, 79, 1, 3, 1, 83, 1, 1, 1, 1, 1, 89, 1, 1, 1, 1, 1, 1
   ]
 
+nFreedomProperty1 :: Word -> NonZero Natural -> Bool
+nFreedomProperty1 n (NonZero m) =
+    isNFree n m == (all ((< n) . snd) . factorise) m
+
 testSuite :: TestTree
 testSuite = testGroup "ArithmeticFunctions"
   [ testGroup "Divisors"
@@ -325,5 +330,8 @@ testSuite = testGroup "ArithmeticFunctions"
     ]
   , testGroup "Mangoldt"
     [ testCase "OEIS" mangoldtOeis
+    ]
+  , testGroup "N-freedom"
+    [ testSmallAndQuick "`isNFree` matches the definition" nFreedomProperty1
     ]
   ]
