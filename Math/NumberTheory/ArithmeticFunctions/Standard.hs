@@ -40,7 +40,6 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
 import Data.Coerce
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
-import Data.List (iterate')
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Semigroup
@@ -273,7 +272,7 @@ nFrees n = concatMap nFreesListInternal nFreeList
     stride :: Word
     stride = 256
     bounds :: [Word]
-    bounds = iterate' (\lo -> lo + stride) 1
+    bounds = iterate (\lo -> lo + stride) 1
     nFreeList :: [(U.Vector Bool, a)]
     nFreeList =
         map (\lo -> let lo' = fromIntegral lo
