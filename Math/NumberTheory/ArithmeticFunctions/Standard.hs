@@ -40,12 +40,15 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
 import Data.Coerce
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
+import Data.List (iterate')
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Semigroup
+import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius
+import Math.NumberTheory.ArithmeticFunctions.NFreedom (sieveBlockNFree)
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -264,8 +267,23 @@ isNFree n = runFunction (isNFreeA n)
 isNFreeA :: UniqueFactorisation n => Word -> ArithmeticFunction n Bool
 isNFreeA n = ArithmeticFunction (\_ pow -> All $ pow < n) getAll
 
-nFrees :: forall a . (Enum a, Num a, UniqueFactorisation a) => Word -> [a]
-nFrees n = filter (isNFree n) [1..]
+nFrees :: forall a . (Integral a, UniqueFactorisation a) => Word -> [a]
+nFrees n = concatMap nFreesListInternal nFreeList
+  where
+    stride :: Word
+    stride = 256
+    bounds :: [Word]
+    bounds = iterate' (\lo -> lo + stride) 1
+    nFreeList :: [(U.Vector Bool, a)]
+    nFreeList =
+        map (\lo -> let lo' = fromIntegral lo
+                    in (sieveBlockNFree n lo stride, lo')) bounds
+    nFreesListInternal :: (U.Vector Bool, a) -> [a]
+    nFreesListInternal (bs, lo) =
+        let stride' :: a
+            stride' = fromIntegral stride
+            lo' = mod lo stride'
+        in filter ((bs U.!) . fromIntegral . pred) [lo' .. lo' + stride']
 
 newtype LCM a = LCM { getLCM :: a }
 
