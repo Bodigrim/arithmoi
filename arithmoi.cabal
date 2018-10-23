@@ -50,6 +50,7 @@ library
     GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Mertens
+    Math.NumberTheory.ArithmeticFunctions.NFreedom
     Math.NumberTheory.ArithmeticFunctions.Moebius
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.Curves.Montgomery
