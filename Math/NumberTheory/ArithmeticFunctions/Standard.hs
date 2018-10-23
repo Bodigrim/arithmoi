@@ -267,6 +267,8 @@ isNFreeA :: UniqueFactorisation n => Word -> ArithmeticFunction n Bool
 isNFreeA n = ArithmeticFunction (\_ pow -> All $ pow < n) getAll
 
 nFrees :: forall a . (Integral a, UniqueFactorisation a) => Word -> [a]
+nFrees 0 = [1]
+nFrees 1 = [1]
 nFrees n = concatMap nFreesListInternal nFreeList
   where
     stride :: Word
@@ -281,8 +283,9 @@ nFrees n = concatMap nFreesListInternal nFreeList
     nFreesListInternal (bs, lo) =
         let stride' :: a
             stride' = fromIntegral stride
-            lo' = mod lo stride'
-        in filter ((bs U.!) . fromIntegral . pred) [lo' .. lo' + stride']
+        in map snd .
+           filter ((bs U.!) . fromIntegral . fst) .
+           zip [0 .. stride - 1] $ [lo .. lo + stride' - 1]
 
 newtype LCM a = LCM { getLCM :: a }
 

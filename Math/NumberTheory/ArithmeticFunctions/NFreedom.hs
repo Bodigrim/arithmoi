@@ -16,6 +16,7 @@ import Control.Monad.ST                     (runST)
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
+import Math.NumberTheory.Powers.Squares     (integerSquareRoot)
 import Math.NumberTheory.Primes             (primes, unPrime)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt)
 
@@ -47,5 +48,8 @@ sieveBlockNFree n lowIndex' len'
     len :: Int
     len = wordToInt len'
 
+    highIndex :: Int
+    highIndex = lowIndex + len - 1
+
     ps :: [Int]
-    ps = take len $ map unPrime primes
+    ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes

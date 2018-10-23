@@ -275,6 +275,20 @@ nFreedomProperty1 :: Word -> NonZero Natural -> Bool
 nFreedomProperty1 n (NonZero m) =
     isNFree n m == (all ((< n) . snd) . factorise) m
 
+nFreedomProperty2 :: NonZero Word -> NonNegative Int -> Bool
+nFreedomProperty2 (NonZero n) (NonNegative m) =
+    let -- This is done so that @n@ is never @1@.
+        n' = 2 + mod n 8
+    in take m (nFrees n') == take m (filter (isNFree n') ([1..] :: [Int]))
+
+nFreedomAssertion1 :: Assertion
+nFreedomAssertion1 =
+    assertEqual "1 is the sole 0-free number" (nFrees 0) ([1] :: [Int])
+
+nFreedomAssertion2 :: Assertion
+nFreedomAssertion2 =
+    assertEqual "1 is the sole 1-free number" (nFrees 1) ([1] :: [Int])
+
 testSuite :: TestTree
 testSuite = testGroup "ArithmeticFunctions"
   [ testGroup "Divisors"
@@ -333,5 +347,8 @@ testSuite = testGroup "ArithmeticFunctions"
     ]
   , testGroup "N-freedom"
     [ testSmallAndQuick "`isNFree` matches the definition" nFreedomProperty1
+    , testSmallAndQuick "`nFrees` matches the definition" nFreedomProperty2
+    , testCase "`1` is the only 0-free number" nFreedomAssertion1
+    , testCase "`1` is the only 1-free number" nFreedomAssertion2
     ]
   ]
