@@ -27,15 +27,14 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
 import Prelude hiding (rem)
 import Data.List
 import Data.Maybe
-import Data.Semigroup
 import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.UniqueFactorisation
-import Math.NumberTheory.Utils.Series (DirichletSeries)
-import qualified Math.NumberTheory.Utils.Series as DS
+import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
+import qualified Math.NumberTheory.Utils.DirichletSeries as DS
 
 atomicSeries
   :: (Semiring b, Num a, Ord a)
@@ -45,8 +44,7 @@ atomicSeries
   -> [Word]
   -> DirichletSeries a b
 atomicSeries point ar p ks = case ar of
-  ArithmeticFunction f g -> one `plus`
-    DS.fromDistinctAscList (map (\k -> (Product (g (f p k)), point (unPrime p ^ k))) ks)
+  ArithmeticFunction f g -> DS.fromDistinctAscList (map (\k -> (g (f p k), point (unPrime p ^ k))) ks)
 
 -- from factorisation of n to possible (p, e) s. t. f(p^e) | n
 type InversePrimorials a = [(Prime a, Word)] -> [(Prime a, [Word])]
@@ -100,16 +98,16 @@ invertFunction
   -> a
   -> b
 invertFunction point f invF n
-  = DS.last
-  $ foldl (\ds b -> uncurry processBatch b ds) one batches
+  = DS.last n
+  $ foldl (\ds b -> uncurry processBatch b ds) (DS.fromDistinctAscList []) batches
   where
     factors = factorise n
     batches = strategy f factors $ invF factors
 
     processBatch :: a -> [(Prime a, [Word])] -> DirichletSeries a b -> DirichletSeries a b
     processBatch pk xs acc
-      = DS.filter (\(Product a) -> a `rem` pk == 0)
-      $ foldl (DS.timesAndCrop (\(Product a) -> n `rem` a == 0)) acc
+      = DS.filter (\a -> a `rem` pk == 0)
+      $ foldl (DS.timesAndCrop (\a -> n `rem` a == 0)) acc
       $ map (uncurry $ atomicSeries point f) xs
 
 -- | The inverse 'totient' function such that
