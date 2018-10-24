@@ -58,6 +58,8 @@ sieveBlockNFree n lowIndex' len'
     ps :: [Int]
     ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
 
+-- | For a given nonnegative integer power @n@, generate all @n@-free
+-- numbers in ascending order, starting at @1@.
 nFrees :: forall a . (Integral a, UniqueFactorisation a) => Word -> [a]
 nFrees 0 = [1]
 nFrees 1 = [1]
