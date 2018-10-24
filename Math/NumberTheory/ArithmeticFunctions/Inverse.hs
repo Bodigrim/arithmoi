@@ -107,7 +107,7 @@ invertFunction point f invF n
     processBatch :: a -> [(Prime a, [Word])] -> DirichletSeries a b -> DirichletSeries a b
     processBatch pk xs acc
       = DS.filter (\a -> a `rem` pk == 0)
-      $ foldl (DS.timesAndCrop (\a -> n `rem` a == 0)) acc
+      $ foldl (DS.timesAndCrop n) acc
       $ map (uncurry $ atomicSeries point f) xs
 {-# SPECIALISE invertFunction :: Semiring b => (Integer -> b) -> ArithmeticFunction Integer Integer -> InversePrimorials Integer -> Integer -> b #-}
 

@@ -17,9 +17,11 @@ module Math.NumberTheory.Utils.DirichletSeries
   , timesAndCrop
   ) where
 
-import Prelude hiding (filter, last)
+import Prelude hiding (filter, last, rem, quot)
 import qualified Data.List as L
 import Data.Semiring (Semiring(..))
+
+import Math.NumberTheory.Euclidean
 
 -- Sparse Dirichlet series are represented by an ascending list of pairs.
 -- For instance, [(a, b), (c, d)] represents 1 + b/s^a + d/s^c.
@@ -53,24 +55,29 @@ merge xs'@(x'@(x, fx) : xs) ys'@(y'@(y, fy) : ys) = case x `compare` y of
 -- In other words, no element repeats in the list
 -- [ a <> b | (a, _) <- as, (b, _) <- bs ]
 timesAndCrop
-  :: (Num a, Ord a, Semiring b)
-  => (a -> Bool)
+  :: (Euclidean a, Ord a, Semiring b)
+  => a
   -> DirichletSeries a b -- ^ longer series
   -> DirichletSeries a b -- ^ shorter series
   -> DirichletSeries a b
-timesAndCrop predicate (DirichletSeries as) (DirichletSeries [(b, fb)])
+timesAndCrop n (DirichletSeries as) (DirichletSeries [(b, fb)])
   = DirichletSeries
   -- TODO: fuse generation of as' and its merge with as
   -- into one function, maintaining two pointers to as.
   -- This will avoid generation of intermediate structures.
   $ [(b, fb)] `merge` (as `merge` as')
   where
-    as' = L.filter (predicate . fst) $ map (\(a, fa) -> (a * b, fa `times` fb)) as
-timesAndCrop predicate (DirichletSeries as) (DirichletSeries bs)
+    nb = n `quot` b
+    as'
+      = map (\(a, fa) -> (a * b, fa `times` fb))
+      $ L.filter (\(a, _) -> nb `rem` a == 0)
+      -- $ L.takeWhile (\(a, _) -> a <= nb)
+      $ as
+timesAndCrop n (DirichletSeries as) (DirichletSeries bs)
   = DirichletSeries
   $ foldl merge (as `merge` bs)
   $ map
-    (\(b, fb) -> L.filter (predicate . fst) $ map
+    (\(b, fb) -> L.filter (\(ab, _) -> n `rem` ab == 0) $ map
       (\(a, fa) -> (a * b, fa `times` fb))
       as)
     bs
