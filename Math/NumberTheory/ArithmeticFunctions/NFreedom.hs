@@ -41,7 +41,7 @@ sieveBlockNFree n lowIndex' len'
     forM_ ps $ \p -> do
       let pPow = p ^ n
           offset = negate lowIndex `mod` pPow
-      forM_ [offset, offset + pPow .. len - 1] $ \ix -> do
+      forM_ (takeWhile (<= highIndex) [offset, offset + pPow .. len - 1]) $ \ix -> do
           MU.unsafeWrite as ix False
     U.unsafeFreeze as
 
