@@ -32,7 +32,6 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Debug.Trace                          (traceShow)
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Unsafe.Coerce
@@ -143,7 +142,7 @@ sieveBlockMoebius lowIndex' len'
       forM_ [offset, offset + p .. len - 1] $ \ix -> do
         MU.unsafeModify as (\y -> y + l) ix
       forM_ [offset2, offset2 + p * p .. len - 1] $ \ix -> do
-        traceShow (p, ix) $ MU.unsafeWrite as ix 0
+        MU.unsafeWrite as ix 0
     forM_ [0 .. len - 1] $ \ix -> do
       MU.unsafeModify as (mapper ix) ix
     U.unsafeFreeze as
