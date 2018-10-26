@@ -22,7 +22,8 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
 import Math.NumberTheory.Primes              (primes, unPrime)
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation)
-import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
+import Math.NumberTheory.Utils.FromIntegral  (integerToInt, intToInteger,
+                                              wordToInt, wordToInteger)
 
 -- | Evaluate the `isNFreeA` function over a block.
 -- Value of @f@ at 0, if zero falls into block, is undefined.
@@ -39,11 +40,11 @@ sieveBlockNFree n lowIndex' len'
   = runST $ do
     as <- MU.replicate len True
     forM_ ps $ \p -> do
-      let pPow = p ^ n
-          offset = negate lowIndex `mod` pPow
-      forM_ (takeWhile (<= highIndex) [offset, offset + pPow .. len - 1]) $ \ix -> do
-          MU.unsafeWrite as ix False
-    U.unsafeFreeze as
+      let pPow = (intToInteger p) ^ n
+          offset = negate (wordToInteger lowIndex') `mod` pPow
+      forM_ (takeWhile (<= fromIntegral highIndex) [offset, offset + pPow .. fromIntegral len - 1]) $ \ix -> do
+          MU.write as (integerToInt ix) False
+    U.freeze as
 
   where
     lowIndex :: Int
