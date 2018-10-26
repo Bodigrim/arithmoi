@@ -280,11 +280,12 @@ nFreedomProperty2 :: NonZero Word -> NonNegative Int -> Bool
 nFreedomProperty2 (NonZero n) (NonNegative m) =
     all (isNFree n) $ take m (nFrees n :: [Integer])
 
-nFreedomProperty3 :: Positive Int -> Bool
-nFreedomProperty3 (Positive m) =
-    let zet = 1 / zetas 1e-14 !! 2 :: Double
+nFreedomProperty3 :: NonZero Word -> Positive Int -> Bool
+nFreedomProperty3 (NonZero n) (Positive m) =
+    let n' = n + 1
+        zet = 1 / zetas 1e-14 !! (fromIntegral n') :: Double
         m' = 100 * m
-        sqfree = fromIntegral m' / fromIntegral (last (take m' $ nFrees 2 :: [Integer]))
+        sqfree = fromIntegral m' / fromIntegral (last (take m' $ nFrees n' :: [Integer]))
     in 1 / fromIntegral m >= abs (zet - sqfree)
 
 nFreedomAssertion1 :: Assertion
@@ -354,7 +355,7 @@ testSuite = testGroup "ArithmeticFunctions"
   , testGroup "N-freedom"
     [ testSmallAndQuick "`isNFree` matches the definition" nFreedomProperty1
     , testSmallAndQuick "numbers produces by `nFrees`s are `n`-free" nFreedomProperty2
-    , testSmallAndQuick "distribution of square-free numbers matches expected" nFreedomProperty3
+    , testSmallAndQuick "distribution of n-free numbers matches expected" nFreedomProperty3
     , testCase "`1` is the only 0-free number" nFreedomAssertion1
     , testCase "`1` is the only 1-free number" nFreedomAssertion2
     ]
