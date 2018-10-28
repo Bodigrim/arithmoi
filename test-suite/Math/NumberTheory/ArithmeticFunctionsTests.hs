@@ -278,7 +278,9 @@ nFreedomProperty1 n (NonZero m) =
 
 nFreedomProperty2 :: NonZero Word -> NonNegative Int -> Bool
 nFreedomProperty2 (NonZero n) (NonNegative m) =
-    all (isNFree n) $ take m (nFrees n :: [Integer])
+    let n' | n == maxBound = n
+           | otherwise     = n + 1
+    in take m (filter (isNFree n') [1 ..]) == take m (nFrees n' :: [Integer])
 
 nFreedomProperty3 :: NonZero Word -> Positive Int -> Bool
 nFreedomProperty3 (NonZero n) (Positive m) =
