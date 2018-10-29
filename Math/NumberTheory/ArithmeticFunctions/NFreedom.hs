@@ -41,9 +41,13 @@ sieveBlockNFree n lowIndex len'
   = runST $ do
     as <- MU.replicate (wordToInt len') True
     forM_ ps $ \p -> do
-      let pPow = p ^ n
+      let pPow :: a
+          pPow = p ^ n
+          offset :: a
           offset = negate lowIndex `mod` pPow
-      forM_ (takeWhile (<= fromIntegral highIndex) [offset, offset + pPow .. fromIntegral len - 1]) $ \ix -> do
+          indices :: [a]
+          indices = takeWhile (<= fromIntegral highIndex) [offset, offset + pPow .. len - 1]
+      forM_ indices $ \ix -> do
           MU.write as (fromIntegral ix) False
     U.freeze as
 
