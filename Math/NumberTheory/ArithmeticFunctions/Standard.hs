@@ -260,7 +260,7 @@ isNFree :: UniqueFactorisation n => Word -> n -> Bool
 isNFree n = runFunction (isNFreeA n)
 
 -- | Check if an integer is @n@-free. An integer @x@ is @n@-free if in its
--- factorisation into prime factors, no factor has an exponent large than or
+-- factorisation into prime factors, no factor has an exponent larger than or
 -- equal to @n@.
 isNFreeA :: UniqueFactorisation n => Word -> ArithmeticFunction n Bool
 isNFreeA n = ArithmeticFunction (\_ pow -> All $ pow < n) getAll
