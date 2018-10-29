@@ -46,7 +46,9 @@ sieveBlockNFree n lowIndex len'
           offset :: a
           offset = negate lowIndex `mod` pPow
           indices :: [a]
-          indices = takeWhile (<= fromIntegral highIndex) [offset, offset + pPow .. len - 1]
+          indices = takeWhile
+                    (<= (pred (maxBound :: Int)) `min` fromIntegral highIndex)
+                    [offset, offset + pPow .. len - 1]
       forM_ indices $ \ix -> do
           MU.write as (fromIntegral ix) False
     U.freeze as
