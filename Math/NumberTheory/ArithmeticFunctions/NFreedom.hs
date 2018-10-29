@@ -52,6 +52,13 @@ sieveBlockNFree n lowIndex len'
           pPow = p ^ n
           offset :: a
           offset = negate lowIndex `mod` pPow
+          -- The second argument in @Data.Vector.Unboxed.Mutable.write@ is an
+          -- @Int@, so to avoid segmentation faults or out-of-bounds errors,
+          -- the enumeration's higher bound must always be less than
+          -- @maxBound :: Int@.
+          -- Futhermore, even if it is smaller than that value, it must also
+          -- be less than @highIndex@ because writing at index @i@ of vector
+          -- where @highIndex < i <= (maxBound :: Int)@ is still problematic.
           indices :: [a]
           indices = [offset, offset + pPow .. minimum [ fromIntegral . pred $ (maxBound :: Int)
                                                       , len - 1
@@ -102,12 +109,12 @@ nFrees n = concatMap nFreesListInternal nFreeList
     nFreesListInternal (bs, lo, strd) =
         let -- When indexing the array of flags @bs@, the index has to be an
             -- @Int@. As such, it's necessary to cast @strd@ twice.
-            -- Once, immediately below, to create the range of values whose
+            -- * Once, immediately below, to create the range of values whose
             -- @n@-freedom will be tested. Since @nFrees@ has return type
             -- @[a]@, this cannot be avoided as @strides@ has type @[Word]@.
             strd' :: a
             strd' = fromIntegral strd
-            -- Twice, immediately below, to create the range of indices with
+            -- * Twice, immediately below, to create the range of indices with
             -- which to query @bs@.
             strd'' :: Int
             strd'' = fromIntegral strd
