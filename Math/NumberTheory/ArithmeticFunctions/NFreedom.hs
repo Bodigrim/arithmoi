@@ -16,14 +16,14 @@ module Math.NumberTheory.ArithmeticFunctions.NFreedom
 
 import Control.Monad                         (forM_)
 import Control.Monad.ST                      (runST)
+import Data.List                             (scanl')
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
 import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
 import Math.NumberTheory.Primes              (primes, unPrime)
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation)
-import Math.NumberTheory.Utils.FromIntegral  (integerToInt, intToInteger,
-                                              wordToInt, wordToInteger)
+import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
 -- | Evaluate the `isNFreeA` function over a block.
 -- Value of @f@ at 0, if zero falls into block, is undefined.
@@ -31,32 +31,30 @@ import Math.NumberTheory.Utils.FromIntegral  (integerToInt, intToInteger,
 -- >>> sieveBlockNFree 2 1 10
 -- [True, True, True, False, True, True, True, False, False, True]
 sieveBlockNFree
-  :: Word
-  -> Word
+  :: forall a . Integral a
+  => Word
+  -> a
   -> Word
   -> U.Vector Bool
 sieveBlockNFree _ _ 0 = U.empty
-sieveBlockNFree n lowIndex' len'
+sieveBlockNFree n lowIndex len'
   = runST $ do
-    as <- MU.replicate len True
+    as <- MU.replicate (wordToInt len') True
     forM_ ps $ \p -> do
-      let pPow = (intToInteger p) ^ n
-          offset = negate (wordToInteger lowIndex') `mod` pPow
+      let pPow = p ^ n
+          offset = negate lowIndex `mod` pPow
       forM_ (takeWhile (<= fromIntegral highIndex) [offset, offset + pPow .. fromIntegral len - 1]) $ \ix -> do
-          MU.write as (integerToInt ix) False
+          MU.write as (fromIntegral ix) False
     U.freeze as
 
   where
-    lowIndex :: Int
-    lowIndex = wordToInt lowIndex'
+    len :: a
+    len = fromIntegral len'
 
-    len :: Int
-    len = wordToInt len'
-
-    highIndex :: Int
+    highIndex :: a
     highIndex = lowIndex + len - 1
 
-    ps :: [Int]
+    ps :: [a]
     ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
 
 -- | For a given nonnegative integer power @n@, generate all @n@-free
@@ -66,18 +64,19 @@ nFrees 0 = [1]
 nFrees 1 = [1]
 nFrees n = concatMap nFreesListInternal nFreeList
   where
-    stride :: Word
-    stride = 256
-    bounds :: [Word]
-    bounds = iterate (\lo -> lo + stride) 1
-    nFreeList :: [(U.Vector Bool, a)]
+    strides :: [Word]
+    strides = take 55 (iterate (2 *) 256) ++ repeat (fromIntegral (maxBound :: Int))
+    bounds :: [a]
+    bounds = scanl' (+) 1 $ map fromIntegral strides
+    nFreeList :: [(U.Vector Bool, a, Word)]
     nFreeList =
-        map (\lo -> let lo' = fromIntegral lo
-                    in (sieveBlockNFree n lo stride, lo')) bounds
-    nFreesListInternal :: (U.Vector Bool, a) -> [a]
-    nFreesListInternal (bs, lo) =
-        let stride' :: a
-            stride' = fromIntegral stride
+       zipWith (\lo strd -> (sieveBlockNFree n lo strd, lo, strd)) bounds strides
+    nFreesListInternal :: (U.Vector Bool, a, Word) -> [a]
+    nFreesListInternal (bs, lo, strd) =
+        let strd' :: a
+            strd' = fromIntegral strd
+            strd'' :: Int
+            strd'' = fromIntegral strd
         in map snd .
-           filter ((bs U.!) . fromIntegral . fst) .
-           zip [0 .. stride - 1] $ [lo .. lo + stride' - 1]
+           filter ((bs U.!) . fst) .
+           zip [0 .. strd'' - 1] $ [lo .. lo + strd' - 1]
