@@ -31,6 +31,13 @@ import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 --
 -- This function should __**not**__ be used with a negative lower bound.
 -- If it is, the result is undefined.
+-- Furthermore, do not:
+--
+-- * use a block length greater than @maxBound :: Int@.
+-- * use a power that is either of @0, 1@.
+--
+-- None of these preconditions are checked, and if any occurs, the result is
+-- undefined, __if__ the function terminates.
 --
 -- >>> sieveBlockNFree 2 1 10
 -- [True, True, True, False, True, True, True, False, False, True]
@@ -58,13 +65,11 @@ sieveBlockNFree n lowIndex len'
           -- @Int@, so to avoid segmentation faults or out-of-bounds errors,
           -- the enumeration's higher bound must always be less than
           -- @maxBound :: Int@.
-          -- Futhermore, even if it is smaller than that value, it must also
-          -- be less than @highIndex@ because writing at index @i@ of vector
-          -- where @highIndex < i <= (maxBound :: Int)@ is still problematic.
+          -- As mentioned above, this is not checked when using this function
+          -- by itself, but is carefully managed when this function is called
+          -- by @nFrees@, see the comments in it.
           indices :: [a]
-          indices = [offset, offset + pPow .. minimum [ fromIntegral . pred $ (maxBound :: Int)
-                                                      , len - 1
-                                                      , fromIntegral highIndex]]
+          indices = [offset, offset + pPow .. len - 1]
       forM_ indices $ \ix -> do
           MU.write as (fromIntegral ix) False
     U.freeze as
@@ -101,7 +106,7 @@ nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
     strides :: [Word]
     strides = take 55 (iterate (2 *) 256) ++ repeat (fromIntegral (maxBound :: Int))
 
-    -- Infinite list of lower bounds at which @sieveBlockNFrees@ will be
+    -- Infinite list of lower bounds at which @sieveBlockNFree@ will be
     -- applied. This has type @Integral a => a@ instead of @Word@ because
     -- unlike the sizes of the sieve that eventually stop increasing (see
     -- above comment), the lower bound at which @sieveBlockNFree@ does not.
@@ -112,8 +117,12 @@ nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
 -- The length of the list is determined by the value passed in as the third
 -- argument. It will be lesser than or equal to this value.
 --
+-- This function should not be used with a negative lower bound. If it is,
+-- the result is undefined.
+--
 -- The block length cannot exceed @maxBound :: Int@, this precondition is not
 -- checked.
+--
 -- As with @nFrees@, passing @n = 0, 1@ results in an empty list.
 nFreesBlock
     :: forall a . Integral a
