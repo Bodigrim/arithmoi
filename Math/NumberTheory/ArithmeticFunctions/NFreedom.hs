@@ -82,7 +82,12 @@ sieveBlockNFree n lowIndex len'
 -- numbers in ascending order, starting at @1@.
 --
 -- When @n@ is @0@ or @1@, the resulting list is @[1]@.
-nFrees :: forall a . (Integral a, UniqueFactorisation a) => Word -> [a]
+nFrees
+    :: forall a . (Integral a, UniqueFactorisation a)
+    => Word
+    -- ^ Power @n@ to be used to generate @n@-free numbers.
+    -> [a]
+    -- ^ Generated infinite list of @n@-free numbers.
 nFrees 0 = [1]
 nFrees 1 = [1]
 nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
