@@ -34,7 +34,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
     -- * Misc
   , carmichael, carmichaelA
   , expMangoldt, expMangoldtA
-  , isNFree, isNFreeA, nFrees
+  , isNFree, isNFreeA, nFrees, nFreesBlock
   ) where
 
 import Data.Coerce

@@ -11,6 +11,7 @@
 
 module Math.NumberTheory.ArithmeticFunctions.NFreedom
   ( nFrees
+  , nFreesBlock
   , sieveBlockNFree
   ) where
 
@@ -97,7 +98,7 @@ nFrees n = concatMap nFreesListInternal nFreeList
     -- Infinite list of lower bounds at which @sieveBlockNFrees@ will be
     -- applied. This has type @Integral a => a@ instead of @Word@ because
     -- unlike the sizes of the sieve that eventually stop increasing (see
-    -- above comment), the lower bound at which @sieveBlockNFrees@ does not.
+    -- above comment), the lower bound at which @sieveBlockNFree@ does not.
     bounds :: [a]
     bounds = scanl' (+) 1 $ map fromIntegral strides
 
@@ -121,3 +122,29 @@ nFrees n = concatMap nFreesListInternal nFreeList
         in map snd .
            filter ((bs U.!) . fst) .
            zip [0 .. strd'' - 1] $ [lo .. lo + strd' - 1]
+
+-- | Generate @n@-free numbers in a block starting at a certain value.
+-- The length of the list is determined by the value passed in as the third
+-- argument. It will be lesser than or equal to this value.
+--
+-- The block length cannot exceed @maxBound :: Int@, this precondition is not
+-- checked.
+-- As with @nFrees@, passing @n = 0, 1@ results in an empty list.
+nFreesBlock :: forall a . Integral a => Word -> a -> Word -> [a]
+nFreesBlock n lowIndex len =
+    let len' :: Int
+        len' = wordToInt len
+        len'' :: a
+        len'' = fromIntegral len
+        bs  = sieveBlockNFree n lowIndex len
+    in map snd .
+       filter ((bs U.!) . fst) .
+       zip [0 .. len' - 1] $ [lowIndex .. lowIndex + len'']
+nFreesBlock 0 lo _ = help lo
+nFreesBlock 1 lo _ = help lo
+{-# INLINE nFreesBlock #-}
+
+help :: Integral a => a -> [a]
+help lo | lo == 1 = [1]
+        | otherwise = []
+{-# INLINE help #-}
