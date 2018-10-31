@@ -28,8 +28,9 @@ import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
 -- | Evaluate the `isNFreeA` function over a block.
 -- Value at @0@, if zero falls into block, is undefined.
--- This function should be used with a negative lower bound. If it is, the
--- result is undefined.
+--
+-- This function should __**not**__ be used with a negative lower bound.
+-- If it is, the result is undefined.
 --
 -- >>> sieveBlockNFree 2 1 10
 -- [True, True, True, False, True, True, True, False, False, True]
