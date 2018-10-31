@@ -288,8 +288,8 @@ nFreedomProperty3 (NonZero n) (Positive m) =
            | otherwise     = n + 1
         zet = 1 / zetas 1e-14 !! (fromIntegral n') :: Double
         m' = 100 * m
-        sqfree = fromIntegral m' / fromIntegral (last (take m' $ nFrees n' :: [Integer]))
-    in 1 / fromIntegral m >= abs (zet - sqfree)
+        nfree = fromIntegral m' / fromIntegral (last (take m' $ nFrees n' :: [Integer]))
+    in 1 / fromIntegral m >= abs (zet - nfree)
 
 nFreedomAssertion1 :: Assertion
 nFreedomAssertion1 =
