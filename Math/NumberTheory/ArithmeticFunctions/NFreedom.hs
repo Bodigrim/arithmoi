@@ -109,7 +109,16 @@ nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
 -- The block length cannot exceed @maxBound :: Int@, this precondition is not
 -- checked.
 -- As with @nFrees@, passing @n = 0, 1@ results in an empty list.
-nFreesBlock :: forall a . Integral a => Word -> a -> Word -> [a]
+nFreesBlock
+    :: forall a . Integral a
+    => Word
+    -- ^ Power @n@ to be used to generate @n@-free numbers.
+    -> a
+    -- ^ Starting number in the block.
+    -> Word
+    -- ^ Length of the block to be generated.
+    -> [a]
+    -- ^ Generated list of @n@-free numbers.
 nFreesBlock 0 lo _ = help lo
 nFreesBlock 1 lo _ = help lo
 nFreesBlock n lowIndex len =
