@@ -85,7 +85,7 @@ sieveBlockNFree n lowIndex len'
 nFrees :: forall a . (Integral a, UniqueFactorisation a) => Word -> [a]
 nFrees 0 = [1]
 nFrees 1 = [1]
-nFrees n = concatMap nFreesListInternal nFreeList
+nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
   where
     -- The 56th element of @iterate (2 *) 256@ is @2^64 :: Word == 0@, so to
     -- avoid overflow only the first 55 elements of this list are used.
@@ -102,27 +102,6 @@ nFrees n = concatMap nFreesListInternal nFreeList
     bounds :: [a]
     bounds = scanl' (+) 1 $ map fromIntegral strides
 
-    nFreeList :: [(U.Vector Bool, a, Word)]
-    nFreeList =
-       zipWith (\lo strd -> (sieveBlockNFree n lo strd, lo, strd)) bounds strides
-
-    nFreesListInternal :: (U.Vector Bool, a, Word) -> [a]
-    nFreesListInternal (bs, lo, strd) =
-        let -- When indexing the array of flags @bs@, the index has to be an
-            -- @Int@. As such, it's necessary to cast @strd@ twice.
-            -- * Once, immediately below, to create the range of values whose
-            -- @n@-freedom will be tested. Since @nFrees@ has return type
-            -- @[a]@, this cannot be avoided as @strides@ has type @[Word]@.
-            strd' :: a
-            strd' = fromIntegral strd
-            -- * Twice, immediately below, to create the range of indices with
-            -- which to query @bs@.
-            strd'' :: Int
-            strd'' = fromIntegral strd
-        in map snd .
-           filter ((bs U.!) . fst) .
-           zip [0 .. strd'' - 1] $ [lo .. lo + strd' - 1]
-
 -- | Generate @n@-free numbers in a block starting at a certain value.
 -- The length of the list is determined by the value passed in as the third
 -- argument. It will be lesser than or equal to this value.
@@ -131,17 +110,24 @@ nFrees n = concatMap nFreesListInternal nFreeList
 -- checked.
 -- As with @nFrees@, passing @n = 0, 1@ results in an empty list.
 nFreesBlock :: forall a . Integral a => Word -> a -> Word -> [a]
+nFreesBlock 0 lo _ = help lo
+nFreesBlock 1 lo _ = help lo
 nFreesBlock n lowIndex len =
-    let len' :: Int
+    let -- When indexing the array of flags @bs@, the index has to be an
+        -- @Int@. As such, it's necessary to cast @strd@ twice.
+        -- * Once, immediately below, to create the range of values whose
+        -- @n@-freedom will be tested. Since @nFrees@ has return type
+        -- @[a]@, this cannot be avoided as @strides@ has type @[Word]@.
+        len' :: Int
         len' = wordToInt len
+        -- * Twice, immediately below, to create the range of indices with
+        -- which to query @bs@.
         len'' :: a
         len'' = fromIntegral len
         bs  = sieveBlockNFree n lowIndex len
     in map snd .
        filter ((bs U.!) . fst) .
        zip [0 .. len' - 1] $ [lowIndex .. lowIndex + len'']
-nFreesBlock 0 lo _ = help lo
-nFreesBlock 1 lo _ = help lo
 {-# INLINE nFreesBlock #-}
 
 help :: Integral a => a -> [a]
