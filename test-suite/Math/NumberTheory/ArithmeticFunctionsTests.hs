@@ -291,6 +291,18 @@ nFreedomProperty3 (NonZero n) (Positive m) =
         nfree = fromIntegral m' / fromIntegral (last (take m' $ nFrees n' :: [Integer]))
     in 1 / fromIntegral m >= abs (zet - nfree)
 
+-- |
+-- * Using a bounded integer type like @Int@ instead of @Integer@ here means
+-- even a relatively low value of @n@, e.g. 20 may cause out-of-bounds memory
+-- accesses in @nFreesBlock@.
+-- * Using @Integer@ prevents this, so that is the numeric type used here.
+nFreesBlockProperty1 :: NonZero Word -> Positive Integer -> Word -> Bool
+nFreesBlockProperty1 (NonZero n) (Positive lo) w =
+    let block = nFreesBlock n lo w
+        len   = length block
+        blk   = take len . dropWhile (< lo) . nFrees $ n
+    in block == blk
+
 nFreedomAssertion1 :: Assertion
 nFreedomAssertion1 =
     assertEqual "1 is the sole 0-free number" (nFrees 0) ([1] :: [Int])
@@ -359,6 +371,7 @@ testSuite = testGroup "ArithmeticFunctions"
     [ testSmallAndQuick "`isNFree` matches the definition" nFreedomProperty1
     , testSmallAndQuick "numbers produces by `nFrees`s are `n`-free" nFreedomProperty2
     , testSmallAndQuick "distribution of n-free numbers matches expected" nFreedomProperty3
+    , testSmallAndQuick "nFreesBlock matches nFrees" nFreesBlockProperty1
     , testCase "`1` is the only 0-free number" nFreedomAssertion1
     , testCase "`1` is the only 1-free number" nFreedomAssertion2
     ]

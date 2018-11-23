@@ -131,7 +131,7 @@ nFreesBlock
     -> a
     -- ^ Starting number in the block.
     -> Word
-    -- ^ Length of the block to be generated.
+    -- ^ Maximum length of the block to be generated.
     -> [a]
     -- ^ Generated list of @n@-free numbers.
 nFreesBlock 0 lo _ = help lo
@@ -155,6 +155,6 @@ nFreesBlock n lowIndex len =
 {-# INLINE nFreesBlock #-}
 
 help :: Integral a => a -> [a]
-help lo | lo == 1 = [1]
-        | otherwise = []
+help 1 = [1]
+help _ = []
 {-# INLINE help #-}
