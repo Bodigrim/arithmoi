@@ -276,19 +276,20 @@ nFreedomProperty1 :: Word -> NonZero Natural -> Bool
 nFreedomProperty1 n (NonZero m) =
     isNFree n m == (all ((< n) . snd) . factorise) m
 
-nFreedomProperty2 :: NonZero Word -> NonNegative Int -> Bool
-nFreedomProperty2 (NonZero n) (NonNegative m) =
+nFreedomProperty2 :: Power Word -> NonNegative Int -> Bool
+nFreedomProperty2 (Power n) (NonNegative m) =
     let n' | n == maxBound = n
            | otherwise     = n + 1
     in take m (filter (isNFree n') [1 ..]) == take m (nFrees n' :: [Integer])
 
-nFreedomProperty3 :: NonZero Word -> Positive Int -> Bool
-nFreedomProperty3 (NonZero n) (Positive m) =
+nFreedomProperty3 :: Power Word -> Positive Int -> Bool
+nFreedomProperty3 (Power n) (Positive m) =
     let n' | n == maxBound = n
            | otherwise     = n + 1
         zet = 1 / zetas 1e-14 !! (fromIntegral n') :: Double
         m' = 100 * m
-        nfree = fromIntegral m' / fromIntegral (last (take m' $ nFrees n' :: [Integer]))
+        nfree = fromIntegral m' /
+                fromIntegral (head (drop (m' - 1) $ nFrees n' :: [Integer]))
     in 1 / fromIntegral m >= abs (zet - nfree)
 
 -- |
@@ -296,8 +297,8 @@ nFreedomProperty3 (NonZero n) (Positive m) =
 -- even a relatively low value of @n@, e.g. 20 may cause out-of-bounds memory
 -- accesses in @nFreesBlock@.
 -- * Using @Integer@ prevents this, so that is the numeric type used here.
-nFreesBlockProperty1 :: NonZero Word -> Positive Integer -> Word -> Bool
-nFreesBlockProperty1 (NonZero n) (Positive lo) w =
+nFreesBlockProperty1 :: Power Word -> Positive Integer -> Word -> Bool
+nFreesBlockProperty1 (Power n) (Positive lo) w =
     let block = nFreesBlock n lo w
         len   = length block
         blk   = take len . dropWhile (< lo) . nFrees $ n
