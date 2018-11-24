@@ -34,6 +34,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
     -- * Misc
   , carmichael, carmichaelA
   , expMangoldt, expMangoldtA
+  , isNFree, isNFreeA, nFrees, nFreesBlock
   ) where
 
 import Data.Coerce
@@ -45,6 +46,7 @@ import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius
+import Math.NumberTheory.ArithmeticFunctions.NFreedom (nFrees, nFreesBlock)
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -253,6 +255,15 @@ instance Semigroup (Mangoldt a) where
 instance Monoid (Mangoldt a) where
   mempty  = MangoldtZero
   mappend = (<>)
+
+isNFree :: UniqueFactorisation n => Word -> n -> Bool
+isNFree n = runFunction (isNFreeA n)
+
+-- | Check if an integer is @n@-free. An integer @x@ is @n@-free if in its
+-- factorisation into prime factors, no factor has an exponent larger than or
+-- equal to @n@.
+isNFreeA :: UniqueFactorisation n => Word -> ArithmeticFunction n Bool
+isNFreeA n = ArithmeticFunction (\_ pow -> All $ pow < n) getAll
 
 newtype LCM a = LCM { getLCM :: a }
 
