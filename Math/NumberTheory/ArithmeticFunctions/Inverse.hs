@@ -36,23 +36,30 @@ import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS
 
+data PrimePowers a = PrimePowers
+  { _ppPrime  :: Prime a
+  , _ppPowers :: [Word] -- sorted list
+  }
+
+instance Show a => Show (PrimePowers a) where
+  show (PrimePowers p xs) = "PP " ++ show (unPrime p) ++ " " ++ show xs
+
 atomicSeries
   :: (Semiring b, Num a, Ord a)
   => (a -> b)
   -> ArithmeticFunction a a
-  -> Prime a
-  -> [Word]
+  -> PrimePowers a
   -> DirichletSeries a b
-atomicSeries point ar p ks = case ar of
+atomicSeries point ar (PrimePowers p ks) = case ar of
   ArithmeticFunction f g -> DS.fromDistinctAscList (map (\k -> (g (f p k), point (unPrime p ^ k))) ks)
 
 -- from factorisation of n to possible (p, e) s. t. f(p^e) | n
-type InversePrimorials a = [(Prime a, Word)] -> [(Prime a, [Word])]
+type InversePrimorials a = [(Prime a, Word)] -> [PrimePowers a]
 
 invTotient
   :: forall a. (Num a, UniqueFactorisation a, Eq a)
   => InversePrimorials a
-invTotient fs = map (\p -> (p, doPrime p)) ps
+invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
   where
     divs :: [a]
     divs = case divisorsListA of
@@ -69,20 +76,20 @@ invTotient fs = map (\p -> (p, doPrime p)) ps
 
 strategy
   :: forall a. (Euclidean a, Ord a)
-  => ArithmeticFunction a a     -- totient function
-  -> [(Prime a, Word)]          -- factors of totient value
-  -> [(Prime a, [Word])]        -- output of invTotient
-  -> [(a, [(Prime a, [Word])])] -- batches with postconditions
+  => ArithmeticFunction a a -- totient function
+  -> [(Prime a, Word)]      -- factors of totient value
+  -> [PrimePowers a]        -- output of invTotient
+  -> [(a, [PrimePowers a])] -- batches with postconditions
 strategy tot fs tots = (1, ret) : rets
   where
     fs' = sortBy (\(p1, _) (p2, _) -> p2 `compare` p1) fs
 
     (ret, rets) = mapAccumL go tots fs'
 
-    go :: [(Prime a, [Word])] -> (Prime a, Word) -> ([(Prime a, [Word])], (a, [(Prime a, [Word])]))
+    go :: [PrimePowers a] -> (Prime a, Word) -> ([PrimePowers a], (a, [PrimePowers a]))
     go ts (unPrime -> p, k) = (rs, (p ^ k, qs))
       where
-        predicate (q, ls) = any (\l -> runTot q l `rem` p == 0) ls
+        predicate (PrimePowers q ls) = any (\l -> runTot q l `rem` p == 0) ls
         (qs, rs) = partition predicate ts
 
     runTot :: Prime a -> Word -> a
@@ -104,11 +111,12 @@ invertFunction point f invF n
     factors = factorise n
     batches = strategy f factors $ invF factors
 
-    processBatch :: a -> [(Prime a, [Word])] -> DirichletSeries a b -> DirichletSeries a b
+    processBatch :: a -> [PrimePowers a] -> DirichletSeries a b -> DirichletSeries a b
     processBatch pk xs acc
       = DS.filter (\a -> a `rem` pk == 0)
       $ foldl (DS.timesAndCrop n) acc
-      $ map (uncurry $ atomicSeries point f) xs
+      $ map (atomicSeries point f) xs
+
 {-# SPECIALISE invertFunction :: Semiring b => (Integer -> b) -> ArithmeticFunction Integer Integer -> InversePrimorials Integer -> Integer -> b #-}
 
 -- | The inverse 'totient' function such that
