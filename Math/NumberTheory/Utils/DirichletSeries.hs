@@ -31,7 +31,7 @@ import Data.Semiring (Semiring(..))
 import Math.NumberTheory.Euclidean
 
 import Data.Map (Map)
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 -- Sparse Dirichlet series are represented by an ascending list of pairs.
 -- For instance, [(a, b), (c, d)] represents 1 + b/s^a + d/s^c.
