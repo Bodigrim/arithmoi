@@ -73,7 +73,7 @@ primeCountProperty3 (Positive n)
 primeCountSpecialCases :: [Assertion]
 primeCountSpecialCases = map a table
   where
-  a (n, m) = assertEqual "primeCount" m (primeCount n)
+    a (n, m) = assertEqual "primeCount" m (primeCount n)
 
 
 -- | Check that values of 'nthPrime' are positive.
