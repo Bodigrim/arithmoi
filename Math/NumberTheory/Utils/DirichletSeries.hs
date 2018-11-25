@@ -56,7 +56,7 @@ partition :: forall a b. (a -> Bool) -> DirichletSeries a b -> (DirichletSeries 
 partition predicate = coerce (M.partitionWithKey @a @b (\k _ -> predicate k))
 
 unions :: forall a b. (Ord a, Semiring b) => [DirichletSeries a b] -> DirichletSeries a b
-unions = coerce (M.unionsWith @[] @a @b plus)
+unions = coerce (M.unionsWith plus :: [Map a b] -> Map a b)
 
 union :: forall a b. (Ord a, Semiring b) => DirichletSeries a b -> DirichletSeries a b -> DirichletSeries a b
 union = coerce (M.unionWith @a @b plus)
