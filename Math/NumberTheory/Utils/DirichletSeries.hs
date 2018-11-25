@@ -74,3 +74,4 @@ timesAndCrop predicate (DirichletSeries as) (DirichletSeries bs)
       (\(a, fa) -> (a * b, fa `times` fb))
       as)
     bs
+{-# SPECIALISE timesAndCrop :: Semiring b => (Integer -> Bool) -> DirichletSeries Integer b -> DirichletSeries Integer b -> DirichletSeries Integer b #-}

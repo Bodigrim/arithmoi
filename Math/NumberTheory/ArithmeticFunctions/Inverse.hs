@@ -109,6 +109,7 @@ invertFunction point f invF n
       = DS.filter (\a -> a `rem` pk == 0)
       $ foldl (DS.timesAndCrop (\a -> n `rem` a == 0)) acc
       $ map (uncurry $ atomicSeries point f) xs
+{-# SPECIALISE invertFunction :: Semiring b => (Integer -> b) -> ArithmeticFunction Integer Integer -> InversePrimorials Integer -> Integer -> b #-}
 
 -- | The inverse 'totient' function such that
 --
@@ -141,6 +142,7 @@ inverseTotient
   -> a
   -> b
 inverseTotient point n = invertFunction point totientA invTotient n
+{-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
 
 --------------------------------------------------------------------------------
 -- Wrappers
