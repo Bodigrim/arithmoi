@@ -17,6 +17,11 @@
 
 module Math.NumberTheory.ArithmeticFunctions.Inverse
   ( inverseTotient
+  , -- * Wrappers
+    MinWord(..)
+  , MaxWord(..)
+  , MinNatural(..)
+  , MaxNatural(..)
   ) where
 
 import Prelude hiding (rem)
@@ -24,6 +29,7 @@ import Data.List
 import Data.Maybe
 import Data.Semigroup
 import Data.Semiring (Semiring(..))
+import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Euclidean
@@ -124,9 +130,68 @@ invertFunction point f invF n
 -- >>> import Data.Semigroup
 -- >>> inverseTotient (const $ Const 1) 120 :: Const (Sum Word) Integer
 -- Const (Sum {getSum = 17})
+--
+-- Find minimal and maximal preimages:
+--
+-- >>> inverseTotient MinWord 120 :: MinWord
+-- MinWord {unMinWord = 143}
+-- >>> inverseTotient MaxWord 120 :: MaxWord
+-- MaxWord {unMaxWord = 462}
 inverseTotient
   :: (Semiring b, Euclidean a, UniqueFactorisation a, Ord a)
   => (a -> b)
   -> a
   -> b
 inverseTotient point n = invertFunction point totientA invTotient n
+
+--------------------------------------------------------------------------------
+-- Wrappers
+
+-- | Wrapper to use in conjunction with 'inverseTotient'.
+-- Extracts the maximal preimage of function.
+newtype MaxWord = MaxWord { unMaxWord :: Word }
+  deriving (Show)
+
+instance Semiring MaxWord where
+  zero = MaxWord minBound
+  one  = MaxWord 1
+  plus  (MaxWord a) (MaxWord b) = MaxWord (a `max` b)
+  times (MaxWord a) (MaxWord b) = MaxWord (a * b)
+
+-- | Wrapper to use in conjunction with 'inverseTotient'.
+-- Extracts the minimal preimage of function.
+newtype MinWord = MinWord { unMinWord :: Word }
+  deriving (Show)
+
+instance Semiring MinWord where
+  zero = MinWord maxBound
+  one  = MinWord 1
+  plus  (MinWord a) (MinWord b) = MinWord (a `min` b)
+  times (MinWord a) (MinWord b) = MinWord (a * b)
+
+-- | Wrapper to use in conjunction with 'inverseTotient'.
+-- Extracts the maximal preimage of function.
+newtype MaxNatural = MaxNatural { unMaxNatural :: Natural }
+  deriving (Show)
+
+instance Semiring MaxNatural where
+  zero = MaxNatural 0
+  one  = MaxNatural 1
+  plus  (MaxNatural a) (MaxNatural b) = MaxNatural (a `max` b)
+  times (MaxNatural a) (MaxNatural b) = MaxNatural (a * b)
+
+-- | Wrapper to use in conjunction with 'inverseTotient'.
+-- Extracts the minimal preimage of function.
+-- 'Nothing' stands for a positive infinity.
+newtype MinNatural = MinNatural { unMinNatural :: Maybe Natural }
+  deriving (Show)
+
+instance Semiring MinNatural where
+  zero = MinNatural Nothing
+  one  = MinNatural (Just 1)
+
+  plus (MinNatural Nothing) b = b
+  plus a (MinNatural Nothing) = a
+  plus (MinNatural (Just a)) (MinNatural (Just b)) = MinNatural (Just (a `min` b))
+
+  times (MinNatural a) (MinNatural b) = MinNatural ((*) <$> a <*> b)
