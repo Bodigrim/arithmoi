@@ -25,7 +25,6 @@ module Math.NumberTheory.Utils.DirichletSeries
 
 import Prelude hiding (filter, last, rem, quot, snd)
 import Data.Coerce
-import qualified Data.List as L
 import Data.Semiring (Semiring(..))
 
 import Math.NumberTheory.Euclidean
@@ -76,25 +75,14 @@ timesAndCrop
   -> DirichletSeries a b -- ^ longer series
   -> DirichletSeries a b -- ^ shorter series
   -> DirichletSeries a b
-timesAndCrop n (DirichletSeries as) (DirichletSeries (M.assocs -> [(b, fb)]))
-  = DirichletSeries
-  $ M.insertWith plus b fb (as `merge` as')
-  where
-    nb = n `quot` b
-    as'
-      = M.fromDistinctAscList
-      $ map (\(a, fa) -> (a * b, fa `times` fb))
-      $ L.filter (\(a, _) -> nb `rem` a == 0)
-      $ M.assocs
-      $ (\(lt, eq, _) -> maybe lt (\v -> M.insert nb v lt) eq)
-      $ M.splitLookup nb
-      $ as
 timesAndCrop n (DirichletSeries as) (DirichletSeries bs)
   = DirichletSeries
-  $ foldl merge (as `merge` bs)
-  $ map
-    (\(b, fb) -> M.fromDistinctAscList $ L.filter (\(ab, _) -> n `rem` ab == 0) $ map
-      (\(a, fa) -> (a * b, fa `times` fb))
-      (M.assocs as))
-    (M.assocs bs)
+  $ merge (as `merge` bs)
+  $ M.fromListWith plus
+  [ (a * b, fa `times` fb)
+  | (b, fb) <- M.assocs bs
+  , let nb = n `quot` b
+  , (a, fa) <- takeWhile ((<= nb) . fst) (M.assocs as)
+  , nb `rem` a == 0
+  ]
 {-# SPECIALISE timesAndCrop :: Semiring b => Integer -> DirichletSeries Integer b -> DirichletSeries Integer b -> DirichletSeries Integer b #-}

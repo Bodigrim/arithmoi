@@ -134,17 +134,20 @@ strategy
   => ArithmeticFunction a a -- totient function
   -> [(Prime a, Word)]      -- factors of totient value
   -> [PrimePowers a]        -- output of invTotient
-  -> [(a, [PrimePowers a])] -- batches with postconditions
-strategy tot fs tots = (1, ret) : rets
+  -> [(Maybe (Prime a, Word), [PrimePowers a])] -- batches with postconditions
+strategy tot fs tots = (Nothing, ret) : rets
   where
     fs' = sortBy (\(p1, _) (p2, _) -> p2 `compare` p1) fs
 
     (ret, rets) = mapAccumL go tots fs'
 
-    go :: [PrimePowers a] -> (Prime a, Word) -> ([PrimePowers a], (a, [PrimePowers a]))
-    go ts (unPrime -> p, k) = (rs, (p ^ k, qs))
+    go
+      :: [PrimePowers a]
+      -> (Prime a, Word)
+      -> ([PrimePowers a], (Maybe (Prime a, Word), [PrimePowers a]))
+    go ts (p, k) = (rs, (Just (p, k), qs))
       where
-        predicate (PrimePowers q ls) = any (\l -> runTot q l `rem` p == 0) ls
+        predicate (PrimePowers q ls) = any (\l -> runTot q l `rem` unPrime p == 0) ls
         (qs, rs) = partition predicate ts
 
     runTot :: Prime a -> Word -> a
@@ -166,9 +169,27 @@ invertFunction point f invF n
     factors = factorise n
     batches = strategy f factors $ invF factors
 
-    processBatch :: a -> [PrimePowers a] -> DirichletSeries a b -> DirichletSeries a b
-    processBatch pk xs acc
-      = DS.filter (\a -> a `rem` pk == 0)
+    processBatch
+      :: Maybe (Prime a, Word)
+      -> [PrimePowers a]
+      -> DirichletSeries a b
+      -> DirichletSeries a b
+    processBatch Nothing xs acc
+      = foldl (DS.timesAndCrop n) acc
+      $ map (atomicSeries point f) xs
+
+    processBatch (Just (p, 1)) xs acc
+      = DS.filter (\a -> a `rem` unPrime p == 0)
+      $ foldl (DS.timesAndCrop n) acc'
+      $ map (atomicSeries point f) xs2
+      where
+        (xs1, xs2) = partition (\(PrimePowers _ ts) -> length ts == 1) xs
+        vs = DS.unions $ map (atomicSeries point f) xs1
+        (ys, zs) = DS.partition (\a -> a `rem` unPrime p == 0) acc
+        acc' = ys `DS.union` DS.timesAndCrop n zs vs
+
+    processBatch (Just pk) xs acc
+      = (\(p, k) -> DS.filter (\a -> a `rem` (unPrime p ^ k) == 0)) pk
       $ foldl (DS.timesAndCrop n) acc
       $ map (atomicSeries point f) xs
 
