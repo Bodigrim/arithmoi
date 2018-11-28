@@ -33,6 +33,9 @@ import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences
 import Math.NumberTheory.TestUtils
 
+-------------------------------------------------------------------------------
+-- Totient
+
 totientProperty1 :: forall a. (Semiring a, Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
 totientProperty1 (Positive x) = Product x `S.member` (inverseTotient (S.singleton . Product) (totient x))
 
@@ -162,6 +165,17 @@ totientSpecialCases3 = zipWith mkAssert (tail factorial) totientMaxFactorial
     totientMax :: Word -> Word
     totientMax = unMaxWord . inverseTotient MaxWord
 
+-------------------------------------------------------------------------------
+-- Sigma
+
+sigmaProperty1 :: forall a. (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
+sigmaProperty1 (Positive x) = Product x `S.member` (inverseSigma (S.singleton . Product) (sigma 1 x))
+
+sigmaProperty2 :: (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
+sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1 . getProduct) (inverseSigma (S.singleton . Product) x))
+
+-------------------------------------------------------------------------------
+-- TestTree
 
 testSuite :: TestTree
 testSuite = testGroup "Inverse"
@@ -184,5 +198,19 @@ testSuite = testGroup "Inverse"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] totientSpecialCases2)
     , testGroup "max"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] totientSpecialCases3)
+    ]
+  , testGroup "Sigma1"
+    [ testGroup "forward"
+      [ testSmallAndQuick "Int"     (sigmaProperty1 :: Positive Int     -> Bool)
+      , testSmallAndQuick "Word"    (sigmaProperty1 :: Positive Word    -> Bool)
+      , testSmallAndQuick "Integer" (sigmaProperty1 :: Positive Integer -> Bool)
+      , testSmallAndQuick "Natural" (sigmaProperty1 :: Positive Natural -> Bool)
+      ]
+    , testGroup "backward"
+      [ testSmallAndQuick "Int"     (sigmaProperty2 :: Positive Int     -> Bool)
+      , testSmallAndQuick "Word"    (sigmaProperty2 :: Positive Word    -> Bool)
+      , testSmallAndQuick "Integer" (sigmaProperty2 :: Positive Integer -> Bool)
+      , testSmallAndQuick "Natural" (sigmaProperty2 :: Positive Natural -> Bool)
+      ]
     ]
   ]
