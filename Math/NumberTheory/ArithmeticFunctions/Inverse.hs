@@ -13,10 +13,12 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE ViewPatterns          #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Inverse
   ( inverseTotient
+  , inverseSigma
   , -- * Wrappers
     MinWord(..)
   , MaxWord(..)
@@ -26,15 +28,19 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
 
 import Prelude hiding (rem)
 import Data.List
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Euclidean
+import Math.NumberTheory.Logarithms
+import Math.NumberTheory.Powers
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS
+import Math.NumberTheory.Utils.FromIntegral
 
 data PrimePowers a = PrimePowers
   { _ppPrime  :: Prime a
@@ -73,6 +79,24 @@ invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
     doPrime p = case lookup p fs of
       Nothing -> [1]
       Just k  -> [1 .. k+1]
+
+invSigma
+  :: forall a. (Integral a, UniqueFactorisation a)
+  => InversePrimorials a
+invSigma fs = pks
+  where
+    divs :: [a]
+    divs = case divisorsListA of
+      ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
+
+    pks :: [PrimePowers a]
+    pks = map (\(x, ys) -> PrimePowers x (sort ys)) $ M.assocs $ M.unionsWith (++)
+      [ maybe mempty (flip M.singleton [e]) (isPrime p)
+      | d <- divs
+      , e <- [1 .. intToWord (integerLog2 (toInteger d))]
+      , let p = integerRoot e (d - 1)
+      , p ^ (e + 1) - 1 == d * (p - 1)
+      ]
 
 strategy
   :: forall a. (Euclidean a, Ord a)
@@ -151,6 +175,14 @@ inverseTotient
   -> b
 inverseTotient point n = invertFunction point totientA invTotient n
 {-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
+
+inverseSigma
+  :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a)
+  => (a -> b)
+  -> a
+  -> b
+inverseSigma point n = invertFunction point (sigmaA 1) invSigma n
+{-# SPECIALISE inverseSigma :: Semiring b => (Integer -> b) -> Integer -> b #-}
 
 --------------------------------------------------------------------------------
 -- Wrappers
