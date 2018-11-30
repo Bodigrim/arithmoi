@@ -174,6 +174,114 @@ sigmaProperty1 (Positive x) = Product x `S.member` (inverseSigma (S.singleton . 
 sigmaProperty2 :: (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
 sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1 . getProduct) (inverseSigma (S.singleton . Product) x))
 
+-- | http://oeis.org/A055486
+sigmaCountFactorial :: [Word]
+sigmaCountFactorial =
+  [ 1
+  , 0
+  , 1
+  , 3
+  , 4
+  , 15
+  , 33
+  , 111
+  , 382
+  , 1195
+  , 3366
+  , 14077
+  , 53265
+  , 229603
+  , 910254
+  , 4524029
+  , 18879944
+  , 91336498
+  -- , 561832582
+  -- , 2801857644
+  -- , 14652294729
+  -- , 78894985156
+  -- , 408373652461
+  -- , 2378940665083
+  -- , 11939275822636
+  -- , 71931330299023
+  -- , 392274481206066
+  -- , 2626331088771946
+  ]
+
+sigmaSpecialCases1 :: [Assertion]
+sigmaSpecialCases1 = zipWith mkAssert (tail factorial) sigmaCountFactorial
+  where
+    mkAssert n m = assertEqual "should be equal" m (getSum $ getConst $ sigmaCount n)
+
+    sigmaCount :: Word -> Const (Sum Word) Word
+    sigmaCount = inverseSigma (const $ Const 1)
+
+-- | http://oeis.org/A055488
+sigmaMinFactorial :: [Word]
+sigmaMinFactorial =
+  [ 5
+  , 14
+  , 54
+  , 264
+  , 1560
+  , 10920
+  , 97440
+  , 876960
+  , 10263240
+  , 112895640
+  , 1348827480
+  , 18029171160
+  , 264370186080
+  , 3806158356000
+  , 62703141621120
+  , 1128159304272000
+  -- , 20422064875212000
+  -- , 404757215566704000
+  -- , 8208550091549808000
+  ]
+
+sigmaSpecialCases2 :: [Assertion]
+sigmaSpecialCases2 = zipWith mkAssert (drop 3 factorial) sigmaMinFactorial
+  where
+    mkAssert n m = assertEqual "should be equal" m (sigmaMin n)
+
+    sigmaMin :: Word -> Word
+    sigmaMin = unMinWord . inverseSigma MinWord
+
+-- | http://oeis.org/A055489
+sigmaMaxFactorial :: [Word]
+sigmaMaxFactorial =
+  [ 5
+  , 23
+  , 95
+  , 719
+  , 5039
+  , 39917
+  , 361657
+  , 3624941
+  , 39904153
+  , 479001599
+  , 6226862869
+  , 87178291199
+  , 1307672080867
+  , 20922780738961
+  , 355687390376431
+  , 6402373545694717
+  -- , 121645099711277873
+  -- , 2432902005056589697
+  ]
+
+sigmaSpecialCases3 :: [Assertion]
+sigmaSpecialCases3 = zipWith mkAssert (drop 3 factorial) sigmaMaxFactorial
+  where
+    mkAssert n m = assertEqual "should be equal" m (sigmaMax n)
+
+    sigmaMax :: Word -> Word
+    sigmaMax = unMaxWord . inverseSigma MaxWord
+
+sigmaSpecialCase4 :: Assertion
+sigmaSpecialCase4 = assertBool "200 should be in inverseSigma(sigma(200))" $
+  sigmaProperty1 $ Positive (200 :: Word)
+
 -------------------------------------------------------------------------------
 -- TestTree
 
@@ -212,5 +320,12 @@ testSuite = testGroup "Inverse"
       , testSmallAndQuick "Integer" (sigmaProperty2 :: Positive Integer -> Bool)
       , testSmallAndQuick "Natural" (sigmaProperty2 :: Positive Natural -> Bool)
       ]
+    , testCase "200" sigmaSpecialCase4
+    , testGroup "count"
+      (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] sigmaSpecialCases1)
+    , testGroup "min"
+      (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] sigmaSpecialCases2)
+    , testGroup "max"
+      (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] sigmaSpecialCases3)
     ]
   ]
