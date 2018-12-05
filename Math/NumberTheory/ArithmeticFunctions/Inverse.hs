@@ -26,17 +26,20 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
   , MaxNatural(..)
   ) where
 
-import Prelude hiding (rem)
+import Prelude hiding (rem, quot)
 import Data.List
+import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Semiring (Semiring(..))
+import qualified Data.Set as S
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Powers
+import Math.NumberTheory.Primes (primes)
 import Math.NumberTheory.UniqueFactorisation
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS
@@ -81,19 +84,47 @@ invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
       Just k  -> [1 .. k+1]
 
 invSigma
-  :: forall a. (Integral a, UniqueFactorisation a)
+  :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)
   => InversePrimorials a
-invSigma fs = pks
+invSigma fs
+  = map (\(x, ys) -> PrimePowers x (S.toList ys))
+  $ M.assocs
+  $ M.unionWith (<>) pksSmall pksLarge
   where
+    numDivs :: a
+    numDivs = case tauA of
+      ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
+
+    lim :: a
+    lim = numDivs `max` 2
+
     divs :: [a]
     divs = case divisorsListA of
       ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
 
-    pks :: [PrimePowers a]
-    pks = map (\(x, ys) -> PrimePowers x (sort ys)) $ M.assocs $ M.unionsWith (++)
-      [ maybe mempty (flip M.singleton [e]) (isPrime p)
+    n :: a
+    n = product $ map (\(p, k) -> unPrime p ^ k) fs
+
+    pksSmall :: Map (Prime a) (S.Set Word)
+    pksSmall
+      = M.fromDistinctAscList
+      $ filter (not . null . snd)
+      $ map (\p -> (p, doPrime p))
+      $ takeWhile ((< lim) . unPrime)
+      $ primes
+
+    doPrime :: Prime a -> S.Set Word
+    doPrime (unPrime -> p) = S.fromDistinctAscList
+      [ e
+      | e <- [1 .. intToWord (integerLogBase (toInteger p) (toInteger n))]
+      , n `rem` ((p ^ (e + 1) - 1) `quot` (p - 1)) == 0
+      ]
+
+    pksLarge :: M.Map (Prime a) (S.Set Word)
+    pksLarge = M.unionsWith (<>)
+      [ maybe mempty (flip M.singleton (S.singleton e)) (isPrime p)
       | d <- divs
-      , e <- [1 .. intToWord (integerLog2 (toInteger d))]
+      , e <- [1 .. intToWord (integerLogBase (toInteger lim) (toInteger d))]
       , let p = integerRoot e (d - 1)
       , p ^ (e + 1) - 1 == d * (p - 1)
       ]
