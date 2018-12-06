@@ -4,9 +4,10 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- The inverse totient function.
--- https://www.emis.de/journals/JIS/VOL19/Alekseyev/alek5.pdf
---
+-- Computing inverses of multiplicative functions.
+-- The implementation is based on
+-- <https://www.emis.de/journals/JIS/VOL19/Alekseyev/alek5.pdf Computing the Inverses, their Power Sums, and Extrema for Euler’s Totient and Other Multiplicative Functions>
+-- by M. A. Alekseyev.
 
 {-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -204,14 +205,15 @@ invertFunction point f invF n
 -- various applications. E. g., list all preimages:
 --
 -- >>> import qualified Data.Set as S
--- >>> S.map getProduct (inverseTotient (S.singleton . Product) 120) :: Set Integer
+-- >>> import Data.Semigroup
+-- >>> S.map getProduct (inverseTotient (S.singleton . Product) 120) :: S.Set Word
 -- fromList [143,155,175,183,225,231,244,248,286,308,310,350,366,372,396,450,462]
 --
 -- Count preimages:
 --
 -- >>> import Control.Applicative
 -- >>> import Data.Semigroup
--- >>> inverseTotient (const $ Const 1) 120 :: Const (Sum Word) Integer
+-- >>> inverseTotient (const $ Const 1) 120 :: Const (Sum Word) Word
 -- Const (Sum {getSum = 17})
 --
 -- Find minimal and maximal preimages:
@@ -228,6 +230,32 @@ inverseTotient
 inverseTotient point n = invertFunction point totientA invTotient n
 {-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
 
+-- | The inverse 'sigma' 1 function such that
+--
+-- > all ((== x) . sigma 1) (inverseSigma x)
+-- > x `elem` inverseSigma (sigma 1 x)
+--
+-- The return value is parametrized by a semiring, which allows
+-- various applications. E. g., list all preimages:
+--
+-- >>> import qualified Data.Set as S
+-- >>> import Data.Semigroup
+-- >>> S.map getProduct (inverseSigma (S.singleton . Product) 120) :: S.Set Word
+-- fromList [54,56,87,95]
+--
+-- Count preimages:
+--
+-- >>> import Control.Applicative
+-- >>> import Data.Semigroup
+-- >>> inverseSigma (const $ Const 1) 120 :: Const (Sum Word) Word
+-- Const (Sum {getSum = 4})
+--
+-- Find minimal and maximal preimages:
+--
+-- >>> inverseSigma MinWord 120 :: MinWord
+-- MinWord {unMinWord = 54}
+-- >>> inverseSigma MaxWord 120 :: MaxWord
+-- MaxWord {unMaxWord = 95}
 inverseSigma
   :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a)
   => (a -> b)
@@ -239,7 +267,7 @@ inverseSigma point n = invertFunction point (sigmaA 1) invSigma n
 --------------------------------------------------------------------------------
 -- Wrappers
 
--- | Wrapper to use in conjunction with 'inverseTotient'.
+-- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the maximal preimage of function.
 newtype MaxWord = MaxWord { unMaxWord :: Word }
   deriving (Show)
@@ -250,7 +278,7 @@ instance Semiring MaxWord where
   plus  (MaxWord a) (MaxWord b) = MaxWord (a `max` b)
   times (MaxWord a) (MaxWord b) = MaxWord (a * b)
 
--- | Wrapper to use in conjunction with 'inverseTotient'.
+-- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the minimal preimage of function.
 newtype MinWord = MinWord { unMinWord :: Word }
   deriving (Show)
@@ -261,7 +289,7 @@ instance Semiring MinWord where
   plus  (MinWord a) (MinWord b) = MinWord (a `min` b)
   times (MinWord a) (MinWord b) = MinWord (a * b)
 
--- | Wrapper to use in conjunction with 'inverseTotient'.
+-- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the maximal preimage of function.
 newtype MaxNatural = MaxNatural { unMaxNatural :: Natural }
   deriving (Show)
@@ -272,7 +300,7 @@ instance Semiring MaxNatural where
   plus  (MaxNatural a) (MaxNatural b) = MaxNatural (a `max` b)
   times (MaxNatural a) (MaxNatural b) = MaxNatural (a * b)
 
--- | Wrapper to use in conjunction with 'inverseTotient'.
+-- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the minimal preimage of function.
 -- 'Nothing' stands for a positive infinity.
 newtype MinNatural = MinNatural { unMinNatural :: Maybe Natural }
