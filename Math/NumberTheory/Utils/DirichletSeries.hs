@@ -14,7 +14,7 @@
 module Math.NumberTheory.Utils.DirichletSeries
   ( DirichletSeries
   , fromDistinctAscList
-  , last
+  , lookup
   , filter
   , partition
   , unions
@@ -23,31 +23,28 @@ module Math.NumberTheory.Utils.DirichletSeries
   , timesAndCrop
   ) where
 
-import Prelude hiding (filter, last, rem, quot, snd)
+import Prelude hiding (filter, last, rem, quot, snd, lookup)
 import Data.Coerce
+import Data.Map (Map)
+import qualified Data.Map.Strict as M
 import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.Euclidean
 
-import Data.Map (Map)
-import qualified Data.Map.Strict as M
-
 -- Sparse Dirichlet series are represented by an ascending list of pairs.
--- For instance, [(a, b), (c, d)] represents 1 + b/s^a + d/s^c.
-newtype DirichletSeries a b = DirichletSeries { unDirichletSeries :: Map a b }
+-- For instance, [(a, b), (c, d)] stands for 1 + b/a^s + d/c^s.
+-- Note that the representation still may include a term (1, b), so
+-- [(1, b), (c, d)] means (1 + b) + d/c^s.
+newtype DirichletSeries a b = DirichletSeries { _unDirichletSeries :: Map a b }
   deriving (Show)
 
 fromDistinctAscList :: forall a b. [(a, b)] -> DirichletSeries a b
 fromDistinctAscList = coerce (M.fromDistinctAscList @a @b)
 
-last :: (Eq a, Num a, Semiring b) => a -> DirichletSeries a b -> b
-last 1 (DirichletSeries m)
-  | [(1, b)] <- M.assocs m = one `plus` b
-  | otherwise = one
-last a' (DirichletSeries xs) = case M.maxViewWithKey xs of
-  Nothing -> zero
-  Just ((a, b), _) -> if a == a' then b else zero
+lookup :: (Ord a, Num a, Semiring b) => a -> DirichletSeries a b -> b
+lookup 1 (DirichletSeries m) = M.findWithDefault zero 1 m `plus` one
+lookup a (DirichletSeries m) = M.findWithDefault zero a m
 
 filter :: forall a b. (a -> Bool) -> DirichletSeries a b -> DirichletSeries a b
 filter predicate = coerce (M.filterWithKey @a @b (\k _ -> predicate k))
@@ -61,24 +58,21 @@ unions = coerce (M.unionsWith plus :: [Map a b] -> Map a b)
 union :: forall a b. (Ord a, Semiring b) => DirichletSeries a b -> DirichletSeries a b -> DirichletSeries a b
 union = coerce (M.unionWith @a @b plus)
 
-merge :: (Ord a, Semiring b) => Map a b -> Map a b -> Map a b
-merge = M.unionWith plus
-
 size :: forall a b. DirichletSeries a b -> Int
 size = coerce (M.size @a @b)
 
--- | Precondition: all pairwise products of keys are distinct.
--- In other words, no element repeats in the list
--- [ a <> b | (a, _) <- as, (b, _) <- bs ]
+-- | Let as = sum_i k_i/a_i^s and bs = sum_i l_i/b_i^s be Dirichlet series,
+-- and all a_i and b_i are divisors of n. Return Dirichlet series cs,
+-- which contains all terms as * bs = sum_i m_i/c_i^s such that c_i divides n.
 timesAndCrop
   :: (Euclidean a, Ord a, Semiring b)
   => a
-  -> DirichletSeries a b -- ^ longer series
-  -> DirichletSeries a b -- ^ shorter series
+  -> DirichletSeries a b
+  -> DirichletSeries a b
   -> DirichletSeries a b
 timesAndCrop n (DirichletSeries as) (DirichletSeries bs)
   = DirichletSeries
-  $ merge (as `merge` bs)
+  $ M.unionWith plus (M.unionWith plus as bs)
   $ M.fromListWith plus
   [ (a * b, fa `times` fb)
   | (b, fb) <- M.assocs bs

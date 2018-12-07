@@ -17,6 +17,8 @@
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE ViewPatterns          #-}
 
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+
 module Math.NumberTheory.ArithmeticFunctions.Inverse
   ( inverseTotient
   , inverseSigma
@@ -32,6 +34,7 @@ import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Semigroup
 import Data.Semiring (Semiring(..))
 import qualified Data.Set as S
 import Numeric.Natural
@@ -54,21 +57,24 @@ data PrimePowers a = PrimePowers
 instance Show a => Show (PrimePowers a) where
   show (PrimePowers p xs) = "PP " ++ show (unPrime p) ++ " " ++ show xs
 
+-- | Convert a list of powers of a prime into an atomic Dirichlet series
+-- (Section 4, Step 2).
 atomicSeries
   :: (Semiring b, Num a, Ord a)
-  => (a -> b)
-  -> ArithmeticFunction a a
-  -> PrimePowers a
-  -> DirichletSeries a b
+  => (a -> b)               -- ^ How to inject a number into a semiring
+  -> ArithmeticFunction a c -- ^ Arithmetic function, which we aim to inverse
+  -> PrimePowers a          -- ^ List of powers of a prime
+  -> DirichletSeries c b    -- ^ Atomic Dirichlet series
 atomicSeries point ar (PrimePowers p ks) = case ar of
   ArithmeticFunction f g -> DS.fromDistinctAscList (map (\k -> (g (f p k), point (unPrime p ^ k))) ks)
 
--- from factorisation of n to possible (p, e) s. t. f(p^e) | n
-type InversePrimorials a = [(Prime a, Word)] -> [PrimePowers a]
-
+-- | See section 5.1 of the paper.
 invTotient
   :: forall a. (Num a, UniqueFactorisation a, Eq a)
-  => InversePrimorials a
+  => [(Prime a, Word)]
+  -- ^ Factorisation of a value of the arithmetic function
+  -> [PrimePowers a]
+  -- ^ Possible prime factors of an argument of the arithmetic function
 invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
   where
     divs :: [a]
@@ -78,15 +84,18 @@ invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
     ps :: [Prime a]
     ps = mapMaybe (isPrime . (+ 1)) divs
 
-    -- TODO: optimize linear lookup
     doPrime :: Prime a -> [Word]
     doPrime p = case lookup p fs of
       Nothing -> [1]
       Just k  -> [1 .. k+1]
 
+-- | See section 5.2 of the paper.
 invSigma
   :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)
-  => InversePrimorials a
+  => [(Prime a, Word)]
+  -- ^ Factorisation of a value of the arithmetic function
+  -> [PrimePowers a]
+  -- ^ Possible prime factors of an argument of the arithmetic function
 invSigma fs
   = map (\(x, ys) -> PrimePowers x (S.toList ys))
   $ M.assocs
@@ -96,6 +105,8 @@ invSigma fs
     numDivs = case tauA of
       ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
 
+    -- The choice of the bound between pksSmall and pksLarge
+    -- is a heuristic to speed up computations in a typical case.
     lim :: a
     lim = numDivs `max` 2
 
@@ -130,12 +141,21 @@ invSigma fs
       , p ^ (e + 1) - 1 == d * (p - 1)
       ]
 
+-- | Instead of multiplying all atomic series and filtering out everything,
+-- which is not divisible by @n@, we'd rather split all atomic series into
+-- a couple of batches, each of which corresponds to a prime factor of @n@.
+-- This allows us to crop resulting Dirichlet series (see 'filter' calls
+-- in 'invertFunction' below) at the end of each batch, saving time and memory.
 strategy
-  :: forall a. (Euclidean a, Ord a)
-  => ArithmeticFunction a a -- totient function
-  -> [(Prime a, Word)]      -- factors of totient value
-  -> [PrimePowers a]        -- output of invTotient
-  -> [(Maybe (Prime a, Word), [PrimePowers a])] -- batches with postconditions
+  :: forall a c. (Euclidean c, Ord c)
+  => ArithmeticFunction a c
+  -- ^ Arithmetic function, which we aim to inverse
+  -> [(Prime c, Word)]
+  -- ^ Factorisation of a value of the arithmetic function
+  -> [PrimePowers a]
+  -- ^ Possible prime factors of an argument of the arithmetic function
+  -> [(Maybe (Prime c, Word), [PrimePowers a])]
+  -- ^ Batches, corresponding to each element of the factorisation of a value
 strategy tot fs tots = (Nothing, ret) : rets
   where
     fs' = sortBy (\(p1, _) (p2, _) -> p2 `compare` p1) fs
@@ -144,41 +164,49 @@ strategy tot fs tots = (Nothing, ret) : rets
 
     go
       :: [PrimePowers a]
-      -> (Prime a, Word)
-      -> ([PrimePowers a], (Maybe (Prime a, Word), [PrimePowers a]))
+      -> (Prime c, Word)
+      -> ([PrimePowers a], (Maybe (Prime c, Word), [PrimePowers a]))
     go ts (p, k) = (rs, (Just (p, k), qs))
       where
         predicate (PrimePowers q ls) = any (\l -> runTot q l `rem` unPrime p == 0) ls
         (qs, rs) = partition predicate ts
 
-    runTot :: Prime a -> Word -> a
+    runTot :: Prime a -> Word -> c
     runTot p k = case tot of
       ArithmeticFunction f g -> g $ f p k
 
+-- | Main workhorse.
 invertFunction
-  :: forall a b.
-     (Semiring b, Euclidean a, UniqueFactorisation a, Ord a)
+  :: forall a b c.
+     (Num a, Ord a, Semiring b, Euclidean c, UniqueFactorisation c, Ord c)
   => (a -> b)
-  -> ArithmeticFunction a a
-  -> InversePrimorials a
-  -> a
+  -- ^ How to inject a number into a semiring
+  -> ArithmeticFunction a c
+  -- ^ Arithmetic function, which we aim to inverse
+  -> ([(Prime c, Word)] -> [PrimePowers a])
+  -- ^ How to find possible prime factors of the argument
+  -> c
+  -- ^ Value of the arithmetic function, which we aim to inverse
   -> b
+  -- ^ Preimages
 invertFunction point f invF n
-  = DS.last n
+  = DS.lookup n
   $ foldl (\ds b -> uncurry processBatch b ds) (DS.fromDistinctAscList []) batches
   where
     factors = factorise n
     batches = strategy f factors $ invF factors
 
     processBatch
-      :: Maybe (Prime a, Word)
+      :: Maybe (Prime c, Word)
       -> [PrimePowers a]
-      -> DirichletSeries a b
-      -> DirichletSeries a b
+      -> DirichletSeries c b
+      -> DirichletSeries c b
     processBatch Nothing xs acc
       = foldl (DS.timesAndCrop n) acc
       $ map (atomicSeries point f) xs
 
+    -- This is equivalent to the next, general case, but is faster,
+    -- since it avoids construction of many intermediate series.
     processBatch (Just (p, 1)) xs acc
       = DS.filter (\a -> a `rem` unPrime p == 0)
       $ foldl (DS.timesAndCrop n) acc'
