@@ -201,6 +201,7 @@ benchmark criterion
     Math.NumberTheory.EisensteinIntegersBench
     Math.NumberTheory.EuclideanBench
     Math.NumberTheory.GaussianIntegersBench
+    Math.NumberTheory.InverseBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench
     Math.NumberTheory.PowersBench

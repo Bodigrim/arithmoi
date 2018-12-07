@@ -26,6 +26,7 @@ module Math.NumberTheory.Utils.DirichletSeries
 import Prelude hiding (filter, last, rem, quot, snd)
 import Data.Coerce
 import Data.Semiring (Semiring(..))
+import Numeric.Natural
 
 import Math.NumberTheory.Euclidean
 
@@ -85,4 +86,7 @@ timesAndCrop n (DirichletSeries as) (DirichletSeries bs)
   , (a, fa) <- takeWhile ((<= nb) . fst) (M.assocs as)
   , nb `rem` a == 0
   ]
+{-# SPECIALISE timesAndCrop :: Semiring b => Int -> DirichletSeries Int b -> DirichletSeries Int b -> DirichletSeries Int b #-}
+{-# SPECIALISE timesAndCrop :: Semiring b => Word -> DirichletSeries Word b -> DirichletSeries Word b -> DirichletSeries Word b #-}
 {-# SPECIALISE timesAndCrop :: Semiring b => Integer -> DirichletSeries Integer b -> DirichletSeries Integer b -> DirichletSeries Integer b #-}
+{-# SPECIALISE timesAndCrop :: Semiring b => Natural -> DirichletSeries Natural b -> DirichletSeries Natural b -> DirichletSeries Natural b #-}

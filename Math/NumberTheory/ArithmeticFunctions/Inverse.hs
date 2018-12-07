@@ -194,7 +194,10 @@ invertFunction point f invF n
       $ foldl (DS.timesAndCrop n) acc
       $ map (atomicSeries point f) xs
 
-{-# SPECIALISE invertFunction :: Semiring b => (Integer -> b) -> ArithmeticFunction Integer Integer -> InversePrimorials Integer -> Integer -> b #-}
+{-# SPECIALISE invertFunction :: Semiring b => (Int -> b) -> ArithmeticFunction Int Int -> ([(Prime Int, Word)] -> [PrimePowers Int]) -> Int -> b #-}
+{-# SPECIALISE invertFunction :: Semiring b => (Word -> b) -> ArithmeticFunction Word Word -> ([(Prime Word, Word)] -> [PrimePowers Word]) -> Word -> b #-}
+{-# SPECIALISE invertFunction :: Semiring b => (Integer -> b) -> ArithmeticFunction Integer Integer -> ([(Prime Integer, Word)] -> [PrimePowers Integer]) -> Integer -> b #-}
+{-# SPECIALISE invertFunction :: Semiring b => (Natural -> b) -> ArithmeticFunction Natural Natural -> ([(Prime Natural, Word)] -> [PrimePowers Natural]) -> Natural -> b #-}
 
 -- | The inverse 'totient' function such that
 --
@@ -228,7 +231,10 @@ inverseTotient
   -> a
   -> b
 inverseTotient point n = invertFunction point totientA invTotient n
+{-# SPECIALISE inverseTotient :: Semiring b => (Int -> b) -> Int -> b #-}
+{-# SPECIALISE inverseTotient :: Semiring b => (Word -> b) -> Word -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
+{-# SPECIALISE inverseTotient :: Semiring b => (Natural -> b) -> Natural -> b #-}
 
 -- | The inverse 'sigma' 1 function such that
 --
@@ -262,7 +268,10 @@ inverseSigma
   -> a
   -> b
 inverseSigma point n = invertFunction point (sigmaA 1) invSigma n
+{-# SPECIALISE inverseSigma :: Semiring b => (Int -> b) -> Int -> b #-}
+{-# SPECIALISE inverseSigma :: Semiring b => (Word -> b) -> Word -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Integer -> b) -> Integer -> b #-}
+{-# SPECIALISE inverseSigma :: Semiring b => (Natural -> b) -> Natural -> b #-}
 
 --------------------------------------------------------------------------------
 -- Wrappers
