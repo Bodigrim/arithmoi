@@ -65,21 +65,20 @@ atomicSeries
   -> ArithmeticFunction a c -- ^ Arithmetic function, which we aim to inverse
   -> PrimePowers a          -- ^ List of powers of a prime
   -> DirichletSeries c b    -- ^ Atomic Dirichlet series
-atomicSeries point ar (PrimePowers p ks) = case ar of
-  ArithmeticFunction f g -> DS.fromDistinctAscList (map (\k -> (g (f p k), point (unPrime p ^ k))) ks)
+atomicSeries point (ArithmeticFunction f g) (PrimePowers p ks) =
+  DS.fromDistinctAscList (map (\k -> (g (f p k), point (unPrime p ^ k))) ks)
 
 -- | See section 5.1 of the paper.
 invTotient
   :: forall a. (Num a, UniqueFactorisation a, Eq a)
   => [(Prime a, Word)]
-  -- ^ Factorisation of a value of the arithmetic function
+  -- ^ Factorisation of a value of the totient function
   -> [PrimePowers a]
-  -- ^ Possible prime factors of an argument of the arithmetic function
+  -- ^ Possible prime factors of an argument of the totient function
 invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
   where
     divs :: [a]
-    divs = case divisorsListA of
-      ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
+    divs = runFunctionOnFactors divisorsListA fs
 
     ps :: [Prime a]
     ps = mapMaybe (isPrime . (+ 1)) divs
@@ -93,29 +92,42 @@ invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
 invSigma
   :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)
   => [(Prime a, Word)]
-  -- ^ Factorisation of a value of the arithmetic function
+  -- ^ Factorisation of a value of the sum-of-divisors function
   -> [PrimePowers a]
-  -- ^ Possible prime factors of an argument of the arithmetic function
+  -- ^ Possible prime factors of an argument of the sum-of-divisors function
 invSigma fs
   = map (\(x, ys) -> PrimePowers x (S.toList ys))
   $ M.assocs
   $ M.unionWith (<>) pksSmall pksLarge
   where
     numDivs :: a
-    numDivs = case tauA of
-      ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
-
-    -- The choice of the bound between pksSmall and pksLarge
-    -- is a heuristic to speed up computations in a typical case.
-    lim :: a
-    lim = numDivs `max` 2
+    numDivs = runFunctionOnFactors tauA fs
 
     divs :: [a]
-    divs = case divisorsListA of
-      ArithmeticFunction f g -> g $ mconcat $ map (uncurry f) fs
+    divs = runFunctionOnFactors divisorsListA fs
 
     n :: a
     n = product $ map (\(p, k) -> unPrime p ^ k) fs
+
+    -- There are two possible strategies to find possible prime factors
+    -- of an argument of the sum-of-divisors function.
+    -- 1. Take each prime p and each power e such that p^e <= n,
+    -- compute sigma(p^e) and check whether it is a divisor of n.
+    -- (corresponds to 'pksSmall' below)
+    -- 2. Take each divisor d of n and each power e such that e <= log_2 d,
+    -- compute p = floor(e-th root of (d - 1)) and check whether sigma(p^e) = d
+    -- and p is actually prime (correposnds to 'pksLarge' below).
+    --
+    -- Asymptotically the second strategy is beneficial, but computing
+    -- exact e-th roots of huge integers (especially when they exceed MAX_DOUBLE)
+    -- is very costly. That is why we employ the first strategy for primes
+    -- below limit 'lim' and the second one for larger ones. This allows us
+    -- to loop over e <= log_lim d which is much smaller than log_2 d.
+    --
+    -- The value of 'lim' below was chosen heuristically;
+    -- it may be tuned in future in accordance with new experimental data.
+    lim :: a
+    lim = numDivs `max` 2
 
     pksSmall :: Map (Prime a) (S.Set Word)
     pksSmall
@@ -156,11 +168,11 @@ strategy
   -- ^ Possible prime factors of an argument of the arithmetic function
   -> [(Maybe (Prime c, Word), [PrimePowers a])]
   -- ^ Batches, corresponding to each element of the factorisation of a value
-strategy tot fs tots = (Nothing, ret) : rets
+strategy (ArithmeticFunction f g) factors args = (Nothing, ret) : rets
   where
-    fs' = sortBy (\(p1, _) (p2, _) -> p2 `compare` p1) fs
-
-    (ret, rets) = mapAccumL go tots fs'
+    (ret, rets)
+      = mapAccumL go args
+      $ sortBy (\(p1, _) (p2, _) -> p2 `compare` p1) factors
 
     go
       :: [PrimePowers a]
@@ -168,12 +180,8 @@ strategy tot fs tots = (Nothing, ret) : rets
       -> ([PrimePowers a], (Maybe (Prime c, Word), [PrimePowers a]))
     go ts (p, k) = (rs, (Just (p, k), qs))
       where
-        predicate (PrimePowers q ls) = any (\l -> runTot q l `rem` unPrime p == 0) ls
+        predicate (PrimePowers q ls) = any (\l -> g (f q l) `rem` unPrime p == 0) ls
         (qs, rs) = partition predicate ts
-
-    runTot :: Prime a -> Word -> c
-    runTot p k = case tot of
-      ArithmeticFunction f g -> g $ f p k
 
 -- | Main workhorse.
 invertFunction
@@ -188,10 +196,10 @@ invertFunction
   -> c
   -- ^ Value of the arithmetic function, which we aim to inverse
   -> b
-  -- ^ Preimages
+  -- ^ Semiring element, representing preimages
 invertFunction point f invF n
   = DS.lookup n
-  $ foldl (\ds b -> uncurry processBatch b ds) (DS.fromDistinctAscList []) batches
+  $ foldl' (\ds b -> uncurry processBatch b ds) (DS.fromDistinctAscList []) batches
   where
     factors = factorise n
     batches = strategy f factors $ invF factors
@@ -202,14 +210,14 @@ invertFunction point f invF n
       -> DirichletSeries c b
       -> DirichletSeries c b
     processBatch Nothing xs acc
-      = foldl (DS.timesAndCrop n) acc
+      = foldl' (DS.timesAndCrop n) acc
       $ map (atomicSeries point f) xs
 
     -- This is equivalent to the next, general case, but is faster,
     -- since it avoids construction of many intermediate series.
     processBatch (Just (p, 1)) xs acc
       = DS.filter (\a -> a `rem` unPrime p == 0)
-      $ foldl (DS.timesAndCrop n) acc'
+      $ foldl' (DS.timesAndCrop n) acc'
       $ map (atomicSeries point f) xs2
       where
         (xs1, xs2) = partition (\(PrimePowers _ ts) -> length ts == 1) xs
@@ -219,7 +227,7 @@ invertFunction point f invF n
 
     processBatch (Just pk) xs acc
       = (\(p, k) -> DS.filter (\a -> a `rem` (unPrime p ^ k) == 0)) pk
-      $ foldl (DS.timesAndCrop n) acc
+      $ foldl' (DS.timesAndCrop n) acc
       $ map (atomicSeries point f) xs
 
 {-# SPECIALISE invertFunction :: Semiring b => (Int -> b) -> ArithmeticFunction Int Int -> ([(Prime Int, Word)] -> [PrimePowers Int]) -> Int -> b #-}
