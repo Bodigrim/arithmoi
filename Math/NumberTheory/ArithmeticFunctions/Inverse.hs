@@ -315,7 +315,7 @@ inverseSigma point n = invertFunction point (sigmaA 1) invSigma n
 -- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the maximal preimage of function.
 newtype MaxWord = MaxWord { unMaxWord :: Word }
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 instance Semiring MaxWord where
   zero = MaxWord minBound
@@ -326,7 +326,7 @@ instance Semiring MaxWord where
 -- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the minimal preimage of function.
 newtype MinWord = MinWord { unMinWord :: Word }
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 instance Semiring MinWord where
   zero = MinWord maxBound
@@ -337,7 +337,7 @@ instance Semiring MinWord where
 -- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the maximal preimage of function.
 newtype MaxNatural = MaxNatural { unMaxNatural :: Natural }
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 instance Semiring MaxNatural where
   zero = MaxNatural 0
@@ -347,16 +347,17 @@ instance Semiring MaxNatural where
 
 -- | Wrapper to use in conjunction with 'inverseTotient' and 'inverseSigma'.
 -- Extracts the minimal preimage of function.
--- 'Nothing' stands for a positive infinity.
-newtype MinNatural = MinNatural { unMinNatural :: Maybe Natural }
-  deriving (Show)
+data MinNatural
+  = MinNatural { unMinNatural :: !Natural }
+  | Infinity
+  deriving (Eq, Ord, Show)
 
 instance Semiring MinNatural where
-  zero = MinNatural Nothing
-  one  = MinNatural (Just 1)
+  zero = Infinity
+  one  = MinNatural 1
 
-  plus (MinNatural Nothing) b = b
-  plus a (MinNatural Nothing) = a
-  plus (MinNatural (Just a)) (MinNatural (Just b)) = MinNatural (Just (a `min` b))
+  plus a b = a `min` b
 
-  times (MinNatural a) (MinNatural b) = MinNatural ((*) <$> a <*> b)
+  times Infinity _ = Infinity
+  times _ Infinity = Infinity
+  times (MinNatural a) (MinNatural b) = MinNatural (a * b)
