@@ -7,8 +7,6 @@ module Math.NumberTheory.InverseBench
   ) where
 
 import Gauge.Main
-import Control.Applicative
-import Data.Semigroup
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions.Inverse
@@ -21,11 +19,11 @@ fact = product [1..13]
 tens :: Num a => a
 tens = 10 ^ 18
 
-countInverseTotient :: (Ord a, Euclidean a, UniqueFactorisation a) => a -> Const (Sum Word) a
-countInverseTotient = inverseTotient (const $ Const $ Sum 1)
+countInverseTotient :: (Ord a, Euclidean a, UniqueFactorisation a) => a -> Word
+countInverseTotient = inverseTotient (const 1)
 
-countInverseSigma :: (Integral a, Euclidean a, UniqueFactorisation a) => a -> Const (Sum Word) a
-countInverseSigma = inverseSigma (const $ Const $ Sum 1)
+countInverseSigma :: (Integral a, Euclidean a, UniqueFactorisation a) => a -> Word
+countInverseSigma = inverseSigma (const 1)
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Inverse"

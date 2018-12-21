@@ -9,15 +9,8 @@
 -- <https://www.emis.de/journals/JIS/VOL19/Alekseyev/alek5.pdf Computing the Inverses, their Power Sums, and Extrema for Euler’s Totient and Other Multiplicative Functions>
 -- by M. A. Alekseyev.
 
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE ViewPatterns          #-}
-
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Inverse
   ( inverseTotient
@@ -34,8 +27,12 @@ import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Ord (Down(..))
+#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
+#endif
 import Data.Semiring (Semiring(..))
+import Data.Set (Set)
 import qualified Data.Set as S
 import Numeric.Natural
 
@@ -129,22 +126,22 @@ invSigma fs
     lim :: a
     lim = numDivs `max` 2
 
-    pksSmall :: Map (Prime a) (S.Set Word)
-    pksSmall
-      = M.fromDistinctAscList
-      $ filter (not . null . snd)
-      $ map (\p -> (p, doPrime p))
-      $ takeWhile ((< lim) . unPrime)
-      $ primes
+    pksSmall :: Map (Prime a) (Set Word)
+    pksSmall = M.fromDistinctAscList
+      [ (p, pows)
+      | p <- takeWhile ((< lim) . unPrime) primes
+      , let pows = doPrime p
+      , not (null pows)
+      ]
 
-    doPrime :: Prime a -> S.Set Word
-    doPrime (unPrime -> p) = S.fromDistinctAscList
+    doPrime :: Prime a -> Set Word
+    doPrime p' = let p = unPrime p' in S.fromDistinctAscList
       [ e
       | e <- [1 .. intToWord (integerLogBase (toInteger p) (toInteger n))]
       , n `rem` ((p ^ (e + 1) - 1) `quot` (p - 1)) == 0
       ]
 
-    pksLarge :: M.Map (Prime a) (S.Set Word)
+    pksLarge :: Map (Prime a) (Set Word)
     pksLarge = M.unionsWith (<>)
       [ maybe mempty (flip M.singleton (S.singleton e)) (isPrime p)
       | d <- divs
@@ -172,7 +169,7 @@ strategy (ArithmeticFunction f g) factors args = (Nothing, ret) : rets
   where
     (ret, rets)
       = mapAccumL go args
-      $ sortBy (\(p1, _) (p2, _) -> p2 `compare` p1) factors
+      $ sortOn (Down . fst) factors
 
     go
       :: [PrimePowers a]
@@ -235,75 +232,77 @@ invertFunction point f invF n
 {-# SPECIALISE invertFunction :: Semiring b => (Integer -> b) -> ArithmeticFunction Integer Integer -> ([(Prime Integer, Word)] -> [PrimePowers Integer]) -> Integer -> b #-}
 {-# SPECIALISE invertFunction :: Semiring b => (Natural -> b) -> ArithmeticFunction Natural Natural -> ([(Prime Natural, Word)] -> [PrimePowers Natural]) -> Natural -> b #-}
 
--- | The inverse 'totient' function such that
+-- | The inverse for 'totient' function.
 --
--- > all ((== x) . totient) (inverseTotient x)
--- > x `elem` inverseTotient (totient x)
---
--- The return value is parametrized by a semiring, which allows
--- various applications. E. g., list all preimages:
+-- The return value is parameterized by a 'Semiring', which allows
+-- various applications by providing different (multiplicative) embeddings.
+-- E. g., list all preimages:
 --
 -- >>> import qualified Data.Set as S
 -- >>> import Data.Semigroup
--- >>> S.map getProduct (inverseTotient (S.singleton . Product) 120) :: S.Set Word
+-- >>> S.map getProduct (inverseTotient (S.singleton . Product) 120)
 -- fromList [143,155,175,183,225,231,244,248,286,308,310,350,366,372,396,450,462]
 --
 -- Count preimages:
 --
--- >>> import Control.Applicative
--- >>> import Data.Semigroup
--- >>> inverseTotient (const $ Const 1) 120 :: Const (Sum Word) Word
--- Const (Sum {getSum = 17})
+-- >>> inverseTotient (const 1) 120
+-- 17
+--
+-- Sum preimages:
+--
+-- >>> inverseTotient id 120
+-- 4904
 --
 -- Find minimal and maximal preimages:
 --
--- >>> inverseTotient MinWord 120 :: MinWord
--- MinWord {unMinWord = 143}
--- >>> inverseTotient MaxWord 120 :: MaxWord
--- MaxWord {unMaxWord = 462}
+-- >>> unMinWord (inverseTotient MinWord 120)
+-- 143
+-- >>> unMaxWord (inverseTotient MaxWord 120)
+-- 462
 inverseTotient
   :: (Semiring b, Euclidean a, UniqueFactorisation a, Ord a)
   => (a -> b)
   -> a
   -> b
-inverseTotient point n = invertFunction point totientA invTotient n
+inverseTotient point = invertFunction point totientA invTotient
 {-# SPECIALISE inverseTotient :: Semiring b => (Int -> b) -> Int -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Word -> b) -> Word -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Natural -> b) -> Natural -> b #-}
 
--- | The inverse 'sigma' 1 function such that
+-- | The inverse for 'sigma' 1 function.
 --
--- > all ((== x) . sigma 1) (inverseSigma x)
--- > x `elem` inverseSigma (sigma 1 x)
---
--- The return value is parametrized by a semiring, which allows
--- various applications. E. g., list all preimages:
+-- The return value is parameterized by a 'Semiring', which allows
+-- various applications by providing different (multiplicative) embeddings.
+-- E. g., list all preimages:
 --
 -- >>> import qualified Data.Set as S
 -- >>> import Data.Semigroup
--- >>> S.map getProduct (inverseSigma (S.singleton . Product) 120) :: S.Set Word
+-- >>> S.map getProduct (inverseSigma (S.singleton . Product) 120)
 -- fromList [54,56,87,95]
 --
 -- Count preimages:
 --
--- >>> import Control.Applicative
--- >>> import Data.Semigroup
--- >>> inverseSigma (const $ Const 1) 120 :: Const (Sum Word) Word
--- Const (Sum {getSum = 4})
+-- >>> inverseSigma (const 1) 120
+-- 4
+--
+-- Sum preimages:
+--
+-- >>> inverseSigma id 120
+-- 292
 --
 -- Find minimal and maximal preimages:
 --
--- >>> inverseSigma MinWord 120 :: MinWord
--- MinWord {unMinWord = 54}
--- >>> inverseSigma MaxWord 120 :: MaxWord
--- MaxWord {unMaxWord = 95}
+-- >>> unMinWord (inverseSigma MinWord 120)
+-- 54
+-- >>> unMaxWord (inverseSigma MaxWord 120)
+-- 95
 inverseSigma
   :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a)
   => (a -> b)
   -> a
   -> b
-inverseSigma point n = invertFunction point (sigmaA 1) invSigma n
+inverseSigma point = invertFunction point (sigmaA 1) invSigma
 {-# SPECIALISE inverseSigma :: Semiring b => (Int -> b) -> Int -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Word -> b) -> Word -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Integer -> b) -> Integer -> b #-}

@@ -20,7 +20,6 @@ module Math.NumberTheory.ArithmeticFunctions.InverseTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.Applicative
 import Data.Semigroup
 import Data.Semiring (Semiring(..))
 import qualified Data.Set as S
@@ -68,10 +67,10 @@ totientCountFactorial =
 totientSpecialCases1 :: [Assertion]
 totientSpecialCases1 = zipWith mkAssert (tail factorial) totientCountFactorial
   where
-    mkAssert n m = assertEqual "should be equal" m (getSum $ getConst $ totientCount n)
+    mkAssert n m = assertEqual "should be equal" m (totientCount n)
 
-    totientCount :: Word -> Const (Sum Word) Word
-    totientCount = inverseTotient (const $ Const 1)
+    totientCount :: Word -> Word
+    totientCount = inverseTotient (const 1)
 
 -- | http://oeis.org/A055487
 totientMinFactorial :: [Word]
@@ -170,10 +169,10 @@ sigmaCountFactorial =
 sigmaSpecialCases1 :: [Assertion]
 sigmaSpecialCases1 = zipWith mkAssert (tail factorial) sigmaCountFactorial
   where
-    mkAssert n m = assertEqual "should be equal" m (getSum $ getConst $ sigmaCount n)
+    mkAssert n m = assertEqual "should be equal" m (sigmaCount n)
 
-    sigmaCount :: Word -> Const (Sum Word) Word
-    sigmaCount = inverseSigma (const $ Const 1)
+    sigmaCount :: Word -> Word
+    sigmaCount = inverseSigma (const 1)
 
 -- | http://oeis.org/A055488
 sigmaMinFactorial :: [Word]
