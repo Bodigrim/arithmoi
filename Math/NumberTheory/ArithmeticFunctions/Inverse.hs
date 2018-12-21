@@ -9,7 +9,7 @@
 -- <https://www.emis.de/journals/JIS/VOL19/Alekseyev/alek5.pdf Computing the Inverses, their Power Sums, and Extrema for Euler’s Totient and Other Multiplicative Functions>
 -- by M. A. Alekseyev.
 
-{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Inverse
@@ -20,6 +20,8 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
   , MaxWord(..)
   , MinNatural(..)
   , MaxNatural(..)
+  , -- * Utils
+    asSetOfPreimages
   ) where
 
 import Prelude hiding (rem, quot)
@@ -28,9 +30,7 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Ord (Down(..))
-#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
-#endif
 import Data.Semiring (Semiring(..))
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -236,11 +236,11 @@ invertFunction point f invF n
 --
 -- The return value is parameterized by a 'Semiring', which allows
 -- various applications by providing different (multiplicative) embeddings.
--- E. g., list all preimages:
+-- E. g., list all preimages (see a helper 'asSetOfPreimages'):
 --
 -- >>> import qualified Data.Set as S
 -- >>> import Data.Semigroup
--- >>> S.map getProduct (inverseTotient (S.singleton . Product) 120)
+-- >>> S.mapMonotonic getProduct (inverseTotient (S.singleton . Product) 120)
 -- fromList [143,155,175,183,225,231,244,248,286,308,310,350,366,372,396,450,462]
 --
 -- Count preimages:
@@ -274,11 +274,11 @@ inverseTotient point = invertFunction point totientA invTotient
 --
 -- The return value is parameterized by a 'Semiring', which allows
 -- various applications by providing different (multiplicative) embeddings.
--- E. g., list all preimages:
+-- E. g., list all preimages (see a helper 'asSetOfPreimages'):
 --
 -- >>> import qualified Data.Set as S
 -- >>> import Data.Semigroup
--- >>> S.map getProduct (inverseSigma (S.singleton . Product) 120)
+-- >>> S.mapMonotonic getProduct (inverseSigma (S.singleton . Product) 120)
 -- fromList [54,56,87,95]
 --
 -- Count preimages:
@@ -360,3 +360,11 @@ instance Semiring MinNatural where
   times Infinity _ = Infinity
   times _ Infinity = Infinity
   times (MinNatural a) (MinNatural b) = MinNatural (a * b)
+
+-- | Helper to extract a set of preimages for 'inverseTotient' or 'inverseSigma'.
+asSetOfPreimages
+  :: (Euclidean a, Integral a)
+  => (forall b. Semiring b => (a -> b) -> a -> b)
+  -> a
+  -> S.Set a
+asSetOfPreimages f = S.mapMonotonic getProduct . f (S.singleton . Product)

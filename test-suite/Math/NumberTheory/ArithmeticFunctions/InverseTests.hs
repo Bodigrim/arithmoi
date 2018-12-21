@@ -20,7 +20,6 @@ module Math.NumberTheory.ArithmeticFunctions.InverseTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.Semigroup
 import Data.Semiring (Semiring(..))
 import qualified Data.Set as S
 import Numeric.Natural
@@ -35,11 +34,11 @@ import Math.NumberTheory.TestUtils
 -------------------------------------------------------------------------------
 -- Totient
 
-totientProperty1 :: forall a. (Semiring a, Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
-totientProperty1 (Positive x) = Product x `S.member` (inverseTotient (S.singleton . Product) (totient x))
+totientProperty1 :: forall a. (Semiring a, Euclidean a, Integral a, UniqueFactorisation a, Ord a) => Positive a -> Bool
+totientProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseTotient (totient x)
 
-totientProperty2 :: (Semiring a, Euclidean a, UniqueFactorisation a, Ord a) => Positive a -> Bool
-totientProperty2 (Positive x) = all (== x) (S.map (totient . getProduct) (inverseTotient (S.singleton . Product) x))
+totientProperty2 :: (Semiring a, Euclidean a, Integral a, UniqueFactorisation a, Ord a) => Positive a -> Bool
+totientProperty2 (Positive x) = all (== x) (S.map totient (asSetOfPreimages inverseTotient x))
 
 -- | http://oeis.org/A055506
 totientCountFactorial :: [Word]
@@ -138,10 +137,10 @@ totientSpecialCases3 = zipWith mkAssert (tail factorial) totientMaxFactorial
 -- Sigma
 
 sigmaProperty1 :: forall a. (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
-sigmaProperty1 (Positive x) = Product x `S.member` (inverseSigma (S.singleton . Product) (sigma 1 x))
+sigmaProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseSigma (sigma 1 x)
 
 sigmaProperty2 :: (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
-sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1 . getProduct) (inverseSigma (S.singleton . Product) x))
+sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1) (asSetOfPreimages inverseSigma x))
 
 -- | http://oeis.org/A055486
 sigmaCountFactorial :: [Word]
