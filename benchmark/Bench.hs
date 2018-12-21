@@ -7,6 +7,7 @@ import Math.NumberTheory.DiscreteLogarithmBench as DiscreteLogarithm
 import Math.NumberTheory.EisensteinIntegersBench as Eisenstein
 import Math.NumberTheory.EuclideanBench as Euclidean
 import Math.NumberTheory.GaussianIntegersBench as Gaussian
+import Math.NumberTheory.InverseBench as Inverse
 import Math.NumberTheory.JacobiBench as Jacobi
 import Math.NumberTheory.MertensBench as Mertens
 import Math.NumberTheory.PowersBench as Powers
@@ -24,6 +25,7 @@ main = defaultMain
   , Eisenstein.benchSuite
   , Euclidean.benchSuite
   , Gaussian.benchSuite
+  , Inverse.benchSuite
   , Jacobi.benchSuite
   , Mertens.benchSuite
   , Powers.benchSuite

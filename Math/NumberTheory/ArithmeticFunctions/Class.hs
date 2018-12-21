@@ -16,6 +16,7 @@
 module Math.NumberTheory.ArithmeticFunctions.Class
   ( ArithmeticFunction(..)
   , runFunction
+  , runFunctionOnFactors
   ) where
 
 import Control.Applicative
@@ -43,11 +44,13 @@ data ArithmeticFunction n a where
 
 -- | Convert to function. The value on 0 is undefined.
 runFunction :: UniqueFactorisation n => ArithmeticFunction n a -> n -> a
-runFunction (ArithmeticFunction f g)
+runFunction f = runFunctionOnFactors f . factorise
+
+runFunctionOnFactors :: UniqueFactorisation n => ArithmeticFunction n a -> [(Prime n, Word)] -> a
+runFunctionOnFactors (ArithmeticFunction f g)
   = g
   . mconcat
   . map (uncurry f)
-  . factorise
 
 instance Functor (ArithmeticFunction n) where
   fmap f (ArithmeticFunction g h) = ArithmeticFunction g (f . h)
