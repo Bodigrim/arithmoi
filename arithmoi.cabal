@@ -68,6 +68,7 @@ library
     Math.NumberTheory.Moduli.Sqrt
     Math.NumberTheory.MoebiusInversion
     Math.NumberTheory.MoebiusInversion.Int
+    Math.NumberTheory.Partition
     Math.NumberTheory.Powers
     Math.NumberTheory.Powers.Cubes
     Math.NumberTheory.Powers.Fourth
