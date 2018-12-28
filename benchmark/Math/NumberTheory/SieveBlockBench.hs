@@ -17,6 +17,7 @@ import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
+import Math.NumberTheory.Primes
 
 blockLen :: Word
 blockLen = 1000000
@@ -30,7 +31,7 @@ totientBlockConfig :: SieveBlockConfig Word
 totientBlockConfig = SieveBlockConfig
   { sbcEmpty                = 1
   , sbcAppend               = (*)
-  , sbcFunctionOnPrimePower = totientHelper
+  , sbcFunctionOnPrimePower = totientHelper . unPrime
   }
 
 carmichaelHelper :: Word -> Word -> Word
@@ -46,7 +47,7 @@ carmichaelBlockConfig = SieveBlockConfig
   { sbcEmpty                = 1
   -- There is a specialized 'gcd' for Word, but not 'lcm'.
   , sbcAppend               = (\x y -> (x `quot` (gcd x y)) * y)
-  , sbcFunctionOnPrimePower = carmichaelHelper
+  , sbcFunctionOnPrimePower = carmichaelHelper . unPrime
   }
 
 moebiusConfig :: SieveBlockConfig Moebius
