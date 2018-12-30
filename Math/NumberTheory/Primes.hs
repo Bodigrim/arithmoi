@@ -10,6 +10,8 @@ module Math.NumberTheory.Primes
     , UniqueFactorisation(..)
     , nextPrime
     , precPrime
+    , -- * Old interface
+      primes
     ) where
 
 import Control.Arrow
@@ -19,6 +21,7 @@ import Data.Maybe
 
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 import Math.NumberTheory.Utils.FromIntegral
