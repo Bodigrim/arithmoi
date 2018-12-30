@@ -26,7 +26,7 @@ import Math.NumberTheory.Primes              (primes, unPrime)
 import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation)
 import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
--- | Evaluate the `isNFreeA` function over a block.
+-- | Evaluate the `Math.NumberTheory.ArithmeticFunctions.isNFree` function over a block.
 -- Value at @0@, if zero falls into block, is undefined.
 --
 -- This function should __**not**__ be used with a negative lower bound.

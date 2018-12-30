@@ -41,6 +41,8 @@ zetasEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
 zetasEven' :: Floating a => [a]
 zetasEven' = map approximateValue zetasEven
 
+-- | Infinite sequence of approximate values of Riemann zeta-function
+-- at odd arguments, starting with @ζ(1)@.
 zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
 zetasOdd eps = (1 / 0) : tail (skipEvens $ zetaHurwitz eps 1)
 

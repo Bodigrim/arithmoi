@@ -135,7 +135,7 @@ isSquare' n
 --   to eliminate altogether about 99.436% of all numbers.
 --
 --   This is the test used by 'exactSquareRoot'. For large numbers,
---   the slower but more discriminating test 'isPossibleSqure2' is
+--   the slower but more discriminating test 'isPossibleSquare2' is
 --   faster.
 {-# SPECIALISE isPossibleSquare :: Int -> Bool,
                                    Integer -> Bool,

@@ -150,7 +150,7 @@ invertMod mx
     y = recipModInteger (getVal mx) (getMod mx)
 {-# INLINABLE invertMod #-}
 
--- | Drop-in replacement for '^', with much better performance.
+-- | Drop-in replacement for 'Prelude.^', with much better performance.
 --
 -- >>> :set -XDataKinds
 -- >>> powMod (3 :: Mod 10) 4
@@ -186,8 +186,9 @@ infixr 8 ^%
 
 -- | This type represents elements of the multiplicative group mod m, i.e.
 -- those elements which are coprime to m. Use @toMultElement@ to construct.
-newtype MultMod m = MultMod { multElement :: Mod m }
-  deriving (Eq, Ord, Show)
+newtype MultMod m = MultMod {
+  multElement :: Mod m -- ^ Unwrap a residue.
+  } deriving (Eq, Ord, Show)
 
 instance KnownNat m => Semigroup (MultMod m) where
   MultMod a <> MultMod b = MultMod (a * b)
@@ -336,8 +337,8 @@ invertSomeMod = \case
   SomeMod -> Int     -> SomeMod,
   SomeMod -> Word    -> SomeMod #-}
 
--- | Drop-in replacement for '^', with much better performance.
--- When -O is enabled, there is a rewrite rule, which specialises '^' to 'powSomeMod'.
+-- | Drop-in replacement for 'Prelude.^', with much better performance.
+-- When -O is enabled, there is a rewrite rule, which specialises 'Prelude.^' to 'powSomeMod'.
 --
 -- >>> powSomeMod (3 `modulo` 10) 4
 -- (1 `modulo` 10)

@@ -73,7 +73,7 @@ additiveSieveBlockConfig f = SieveBlockConfig
 --
 -- Based on Algorithm M of <https://arxiv.org/pdf/1305.1639.pdf Parity of the number of primes in a given interval and algorithms of the sublinear summation> by A. V. Lelechenko. See Lemma 2 on p. 5 on its algorithmic complexity. For the majority of use-cases its time complexity is O(x^(1+ε)).
 --
--- For example, here is an analogue of divisor function 'tau':
+-- For example, here is an analogue of divisor function 'Math.NumberTheory.ArithmeticFunctions.tau':
 --
 -- >>> sieveBlockUnboxed (SieveBlockConfig 1 (\_ a -> a + 1) (*)) 1 10
 -- [1,2,2,3,2,4,2,4,3,4]

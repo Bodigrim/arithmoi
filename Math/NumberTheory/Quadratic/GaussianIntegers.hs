@@ -1,3 +1,13 @@
+-- |
+-- Module:      Math.NumberTheory.GaussianIntegers
+-- Copyright:   (c) 2016 Chris Fredrickson, Google Inc.
+-- Licence:     MIT
+-- Maintainer:  Chris Fredrickson <chris.p.fredrickson@gmail.com>
+--
+-- This module exports functions for manipulating Gaussian integers, including
+-- computing their prime factorisations.
+--
+
 {-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies  #-}

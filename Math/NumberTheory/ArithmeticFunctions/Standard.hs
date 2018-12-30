@@ -56,6 +56,7 @@ import Numeric.Natural
 multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
 
+-- | See 'divisorsA'.
 divisors :: (UniqueFactorisation n, Num n, Ord n) => n -> Set n
 divisors = runFunction divisorsA
 {-# SPECIALIZE divisors :: Natural -> Set Natural #-}
@@ -71,6 +72,7 @@ divisorsHelper p 1 = S.singleton p
 divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelper #-}
 
+-- | See 'divisorsListA'.
 divisorsList :: (UniqueFactorisation n, Num n) => n -> [n]
 divisorsList = runFunction divisorsListA
 
@@ -84,11 +86,12 @@ divisorsListHelper p 1 = [p]
 divisorsListHelper p a = p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsListHelper #-}
 
-divisorsSmall :: (UniqueFactorisation n, Prime n ~ Prime Int) => n -> IntSet
+-- | See 'divisorsSmallA'.
+divisorsSmall :: Int -> IntSet
 divisorsSmall = runFunction divisorsSmallA
 
 -- | Same as 'divisors', but with better performance on cost of type restriction.
-divisorsSmallA :: forall n. (Prime n ~ Prime Int) => ArithmeticFunction n IntSet
+divisorsSmallA :: ArithmeticFunction Int IntSet
 divisorsSmallA = ArithmeticFunction (\p k -> IntSetProduct $ divisorsHelperSmall (unPrime p) k) (IS.insert 1 . getIntSetProduct)
 
 divisorsHelperSmall :: Int -> Word -> IntSet
@@ -97,6 +100,7 @@ divisorsHelperSmall p 1 = IS.singleton p
 divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelperSmall #-}
 
+-- | See 'tauA'.
 tau :: (UniqueFactorisation n, Num a) => n -> a
 tau = runFunction tauA
 
@@ -106,6 +110,7 @@ tau = runFunction tauA
 tauA :: Num a => ArithmeticFunction n a
 tauA = multiplicative $ const (fromIntegral . succ)
 
+-- | See 'sigmaA'.
 sigma :: (UniqueFactorisation n, Integral n) => Word -> n -> n
 sigma = runFunction . sigmaA
 
@@ -124,6 +129,7 @@ sigmaHelper pa 2 = pa * pa + pa + 1
 sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
+-- | See 'totientA'.
 totient :: (UniqueFactorisation n, Num n) => n -> n
 totient = runFunction totientA
 
@@ -133,6 +139,7 @@ totient = runFunction totientA
 totientA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
 totientA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper p
 
+-- | See 'jordanA'.
 jordan :: (UniqueFactorisation n, Num n) => Word -> n -> n
 jordan = runFunction . jordanA
 
@@ -150,6 +157,7 @@ jordanHelper pa 2 = (pa - 1) * pa
 jordanHelper pa k = (pa - 1) * pa ^ wordToInt (k - 1)
 {-# INLINE jordanHelper #-}
 
+-- | See 'ramanujanA'.
 ramanujan :: Integer -> Integer
 ramanujan = runFunction ramanujanA
 
@@ -171,6 +179,7 @@ ramanujanHelper p k = sum $ zipWith3 (\a b c -> a * b * c) paPowers tpPowers bin
         tpPowers = reverse $ take (length binomials) $ iterate (* tp^(2::Int)) (if even k then 1 else tp)
 {-# INLINE ramanujanHelper #-}
 
+-- | See 'moebiusA'.
 moebius :: UniqueFactorisation n => n -> Moebius
 moebius = runFunction moebiusA
 
@@ -182,6 +191,7 @@ moebiusA = ArithmeticFunction (const f) id
     f 0 = MoebiusP
     f _ = MoebiusZ
 
+-- | See 'liouvilleA'.
 liouville :: (UniqueFactorisation n, Num a) => n -> a
 liouville = runFunction liouvilleA
 
@@ -189,6 +199,7 @@ liouville = runFunction liouvilleA
 liouvilleA :: Num a => ArithmeticFunction n a
 liouvilleA = ArithmeticFunction (const $ Xor . odd) runXor
 
+-- | See 'carmichaelA'.
 carmichael :: (UniqueFactorisation n, Integral n) => n -> n
 carmichael = runFunction carmichaelA
 {- The specializations reflects available specializations of lcm. -}
@@ -211,6 +222,7 @@ carmichaelA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> LCM $ f
 additive :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 additive f = ArithmeticFunction ((Sum .) . f) getSum
 
+-- | See 'smallOmegaA'.
 smallOmega :: (UniqueFactorisation n, Num a) => n -> a
 smallOmega = runFunction smallOmegaA
 
@@ -220,6 +232,7 @@ smallOmega = runFunction smallOmegaA
 smallOmegaA :: Num a => ArithmeticFunction n a
 smallOmegaA = additive (\_ _ -> 1)
 
+-- | See 'bigOmegaA'.
 bigOmega :: UniqueFactorisation n => n -> Word
 bigOmega = runFunction bigOmegaA
 
@@ -229,6 +242,7 @@ bigOmega = runFunction bigOmegaA
 bigOmegaA :: ArithmeticFunction n Word
 bigOmegaA = additive $ const id
 
+-- | See 'expMangoldtA'.
 expMangoldt :: (UniqueFactorisation n, Num n) => n -> n
 expMangoldt = runFunction expMangoldtA
 
@@ -256,6 +270,7 @@ instance Monoid (Mangoldt a) where
   mempty  = MangoldtZero
   mappend = (<>)
 
+-- | See 'isNFreeA'.
 isNFree :: UniqueFactorisation n => Word -> n -> Bool
 isNFree n = runFunction (isNFreeA n)
 
