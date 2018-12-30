@@ -7,9 +7,9 @@
 module Math.NumberTheory.Primes
     ( Prime
     , unPrime
-    , UniqueFactorisation(..)
     , nextPrime
     , precPrime
+    , UniqueFactorisation(..)
     , -- * Old interface
       primes
     ) where
