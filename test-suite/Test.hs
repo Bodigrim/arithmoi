@@ -2,9 +2,9 @@ import Test.Tasty
 
 import qualified Math.NumberTheory.EuclideanTests as Euclidean
 
-import qualified Math.NumberTheory.Recurrencies.PentagonalTests as RecurrenciesPentagonal
-import qualified Math.NumberTheory.Recurrencies.BilinearTests as RecurrenciesBilinear
-import qualified Math.NumberTheory.Recurrencies.LinearTests as RecurrenciesLinear
+import qualified Math.NumberTheory.Recurrences.PentagonalTests as RecurrencesPentagonal
+import qualified Math.NumberTheory.Recurrences.BilinearTests as RecurrencesBilinear
+import qualified Math.NumberTheory.Recurrences.LinearTests as RecurrencesLinear
 
 import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
 import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
@@ -36,6 +36,7 @@ import qualified Math.NumberTheory.EisensteinIntegersTests as Eisenstein
 import qualified Math.NumberTheory.GaussianIntegersTests as Gaussian
 
 import qualified Math.NumberTheory.ArithmeticFunctionsTests as ArithmeticFunctions
+import qualified Math.NumberTheory.ArithmeticFunctions.InverseTests as Inverse
 import qualified Math.NumberTheory.ArithmeticFunctions.MertensTests as Mertens
 import qualified Math.NumberTheory.ArithmeticFunctions.SieveBlockTests as SieveBlock
 import qualified Math.NumberTheory.UniqueFactorisationTests as UniqueFactorisation
@@ -60,10 +61,10 @@ tests = testGroup "All"
     , Squares.testSuite
     ]
   , Euclidean.testSuite
-  , testGroup "Recurrencies"
-    [ RecurrenciesPentagonal.testSuite
-    , RecurrenciesLinear.testSuite
-    , RecurrenciesBilinear.testSuite
+  , testGroup "Recurrences"
+    [ RecurrencesPentagonal.testSuite
+    , RecurrencesLinear.testSuite
+    , RecurrencesBilinear.testSuite
     ]
   , testGroup "Moduli"
     [ ModuliChinese.testSuite
@@ -90,6 +91,7 @@ tests = testGroup "All"
   , Gaussian.testSuite
   , testGroup "ArithmeticFunctions"
     [ ArithmeticFunctions.testSuite
+    , Inverse.testSuite
     , Mertens.testSuite
     , SieveBlock.testSuite
     ]

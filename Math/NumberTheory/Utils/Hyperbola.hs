@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Highest points under hyperbola.
 --

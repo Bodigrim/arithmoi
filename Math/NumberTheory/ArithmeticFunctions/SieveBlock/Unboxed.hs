@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Bulk evaluation of arithmetic functions without factorisation
 -- of arguments.
@@ -30,7 +28,8 @@ import GHC.Exts
 
 import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius)
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Primes (primes, unPrime)
+import Math.NumberTheory.Primes (primes)
+import Math.NumberTheory.Primes.Types (Prime(..))
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils (splitOff#)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
@@ -47,14 +46,14 @@ import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 data SieveBlockConfig a = SieveBlockConfig
   { sbcEmpty                :: a
     -- ^ value of a function on 1
-  , sbcFunctionOnPrimePower :: Word -> Word -> a
+  , sbcFunctionOnPrimePower :: Prime Word -> Word -> a
     -- ^ how to evaluate a function on prime powers
   , sbcAppend               :: a -> a -> a
     -- ^ how to combine values of a function on coprime arguments
   }
 
 -- | Create a config for a multiplicative function from its definition on prime powers.
-multiplicativeSieveBlockConfig :: Num a => (Word -> Word -> a) -> SieveBlockConfig a
+multiplicativeSieveBlockConfig :: Num a => (Prime Word -> Word -> a) -> SieveBlockConfig a
 multiplicativeSieveBlockConfig f = SieveBlockConfig
   { sbcEmpty                = 1
   , sbcFunctionOnPrimePower = f
@@ -62,7 +61,7 @@ multiplicativeSieveBlockConfig f = SieveBlockConfig
   }
 
 -- | Create a config for an additive function from its definition on prime powers.
-additiveSieveBlockConfig :: Num a => (Word -> Word -> a) -> SieveBlockConfig a
+additiveSieveBlockConfig :: Num a => (Prime Word -> Word -> a) -> SieveBlockConfig a
 additiveSieveBlockConfig f = SieveBlockConfig
   { sbcEmpty                = 0
   , sbcFunctionOnPrimePower = f
@@ -74,7 +73,7 @@ additiveSieveBlockConfig f = SieveBlockConfig
 --
 -- Based on Algorithm M of <https://arxiv.org/pdf/1305.1639.pdf Parity of the number of primes in a given interval and algorithms of the sublinear summation> by A. V. Lelechenko. See Lemma 2 on p. 5 on its algorithmic complexity. For the majority of use-cases its time complexity is O(x^(1+ε)).
 --
--- For example, here is an analogue of divisor function 'tau':
+-- For example, here is an analogue of divisor function 'Math.NumberTheory.ArithmeticFunctions.tau':
 --
 -- >>> sieveBlockUnboxed (SieveBlockConfig 1 (\_ a -> a + 1) (*)) 1 10
 -- [1,2,2,3,2,4,2,4,3,4]
@@ -109,7 +108,7 @@ sieveBlockUnboxed (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
           fs = V.generate
             (integerLogBase' (toInteger p) (toInteger highIndex))
-            (\k -> f p' (intToWord k + 1))
+            (\k -> f (Prime p') (intToWord k + 1))
 
           offset :: Int
           offset = negate lowIndex `mod` p
@@ -122,7 +121,7 @@ sieveBlockUnboxed (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
     forM_ [0 .. len - 1] $ \k -> do
       a <- MV.unsafeRead as k
-      MV.unsafeModify bs (\b -> if a /= 1 then b `append` f a 1 else b) k
+      MV.unsafeModify bs (\b -> if a /= 1 then b `append` f (Prime a) 1 else b) k
 
     V.unsafeFreeze bs
 

@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Generic type for arithmetic functions over arbitrary unique
 -- factorisation domains.
@@ -18,6 +16,7 @@
 module Math.NumberTheory.ArithmeticFunctions.Class
   ( ArithmeticFunction(..)
   , runFunction
+  , runFunctionOnFactors
   ) where
 
 import Control.Applicative
@@ -34,8 +33,8 @@ import Math.NumberTheory.UniqueFactorisation
 --
 -- In the following definition the first argument is the function on prime's
 -- powers, the monoid instance determines a rule of combination (typically
--- 'Product' or 'Sum'), and the second argument is convenient for unwrapping
--- (typically, 'getProduct' or 'getSum').
+-- 'Data.Semigroup.Product' or 'Data.Semigroup.Sum'), and the second argument is convenient for unwrapping
+-- (typically, 'Data.Semigroup.getProduct' or 'Data.Semigroup.getSum').
 data ArithmeticFunction n a where
   ArithmeticFunction
     :: Monoid m
@@ -43,13 +42,16 @@ data ArithmeticFunction n a where
     -> (m -> a)
     -> ArithmeticFunction n a
 
--- | Convert to function. The value on 0 is undefined.
+-- | Convert to a function. The value on 0 is undefined.
 runFunction :: UniqueFactorisation n => ArithmeticFunction n a -> n -> a
-runFunction (ArithmeticFunction f g)
+runFunction f = runFunctionOnFactors f . factorise
+
+-- | Convert to a function on prime factorisation.
+runFunctionOnFactors :: UniqueFactorisation n => ArithmeticFunction n a -> [(Prime n, Word)] -> a
+runFunctionOnFactors (ArithmeticFunction f g)
   = g
   . mconcat
   . map (uncurry f)
-  . factorise
 
 instance Functor (ArithmeticFunction n) where
   fmap f (ArithmeticFunction g h) = ArithmeticFunction g (f . h)

@@ -1,16 +1,15 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies.BilinearTests
+-- Module:      Math.NumberTheory.Recurrences.BilinearTests
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
--- Tests for Math.NumberTheory.Recurrencies.Bilinear
+-- Tests for Math.NumberTheory.Recurrences.Bilinear
 --
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.Recurrencies.BilinearTests
+module Math.NumberTheory.Recurrences.BilinearTests
   ( testSuite
   ) where
 
@@ -19,10 +18,10 @@ import Test.Tasty.HUnit
 
 import Data.Ratio
 
-import Math.NumberTheory.Recurrencies.Bilinear (bernoulli, binomial, euler,
-                                                eulerian1, eulerian2,
-                                                eulerPolyAt1, lah, stirling1,
-                                                stirling2)
+import Math.NumberTheory.Recurrences.Bilinear (bernoulli, binomial, euler,
+                                               eulerian1, eulerian2,
+                                               eulerPolyAt1, lah, stirling1,
+                                               stirling2)
 import Math.NumberTheory.TestUtils
 
 binomialProperty1 :: NonNegative Int -> Bool

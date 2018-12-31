@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Calculating integer roots, modular powers and related things.
 -- This module reexports the most needed functions from the implementation

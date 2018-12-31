@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer, 2017-2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>
 -- is a generalization of the Legendre symbol, useful for primality

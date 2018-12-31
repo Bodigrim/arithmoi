@@ -3,8 +3,6 @@
 -- Copyright:    (c) 2018 Bhavik Mehta
 -- License:      MIT
 -- Maintainer:   Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:    Provisional
--- Portability:  Non-portable
 --
 
 {-# LANGUAGE BangPatterns        #-}

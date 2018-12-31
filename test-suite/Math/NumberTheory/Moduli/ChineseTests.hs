@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Moduli.Chinese
 --
@@ -41,8 +40,32 @@ chineseRemainder2Property :: Integer -> Positive Integer -> Integer -> Positive 
 chineseRemainder2Property r1 (Positive m1) r2 (Positive m2) = gcd m1 m2 /= 1
   || Just (chineseRemainder2 (r1, m1) (r2, m2)) == chineseRemainder [(r1, m1), (r2, m2)]
 
+chineseCoprimeProperty :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
+chineseCoprimeProperty n1 (Positive m1) n2 (Positive m2) = case gcd m1 m2 of
+  1 -> case chineseCoprime (n1, m1) (n2, m2) of
+    Nothing -> False
+    Just n  -> n `mod` m1 == n1 `mod` m1 && n `mod` m2 == n2 `mod` m2
+  _ -> case chineseCoprime (n1, m1) (n2, m2) of
+    Nothing -> True
+    Just{}  -> False
+
+chineseProperty :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
+chineseProperty n1 (Positive m1) n2 (Positive m2) = if compatible
+  then case chinese (n1, m1) (n2, m2) of
+    Nothing -> False
+    Just n  -> n `mod` m1 == n1 `mod` m1 && n `mod` m2 == n2 `mod` m2
+  else case chineseCoprime (n1, m1) (n2, m2) of
+    Nothing -> True
+    Just{}  -> False
+  where
+    g = gcd m1 m2
+    compatible = n1 `mod` g == n2 `mod` g
+
+
 testSuite :: TestTree
 testSuite = testGroup "Chinese"
   [ testSmallAndQuick "chineseRemainder"  chineseRemainderProperty
   , testSmallAndQuick "chineseRemainder2" chineseRemainder2Property
+  , testSmallAndQuick "chineseCoprime"    chineseCoprimeProperty
+  , testSmallAndQuick "chinese"           chineseProperty
   ]

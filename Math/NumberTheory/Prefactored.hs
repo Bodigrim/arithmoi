@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Type for numbers, accompanied by their factorisation.
 --
@@ -57,8 +55,8 @@ import Math.NumberTheory.Primes.Types
 -- >>> factorise (p^2 * q^3)
 -- [(PrimeNat 1000000000000000000000000000057, 2), (PrimeNat 2000000000000000000000000000071, 3)]
 --
--- Moreover, we can instantly compute 'totient' and its iterations.
--- It works fine, because output of 'totient' is also prefactored.
+-- Moreover, we can instantly compute 'Math.NumberTheory.ArithmeticFunctions.totient' and its iterations.
+-- It works fine, because output of 'Math.NumberTheory.ArithmeticFunctions.totient' is also prefactored.
 --
 -- >>> prefValue $ totient (p^2 * q^3)
 -- 8000000000000000000000000001752000000000000000000000000151322000000000000000000000006445392000000000000000000000135513014000000000000000000001126361040

@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.ArithmeticFunctions.SieveBlock
 --
@@ -28,6 +27,7 @@ import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
+import Math.NumberTheory.Primes (unPrime)
 
 pointwiseTest :: (Eq a, Show a) => ArithmeticFunction Word a -> Word -> Word -> IO ()
 pointwiseTest f lowIndex len = assertEqual "pointwise"
@@ -72,7 +72,7 @@ multiplicativeConfig :: (Word -> Word -> Word) -> SieveBlockConfig Word
 multiplicativeConfig f = SieveBlockConfig
   { sbcEmpty                = 1
   , sbcAppend               = (*)
-  , sbcFunctionOnPrimePower = f
+  , sbcFunctionOnPrimePower = f . unPrime
   }
 
 moebiusConfig :: SieveBlockConfig Moebius

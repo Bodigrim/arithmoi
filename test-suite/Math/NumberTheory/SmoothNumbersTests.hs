@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.SmoothNumbersTests
 --
@@ -16,6 +15,7 @@ module Math.NumberTheory.SmoothNumbersTests
 
 import Prelude hiding (mod)
 import Test.Tasty
+import Test.Tasty.HUnit
 
 import Data.Coerce
 import Data.List (genericDrop, nub, sort)
@@ -37,7 +37,7 @@ isSmoothPropertyHelper :: Euclidean a => (a -> Integer) -> [a] -> Int -> Int -> 
 isSmoothPropertyHelper norm primes' i1 i2 =
     let primes = take i1 primes'
         basis  = fromJust (fromList primes)
-    in all (isSmooth basis) $ take i2 $ smoothOver' norm basis 
+    in all (isSmooth basis) $ take i2 $ smoothOver' norm basis
 
 isSmoothProperty1 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty1 (Positive i1) (Positive i2) =
@@ -70,6 +70,13 @@ smoothNumbersAreUniqueProperty s (Positive len)
   where
     l = take len $ smoothOver s
 
+isSmoothSpecialCase1 :: Assertion
+isSmoothSpecialCase1 = assertBool "should be distinct" $ nub l == l
+  where
+    b = fromJust $ fromList [1+3*G.ι,6+8*G.ι]
+    l = take 10 $ map abs $ smoothOver' G.norm b
+
+
 testSuite :: TestTree
 testSuite = testGroup "SmoothNumbers"
   [ testGroup "fromSet == fromList"
@@ -89,7 +96,7 @@ testSuite = testGroup "SmoothNumbers"
     , testSmallAndQuick "Natural"
       (smoothOverInRangeProperty :: SmoothBasis Natural -> Positive Natural -> Positive Natural -> Bool)
     ]
-  , testGroup "smoothOver generates a list withouth duplicates"
+  , testGroup "smoothOver generates a list without duplicates"
     [ testSmallAndQuick "Integer"
       (smoothNumbersAreUniqueProperty :: SmoothBasis Integer -> Positive Int -> Bool)
     , testSmallAndQuick "Natural"
@@ -101,5 +108,6 @@ testSuite = testGroup "SmoothNumbers"
       [ testSmallAndQuick "Gaussian" isSmoothProperty1
       , testSmallAndQuick "Eisenstein" isSmoothProperty2
       ]
+    , testCase "all distinct for base [1+3*ι,6+8*ι]" isSmoothSpecialCase1
     ]
   ]

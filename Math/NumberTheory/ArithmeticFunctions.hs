@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- This module provides an interface for defining and manipulating
 -- arithmetic functions. It also defines several most widespreaded

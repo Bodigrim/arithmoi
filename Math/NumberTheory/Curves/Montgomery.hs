@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Arithmetic on Montgomery elliptic curve.
 --
@@ -56,9 +54,11 @@ data Point (a24 :: Nat) (n :: Nat) = Point
   , pointZ :: !Integer -- ^ Extract z-coordinate.
   }
 
+-- | Extract (a + 2) \/ 4, where a is a coefficient in curve's equation.
 pointA24 :: forall a24 n. KnownNat a24 => Point a24 n -> Integer
 pointA24 _ = toInteger $ natVal (Proxy :: Proxy a24)
 
+-- | Extract modulo of the curve.
 pointN :: forall a24 n. KnownNat n => Point a24 n -> Integer
 pointN _ = toInteger $ natVal (Proxy :: Proxy n)
 

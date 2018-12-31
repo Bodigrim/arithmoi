@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Certificates for primality or compositeness.
 {-# LANGUAGE CPP #-}
@@ -64,7 +62,7 @@ data CompositenessProof
       deriving Show
 
 -- | An argument for compositeness of a number (which must be @> 1@).
---   'CompositenessProof's translate directly to 'CompositenessArguments',
+--   'CompositenessProof's translate directly to 'CompositenessArgument's,
 --   correct arguments can be transformed into proofs. This type allows the
 --   manipulation of proofs while maintaining their correctness.
 --   The only way to access components of a 'CompositenessProof' except
@@ -91,7 +89,7 @@ data PrimalityProof
       deriving Show
 
 -- | An argument for primality of a number (which must be @> 1@).
---   'PrimalityProof's translate directly to 'PrimalityArguments',
+--   'PrimalityProof's translate directly to 'PrimalityArgument's,
 --   correct arguments can be transformed into proofs. This type allows the
 --   manipulation of proofs while maintaining their correctness.
 --   The only way to access components of a 'PrimalityProof' except
@@ -106,6 +104,7 @@ data PrimalityArgument
     | Assumption { aprime :: Integer }       -- ^ Primality assumed
       deriving (Show, Read, Eq, Ord)
 
+-- | Eliminate 'Certificate'.
 argueCertificate :: Certificate -> Either CompositenessArgument PrimalityArgument
 argueCertificate (Composite proof) = Left (argueCompositeness proof)
 argueCertificate (Prime proof) = Right (arguePrimality proof)

@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.MoebiusInversion
 --

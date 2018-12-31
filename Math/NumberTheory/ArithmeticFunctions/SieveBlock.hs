@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Bulk evaluation of arithmetic functions over continuous intervals
 -- without factorisation.
@@ -116,7 +114,7 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
           fs = V.generate
             (integerLogBase' (toInteger p) (toInteger highIndex))
-            (\k -> f p' (intToWord k + 1))
+            (\k -> f (Prime p') (intToWord k + 1))
 
           offset :: Int
           offset = negate lowIndex `mod` p
@@ -129,6 +127,6 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
     forM_ [0 .. len - 1] $ \k -> do
       a <- MV.unsafeRead as k
-      MV.unsafeModify bs (\b -> if a /= 1 then b `append` f a 1 else b) k
+      MV.unsafeModify bs (\b -> if a /= 1 then b `append` f (Prime a) 1 else b) k
 
     V.unsafeFreeze bs

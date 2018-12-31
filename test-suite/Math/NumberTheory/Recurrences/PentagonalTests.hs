@@ -1,12 +1,10 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies.PentagonalTests
+-- Module:      Math.NumberTheory.Recurrences.PentagonalTests
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
--- Tests for Math.NumberTheory.Recurrencies.Pentagonal
+-- Tests for Math.NumberTheory.Recurrences.Pentagonal
 --
 
 {-# LANGUAGE CPP                 #-}
@@ -15,16 +13,16 @@
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
-module Math.NumberTheory.Recurrencies.PentagonalTests
+module Math.NumberTheory.Recurrences.PentagonalTests
   ( testSuite
   ) where
 
-import Data.Proxy                     (Proxy (..))
-import GHC.Natural                    (Natural)
-import GHC.TypeNats.Compat            (SomeNat (..), someNatVal)
+import Data.Proxy                    (Proxy (..))
+import GHC.Natural                   (Natural)
+import GHC.TypeNats.Compat           (SomeNat (..), someNatVal)
 
-import Math.NumberTheory.Moduli       (Mod, getVal)
-import Math.NumberTheory.Recurrencies (partition)
+import Math.NumberTheory.Moduli      (Mod, getVal)
+import Math.NumberTheory.Recurrences (partition)
 import Math.NumberTheory.TestUtils
 
 import Test.Tasty
@@ -35,7 +33,7 @@ partition' :: Num a => Int -> a
 partition' = (partition !!)
 
 -- | Check that the @k@-th generalized pentagonal number is
--- @div (3 * k² - k) 2@, where @k ∈ {0, 1, −1, 2, −2, 3, −3, 4, ...}@.
+-- @div (3 * k² - k) 2@, where @k ∈ {0, 1, -1, 2, -2, 3, -3, 4, ...}@.
 -- Notice that @-1@ is the @2 * abs (-1) == 2@-nd index in the zero-based list,
 -- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
 pentagonalNumbersProperty1 :: AnySign Int -> Bool
@@ -53,12 +51,12 @@ partitionSpecialCase20 = assertEqual "partition"
     (take 20 partition)
     [1, 1, 2, 3, 5, 7, 11, 15, 22, 30, 42, 56, 77, 101, 135, 176, 231, 297, 385, 490]
 
--- | Copied from @Math.NumberTheory.Recurrencies.Pentagonal@ to test the
+-- | Copied from @Math.NumberTheory.Recurrences.Pentagonal@ to test the
 -- reference implementation of @partition@.
 pentagonalSigns :: Num a => [a] -> [a]
 pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
--- | Copied from @Math.NumberTheory.Recurrencies.Pentagonal@ to test the
+-- | Copied from @Math.NumberTheory.Recurrences.Pentagonal@ to test the
 -- reference implementation of @partition@.
 pents :: (Enum a, Num a) => [a]
 pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])

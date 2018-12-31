@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2016 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Primes.Counting
 --
@@ -74,7 +73,7 @@ primeCountProperty3 (Positive n)
 primeCountSpecialCases :: [Assertion]
 primeCountSpecialCases = map a table
   where
-  a (n, m) = assertEqual "primeCount" m (primeCount n)
+    a (n, m) = assertEqual "primeCount" m (primeCount n)
 
 
 -- | Check that values of 'nthPrime' are positive.

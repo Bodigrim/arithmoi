@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2017 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- This is an internal module, defining types for primes.
 -- Should not be exposed to users.

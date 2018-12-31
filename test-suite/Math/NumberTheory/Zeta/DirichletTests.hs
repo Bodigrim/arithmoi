@@ -3,7 +3,6 @@
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
--- Stability:   Provisional
 --
 -- Tests for Math.NumberTheory.Zeta.Dirichlet
 --
@@ -89,11 +88,11 @@ betasProperty1 (Positive m)
 
 betasProperty2 :: NonNegative Int -> NonNegative Int -> Bool
 betasProperty2 (NonNegative e1) (NonNegative e2)
-  = maximum (take 10 $ drop 2 $ zipWith ((abs .) . (-)) (betas eps1) (betas eps2)) <= eps1 + eps2
+  = maximum (take 35 $ drop 2 $ zipWith ((abs .) . (-)) (betas eps1) (betas eps2)) <= eps1 + eps2
   where
     eps1, eps2 :: Double
-    eps1 = (1.0 / 2) ^ e1
-    eps2 = (1.0 / 2) ^ e2
+    eps1 = max ((1.0 / 2) ^ e1) ((1.0 / 2) ^ 53)
+    eps2 = max ((1.0 / 2) ^ e2) ((1.0 / 2) ^ 53)
 
 
 testSuite :: TestTree

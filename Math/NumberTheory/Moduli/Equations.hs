@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2018 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Polynomial modular equations.
 --
@@ -65,7 +63,7 @@ solveQuadratic
   => Mod m   -- ^ a
   -> Mod m   -- ^ b
   -> Mod m   -- ^ c
-  -> [Mod m] -- ^ list of c
+  -> [Mod m] -- ^ list of x
 solveQuadratic a b c
   = map fromInteger
   $ fst

@@ -1,10 +1,8 @@
 -- |
--- Module:      Math.NumberTheory.Recurrencies.Pentagonal
+-- Module:      Math.NumberTheory.Recurrences.Pentagonal
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Values of <https://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function partition function>.
 --
@@ -12,7 +10,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes   #-}
 
-module Math.NumberTheory.Recurrencies.Pentagonal
+module Math.NumberTheory.Recurrences.Pentagonal
   ( partition
   , pentagonalSigns
   , pents

@@ -3,8 +3,6 @@
 -- Copyright:   (c) 2018 Frederick Schneider
 -- Licence:     MIT
 -- Maintainer:  Frederick Schneider <frederick.schneider2011@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- A <https://en.wikipedia.org/wiki/Smooth_number smooth number>
 -- is an integer, which can be represented as a product of powers of elements
@@ -90,23 +88,25 @@ fromSmoothUpperBound n = if (n < 2)
 smoothOver' :: forall a b . (Eq a, Num a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
 smoothOver' norm pl =
     foldr
-    (\p l -> mergeListLists $ iterate (map (p*)) l)
+    (\p l -> mergeListLists $ iterate (map $ abs . (p*)) l)
     [1]
     (nub $ unSmoothBasis pl)
   where
     {-# INLINE mergeListLists #-}
-    mergeListLists      = foldr go1 []
+    mergeListLists :: [[a]] -> [a]
+    mergeListLists = foldr go1 []
       where
         go1 :: [a] -> [a] -> [a]
+        go1 []    b = b
         go1 (h:t) b = h:(go2 t b)
-        go1 _     b = b
 
         go2 :: [a] -> [a] -> [a]
+        go2 a [] = a
+        go2 [] b = b
         go2 a@(ah:at) b@(bh:bt)
           | norm bh < norm ah   = bh : (go2 a bt)
-          | ah == bh            = ah : (go2 at bt)
-          | otherwise = ah : (go2 at b) -- no possibility of duplicates
-        go2 a b = if null a then b else a
+          | ah == bh    = ah : (go2 at bt)
+          | otherwise = ah : (go2 at b)
 
 -- | Generate an infinite ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -149,7 +149,7 @@ smoothOverInRange s lo hi
 -- >>> import Data.Maybe
 -- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
 -- [100, 125, 128, 160, 200]
-smoothOverInRangeBF 
+smoothOverInRangeBF
   :: forall a. (Enum a, E.Euclidean a)
   => SmoothBasis a
   -> a
