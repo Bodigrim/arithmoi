@@ -28,7 +28,7 @@ module Math.NumberTheory.DirichletCharacters
   , evaluate
   , generalEval
   , toFunction
-  , fromIndex
+  , indexToChar
   , characterNumber
   -- ** Special Dirichlet characters
   , principalChar
@@ -76,11 +76,12 @@ data DirichletFactor = OddPrime { _getPrime :: Prime Natural
                                  deriving (Show)
 
 instance Eq (DirichletCharacter n) where
-  Generated a == Generated b = go a b
-    where go [] [] = True
-          go (OddPrime _ _ _ x : xs) (OddPrime _ _ _ y : ys) = x == y && go xs ys
-          go (TwoPower _ x1 x2 : xs) (TwoPower _ y1 y2 : ys) = x1 == y1 && x2 == y2 && go xs ys
-          go _ _ = False
+  Generated a == Generated b = a == b
+
+instance Eq DirichletFactor where
+  TwoPower _ x1 x2 == TwoPower _ y1 y2 = x1 == y1 && x2 == y2
+  OddPrime _ _ _ x == OddPrime _ _ _ y = x == y
+  _ == _ = False
 
 -- | A representation of <https://en.wikipedia.org/wiki/Root_of_unity roots of unity>: complex
 -- numbers \(z\) for which there is \(n\) such that \(z^n=1\).
@@ -182,13 +183,14 @@ instance KnownNat n => Monoid (DirichletCharacter n) where
 -- | We define `succ` and `pred` with more efficient implementations than
 -- `toEnum . (+1) . fromEnum`.
 instance KnownNat n => Enum (DirichletCharacter n) where
-  toEnum = fromIndex
+  toEnum = indexToChar
   fromEnum = characterNumber
-  -- TODO: write better succ and pred, by re-using the existing generators instead of recalculating them each time
+  succ = nextChar
+  pred = prevChar
 
 instance KnownNat n => Bounded (DirichletCharacter n) where
-  minBound = fromIndex (0 :: Int)
-  maxBound = fromIndex (totient n - 1)
+  minBound = indexToChar (0 :: Int)
+  maxBound = indexToChar (totient n - 1)
     where n = natVal (Proxy :: Proxy n)
 
 characterNumber :: Integral a => DirichletCharacter n -> a
@@ -199,8 +201,8 @@ characterNumber (Generated y) = foldr go 0 y
                TwoPower k a b   -> \x -> (x * (2^(k-2)) + fromIntegral b) * 2 + (fromIntegral a)
                -- TODO: again use bitshifts to optimise
 
-fromIndex :: forall a n. (KnownNat n, Integral a) => a -> DirichletCharacter n
-fromIndex m
+indexToChar :: forall a n. (KnownNat n, Integral a) => a -> DirichletCharacter n
+indexToChar m
   | m < 0 = error "Enum DirichletCharacter: negative input"
   | m >= maxi = error "Enum DirichletCharacter: input too large"
   | otherwise = Generated (go (factorise n))
@@ -220,6 +222,43 @@ fromIndex m
           where func a (p,k) = (q, OddPrime p k (generator p k) r)
                   where (q,r) = quotRem a (p'^(k-1)*(p'-1))
                         p' = unPrime p
+
+nextChar :: DirichletCharacter n -> DirichletCharacter n
+nextChar (Generated t) = Generated (map rollOver l ++ r')
+  where saturated :: DirichletFactor -> Bool
+        saturated (TwoPower k a b) = a == 1 && b + 1 == bit (wordToInt $ k-2)
+        saturated (OddPrime p k _ a) = a + 1 == p'^(k-1)*(p'-1)
+          where p' = unPrime p
+        (l,r) = span saturated t
+        rollOver :: DirichletFactor -> DirichletFactor
+        rollOver (TwoPower k _ _) = TwoPower k 0 0
+        rollOver (OddPrime p k g _) = OddPrime p k g 0
+        addOne :: DirichletFactor -> DirichletFactor
+        addOne (TwoPower k 0 b) = TwoPower k 1 b
+        addOne (TwoPower k _ b) = TwoPower k 0 (b+1)
+        addOne (OddPrime p k g a) = OddPrime p k g (a+1)
+        r' = case r of
+               [] -> error "DirichletCharacter: succ of largest character"
+               (x:rs) -> addOne x: rs
+
+prevChar :: DirichletCharacter n -> DirichletCharacter n
+prevChar (Generated t) = Generated (map rollBack l ++ r')
+  where empty :: DirichletFactor -> Bool
+        empty (TwoPower _ 0 0) = True
+        empty (OddPrime _ _ _ 0) = True
+        empty _ = False
+        (l,r) = span empty t
+        rollBack :: DirichletFactor -> DirichletFactor
+        rollBack (TwoPower k _ _) = TwoPower k 1 (bit (wordToInt $ k-2) - 1)
+        rollBack (OddPrime p k g _) = OddPrime p k g (p'^(k-1)*(p'-1) - 1)
+          where p' = unPrime p
+        subOne :: DirichletFactor -> DirichletFactor
+        subOne (TwoPower k 1 b) = TwoPower k 0 b
+        subOne (TwoPower k _ b) = TwoPower k 1 (b-1)
+        subOne (OddPrime p k g a) = OddPrime p k g (a-1)
+        r' = case r of
+               [] -> error "DirichletCharacter: pred of smallest character"
+               (x:rs) -> subOne x: rs
 
 -- | Test if a given Dirichlet character is prinicpal for its modulus: a principal character mod
 -- \(n\) is 1 for \(a\) coprime to \(n\), and 0 otherwise.
