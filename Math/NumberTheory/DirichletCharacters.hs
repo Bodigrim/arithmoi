@@ -64,14 +64,14 @@ import Math.NumberTheory.Moduli.PrimitiveRoot
 data DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
   deriving (Show)
 
-data DirichletFactor = OddPrime { getPrime :: Prime Natural
-                                , getPower :: Word
-                                , getGenerator :: Natural
-                                , getValue :: Natural
+data DirichletFactor = OddPrime { _getPrime :: Prime Natural
+                                , _getPower :: Word
+                                , _getGenerator :: Natural
+                                , _getValue :: Natural
                                 }
-                      | TwoPower { getPower :: Word
-                                 , getFirstValue :: Natural
-                                 , getSecondValue :: Natural
+                      | TwoPower { _getPower :: Word
+                                 , _getFirstValue :: Natural
+                                 , _getSecondValue :: Natural
                                  }
                                  deriving (Show)
 
@@ -82,6 +82,8 @@ instance Eq (DirichletCharacter n) where
           go (TwoPower _ x1 x2 : xs) (TwoPower _ y1 y2 : ys) = x1 == y1 && x2 == y2 && go xs ys
           go _ _ = False
 
+-- | A representation of <https://en.wikipedia.org/wiki/Root_of_unity roots of unity>: complex
+-- numbers \(z\) for which there is \(n\) such that \(z^n=1\).
 newtype RootOfUnity =
   RootOfUnity { -- | Every root of unity can be expressed as \(e^{2 \pi i q}\) for some
                 -- rational \(q\) satisfying \(0 \leq q < 1\), this function extracts it.
@@ -114,13 +116,16 @@ instance Monoid RootOfUnity where
   mappend = (<>)
   mempty = RootOfUnity 0
 
--- | Convert a root of unity into an inexact complex number. Due to floating point
--- inaccuracies, it is recommended to avoid use of this until the end of a
--- calculation. Alternatively, with [cyclotomic](http://hackage.haskell.org/package/cyclotomic-0.5.1)
--- one can use @[polarRat](https://hackage.haskell.org/package/cyclotomic-0.5.1/docs/Data-Complex-Cyclotomic.html#v:polarRat) 1 . @'fromRootOfUnity' to convert to a cyclotomic number.
+-- | Convert a root of unity into an inexact complex number. Due to floating point inaccuracies,
+-- it is recommended to avoid use of this until the end of a calculation. Alternatively, with
+-- the [cyclotomic](http://hackage.haskell.org/package/cyclotomic-0.5.1) package, one can use
+-- @[polarRat](https://hackage.haskell.org/package/cyclotomic-0.5.1/docs/Data-Complex-Cyclotomic.html#v:polarRat)
+-- 1 . @'fromRootOfUnity' to convert to a cyclotomic number.
 toComplex :: Floating a => RootOfUnity -> Complex a
 toComplex = cis . (2*pi*) . fromRational . fromRootOfUnity
 
+-- | For primes, the canonical primitive root is the smallest such. For prime powers \(p^k\),
+-- either the smallest primitive root \(g\) mod \(p\) works, or \(g+p\) works.
 generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
 generator p k
   | k == 1 = modP
@@ -128,7 +133,8 @@ generator p k
   where p' = unPrime p
         modP = head $ filter (isPrimitiveRoot' (CGOddPrimePower p 1)) [2..p'-1]
 
--- TODO: improve using bitshifts
+-- | Implement the function \(\lambda\) from page 5 of
+-- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf
 lambda :: Integer -> Word -> Integer
 lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-2))
 
@@ -154,6 +160,8 @@ evalFactor m =
                                                       else m'
                                              kBits = bit (wordToInt k) - 1
 
+-- | Give the principal character for this modulus: a principal character mod n is 1 for a coprime
+-- to n, and 0 otherwise.
 principalChar :: KnownNat n => DirichletCharacter n
 principalChar = minBound
 
@@ -171,6 +179,8 @@ instance Semigroup (DirichletCharacter n) where
 instance KnownNat n => Monoid (DirichletCharacter n) where
   mempty = principalChar
 
+-- | We define `succ` and `pred` with more efficient implementations than
+-- `toEnum . (+1) . fromEnum`.
 instance KnownNat n => Enum (DirichletCharacter n) where
   toEnum = fromIndex
   fromEnum = characterNumber
@@ -211,10 +221,22 @@ fromIndex m
                   where (q,r) = quotRem a (p'^(k-1)*(p'-1))
                         p' = unPrime p
 
+-- | Test if a given Dirichlet character is prinicpal for its modulus: a principal character mod
+-- \(n\) is 1 for \(a\) coprime to \(n\), and 0 otherwise.
 isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
 isPrincipal chi = chi == principalChar
 
-induced :: forall d n. (KnownNat d, KnownNat n) => DirichletCharacter d -> Maybe (DirichletCharacter n)
+-- | Induce a Dirichlet character to a higher modulus. If \(d \mid n\), then \(a \bmod{n}\) can be
+-- reduced to \(a \bmod{d}\). Thus, a multiplicative function on \(\mathbb{Z}/d\mathbb{Z}\)
+-- induces a multiplicative function on \(\mathbb{Z}/n\mathbb{Z}\).
+--
+-- >>> :set -XTypeApplications
+-- >>> chi = fromIndex 5 :: DirichletCharacter 45
+-- >>> chi2 = induced @135 chi
+-- >>> :t chi2
+-- Maybe (DirichletCharacter 135)
+--
+induced :: forall n d. (KnownNat d, KnownNat n) => DirichletCharacter d -> Maybe (DirichletCharacter n)
 induced (Generated start) = if n `rem` d == 0
                             then Just (Generated (combine n' start))
                             else Nothing
@@ -242,6 +264,8 @@ induced (Generated start) = if n `rem` d == 0
         rest :: (Prime Natural, Word) -> DirichletFactor
         rest (p,k) = OddPrime p k (generator p k) 0
 
+-- | The <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol> gives a real Dirichlet
+-- character for odd moduli.
 jacobiCharacter :: forall n. KnownNat n => Maybe (RealCharacter n)
 jacobiCharacter = if odd n
                      then Just (RealChar (Generated (func <$> factorise n)))
@@ -256,8 +280,12 @@ jacobiCharacter = if odd n
                         MinusOne -> p'^(k-1)*((p'-1) `div` 2) -- p is odd so this is fine
                         Zero -> error "internal error in jacobiCharacter: please report this as a bug"
 
-newtype RealCharacter n = RealChar { getRealChar :: DirichletCharacter n }
+-- | A Dirichlet character is real if it is real-valued.
+newtype RealCharacter n = RealChar { -- | Extract the character itself from a `RealCharacter`.
+                                     getRealChar :: DirichletCharacter n
+                                   }
 
+-- | Test if a given `DirichletCharacter` is real, and if so give a `RealCharacter`.
 isRealCharacter :: DirichletCharacter n -> Maybe (RealCharacter n)
 isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else Nothing
   where real :: DirichletFactor -> Bool
@@ -267,6 +295,7 @@ isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else No
 -- TODO: it should be possible to calculate this without evaluate/generalEval
 -- and thus avoid using discrete log calculations: consider the order of m
 -- inside each of the factor groups?
+-- | Evaluate a real Dirichlet character, which can only take values \(-1,0,1\).
 toRealFunction :: KnownNat n => RealCharacter n -> Natural -> Int
 toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
                                     Nothing -> 0
