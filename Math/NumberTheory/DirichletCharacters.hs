@@ -16,23 +16,30 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Math.NumberTheory.DirichletCharacters
-  ( DirichletCharacter
-  , RootOfUnity
+  (
+  -- * Roots of unity
+    RootOfUnity
+  -- ** Conversions
   , toRootOfUnity
   , fromRootOfUnity
   , toComplex
+  -- * Dirichlet characters
+  , DirichletCharacter
   , evaluate
   , generalEval
   , toFunction
-  , principalChar
   , fromIndex
   , characterNumber
+  -- ** Special Dirichlet characters
+  , principalChar
   , isPrincipal
   , jacobiCharacter
+  , induced
+  -- ** Real Dirichlet characters
+  , RealCharacter
   , isRealCharacter
   , getRealChar
   , toRealFunction
-  , induced
   ) where
 
 import Data.Semigroup
@@ -75,25 +82,42 @@ instance Eq (DirichletCharacter n) where
           go (TwoPower _ x1 x2 : xs) (TwoPower _ y1 y2 : ys) = x1 == y1 && x2 == y2 && go xs ys
           go _ _ = False
 
-newtype RootOfUnity = RootOfUnity { fromRootOfUnity :: Rational }
-  deriving (Eq, Show)
-  -- RootOfUnity q represents e^(2pi i * q)
+newtype RootOfUnity =
+  RootOfUnity { -- | Every root of unity can be expressed as \(e^{2 \pi i q}\) for some
+                -- rational \(q\) satisfying \(0 \leq q < 1\), this function extracts it.
+                fromRootOfUnity :: Rational }
+  deriving (Eq)
 
+instance Show RootOfUnity where
+  show (RootOfUnity q)
+    | n == 0    = "e^0"
+    | d == 1    = "e^(πi)"
+    | n == 1    = "e^(πi/" ++ show d ++ ")"
+    | otherwise = "e^(" ++ show n ++ "πi/" ++ show d ++ ")"
+    where n = numerator (2*q)
+          d = denominator (2*q)
+
+-- | Given a rational \(q\), produce the root of unity \(e^{2 \pi i q}\).
 toRootOfUnity :: Rational -> RootOfUnity
 toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
   where n = numerator q
         d = denominator q
         -- effectively q `mod` 1
+  -- This smart constructor ensures that the rational is always in the range 0 <= q < 1.
 
+-- | This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 instance Semigroup RootOfUnity where
   (RootOfUnity q1) <> (RootOfUnity q2) = toRootOfUnity (q1 + q2)
   stimes k (RootOfUnity q) = toRootOfUnity (q * fromIntegral k)
-  -- ^ This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 
 instance Monoid RootOfUnity where
   mappend = (<>)
   mempty = RootOfUnity 0
 
+-- | Convert a root of unity into an inexact complex number. Due to floating point
+-- inaccuracies, it is recommended to avoid use of this until the end of a
+-- calculation. Alternatively, with [cyclotomic](http://hackage.haskell.org/package/cyclotomic-0.5.1)
+-- one can use @[polarRat](https://hackage.haskell.org/package/cyclotomic-0.5.1/docs/Data-Complex-Cyclotomic.html#v:polarRat) 1 . @'fromRootOfUnity' to convert to a cyclotomic number.
 toComplex :: Floating a => RootOfUnity -> Complex a
 toComplex = cis . (2*pi*) . fromRational . fromRootOfUnity
 
