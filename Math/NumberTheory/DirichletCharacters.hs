@@ -42,26 +42,26 @@ module Math.NumberTheory.DirichletCharacters
   , toRealFunction
   ) where
 
-import Data.Semigroup
-import GHC.TypeNats.Compat
-import Numeric.Natural                            (Natural)
-import Data.Bits                                  (testBit, (.&.), bit)
-import Data.Ratio                                 (Rational, (%), numerator, denominator)
+import Data.Bits                                  (Bits(..))
 import Data.Complex                               (Complex, cis)
-import Data.Proxy                                 (Proxy(..))
 import Data.List                                  (mapAccumL)
+import Data.Proxy                                 (Proxy(..))
+import Data.Ratio                                 (Rational, (%), numerator, denominator)
+import Data.Semigroup                             (Semigroup(..))
+import GHC.TypeNats.Compat                        (Nat, natVal)
+import Numeric.Natural                            (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions      (totient)
-import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod, getVal, multElement, Mod, isMultElement)
+import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod(..), getVal, Mod, isMultElement)
 import Math.NumberTheory.Moduli.Jacobi            (jacobi, JacobiSymbol(..))
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
 import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers                   (powMod)
 import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
 
-import Math.NumberTheory.Moduli.PrimitiveRoot
+import Math.NumberTheory.Moduli.PrimitiveRoot     (isPrimitiveRoot', CyclicGroup(..))
 
-data DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
+newtype DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
   deriving (Show)
 
 data DirichletFactor = OddPrime { _getPrime :: Prime Natural
@@ -137,7 +137,9 @@ generator p k
 -- | Implement the function \(\lambda\) from page 5 of
 -- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf
 lambda :: Integer -> Word -> Integer
-lambda x e = ((powMod x (2^(e-1)) (2^(2*e-1)) - 1) `div` (2^(e+1))) `mod` (2^(e-2))
+lambda x e = ((powMod x (2*modulus) largeMod - 1) `shiftR` wordToInt (e+1)) .&. (modulus - 1)
+  where modulus = bit (wordToInt $ e-2)
+        largeMod = bit (wordToInt $ 2*e - 1)
 
 generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
 generalEval chi = fmap (evaluate chi) . isMultElement
@@ -153,8 +155,9 @@ evalFactor :: Integer -> DirichletFactor -> RootOfUnity
 evalFactor m =
   \case
     OddPrime (toInteger . unPrime -> p) k (toInteger -> a) b ->
-      toRootOfUnity (toInteger (b * discreteLogarithmPP p k a (m `rem` p^k)) % (p^(k-1)*(p-1)))
-    TwoPower k s b -> toRootOfUnity (toInteger s * (if testBit m 1 then 1 else 0) % 2) <> toRootOfUnity (toInteger b * lambda m'' k % (2^(k-2)))
+      toRootOfUnity $ toInteger (b * discreteLogarithmPP p k a (m `rem` p^k)) % (p^(k-1)*(p-1))
+    TwoPower k s b -> toRootOfUnity (toInteger s * (if testBit m 1 then 1 else 0) % 2)
+                   <> toRootOfUnity (toInteger b * lambda m'' k % bit (wordToInt $ k-2))
                                        where m' = m .&. kBits
                                              m'' = if testBit m 1
                                                       then bit (wordToInt k) - m'
@@ -169,9 +172,11 @@ principalChar = minBound
 mulChars :: DirichletCharacter n -> DirichletCharacter n -> DirichletCharacter n
 mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
   where combine :: DirichletFactor -> DirichletFactor -> DirichletFactor
-        combine (OddPrime p k g n) (OddPrime _ _ _ m) = OddPrime p k g ((n + m) `mod` (p'^(k-1)*(p'-1)))
+        combine (OddPrime p k g n) (OddPrime _ _ _ m) =
+          OddPrime p k g ((n + m) `mod` (p'^(k-1)*(p'-1)))
           where p' = unPrime p
-        combine (TwoPower k a n) (TwoPower _ b m) = TwoPower k ((a + b) `mod` 2) ((n + m) `mod` 2^(k-2))
+        combine (TwoPower k a n) (TwoPower _ b m) =
+          TwoPower k ((a + b) `mod` 2) ((n + m) .&. (bit (wordToInt k - 2) - 1))
         combine _ _ = error "internal error: malformed DirichletCharacter"
 
 instance Semigroup (DirichletCharacter n) where
@@ -193,13 +198,14 @@ instance KnownNat n => Bounded (DirichletCharacter n) where
   maxBound = indexToChar (totient n - 1)
     where n = natVal (Proxy :: Proxy n)
 
-characterNumber :: Integral a => DirichletCharacter n -> a
+characterNumber :: (Integral a, Bits a) => DirichletCharacter n -> a
 characterNumber (Generated y) = foldr go 0 y
   where go = \case
-               OddPrime p k _ a -> \x -> x * (p'^(k-1)*(p'-1)) + (fromIntegral a)
+               OddPrime p k _ a ->
+                 \x -> x * (p'^(k-1)*(p'-1)) + fromIntegral a
                  where p' = fromIntegral (unPrime p)
-               TwoPower k a b   -> \x -> (x * (2^(k-2)) + fromIntegral b) * 2 + (fromIntegral a)
-               -- TODO: again use bitshifts to optimise
+               TwoPower k a b   ->
+                 \x -> (x `shiftL` wordToInt (k-2) + fromIntegral b) * 2 + fromIntegral a
 
 indexToChar :: forall a n. (KnownNat n, Integral a) => a -> DirichletCharacter n
 indexToChar m
@@ -287,10 +293,12 @@ induced (Generated start) = if n `rem` d == 0
         combine t [] = plain t
         combine ((p1,k1):xs) (y:ys)
           | unPrime p1 == 2, TwoPower k2 a b <- y = TwoPower k1 a (b*2^(k1-k2)): combine xs ys
-          | OddPrime p2 1 _g a <- y, p1 == p2 = OddPrime p2 k1 (generator p2 k1) (a*unPrime p1^(k1-1)): combine xs ys
-            -- generator p2 k1 will be g or g + p2, and we already know g is a primroot mod p
+          | OddPrime p2 1 _g a <- y, p1 == p2 =
+                             OddPrime p2 k1 (generator p2 k1) (a*unPrime p1^(k1-1)): combine xs ys
+            -- TODO: generator p2 k1 will be g or g + p2, and we already know g is a primroot mod p
             -- so should be able to save work instead of running generator
-          | OddPrime p2 k2 g a <- y, p1 == p2 = OddPrime p2 k1 g (a*unPrime p1^(k1-k2)): combine xs ys
+          | OddPrime p2 k2 g a <- y, p1 == p2 =
+                             OddPrime p2 k1 g (a*unPrime p1^(k1-k2)): combine xs ys
           | unPrime p1 == 2, k1 >= 2 = TwoPower k1 0 0: combine xs (y:ys)
           | unPrime p1 == 2 = combine xs (y:ys)
           | otherwise = OddPrime p1 k1 (generator p1 k1) 0: combine xs (y:ys)
@@ -310,7 +318,6 @@ jacobiCharacter = if odd n
                      then Just (RealChar (Generated (func <$> factorise n)))
                      else Nothing
   where n = natVal (Proxy :: Proxy n)
-        func :: (Prime Natural, Word) -> DirichletFactor
         func (p,k) = OddPrime p k g val -- we know p is odd since n is odd and p | n
           where p' = unPrime p
                 g = generator p k
