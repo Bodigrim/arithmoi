@@ -13,7 +13,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
@@ -40,6 +40,8 @@ module Math.NumberTheory.DirichletCharacters
   , isRealCharacter
   , getRealChar
   , toRealFunction
+  -- * Debugging
+  , validChar
   ) where
 
 import Data.Bits                                  (Bits(..))
@@ -61,19 +63,39 @@ import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
 
 import Math.NumberTheory.Moduli.PrimitiveRoot     (isPrimitiveRoot', CyclicGroup(..))
 
+-- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
+-- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
+-- values at roots of unity and can be evaluated using `evaluate`.
+-- A Dirichlet character can be extended to a completely multiplicative function on \(\mathbb{Z}\)
+-- by assigning the value 0 for \(a\) sharing a common factor with \(n\), using `generalEval`.
+--
+-- There are finitely many possible Dirichlet characters for a given modulus, in particular there
+-- are \(\phi(n)\) characters modulo \(n\), where \(\phi\) refers to Euler's `totient` function.
+-- This gives rise to `Enum` and `Bounded` instances.
 newtype DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
-  deriving (Show)
 
+-- | The group (Z/nZ)^* decomposes to a product (Z/2^k0 Z)^* x (Z/p1^k1 Z)^* x ... x (Z/pi^ki Z)^*
+-- where n = 2^k0 p1^k1 ... pi^ki, and the pj are odd primes, k0 possibly 0. Thus, a group
+-- homomorphism from (Z/nZ)^* is characterised by group homomorphisms from each of these factor
+-- groups. Furthermore, for odd p, we have (Z/p^k Z)^* isomorphic to Z / p^(k-1)*(p-1) Z, an
+-- additive group, where an isomorphism is specified by a choice of primitive root.
+-- Similarly, for k >= 2, (Z/2^k Z)^* is isomorphic to Z/2Z * (Z / 2^(k-2) Z) (and for k < 2
+-- it is trivial).  (See `lambda` for this isomorphism).
+-- Thus, to specify a Dirichlet character, it suffices to specify the value of generators
+-- of each of these cyclic groups, when primitive roots are given. This data is given by a
+-- DirichletFactor.
+-- We have the invariant that the factors must be given in strictly increasing order, and the
+-- generator is as given by `generator`, and are each non-trivial. These conditions are verified
+-- using `validChar`.
 data DirichletFactor = OddPrime { _getPrime :: Prime Natural
                                 , _getPower :: Word
                                 , _getGenerator :: Natural
                                 , _getValue :: Natural
                                 }
-                      | TwoPower { _getPower :: Word
-                                 , _getFirstValue :: Natural
-                                 , _getSecondValue :: Natural
-                                 }
-                                 deriving (Show)
+                     | TwoPower { _getPower :: Word
+                                , _getFirstValue :: Natural
+                                , _getSecondValue :: Natural
+                                }
 
 instance Eq (DirichletCharacter n) where
   Generated a == Generated b = a == b
@@ -125,7 +147,7 @@ instance Monoid RootOfUnity where
 toComplex :: Floating a => RootOfUnity -> Complex a
 toComplex = cis . (2*pi*) . fromRational . fromRootOfUnity
 
--- | For primes, the canonical primitive root is the smallest such. For prime powers \(p^k\),
+-- | For primes, define the canonical primitive root as the smallest such. For prime powers \(p^k\),
 -- either the smallest primitive root \(g\) mod \(p\) works, or \(g+p\) works.
 generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
 generator p k
@@ -141,16 +163,13 @@ lambda x e = ((powMod x (2*modulus) largeMod - 1) `shiftR` wordToInt (e+1)) .&. 
   where modulus = bit (wordToInt $ e-2)
         largeMod = bit (wordToInt $ 2*e - 1)
 
-generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
-generalEval chi = fmap (evaluate chi) . isMultElement
-
-toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
-toFunction chi = maybe 0 toComplex . generalEval chi . fromIntegral
-
+-- | For elements of the multiplicative group \((\mathbb{Z}/n\mathbb{Z})^*\), a Dirichlet
+-- character evaluates to a root of unity.
 evaluate :: DirichletCharacter n -> MultMod n -> RootOfUnity
 evaluate (Generated ds) m = foldMap (evalFactor m') ds
   where m' = getVal $ multElement m
 
+-- | Evaluate each factor of the Dirichlet character.
 evalFactor :: Integer -> DirichletFactor -> RootOfUnity
 evalFactor m =
   \case
@@ -164,8 +183,17 @@ evalFactor m =
                                                       else m'
                                              kBits = bit (wordToInt k) - 1
 
--- | Give the principal character for this modulus: a principal character mod n is 1 for a coprime
--- to n, and 0 otherwise.
+-- | A character can evaluate to a root of unity or zero: represented by @Nothing@.
+generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
+generalEval chi = fmap (evaluate chi) . isMultElement
+
+-- | Convert a Dirichlet character to a complex-valued function. As in `toComplex`, the result is
+-- inexact due to floating-point inaccuracies. See `toComplex` for more.
+toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
+toFunction chi = maybe 0 toComplex . generalEval chi . fromIntegral
+
+-- | Give the principal character for this modulus: a principal character mod \(n\) is 1 for
+-- \(a\) coprime to \(n\), and 0 otherwise.
 principalChar :: KnownNat n => DirichletCharacter n
 principalChar = minBound
 
@@ -179,6 +207,7 @@ mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
           TwoPower k ((a + b) `mod` 2) ((n + m) .&. (bit (wordToInt k - 2) - 1))
         combine _ _ = error "internal error: malformed DirichletCharacter"
 
+-- TODO: this semigroup is also a group, allow `stimes` to work for non-positives too
 instance Semigroup (DirichletCharacter n) where
   (<>) = mulChars
 
@@ -186,7 +215,7 @@ instance KnownNat n => Monoid (DirichletCharacter n) where
   mempty = principalChar
 
 -- | We define `succ` and `pred` with more efficient implementations than
--- `toEnum . (+1) . fromEnum`.
+-- @`toEnum` . (+1) . `fromEnum`@.
 instance KnownNat n => Enum (DirichletCharacter n) where
   toEnum = indexToChar
   fromEnum = characterNumber
@@ -198,6 +227,8 @@ instance KnownNat n => Bounded (DirichletCharacter n) where
   maxBound = indexToChar (totient n - 1)
     where n = natVal (Proxy :: Proxy n)
 
+-- | We have a (non-canonical) enumeration of dirichlet characters, with inverse given by
+-- `indexToChar`.
 characterNumber :: (Integral a, Bits a) => DirichletCharacter n -> a
 characterNumber (Generated y) = foldr go 0 y
   where go = \case
@@ -207,6 +238,8 @@ characterNumber (Generated y) = foldr go 0 y
                TwoPower k a b   ->
                  \x -> (x `shiftL` wordToInt (k-2) + fromIntegral b) * 2 + fromIntegral a
 
+-- | Give the dirichlet character from its number. The index must be between 0 and \(\phi(n)\).
+-- Inverse of `characterNumber`.
 indexToChar :: forall a n. (KnownNat n, Integral a) => a -> DirichletCharacter n
 indexToChar m
   | m < 0 = error "Enum DirichletCharacter: negative input"
@@ -348,3 +381,8 @@ toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
                                     Just t | t == mempty -> 1
                                     Just t | t == RootOfUnity (1 % 2) -> -1
                                     _ -> error "internal error in toRealFunction: please report this as a bug"
+
+-- TODO: write this function
+-- | Test if the internal DirichletCharacter structure is valid.
+validChar :: forall n. KnownNat n => DirichletCharacter n -> Bool
+validChar = error "todo: validChar"
