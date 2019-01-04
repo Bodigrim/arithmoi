@@ -59,6 +59,7 @@ import Math.NumberTheory.Moduli.Jacobi            (jacobi, JacobiSymbol(..))
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
 import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers                   (powMod)
+import Math.NumberTheory.Primes                   (primes)
 import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
 
 import Math.NumberTheory.Moduli.PrimitiveRoot     (isPrimitiveRoot', CyclicGroup(..))
@@ -358,6 +359,9 @@ jacobiCharacter = if odd n
                         One -> 0
                         MinusOne -> p'^(k-1)*((p'-1) `div` 2) -- p is odd so this is fine
                         Zero -> error "internal error in jacobiCharacter: please report this as a bug"
+                          -- We should not reach this branch, since g should be a prim root mod p,
+                          -- in particular it absolutely should not divide p, so the jacobi symbol
+                          -- should not be 0, and any power of it should not be 0.
 
 -- | A Dirichlet character is real if it is real-valued.
 newtype RealCharacter n = RealChar { -- | Extract the character itself from a `RealCharacter`.
@@ -381,8 +385,18 @@ toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
                                     Just t | t == mempty -> 1
                                     Just t | t == RootOfUnity (1 % 2) -> -1
                                     _ -> error "internal error in toRealFunction: please report this as a bug"
+                                      -- A real character should not be able to evaluate to
+                                      -- anything other than {-1,0,1}, so should not reach this branch
 
--- TODO: write this function
 -- | Test if the internal DirichletCharacter structure is valid.
 validChar :: forall n. KnownNat n => DirichletCharacter n -> Bool
-validChar = error "todo: validChar"
+validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs
+  where correctDecomposition = removeTwo (factorise n) == map getPP xs
+        getPP (TwoPower k _ _) = (two, k)
+        getPP (OddPrime p k _ _) = (p, k)
+        removeTwo ((unPrime -> 2,1):ys) = ys
+        removeTwo ys = ys
+        correctPrimitiveRoot TwoPower{} = True
+        correctPrimitiveRoot (OddPrime p k g _) = g == generator p k
+        n = natVal (Proxy :: Proxy n)
+        two = head primes -- lazy way to get Prime 2
