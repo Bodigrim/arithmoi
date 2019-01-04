@@ -29,6 +29,7 @@ module Math.NumberTheory.DirichletCharacters
   , generalEval
   , toFunction
   , indexToChar
+  , indicesToChars
   , characterNumber
   -- ** Special Dirichlet characters
   , principalChar
@@ -46,7 +47,8 @@ module Math.NumberTheory.DirichletCharacters
 
 import Data.Bits                                  (Bits(..))
 import Data.Complex                               (Complex, cis)
-import Data.List                                  (mapAccumL)
+import Data.Functor.Identity                      (Identity(..))
+import Data.List                                  (mapAccumL, foldl')
 import Data.Proxy                                 (Proxy(..))
 import Data.Ratio                                 (Rational, (%), numerator, denominator)
 import Data.Semigroup                             (Semigroup(..))
@@ -220,8 +222,13 @@ instance KnownNat n => Monoid (DirichletCharacter n) where
 instance KnownNat n => Enum (DirichletCharacter n) where
   toEnum = indexToChar
   fromEnum = characterNumber
-  succ = nextChar
-  pred = prevChar
+  succ x = makeChar x (characterNumber x + 1 :: Integer)
+  pred x = makeChar x (characterNumber x - 1 :: Integer)
+
+  enumFromTo x y       = bulkMakeChars x [fromEnum x..fromEnum y]
+  enumFrom x           = bulkMakeChars x [fromEnum x..]
+  enumFromThenTo x y z = bulkMakeChars x [fromEnum x, fromEnum y..fromEnum z]
+  enumFromThen x y     = bulkMakeChars x [fromEnum x, fromEnum y..]
 
 instance KnownNat n => Bounded (DirichletCharacter n) where
   minBound = indexToChar (0 :: Int)
@@ -231,74 +238,75 @@ instance KnownNat n => Bounded (DirichletCharacter n) where
 -- | We have a (non-canonical) enumeration of dirichlet characters, with inverse given by
 -- `indexToChar`.
 characterNumber :: (Integral a, Bits a) => DirichletCharacter n -> a
-characterNumber (Generated y) = foldr go 0 y
-  where go = \case
-               OddPrime p k _ a ->
-                 \x -> x * (p'^(k-1)*(p'-1)) + fromIntegral a
-                 where p' = fromIntegral (unPrime p)
-               TwoPower k a b   ->
-                 \x -> (x `shiftL` wordToInt (k-2) + fromIntegral b) * 2 + fromIntegral a
+characterNumber (Generated y) = foldl' go 0 y
+  where go x (OddPrime p k _ a) = x * (p'^(k-1)*(p'-1)) + fromIntegral a
+          where p' = fromIntegral (unPrime p)
+        go x (TwoPower k a b)   = (x `shiftL` wordToInt (k-2) + fromIntegral b) * 2 + fromIntegral a
 
--- | Give the dirichlet character from its number. The index must be between 0 and \(\phi(n)\).
+-- | Give the dirichlet character from its number.
 -- Inverse of `characterNumber`.
-indexToChar :: forall a n. (KnownNat n, Integral a) => a -> DirichletCharacter n
-indexToChar m
-  | m < 0 = error "Enum DirichletCharacter: negative input"
-  | m >= maxi = error "Enum DirichletCharacter: input too large"
-  | otherwise = Generated (go (factorise n))
+indexToChar :: forall n a. (KnownNat n, Integral a) => a -> DirichletCharacter n
+indexToChar = runIdentity . indicesToChars . Identity
+
+-- | Give a collection of dirichlet characters from their numbers. This may be more efficient than
+-- `indexToChar` for multiple characters, as it prevents some internal recalculations, such as
+-- factorising the modulus.
+indicesToChars :: forall n a f. (KnownNat n, Integral a, Functor f) => f a -> f (DirichletCharacter n)
+indicesToChars = fmap (Generated . unroll t . (`mod` totient n) . fromIntegral)
   where n = natVal (Proxy :: Proxy n)
-        maxi = fromIntegral $ totient n
-        m' = fromIntegral m
-        go :: [(Prime Natural, Word)] -> [DirichletFactor]
-        go [] = []
-        go f@((p,k):xs) = case (unPrime p, k) of
-                            (2,1) -> odds m' xs
-                            (2,_) -> TwoPower k a2 b2: odds b1 xs
-                                       where (a1,a2) = quotRem (fromIntegral m) 2
-                                             (b1,b2) = quotRem a1 (2^(k-2))
-                            _ -> odds m' f
-        odds :: Natural -> [(Prime Natural, Word)] -> [DirichletFactor]
-        odds t = snd . mapAccumL func t
-          where func a (p,k) = (q, OddPrime p k (generator p k) r)
-                  where (q,r) = quotRem a (p'^(k-1)*(p'-1))
-                        p' = unPrime p
+        t = mkTemplate n
 
-nextChar :: DirichletCharacter n -> DirichletCharacter n
-nextChar (Generated t) = Generated (map rollOver l ++ r')
-  where saturated :: DirichletFactor -> Bool
-        saturated (TwoPower k a b) = a == 1 && b + 1 == bit (wordToInt $ k-2)
-        saturated (OddPrime p k _ a) = a + 1 == p'^(k-1)*(p'-1)
-          where p' = unPrime p
-        (l,r) = span saturated t
-        rollOver :: DirichletFactor -> DirichletFactor
-        rollOver (TwoPower k _ _) = TwoPower k 0 0
-        rollOver (OddPrime p k g _) = OddPrime p k g 0
-        addOne :: DirichletFactor -> DirichletFactor
-        addOne (TwoPower k 0 b) = TwoPower k 1 b
-        addOne (TwoPower k _ b) = TwoPower k 0 (b+1)
-        addOne (OddPrime p k g a) = OddPrime p k g (a+1)
-        r' = case r of
-               [] -> error "DirichletCharacter: succ of largest character"
-               (x:rs) -> addOne x: rs
+makeChar :: forall n a. (KnownNat n, Integral a) => DirichletCharacter n -> a -> DirichletCharacter n
+makeChar x = runIdentity . bulkMakeChars x . Identity
 
-prevChar :: DirichletCharacter n -> DirichletCharacter n
-prevChar (Generated t) = Generated (map rollBack l ++ r')
-  where empty :: DirichletFactor -> Bool
-        empty (TwoPower _ 0 0) = True
-        empty (OddPrime _ _ _ 0) = True
-        empty _ = False
-        (l,r) = span empty t
-        rollBack :: DirichletFactor -> DirichletFactor
-        rollBack (TwoPower k _ _) = TwoPower k 1 (bit (wordToInt $ k-2) - 1)
-        rollBack (OddPrime p k g _) = OddPrime p k g (p'^(k-1)*(p'-1) - 1)
+-- use one character to make many more: better than indicestochars since it avoids recalculating
+-- some primitive roots
+bulkMakeChars :: forall n a f. (KnownNat n, Integral a, Functor f) => DirichletCharacter n -> f a -> f (DirichletCharacter n)
+bulkMakeChars x = fmap (Generated . unroll t . (`mod` totient n) . fromIntegral)
+  where t = templateFromCharacter x
+        n = natVal (Proxy :: Proxy n)
+
+-- We assign each natural a unique Template, which can be decorated (eg in `unroll`) to
+-- form a DirichletCharacter. A Template effectively holds the information carried around
+-- in a DirichletFactor which depends only on the modulus of the character.
+data Template = OddTemplate { _getPrime'     :: Prime Natural
+                            , _getPower'     :: Word
+                            , _getGenerator' :: !Natural
+                            , _getModulus'   :: !Natural
+                            }
+              | TwoTemplate { _getPower'     :: Word
+                            , _getModulus'   :: !Natural
+                            } -- the modulus is derivable from the other values, but calculation
+                              -- may be expensive, so we pre-calculate it
+                              -- morally getModulus should be a prefactored but seems to be
+                              -- pointless here
+
+templateFromCharacter :: DirichletCharacter n -> [Template]
+templateFromCharacter (Generated t) = map go t
+  where go (OddPrime p k g _) = OddTemplate p k g (p'^(k-1)*(p'-1))
           where p' = unPrime p
-        subOne :: DirichletFactor -> DirichletFactor
-        subOne (TwoPower k 1 b) = TwoPower k 0 b
-        subOne (TwoPower k _ b) = TwoPower k 1 (b-1)
-        subOne (OddPrime p k g a) = OddPrime p k g (a-1)
-        r' = case r of
-               [] -> error "DirichletCharacter: pred of smallest character"
-               (x:rs) -> subOne x: rs
+        go (TwoPower k _ _) = TwoTemplate k (bit (wordToInt $ k-2))
+
+-- TODO: Template is effectively a CyclicFactor of a generalised CyclicGroup...
+-- see issue #154
+
+mkTemplate :: Natural -> [Template]
+mkTemplate = go . factorise
+  where go :: [(Prime Natural, Word)] -> [Template]
+        go ((unPrime -> 2, 1):xs) = map odds xs
+        go ((unPrime -> 2, k):xs) = TwoTemplate k (bit (wordToInt $ k-2)): map odds xs
+        go xs = map odds xs
+        odds :: (Prime Natural, Word) -> Template
+        odds (p, k) = OddTemplate p k (generator p k) (p'^(k-1)*(p'-1))
+          where p' = unPrime p
+
+-- the validity of the producted dirichletfactor list requires the template to be valid
+unroll :: [Template] -> Natural -> [DirichletFactor]
+unroll t m = snd (mapAccumL func m t)
+  where func :: Natural -> Template -> (Natural, DirichletFactor)
+        func a (OddTemplate p k g n) = OddPrime p k g <$> quotRem a n
+        func a (TwoTemplate k n) = TwoPower k a2 <$> quotRem a1 n
+          where (a1,a2) = quotRem a 2
 
 -- | Test if a given Dirichlet character is prinicpal for its modulus: a principal character mod
 -- \(n\) is 1 for \(a\) coprime to \(n\), and 0 otherwise.
@@ -356,8 +364,10 @@ jacobiCharacter = if odd n
           where p' = unPrime p
                 g = generator p k
                 val = case k `stimes` jacobi g p' of
+                        -- TODO: is there a nice formula for the jacobi symbol of primitive roots?
+                        -- if so, is there also a nice way of getting the character number?
                         One -> 0
-                        MinusOne -> p'^(k-1)*((p'-1) `div` 2) -- p is odd so this is fine
+                        MinusOne -> p'^(k-1)*((p'-1) `div` 2)
                         Zero -> error "internal error in jacobiCharacter: please report this as a bug"
                           -- We should not reach this branch, since g should be a prim root mod p,
                           -- in particular it absolutely should not divide p, so the jacobi symbol
