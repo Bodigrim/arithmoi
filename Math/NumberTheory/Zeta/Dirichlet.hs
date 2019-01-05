@@ -14,7 +14,7 @@ module Math.NumberTheory.Zeta.Dirichlet
   , betasOdd
   ) where
 
-import Data.ExactPi                   (ExactPi (..), approximateValue)
+import Data.ExactPi
 import Data.List                      (zipWith4)
 import Data.Ratio                     ((%))
 
@@ -38,11 +38,6 @@ betasOdd = zipWith Exact [1, 3 ..] $ zipWith4
                                      (skipOdds factorial)
                                      (skipOdds euler)
                                      (iterate (4 *) 4)
-
--- | @betasOdd@, but with @forall a . Floating a => a@ instead of @ExactPi@s.
--- Used in @betas@.
-betasOdd' :: Floating a => [a]
-betasOdd' = map approximateValue betasOdd
 
 -- | Infinite sequence of approximate values of the Dirichlet @β@ function at
 -- positive even integer arguments, starting with @β(0)@.
@@ -71,7 +66,7 @@ betas :: (Floating a, Ord a) => a -> [a]
 betas eps = e : o : scanl1 f (intertwine es os)
   where
     e : es = betasEven eps
-    o : os = betasOdd'
+    o : os = map (getRationalLimit (\a b -> abs (a - b) < eps) . rationalApproximations) betasOdd
 
     -- Cap-and-floor to improve numerical stability:
     -- 1 > beta(n + 1) - 1 > (beta(n) - 1) / 2

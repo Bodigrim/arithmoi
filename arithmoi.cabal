@@ -39,7 +39,7 @@ library
     array >=0.5 && <0.6,
     containers >=0.5 && <0.7,
     deepseq,
-    exact-pi >=0.4.1.1,
+    exact-pi >=0.5,
     ghc-prim <0.6,
     integer-gmp <1.1,
     integer-logarithms >=1.0,

@@ -14,7 +14,7 @@ module Math.NumberTheory.Zeta.Riemann
   , zetasOdd
   ) where
 
-import Data.ExactPi                   (ExactPi (..), approximateValue)
+import Data.ExactPi
 import Data.Ratio                     ((%))
 
 import Math.NumberTheory.Recurrences  (bernoulli)
@@ -38,9 +38,6 @@ zetasEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
   where
     cs = (- 1 % 2) : zipWith (\i f -> i * (-4) / fromInteger (2 * f * (2 * f - 1))) cs [1..]
 
-zetasEven' :: Floating a => [a]
-zetasEven' = map approximateValue zetasEven
-
 -- | Infinite sequence of approximate values of Riemann zeta-function
 -- at odd arguments, starting with @ζ(1)@.
 zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
@@ -63,7 +60,7 @@ zetasOdd eps = (1 / 0) : tail (skipEvens $ zetaHurwitz eps 1)
 zetas :: (Floating a, Ord a) => a -> [a]
 zetas eps = e : o : scanl1 f (intertwine es os)
   where
-    e : es = zetasEven'
+    e : es = map (getRationalLimit (\a b -> abs (a - b) < eps) . rationalApproximations) zetasEven
     o : os = zetasOdd eps
 
     -- Cap-and-floor to improve numerical stability:
