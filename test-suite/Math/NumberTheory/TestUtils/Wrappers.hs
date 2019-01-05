@@ -32,13 +32,14 @@ import Data.Functor.Classes
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
+import Math.NumberTheory.Euclidean (Euclidean)
 import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
 -------------------------------------------------------------------------------
 -- AnySign
 
 newtype AnySign a = AnySign { getAnySign :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary, Euclidean)
 
 instance (Monad m, Serial m a) => Serial m (AnySign a) where
   series = AnySign <$> series
@@ -56,6 +57,7 @@ instance Show1 AnySign where
 -- Positive from smallcheck
 
 deriving instance Functor Positive
+deriving instance Euclidean a => Euclidean (Positive a)
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (Positive a) where
   arbitrary = Positive <$> (arbitrary `suchThat` (> 0))
@@ -78,6 +80,7 @@ instance Show1 Positive where
 -- NonNegative from smallcheck
 
 deriving instance Functor NonNegative
+deriving instance Euclidean a => Euclidean (NonNegative a)
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (NonNegative a) where
   arbitrary = NonNegative <$> (arbitrary `suchThat` (>= 0))
@@ -131,7 +134,7 @@ instance Show1 Huge where
 -- Power
 
 newtype Power a = Power { getPower :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Euclidean)
 
 instance (Monad m, Num a, Ord a, Serial m a) => Serial m (Power a) where
   series = Power <$> series `suchThatSerial` (> 0)
