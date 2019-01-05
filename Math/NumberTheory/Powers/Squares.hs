@@ -28,6 +28,8 @@ import Data.Array.ST
 
 import Data.Bits
 
+import Numeric.Natural
+
 import Math.NumberTheory.Unsafe
 
 import Math.NumberTheory.Powers.Squares.Internal
@@ -37,7 +39,8 @@ import Math.NumberTheory.Powers.Squares.Internal
 --   Throws an error on negative input.
 {-# SPECIALISE integerSquareRoot :: Int -> Int,
                                     Word -> Word,
-                                    Integer -> Integer
+                                    Integer -> Integer,
+                                    Natural -> Natural
   #-}
 integerSquareRoot :: Integral a => a -> a
 integerSquareRoot n
@@ -62,7 +65,8 @@ integerSquareRoot' = isqrtA
 {-# SPECIALISE integerSquareRootRem ::
         Int -> (Int, Int),
         Word -> (Word, Word),
-        Integer -> (Integer, Integer)
+        Integer -> (Integer, Integer),
+        Natural -> (Natural, Natural)
   #-}
 integerSquareRootRem :: Integral a => a -> (a, a)
 integerSquareRootRem n
@@ -90,7 +94,8 @@ integerSquareRootRem' n = (s, n - s * s)
 --   Checks for negativity and 'isPossibleSquare'.
 {-# SPECIALISE exactSquareRoot :: Int -> Maybe Int,
                                   Word -> Maybe Word,
-                                  Integer -> Maybe Integer
+                                  Integer -> Maybe Integer,
+                                  Natural -> Maybe Natural
   #-}
 exactSquareRoot :: Integral a => a -> Maybe a
 exactSquareRoot n
@@ -104,7 +109,8 @@ exactSquareRoot n
 --   is checked, if it is, the integer square root is calculated.
 {-# SPECIALISE isSquare :: Int -> Bool,
                            Word -> Bool,
-                           Integer -> Bool
+                           Integer -> Bool,
+                           Natural -> Bool
   #-}
 isSquare :: Integral a => a -> Bool
 isSquare n = n >= 0 && isSquare' n
@@ -117,7 +123,8 @@ isSquare n = n >= 0 && isSquare' n
 --   arguments may cause any kind of havoc.
 {-# SPECIALISE isSquare' :: Int -> Bool,
                             Word -> Bool,
-                            Integer -> Bool
+                            Integer -> Bool,
+                            Natural -> Bool
   #-}
 isSquare' :: Integral a => a -> Bool
 isSquare' n
@@ -138,8 +145,9 @@ isSquare' n
 --   the slower but more discriminating test 'isPossibleSquare2' is
 --   faster.
 {-# SPECIALISE isPossibleSquare :: Int -> Bool,
+                                   Word -> Bool,
                                    Integer -> Bool,
-                                   Word -> Bool
+                                   Natural -> Bool
   #-}
 isPossibleSquare :: Integral a => a -> Bool
 isPossibleSquare n =
@@ -161,8 +169,9 @@ isPossibleSquare n =
 --   numbers, where calculating the square root becomes more expensive,
 --   it is much faster (if the vast majority of tested numbers aren't squares).
 {-# SPECIALISE isPossibleSquare2 :: Int -> Bool,
+                                    Word -> Bool,
                                     Integer -> Bool,
-                                    Word -> Bool
+                                    Natural -> Bool
   #-}
 isPossibleSquare2 :: Integral a => a -> Bool
 isPossibleSquare2 n =

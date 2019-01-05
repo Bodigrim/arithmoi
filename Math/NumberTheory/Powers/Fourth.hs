@@ -28,14 +28,17 @@ import Data.Array.ST
 
 import Data.Bits
 
+import Numeric.Natural
+
 import Math.NumberTheory.Unsafe
 
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
 --   Throws an error on negaitve input.
 {-# SPECIALISE integerFourthRoot :: Int -> Int,
+                                    Word -> Word,
                                     Integer -> Integer,
-                                    Word -> Word
+                                    Natural -> Natural
   #-}
 integerFourthRoot :: Integral a => a -> a
 integerFourthRoot n
@@ -58,8 +61,9 @@ integerFourthRoot' n = newton4 n (approxBiSqrt n)
 -- | Returns @Nothing@ if @n@ is not a fourth power,
 --   @Just r@ if @n == r^4@ and @r >= 0@.
 {-# SPECIALISE exactFourthRoot :: Int -> Maybe Int,
+                                  Word -> Maybe Word,
                                   Integer -> Maybe Integer,
-                                  Word -> Maybe Word
+                                  Natural -> Maybe Natural
   #-}
 exactFourthRoot :: Integral a => a -> Maybe a
 exactFourthRoot 0 = Just 0
@@ -75,8 +79,9 @@ exactFourthRoot n
 --   First nonnegativity is checked, then the unchecked
 --   test is called.
 {-# SPECIALISE isFourthPower :: Int -> Bool,
+                                Word -> Bool,
                                 Integer -> Bool,
-                                Word -> Bool
+                                Natural -> Bool
   #-}
 isFourthPower :: Integral a => a -> Bool
 isFourthPower 0 = True
@@ -87,8 +92,9 @@ isFourthPower n = n > 0 && isFourthPower' n
 --   'isPossibleFourthPower' test, its integer fourth root
 --   is calculated.
 {-# SPECIALISE isFourthPower' :: Int -> Bool,
+                                 Word -> Bool,
                                  Integer -> Bool,
-                                 Word -> Bool
+                                 Natural -> Bool
   #-}
 isFourthPower' :: Integral a => a -> Bool
 isFourthPower' n = isPossibleFourthPower n && r2*r2 == n
@@ -100,8 +106,9 @@ isFourthPower' n = isPossibleFourthPower n && r2*r2 == n
 --   The condition is /not/ checked.
 --   This eliminates about 99.958% of numbers.
 {-# SPECIALISE isPossibleFourthPower :: Int -> Bool,
+                                        Word -> Bool,
                                         Integer -> Bool,
-                                        Word -> Bool
+                                        Natural -> Bool
   #-}
 isPossibleFourthPower :: Integral a => a -> Bool
 isPossibleFourthPower n =

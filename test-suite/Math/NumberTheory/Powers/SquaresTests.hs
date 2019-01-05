@@ -49,23 +49,23 @@ integerSquareRootProperty_Integer :: NonNegative Integer -> Bool
 integerSquareRootProperty_Integer = integerSquareRootProperty
 
 -- | Check that 'integerSquareRoot' returns the largest integer @m@ with @m*m <= n@, where @n@ has form @k@^2-1.
-integerSquareRootProperty2 :: Integral a => NonNegative a -> Bool
-integerSquareRootProperty2 (NonNegative k) = n < 0
+integerSquareRootProperty2 :: Integral a => Positive a -> Bool
+integerSquareRootProperty2 (Positive k) = n < 0
   || m >=0 && m * m <= n && (m + 1) ^ 2 /= n && m + 1 >= n `div` (m + 1)
   where
     n = k ^ 2 - 1
     m = integerSquareRoot n
 
 -- | Specialized to trigger 'isqrtInt''.
-integerSquareRootProperty2_Int :: NonNegative Int -> Bool
+integerSquareRootProperty2_Int :: Positive Int -> Bool
 integerSquareRootProperty2_Int = integerSquareRootProperty2
 
 -- | Specialized to trigger 'isqrtWord'.
-integerSquareRootProperty2_Word :: NonNegative Word -> Bool
+integerSquareRootProperty2_Word :: Positive Word -> Bool
 integerSquareRootProperty2_Word = integerSquareRootProperty2
 
 -- | Specialized to trigger 'isqrtInteger'.
-integerSquareRootProperty2_Integer :: NonNegative Integer -> Bool
+integerSquareRootProperty2_Integer :: Positive Integer -> Bool
 integerSquareRootProperty2_Integer = integerSquareRootProperty2
 
 #if WORD_SIZE_IN_BITS == 64

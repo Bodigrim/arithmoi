@@ -29,6 +29,8 @@ import Data.Bits
 import Data.List (foldl')
 import qualified Data.Set as Set
 
+import Numeric.Natural
+
 import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Utils  (shiftToOddCount
                                 , splitOff
@@ -49,10 +51,13 @@ import Math.NumberTheory.Utils.FromIntegral (intToWord, wordToInt)
 {-# SPECIALISE integerRoot :: Int -> Int -> Int,
                               Int -> Word -> Word,
                               Int -> Integer -> Integer,
+                              Int -> Natural -> Natural,
                               Word -> Int -> Int,
                               Word -> Word -> Word,
                               Word -> Integer -> Integer,
-                              Integer -> Integer -> Integer
+                              Word -> Natural -> Natural,
+                              Integer -> Integer -> Integer,
+                              Natural -> Natural -> Natural
   #-}
 integerRoot :: (Integral a, Integral b) => b -> a -> a
 integerRoot 1 n         = n
@@ -189,8 +194,9 @@ largePFPower bd n = rawPower ln n
 ------------------------------------------------------------------------------------------
 
 {-# SPECIALISE newtonK :: Int -> Int -> Int -> Int,
+                          Word -> Word -> Word -> Word,
                           Integer -> Integer -> Integer -> Integer,
-                          Word -> Word -> Word -> Word
+                          Natural -> Natural -> Natural -> Natural
   #-}
 newtonK :: Integral a => a -> a -> a -> a
 newtonK k n a = go (step a)
@@ -203,9 +209,10 @@ newtonK k n a = go (step a)
         where
           l = step m
 
-{-# SPECIALISE approxKthRoot :: Int -> Integer -> Integer,
-                                Int -> Int -> Int,
-                                Int -> Word -> Word
+{-# SPECIALISE approxKthRoot :: Int -> Int -> Int,
+                                Int -> Word -> Word,
+                                Int -> Integer -> Integer,
+                                Int -> Natural -> Natural
   #-}
 approxKthRoot :: Integral a => Int -> a -> a
 approxKthRoot k = fromInteger . appKthRoot k . fromIntegral

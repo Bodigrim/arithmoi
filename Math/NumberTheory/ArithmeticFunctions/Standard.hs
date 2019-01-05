@@ -202,9 +202,10 @@ liouvilleA = ArithmeticFunction (const $ Xor . odd) runXor
 -- | See 'carmichaelA'.
 carmichael :: (UniqueFactorisation n, Integral n) => n -> n
 carmichael = runFunction carmichaelA
-{- The specializations reflects available specializations of lcm. -}
-{-# SPECIALIZE carmichael :: Int -> Int #-}
+{-# SPECIALIZE carmichael :: Int     -> Int #-}
+{-# SPECIALIZE carmichael :: Word    -> Word #-}
 {-# SPECIALIZE carmichael :: Integer -> Integer #-}
+{-# SPECIALIZE carmichael :: Natural -> Natural #-}
 
 -- | Calculates the Carmichael function for a positive integer, that is,
 --   the (smallest) exponent of the group of units in @&#8484;/(n)@.

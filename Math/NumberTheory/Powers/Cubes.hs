@@ -28,6 +28,8 @@ import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
 
+import Numeric.Natural
+
 import Math.NumberTheory.Unsafe
 
 -- | Calculate the integer cube root of an integer @n@,
@@ -35,8 +37,9 @@ import Math.NumberTheory.Unsafe
 --   Note that this is not symmetric about @0@, for example
 --   @integerCubeRoot (-2) = (-2)@ while @integerCubeRoot 2 = 1@.
 {-# SPECIALISE integerCubeRoot :: Int -> Int,
+                                  Word -> Word,
                                   Integer -> Integer,
-                                  Word -> Word
+                                  Natural -> Natural
   #-}
 integerCubeRoot :: Integral a => a -> a
 integerCubeRoot 0 = 0
@@ -66,7 +69,8 @@ integerCubeRoot' n = newton3 n (approxCuRt n)
 --   @Just r@ if @n == r^3@.
 {-# SPECIALISE exactCubeRoot :: Int -> Maybe Int,
                                 Word -> Maybe Word,
-                                Integer -> Maybe Integer
+                                Integer -> Maybe Integer,
+                                Natural -> Maybe Natural
   #-}
 exactCubeRoot :: Integral a => a -> Maybe a
 exactCubeRoot 0 = Just 0
@@ -83,8 +87,9 @@ exactCubeRoot n
 
 -- | Test whether an integer is a cube.
 {-# SPECIALISE isCube :: Int -> Bool,
+                         Word -> Bool,
                          Integer -> Bool,
-                         Word -> Bool
+                         Natural -> Bool
   #-}
 isCube :: Integral a => a -> Bool
 isCube 0 = True
@@ -102,8 +107,9 @@ isCube n
 --   this is much faster than @let r = cubeRoot n in r*r*r == n@.
 --   The condition @n >= 0@ is /not/ checked.
 {-# SPECIALISE isCube' :: Int -> Bool,
+                          Word -> Bool,
                           Integer -> Bool,
-                          Word -> Bool
+                          Natural -> Bool
   #-}
 isCube' :: Integral a => a -> Bool
 isCube' !n = isPossibleCube n
@@ -115,8 +121,9 @@ isCube' !n = isPossibleCube n
 --   Only about 0.08% of all numbers pass this test.
 --   The precondition @n >= 0@ is /not/ checked.
 {-# SPECIALISE isPossibleCube :: Int -> Bool,
+                                 Word -> Bool,
                                  Integer -> Bool,
-                                 Word -> Bool
+                                 Natural -> Bool
   #-}
 isPossibleCube :: Integral a => a -> Bool
 isPossibleCube !n =
@@ -166,7 +173,6 @@ cubeRootIgr :: Integer -> Integer
 cubeRootIgr 0 = 0
 cubeRootIgr n = newton3 n (approxCuRt n)
 
-{-# SPECIALISE newton3 :: Int -> Int -> Int #-}
 {-# SPECIALISE newton3 :: Integer -> Integer -> Integer #-}
 newton3 :: Integral a => a -> a -> a
 newton3 n a = go (step a)

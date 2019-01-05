@@ -51,7 +51,7 @@ isPerfectPowerProperty (AnySign n) = (k > 1 && t) || (k == 1 && not t)
 
 -- | Check that the first component of 'highestPower' is square-free.
 highestPowerProperty :: Integral a => AnySign a -> Bool
-highestPowerProperty (AnySign n) = (n `elem` [-1, 0, 1] && k == 3) || (b ^ k == n && b' == b && k' == 1)
+highestPowerProperty (AnySign n) = (n + 1 `elem` [0, 1, 2] && k == 3) || (b ^ k == n && b' == b && k' == 1)
   where
     (b, k) = highestPower n
     (b', k') = highestPower b

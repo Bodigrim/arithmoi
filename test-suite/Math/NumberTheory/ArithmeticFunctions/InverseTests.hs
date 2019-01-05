@@ -22,7 +22,6 @@ import Test.Tasty.HUnit
 
 import Data.Semiring (Semiring(..))
 import qualified Data.Set as S
-import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.Inverse
@@ -241,18 +240,8 @@ sigmaSpecialCase4 = assertBool "200 should be in inverseSigma(sigma(200))" $
 testSuite :: TestTree
 testSuite = testGroup "Inverse"
   [ testGroup "Totient"
-    [ testGroup "forward"
-      [ testSmallAndQuick "Int"     (totientProperty1 :: Positive Int     -> Bool)
-      , testSmallAndQuick "Word"    (totientProperty1 :: Positive Word    -> Bool)
-      , testSmallAndQuick "Integer" (totientProperty1 :: Positive Integer -> Bool)
-      , testSmallAndQuick "Natural" (totientProperty1 :: Positive Natural -> Bool)
-      ]
-    , testGroup "backward"
-      [ testSmallAndQuick "Int"     (totientProperty2 :: Positive Int     -> Bool)
-      , testSmallAndQuick "Word"    (totientProperty2 :: Positive Word    -> Bool)
-      , testSmallAndQuick "Integer" (totientProperty2 :: Positive Integer -> Bool)
-      , testSmallAndQuick "Natural" (totientProperty2 :: Positive Natural -> Bool)
-      ]
+    [ testIntegralPropertyNoLarge "forward"  totientProperty1
+    , testIntegralPropertyNoLarge "backward" totientProperty2
     , testGroup "count"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] totientSpecialCases1)
     , testGroup "min"
@@ -261,18 +250,8 @@ testSuite = testGroup "Inverse"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] totientSpecialCases3)
     ]
   , testGroup "Sigma1"
-    [ testGroup "forward"
-      [ testSmallAndQuick "Int"     (sigmaProperty1 :: Positive Int     -> Bool)
-      , testSmallAndQuick "Word"    (sigmaProperty1 :: Positive Word    -> Bool)
-      , testSmallAndQuick "Integer" (sigmaProperty1 :: Positive Integer -> Bool)
-      , testSmallAndQuick "Natural" (sigmaProperty1 :: Positive Natural -> Bool)
-      ]
-    , testGroup "backward"
-      [ testSmallAndQuick "Int"     (sigmaProperty2 :: Positive Int     -> Bool)
-      , testSmallAndQuick "Word"    (sigmaProperty2 :: Positive Word    -> Bool)
-      , testSmallAndQuick "Integer" (sigmaProperty2 :: Positive Integer -> Bool)
-      , testSmallAndQuick "Natural" (sigmaProperty2 :: Positive Natural -> Bool)
-      ]
+    [ testIntegralPropertyNoLarge "forward"  sigmaProperty1
+    , testIntegralPropertyNoLarge "backward" sigmaProperty2
     , testCase "200" sigmaSpecialCase4
     , testGroup "count"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] sigmaSpecialCases1)
