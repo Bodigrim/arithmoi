@@ -43,6 +43,7 @@ module Math.NumberTheory.Recurrences.Bilinear
   , bernoulli
   , euler
   , eulerPolyAt1
+  , faulhaberPoly
   ) where
 
 import Data.List
@@ -174,6 +175,22 @@ bernoulli :: Integral a => [Ratio a]
 bernoulli = helperForB_E_EP id (map recip [1..])
 {-# SPECIALIZE bernoulli :: [Ratio Int] #-}
 {-# SPECIALIZE bernoulli :: [Rational] #-}
+
+-- | <https://en.wikipedia.org/wiki/Faulhaber%27s_formula Faulhaber's formula>.
+--
+-- >>> sum (map (^ 10) [0..100])
+-- sum (map (^ 10) [0..100])
+-- >>> sum $ zipWith (*) (faulhaberPoly 10) (iterate (* 100) 1)
+-- 959924142434241924250 % 1
+faulhaberPoly :: Integral a => Int -> [Ratio a]
+-- Implementation by https://github.com/CarlEdman
+faulhaberPoly p
+  = zipWith (*) ((0:)
+  $ reverse
+  $ take (p+1) $ bernoulli)
+  $ map (% (fromIntegral p+1))
+  $ zipWith (*) (iterate negate (if odd p then 1 else -1))
+  $ binomial !! (fromIntegral p+1)
 
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
