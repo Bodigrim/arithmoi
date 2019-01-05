@@ -171,7 +171,10 @@ powMod mx a
 "powMod/2/Integer"     forall x. powMod x (2 :: Integer) = let u = x in u*u
 "powMod/3/Integer"     forall x. powMod x (3 :: Integer) = let u = x in u*u*u
 "powMod/2/Int"         forall x. powMod x (2 :: Int)     = let u = x in u*u
-"powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u #-}
+"powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u
+"powMod/2/Word"        forall x. powMod x (2 :: Word)    = let u = x in u*u
+"powMod/3/Word"        forall x. powMod x (3 :: Word)    = let u = x in u*u*u
+#-}
 
 -- | Infix synonym of 'powMod'.
 (^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m

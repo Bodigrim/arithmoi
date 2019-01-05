@@ -37,6 +37,7 @@ import Control.Monad (foldM)
 import Data.Foldable
 import Data.Ratio
 import GHC.TypeNats.Compat
+import Numeric.Natural
 
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Euclidean
@@ -61,7 +62,9 @@ chineseCoprime (n1, m1) (n2, m2) = case d of
     (d, u, v) = extendedGCD m1 m2
 
 {-# SPECIALISE chineseCoprime :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
+{-# SPECIALISE chineseCoprime :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
 {-# SPECIALISE chineseCoprime :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
+{-# SPECIALISE chineseCoprime :: (Natural, Natural) -> (Natural, Natural) -> Maybe Natural #-}
 
 -- | 'chinese' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
 -- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@, if exists.
@@ -100,7 +103,9 @@ chinese (n1, m1) (n2, m2)
         (k2, _) = splitOff p m2
 
 {-# SPECIALISE chinese :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
+{-# SPECIALISE chinese :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
 {-# SPECIALISE chinese :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
+{-# SPECIALISE chinese :: (Natural, Natural) -> (Natural, Natural) -> Maybe Natural #-}
 
 isCompatible :: KnownNat m => Mod m -> Rational -> Bool
 isCompatible n r = case invertMod (fromInteger (denominator r)) of
