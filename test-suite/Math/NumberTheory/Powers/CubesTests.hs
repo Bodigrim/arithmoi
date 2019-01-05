@@ -36,9 +36,9 @@ integerCubeRootProperty (AnySign n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
   where
     m = integerCubeRoot n
     cond
-      | m == -1   = n == -1
-      | m < 0     = (m + 1) ^ 2 <= n `div` (m + 1)
-      | otherwise = (m + 1) ^ 2 >= n `div` (m + 1)
+      | m < 0 && m == -1 = n == -1
+      | m < 0            = (m + 1) ^ 2 <= n `div` (m + 1)
+      | otherwise        = (m + 1) ^ 2 >= n `div` (m + 1)
 
 -- | Specialized to trigger 'cubeRootInt''.
 integerCubeRootProperty_Int :: AnySign Int -> Bool
@@ -54,14 +54,14 @@ integerCubeRootProperty_Integer = integerCubeRootProperty
 
 -- | Check that 'integerCubeRoot' returns the largest integer @m@ with @m^3 <= n@, , where @n@ has form @k@^3-1.
 integerCubeRootProperty2 :: Integral a => AnySign a -> Bool
-integerCubeRootProperty2 (AnySign k) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
+integerCubeRootProperty2 (AnySign k) = k == 0 || (m ^ 3 <= n && (m + 1) ^ 3 /= n && cond)
   where
     n = k ^ 3 - 1
     m = integerCubeRoot n
     cond
-      | m == -1   = n == -1
-      | m < 0     = (m + 1) ^ 2 <= n `div` (m + 1)
-      | otherwise = (m + 1) ^ 2 >= n `div` (m + 1)
+      | m < 0 && m == -1 = n == -1
+      | m < 0            = (m + 1) ^ 2 <= n `div` (m + 1)
+      | otherwise        = (m + 1) ^ 2 >= n `div` (m + 1)
 
 -- | Specialized to trigger 'cubeRootInt''.
 integerCubeRootProperty2_Int :: AnySign Int -> Bool

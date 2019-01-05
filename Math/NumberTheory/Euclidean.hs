@@ -151,6 +151,7 @@ instance Euclidean Integer where
   -- https://ghc.haskell.org/trac/ghc/ticket/15350
   -- extendedGCD = gcdExtInteger
 
+-- | Beware that 'extendedGCD' does not make any sense for 'Natural'.
 instance Euclidean Natural where
   quotRem = P.quotRem
   divMod  = P.divMod
