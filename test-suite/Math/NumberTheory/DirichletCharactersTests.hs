@@ -12,7 +12,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.DirichletCharactersTests where
@@ -41,7 +40,7 @@ rootOfUnityTest n (Positive d) = toComplex ((d `div` gcd n d) `stimes` toRootOfU
 -- | This tests property 6 from https://en.wikipedia.org/wiki/Dirichlet_character#Axiomatic_definition
 dirCharOrder :: forall n. KnownNat n => DirichletCharacter n -> Bool
 dirCharOrder chi = isPrincipal (totient n `stimes` chi)
-  where n = natVal (Proxy :: Proxy n)
+  where n = natVal @n Proxy
 
 -- | Tests wikipedia's property 3 (note 1,2,5 are essentially enforced by the type system).
 testMultiplicative :: KnownNat n => DirichletCharacter n -> Natural -> Natural -> Bool
@@ -58,7 +57,7 @@ dirCharProperty :: (forall n. KnownNat n => DirichletCharacter n -> a) -> Positi
 dirCharProperty test (Positive n) i =
   case someNatVal n of
     SomeNat (Proxy :: Proxy n) -> test chi
-      where chi = indexToChar (i `mod` totient n) :: DirichletCharacter n
+      where chi = indexToChar @n (i `mod` totient n)
 
 -- | There should be phi(n) characters
 countCharacters :: Positive Natural -> Bool
@@ -73,12 +72,12 @@ principalCase (Positive n) =
   case someNatVal n of
     SomeNat (Proxy :: Proxy n) ->
       mapMaybe (generalEval chi) [minBound..maxBound] == genericReplicate (totient n) mempty
-        where chi = principalChar :: DirichletCharacter n
+        where chi = principalChar @n
 
 -- | Test the orthogonality relations https://en.wikipedia.org/wiki/Dirichlet_character#Character_orthogonality
 orthogonality1 :: forall n. KnownNat n => DirichletCharacter n -> Bool
 orthogonality1 chi = magnitude (total - correct) < (1e-13 :: Double)
-  where n = natVal (Proxy :: Proxy n)
+  where n = natVal @n Proxy
         total = sum [toFunction chi a | a <- [0..n-1]]
         correct = if isPrincipal chi
                      then fromIntegral $ totient n
@@ -107,8 +106,8 @@ inducedCheck chi (Positive k) =
       case chi2 of
         Just chi2' -> and [generalEval chi2' (fromIntegral j) == generalEval chi (fromIntegral j) | j <- [0..d*k-1], gcd j (d*k) == 1]
         _ -> False
-        where chi2 = induced chi :: Maybe (DirichletCharacter n)
-  where d = natVal (Proxy :: Proxy d)
+        where chi2 = induced @n chi
+  where d = natVal @d Proxy
 
 -- | The jacobi character agrees with the jacobi symbol
 jacobiCheck :: Positive Natural -> Bool
