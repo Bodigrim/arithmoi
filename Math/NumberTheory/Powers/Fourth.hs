@@ -18,19 +18,17 @@ module Math.NumberTheory.Powers.Fourth
 
 #include "MachDeps.h"
 
+import Control.Monad.ST
+import Data.Bits
+import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as MV
+
 import GHC.Base
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
 
-import Data.Array.Unboxed
-import Data.Array.ST
-
-import Data.Bits
-
 import Numeric.Natural
-
-import Math.NumberTheory.Unsafe
 
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
@@ -111,10 +109,10 @@ isFourthPower' n = isPossibleFourthPower n && r2*r2 == n
                                         Natural -> Bool
   #-}
 isPossibleFourthPower :: Integral a => a -> Bool
-isPossibleFourthPower n =
-        biSqRes256 `unsafeAt` (fromIntegral n .&. 255)
-      && biSqRes425 `unsafeAt` (fromIntegral (n `rem` 425))
-      && biSqRes377 `unsafeAt` (fromIntegral (n `rem` 377))
+isPossibleFourthPower n
+  =  V.unsafeIndex biSqRes256 (fromIntegral n .&. 255)
+  && V.unsafeIndex biSqRes425 (fromIntegral (n `rem` 425))
+  && V.unsafeIndex biSqRes377 (fromIntegral (n `rem` 377))
 
 {-# SPECIALISE newton4 :: Integer -> Integer -> Integer #-}
 newton4 :: Integral a => a -> a -> a
@@ -156,28 +154,31 @@ appBiSqrt n@(Jp# bn#)
 appBiSqrt _ = error "integerFourthRoot': negative argument"
 
 
-biSqRes256 :: UArray Int Bool
-biSqRes256 = runSTUArray $ do
-    ar <- newArray (0,255) False
-    let note 257 = return ar
-        note i = unsafeWrite ar i True >> note (i+16)
-    unsafeWrite ar 0 True
-    unsafeWrite ar 16 True
+biSqRes256 :: V.Vector Bool
+biSqRes256 = runST $ do
+    ar <- MV.replicate 256 False
+    let note 257 = return ()
+        note i = MV.unsafeWrite ar i True >> note (i+16)
+    MV.unsafeWrite ar 0 True
+    MV.unsafeWrite ar 16 True
     note 1
+    V.unsafeFreeze ar
 
-biSqRes425 :: UArray Int Bool
-biSqRes425 = runSTUArray $ do
-    ar <- newArray (0,424) False
-    let note 154 = return ar
-        note i = unsafeWrite ar ((i*i*i*i) `rem` 425) True >> note (i+1)
+biSqRes425 :: V.Vector Bool
+biSqRes425 = runST $ do
+    ar <- MV.replicate 425 False
+    let note 154 = return ()
+        note i = MV.unsafeWrite ar ((i*i*i*i) `rem` 425) True >> note (i+1)
     note 0
+    V.unsafeFreeze ar
 
-biSqRes377 :: UArray Int Bool
-biSqRes377 = runSTUArray $ do
-    ar <- newArray (0,376) False
-    let note 144 = return ar
-        note i = unsafeWrite ar ((i*i*i*i) `rem` 377) True >> note (i+1)
+biSqRes377 :: V.Vector Bool
+biSqRes377 = runST $ do
+    ar <- MV.replicate 377 False
+    let note 144 = return ()
+        note i = MV.unsafeWrite ar ((i*i*i*i) `rem` 377) True >> note (i+1)
     note 0
+    V.unsafeFreeze ar
 
 biSqrtInt :: Int -> Int
 biSqrtInt 0 = 0

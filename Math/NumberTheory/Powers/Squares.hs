@@ -23,14 +23,12 @@ module Math.NumberTheory.Powers.Squares
 
 #include "MachDeps.h"
 
-import Data.Array.Unboxed
-import Data.Array.ST
-
+import Control.Monad.ST
 import Data.Bits
+import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as MV
 
 import Numeric.Natural
-
-import Math.NumberTheory.Unsafe
 
 import Math.NumberTheory.Powers.Squares.Internal
 
@@ -150,10 +148,10 @@ isSquare' n
                                    Natural -> Bool
   #-}
 isPossibleSquare :: Integral a => a -> Bool
-isPossibleSquare n =
-  unsafeAt sr256 ((fromIntegral n) .&. 255)
-  && unsafeAt sr693 (fromIntegral (n `rem` 693))
-  && unsafeAt sr325 (fromIntegral (n `rem` 325))
+isPossibleSquare n
+  =  V.unsafeIndex sr256 ((fromIntegral n) .&. 255)
+  && V.unsafeIndex sr693 (fromIntegral (n `rem` 693))
+  && V.unsafeIndex sr325 (fromIntegral (n `rem` 325))
 
 -- | Test whether a non-negative number may be a square.
 --   Non-negativity is not checked, passing negative arguments may
@@ -174,51 +172,52 @@ isPossibleSquare n =
                                     Natural -> Bool
   #-}
 isPossibleSquare2 :: Integral a => a -> Bool
-isPossibleSquare2 n =
-  unsafeAt sr256 ((fromIntegral n) .&. 255)
-  && unsafeAt sr819  (fromIntegral (n `rem` 819))
-  && unsafeAt sr1025 (fromIntegral (n `rem` 1025))
-  && unsafeAt sr2047 (fromIntegral (n `rem` 2047))
-  && unsafeAt sr4097 (fromIntegral (n `rem` 4097))
-  && unsafeAt sr341  (fromIntegral (n `rem` 341))
+isPossibleSquare2 n
+  =  V.unsafeIndex sr256  ((fromIntegral n) .&. 255)
+  && V.unsafeIndex sr819  (fromIntegral (n `rem` 819))
+  && V.unsafeIndex sr1025 (fromIntegral (n `rem` 1025))
+  && V.unsafeIndex sr2047 (fromIntegral (n `rem` 2047))
+  && V.unsafeIndex sr4097 (fromIntegral (n `rem` 4097))
+  && V.unsafeIndex sr341  (fromIntegral (n `rem` 341))
 
 -----------------------------------------------------------------------------
 --  Auxiliary Stuff
 
 -- Make an array indicating whether a remainder is a square remainder.
-sqRemArray :: Int -> UArray Int Bool
-sqRemArray md = runSTUArray $ do
-  arr <- newArray (0,md-1) False
+sqRemArray :: Int -> V.Vector Bool
+sqRemArray md = runST $ do
+  ar <- MV.replicate md False
   let !stop = (md `quot` 2) + 1
       fill k
-        | k < stop  = unsafeWrite arr ((k*k) `rem` md) True >> fill (k+1)
-        | otherwise = return arr
-  unsafeWrite arr 0 True
-  unsafeWrite arr 1 True
+        | k < stop  = MV.unsafeWrite ar ((k*k) `rem` md) True >> fill (k+1)
+        | otherwise = return ()
+  MV.unsafeWrite ar 0 True
+  MV.unsafeWrite ar 1 True
   fill 2
+  V.unsafeFreeze ar
 
-sr256 :: UArray Int Bool
+sr256 :: V.Vector Bool
 sr256 = sqRemArray 256
 
-sr819 :: UArray Int Bool
+sr819 :: V.Vector Bool
 sr819 = sqRemArray 819
 
-sr4097 :: UArray Int Bool
+sr4097 :: V.Vector Bool
 sr4097 = sqRemArray 4097
 
-sr341 :: UArray Int Bool
+sr341 :: V.Vector Bool
 sr341 = sqRemArray 341
 
-sr1025 :: UArray Int Bool
+sr1025 :: V.Vector Bool
 sr1025 = sqRemArray 1025
 
-sr2047 :: UArray Int Bool
+sr2047 :: V.Vector Bool
 sr2047 = sqRemArray 2047
 
-sr693 :: UArray Int Bool
+sr693 :: V.Vector Bool
 sr693 = sqRemArray 693
 
-sr325 :: UArray Int Bool
+sr325 :: V.Vector Bool
 sr325 = sqRemArray 325
 
 -- Specialisations for Int, Word, and Integer
