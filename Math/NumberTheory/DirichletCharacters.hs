@@ -31,6 +31,7 @@ module Math.NumberTheory.DirichletCharacters
   , indexToChar
   , indicesToChars
   , characterNumber
+  , allChars
   -- ** Special Dirichlet characters
   , principalChar
   , isPrincipal
@@ -93,7 +94,8 @@ data DirichletFactor = OddPrime { _getPrime :: Prime Natural
                                 , _getGenerator :: Natural
                                 , _getValue :: RootOfUnity
                                 }
-                     | TwoPower { _getPower :: Word
+                     | TwoPower { _getPower2 :: Int -- this ought to be Word, but many applications
+                                                    -- needed to use wordToInt, so Int is cleaner
                                 , _getFirstValue :: RootOfUnity
                                 , _getSecondValue :: RootOfUnity
                                 }
@@ -133,7 +135,7 @@ toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
 
 -- | This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 instance Semigroup RootOfUnity where
-  (RootOfUnity q1) <> (RootOfUnity q2) = toRootOfUnity (q1 + q2)
+  RootOfUnity q1 <> RootOfUnity q2 = toRootOfUnity (q1 + q2)
   stimes k (RootOfUnity q) = toRootOfUnity (q * fromIntegral k)
 
 instance Monoid RootOfUnity where
@@ -159,10 +161,10 @@ generator p k
 
 -- | Implement the function \(\lambda\) from page 5 of
 -- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf
-lambda :: Integer -> Word -> Integer
-lambda x e = ((powMod x (2*modulus) largeMod - 1) `shiftR` wordToInt (e+1)) .&. (modulus - 1)
-  where modulus = bit (wordToInt $ e-2)
-        largeMod = bit (wordToInt $ 2*e - 1)
+lambda :: Integer -> Int -> Integer
+lambda x e = ((powMod x (2*modulus) largeMod - 1) `shiftR` (e+1)) .&. (modulus - 1)
+  where modulus = bit (e-2)
+        largeMod = bit (2*e - 1)
 
 -- | For elements of the multiplicative group \((\mathbb{Z}/n\mathbb{Z})^*\), a Dirichlet
 -- character evaluates to a root of unity.
@@ -180,9 +182,9 @@ evalFactor m =
                    <> lambda m'' k `stimes` b
                                        where m' = m .&. kBits
                                              m'' = if testBit m 1
-                                                      then bit (wordToInt k) - m'
+                                                      then bit k - m'
                                                       else m'
-                                             kBits = bit (wordToInt k) - 1
+                                             kBits = bit k - 1
 
 -- | A character can evaluate to a root of unity or zero: represented by @Nothing@.
 generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
@@ -240,8 +242,8 @@ characterNumber (Generated y) = foldl' go 0 y
           where p' = fromIntegral (unPrime p)
                 m = p'^(k-1)*(p'-1)
         go x (TwoPower k a b)   = x' * 2 + numerator (fromRootOfUnity a * (2 % 1))
-          where m = bit $ wordToInt $ k-2 :: Integer
-                x' = x `shiftL` wordToInt (k-2) + numerator (fromRootOfUnity b * fromIntegral m)
+          where m = bit (k-2) :: Integer
+                x' = x `shiftL` (k-2) + numerator (fromRootOfUnity b * fromIntegral m)
 
 -- | Give the dirichlet character from its number.
 -- Inverse of `characterNumber`.
@@ -249,12 +251,16 @@ indexToChar :: forall n a. (KnownNat n, Integral a) => a -> DirichletCharacter n
 indexToChar = runIdentity . indicesToChars . Identity
 
 -- | Give a collection of dirichlet characters from their numbers. This may be more efficient than
--- `indexToChar` for multiple characters, as it prevents some internal recalculations, such as
--- factorising the modulus.
+-- `indexToChar` for multiple characters, as it prevents some internal recalculations.
 indicesToChars :: forall n a f. (KnownNat n, Integral a, Functor f) => f a -> f (DirichletCharacter n)
 indicesToChars = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
   where n = natVal (Proxy :: Proxy n)
         (Product m, t) = mkTemplate n
+
+-- | List all characters for the modulus. This is preferred to using @[minBound..maxBound]@.
+allChars :: forall n. (KnownNat n) => [DirichletCharacter n]
+allChars = indicesToChars [0..m-1]
+  where m = totient $ natVal (Proxy :: Proxy n)
 
 makeChar :: (Integral a) => DirichletCharacter n -> a -> DirichletCharacter n
 makeChar x = runIdentity . bulkMakeChars x . Identity
@@ -273,7 +279,7 @@ data Template = OddTemplate { _getPrime'     :: Prime Natural
                             , _getGenerator' :: !Natural
                             , _getModulus'   :: !Natural
                             }
-              | TwoTemplate { _getPower'     :: Word
+              | TwoTemplate { _getPower2'    :: Int
                             , _getModulus'   :: !Natural
                             } -- the modulus is derivable from the other values, but calculation
                               -- may be expensive, so we pre-calculate it
@@ -286,7 +292,7 @@ templateFromCharacter (Generated t) = mapM go t
           where p' = unPrime p
                 m = p'^(k-1)*(p'-1)
         go (TwoPower k _ _) = (Product (2*m), TwoTemplate k m)
-          where m = bit $ wordToInt $ k-2
+          where m = bit (k-2)
 
 -- TODO (idea): Template is effectively a CyclicFactor of a generalised CyclicGroup...
 -- see issue #154
@@ -294,12 +300,12 @@ templateFromCharacter (Generated t) = mapM go t
 mkTemplate :: Natural -> (Product Natural, [Template])
 mkTemplate = go . factorise
   where go :: [(Prime Natural, Word)] -> (Product Natural, [Template])
-        go ((unPrime -> 2, 1):xs) = foldMap odds xs
-        go ((unPrime -> 2, k):xs) = (Product (2*m), [TwoTemplate k m]) <> foldMap odds xs
-          where m = bit $ wordToInt $ k-2
-        go xs = foldMap odds xs
-        odds :: (Prime Natural, Word) -> (Product Natural, [Template])
-        odds (p, k) = (Product m, [OddTemplate p k (generator p k) m])
+        go ((unPrime -> 2, 1):xs) = mapM odds xs
+        go ((unPrime -> 2, wordToInt -> k):xs) = (Product (2*m), [TwoTemplate k m]) <> mapM odds xs
+          where m = bit (k-2)
+        go xs = mapM odds xs
+        odds :: (Prime Natural, Word) -> (Product Natural, Template)
+        odds (p, k) = (Product m, OddTemplate p k (generator p k) m)
           where p' = unPrime p
                 m = p'^(k-1)*(p'-1)
 
@@ -341,21 +347,21 @@ induced (Generated start) = if n `rem` d == 0
         combine t [] = plain t
         combine ((p1,k1):xs) (y:ys)
           -- TODO: consider tidying
-          | unPrime p1 == 2, TwoPower _ a b <- y = TwoPower k1 a b: combine xs ys
+          | unPrime p1 == 2, TwoPower _ a b <- y = TwoPower (wordToInt k1) a b: combine xs ys
           | OddPrime p2 1 _g a <- y, p1 == p2 =
                              OddPrime p2 k1 (generator p2 k1) a: combine xs ys
             -- TODO: generator p2 k1 will be g or g + p2, and we already know g is a primroot mod p
             -- so should be able to save work instead of running generator
           | OddPrime p2 _ g a <- y, p1 == p2 =
                              OddPrime p2 k1 g a: combine xs ys
-          | unPrime p1 == 2, k1 >= 2 = TwoPower k1 mempty mempty: combine xs (y:ys)
+          | unPrime p1 == 2, k1 >= 2 = TwoPower (wordToInt k1) mempty mempty: combine xs (y:ys)
           | unPrime p1 == 2 = combine xs (y:ys)
           | otherwise = OddPrime p1 k1 (generator p1 k1) mempty: combine xs (y:ys)
         plain :: [(Prime Natural, Word)] -> [DirichletFactor]
         plain [] = []
         plain f@((p,k):xs) = case (unPrime p, k) of
                                (2,1) -> map rest xs
-                               (2,_) -> TwoPower k mempty mempty: map rest xs
+                               (2,_) -> TwoPower (wordToInt k) mempty mempty: map rest xs
                                _ -> map rest f
         rest :: (Prime Natural, Word) -> DirichletFactor
         rest (p,k) = OddPrime p k (generator p k) mempty
@@ -402,7 +408,7 @@ toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
 validChar :: forall n. KnownNat n => DirichletCharacter n -> Bool
 validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs
   where correctDecomposition = removeTwo (factorise n) == map getPP xs
-        getPP (TwoPower k _ _) = (two, k)
+        getPP (TwoPower k _ _) = (two, fromIntegral k)
         getPP (OddPrime p k _ _) = (p, k)
         removeTwo ((unPrime -> 2,1):ys) = ys
         removeTwo ys = ys
