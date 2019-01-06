@@ -45,25 +45,24 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
-import Data.Bits                                  (Bits(..))
-import Data.Complex                               (Complex, cis)
-import Data.Functor.Identity                      (Identity(..))
-import Data.List                                  (mapAccumL, foldl')
-import Data.Proxy                                 (Proxy(..))
-import Data.Ratio                                 (Rational, Ratio, (%), numerator, denominator)
-import Data.Semigroup                             (Semigroup(..), Product(..))
-import GHC.TypeNats.Compat                        (Nat, natVal)
-import Numeric.Natural                            (Natural)
+import Data.Bits                                           (Bits(..))
+import Data.Complex                                        (Complex, cis)
+import Data.Functor.Identity                               (Identity(..))
+import Data.List                                           (mapAccumL, foldl')
+import Data.Proxy                                          (Proxy(..))
+import Data.Ratio                                          (Rational, Ratio, (%), numerator, denominator)
+import Data.Semigroup                                      (Semigroup(..), Product(..))
+import GHC.TypeNats.Compat                                 (Nat, natVal)
+import Numeric.Natural                                     (Natural)
 
-import Math.NumberTheory.ArithmeticFunctions      (totient)
-import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod(..), getVal, Mod, isMultElement)
-import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
-import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
-import Math.NumberTheory.Powers                   (powMod)
-import Math.NumberTheory.Primes                   (primes)
-import Math.NumberTheory.Utils.FromIntegral       (wordToInt)
-
-import Math.NumberTheory.Moduli.PrimitiveRoot     (isPrimitiveRoot', CyclicGroup(..))
+import Math.NumberTheory.ArithmeticFunctions               (totient)
+import Math.NumberTheory.Moduli.Class                      (KnownNat, MultMod(..), getVal, Mod, isMultElement)
+import Math.NumberTheory.Moduli.DiscreteLogarithm.Internal (discreteLogarithmPP)
+import Math.NumberTheory.Moduli.PrimitiveRoot              (isPrimitiveRoot', CyclicGroup(..))
+import Math.NumberTheory.Powers                            (powMod)
+import Math.NumberTheory.Primes                            (primes)
+import Math.NumberTheory.UniqueFactorisation               (UniqueFactorisation, unPrime, Prime, factorise)
+import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
 -- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
