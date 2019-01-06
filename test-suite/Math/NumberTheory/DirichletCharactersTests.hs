@@ -11,6 +11,9 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.DirichletCharactersTests where
 
@@ -28,6 +31,7 @@ import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal)
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.DirichletCharacters
+import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
 
@@ -41,34 +45,35 @@ dirCharOrder chi = isPrincipal (totient n `stimes` chi)
 
 -- | Tests wikipedia's property 3 (note 1,2,5 are essentially enforced by the type system).
 testMultiplicative :: KnownNat n => DirichletCharacter n -> Natural -> Natural -> Bool
-testMultiplicative chi a b = chiAB == chiAchiB
+testMultiplicative chi (fromIntegral -> a) (fromIntegral -> b) = chiAB == chiAchiB
   where chi' = generalEval chi
-        a' = fromIntegral a
-        b' = fromIntegral b
-        chiAB = chi' (a'*b')
-        chiAchiB = (<>) <$> chi' a' <*> chi' b'
+        chiAB = chi' (a*b)
+        chiAchiB = (<>) <$> chi' a <*> chi' b
 
 -- | Test property 4 from wikipedia
 testAtOne :: KnownNat n => DirichletCharacter n -> Bool
 testAtOne chi = evaluate chi mempty == mempty
 
 dirCharProperty :: (forall n. KnownNat n => DirichletCharacter n -> a) -> Positive Natural -> Natural -> a
-dirCharProperty test (Positive n) i = case someNatVal n of
-                                        SomeNat (Proxy :: Proxy n) -> test chi
-                                          where chi = indexToChar (i `mod` totient n) :: DirichletCharacter n
+dirCharProperty test (Positive n) i =
+  case someNatVal n of
+    SomeNat (Proxy :: Proxy n) -> test chi
+      where chi = indexToChar (i `mod` totient n) :: DirichletCharacter n
 
 -- | There should be phi(n) characters
 countCharacters :: Positive Natural -> Bool
-countCharacters (Positive n) = case someNatVal n of
-                                 SomeNat (Proxy :: Proxy n) ->
-                                   genericLength (nub [minBound :: DirichletCharacter n .. maxBound]) == totient n
+countCharacters (Positive n) =
+  case someNatVal n of
+    SomeNat (Proxy :: Proxy n) ->
+      genericLength (nub [minBound :: DirichletCharacter n .. maxBound]) == totient n
 
 -- | The principal character should be 1 at all phi(n) places
 principalCase :: Positive Natural -> Bool
-principalCase (Positive n) = case someNatVal n of
-                             SomeNat (Proxy :: Proxy n) ->
-                               mapMaybe (generalEval chi) [minBound..maxBound] == genericReplicate (totient n) mempty
-                                 where chi = principalChar :: DirichletCharacter n
+principalCase (Positive n) =
+  case someNatVal n of
+    SomeNat (Proxy :: Proxy n) ->
+      mapMaybe (generalEval chi) [minBound..maxBound] == genericReplicate (totient n) mempty
+        where chi = principalChar :: DirichletCharacter n
 
 -- | Test the orthogonality relations https://en.wikipedia.org/wiki/Dirichlet_character#Character_orthogonality
 orthogonality1 :: forall n. KnownNat n => DirichletCharacter n -> Bool
@@ -80,13 +85,14 @@ orthogonality1 chi = magnitude (total - correct) < (1e-13 :: Double)
                      else 0
 
 orthogonality2 :: Positive Natural -> Integer -> Bool
-orthogonality2 (Positive n) a = case a `modulo` n of
-                                  SomeMod a' -> magnitude (total - correct) < (1e-13 :: Double)
-                                    where total = sum [maybe 0 toComplex (generalEval chi a') | chi <- [minBound .. maxBound]]
-                                          correct = if a' == 1
-                                                       then fromIntegral $ totient n
-                                                       else 0
-                                  InfMod {} -> False
+orthogonality2 (Positive n) a =
+  case a `modulo` n of
+    SomeMod a' -> magnitude (total - correct) < (1e-13 :: Double)
+      where total = sum [maybe 0 toComplex (generalEval chi a') | chi <- [minBound .. maxBound]]
+            correct = if a' == 1
+                         then fromIntegral $ totient n
+                         else 0
+    InfMod {} -> False
 
 -- | Manually confirm isRealCharacter is correct (in both directions)
 realityCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
@@ -104,6 +110,15 @@ inducedCheck chi (Positive k) =
         where chi2 = induced chi :: Maybe (DirichletCharacter n)
   where d = natVal (Proxy :: Proxy d)
 
+-- | The jacobi character agrees with the jacobi symbol
+jacobiCheck :: Positive Natural -> Bool
+jacobiCheck (Positive n) =
+  case someNatVal (2*n+1) of
+    SomeNat (Proxy :: Proxy n) ->
+      case jacobiCharacter @n of
+        Just chi -> and [toRealFunction chi (fromIntegral j) == symbolToIntegral (jacobi j (2*n+1)) | j <- [0..2*n]]
+        _ -> False
+
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
   [ testSmallAndQuick "RootOfUnity contains roots of unity" rootOfUnityTest
@@ -115,5 +130,6 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Orthogonality relation 1" (dirCharProperty orthogonality1)
   , testSmallAndQuick "Orthogonality relation 2" orthogonality2
   , testSmallAndQuick "Real character checking is valid" (dirCharProperty realityCheck)
+  , testSmallAndQuick "Jacobi character matches symbol" jacobiCheck
   , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
   ]

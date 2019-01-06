@@ -34,13 +34,13 @@ module Math.NumberTheory.DirichletCharacters
   -- ** Special Dirichlet characters
   , principalChar
   , isPrincipal
-  , jacobiCharacter
   , induced
   -- ** Real Dirichlet characters
   , RealCharacter
   , isRealCharacter
   , getRealChar
   , toRealFunction
+  , jacobiCharacter
   -- * Debugging
   , validChar
   ) where
@@ -51,13 +51,12 @@ import Data.Functor.Identity                      (Identity(..))
 import Data.List                                  (mapAccumL, foldl')
 import Data.Proxy                                 (Proxy(..))
 import Data.Ratio                                 (Rational, (%), numerator, denominator)
-import Data.Semigroup                             (Semigroup(..))
+import Data.Semigroup                             (Semigroup(..), Product(..))
 import GHC.TypeNats.Compat                        (Nat, natVal)
 import Numeric.Natural                            (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions      (totient)
 import Math.NumberTheory.Moduli.Class             (KnownNat, MultMod(..), getVal, Mod, isMultElement)
-import Math.NumberTheory.Moduli.Jacobi            (jacobi, JacobiSymbol(..))
 import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithmPP)
 import Math.NumberTheory.UniqueFactorisation      (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Powers                   (powMod)
@@ -252,19 +251,18 @@ indexToChar = runIdentity . indicesToChars . Identity
 -- `indexToChar` for multiple characters, as it prevents some internal recalculations, such as
 -- factorising the modulus.
 indicesToChars :: forall n a f. (KnownNat n, Integral a, Functor f) => f a -> f (DirichletCharacter n)
-indicesToChars = fmap (Generated . unroll t . (`mod` totient n) . fromIntegral)
+indicesToChars = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
   where n = natVal (Proxy :: Proxy n)
-        t = mkTemplate n
+        (Product m, t) = mkTemplate n
 
-makeChar :: forall n a. (KnownNat n, Integral a) => DirichletCharacter n -> a -> DirichletCharacter n
+makeChar :: (Integral a) => DirichletCharacter n -> a -> DirichletCharacter n
 makeChar x = runIdentity . bulkMakeChars x . Identity
 
 -- use one character to make many more: better than indicestochars since it avoids recalculating
 -- some primitive roots
-bulkMakeChars :: forall n a f. (KnownNat n, Integral a, Functor f) => DirichletCharacter n -> f a -> f (DirichletCharacter n)
-bulkMakeChars x = fmap (Generated . unroll t . (`mod` totient n) . fromIntegral)
-  where t = templateFromCharacter x
-        n = natVal (Proxy :: Proxy n)
+bulkMakeChars :: (Integral a, Functor f) => DirichletCharacter n -> f a -> f (DirichletCharacter n)
+bulkMakeChars x = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
+  where (Product m, t) = templateFromCharacter x
 
 -- We assign each natural a unique Template, which can be decorated (eg in `unroll`) to
 -- form a DirichletCharacter. A Template effectively holds the information carried around
@@ -281,26 +279,30 @@ data Template = OddTemplate { _getPrime'     :: Prime Natural
                               -- morally getModulus should be a prefactored but seems to be
                               -- pointless here
 
-templateFromCharacter :: DirichletCharacter n -> [Template]
-templateFromCharacter (Generated t) = map go t
-  where go (OddPrime p k g _) = OddTemplate p k g (p'^(k-1)*(p'-1))
+templateFromCharacter :: DirichletCharacter n -> (Product Natural, [Template])
+templateFromCharacter (Generated t) = mapM go t
+  where go (OddPrime p k g _) = (Product m, OddTemplate p k g m)
           where p' = unPrime p
-        go (TwoPower k _ _) = TwoTemplate k (bit (wordToInt $ k-2))
+                m = p'^(k-1)*(p'-1)
+        go (TwoPower k _ _) = (Product (2*m), TwoTemplate k m)
+          where m = bit $ wordToInt $ k-2
 
--- TODO: Template is effectively a CyclicFactor of a generalised CyclicGroup...
+-- TODO (idea): Template is effectively a CyclicFactor of a generalised CyclicGroup...
 -- see issue #154
 
-mkTemplate :: Natural -> [Template]
+mkTemplate :: Natural -> (Product Natural, [Template])
 mkTemplate = go . factorise
-  where go :: [(Prime Natural, Word)] -> [Template]
-        go ((unPrime -> 2, 1):xs) = map odds xs
-        go ((unPrime -> 2, k):xs) = TwoTemplate k (bit (wordToInt $ k-2)): map odds xs
-        go xs = map odds xs
-        odds :: (Prime Natural, Word) -> Template
-        odds (p, k) = OddTemplate p k (generator p k) (p'^(k-1)*(p'-1))
+  where go :: [(Prime Natural, Word)] -> (Product Natural, [Template])
+        go ((unPrime -> 2, 1):xs) = foldMap odds xs
+        go ((unPrime -> 2, k):xs) = (Product (2*m), [TwoTemplate k m]) <> foldMap odds xs
+          where m = bit $ wordToInt $ k-2
+        go xs = foldMap odds xs
+        odds :: (Prime Natural, Word) -> (Product Natural, [Template])
+        odds (p, k) = (Product m, [OddTemplate p k (generator p k) m])
           where p' = unPrime p
+                m = p'^(k-1)*(p'-1)
 
--- the validity of the producted dirichletfactor list requires the template to be valid
+-- the validity of the producted dirichletfactor list here requires the template to be valid
 unroll :: [Template] -> Natural -> [DirichletFactor]
 unroll t m = snd (mapAccumL func m t)
   where func :: Natural -> Template -> (Natural, DirichletFactor)
@@ -310,8 +312,8 @@ unroll t m = snd (mapAccumL func m t)
 
 -- | Test if a given Dirichlet character is prinicpal for its modulus: a principal character mod
 -- \(n\) is 1 for \(a\) coprime to \(n\), and 0 otherwise.
-isPrincipal :: KnownNat n => DirichletCharacter n -> Bool
-isPrincipal chi = chi == principalChar
+isPrincipal :: DirichletCharacter n -> Bool
+isPrincipal chi = characterNumber chi == (0 :: Int)
 
 -- | Induce a Dirichlet character to a higher modulus. If \(d \mid n\), then \(a \bmod{n}\) can be
 -- reduced to \(a \bmod{d}\). Thus, a multiplicative function on \(\mathbb{Z}/d\mathbb{Z}\)
@@ -357,21 +359,14 @@ induced (Generated start) = if n `rem` d == 0
 -- character for odd moduli.
 jacobiCharacter :: forall n. KnownNat n => Maybe (RealCharacter n)
 jacobiCharacter = if odd n
-                     then Just (RealChar (Generated (func <$> factorise n)))
+                     then Just $ RealChar $ Generated $ map go $ snd $ mkTemplate n
                      else Nothing
   where n = natVal (Proxy :: Proxy n)
-        func (p,k) = OddPrime p k g val -- we know p is odd since n is odd and p | n
-          where p' = unPrime p
-                g = generator p k
-                val = case k `stimes` jacobi g p' of
-                        -- TODO: is there a nice formula for the jacobi symbol of primitive roots?
-                        -- if so, is there also a nice way of getting the character number?
-                        One -> 0
-                        MinusOne -> p'^(k-1)*((p'-1) `div` 2)
-                        Zero -> error "internal error in jacobiCharacter: please report this as a bug"
-                          -- We should not reach this branch, since g should be a prim root mod p,
-                          -- in particular it absolutely should not divide p, so the jacobi symbol
-                          -- should not be 0, and any power of it should not be 0.
+        go :: Template -> DirichletFactor
+        go TwoTemplate{} = error "internal error in jacobiCharacter: please report this as a bug"
+          -- every factor of n should be odd
+        go (OddTemplate p k g m) = OddPrime p k g $ (m * fromIntegral k `div` 2) `mod` m
+          -- jacobi symbol of a primitive root mod p over p is always -1
 
 -- | A Dirichlet character is real if it is real-valued.
 newtype RealCharacter n = RealChar { -- | Extract the character itself from a `RealCharacter`.
