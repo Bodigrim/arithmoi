@@ -36,6 +36,7 @@ module Math.NumberTheory.DirichletCharacters
   , principalChar
   , isPrincipal
   , induced
+  , isPrimitive
   -- ** Real Dirichlet characters
   , RealCharacter
   , isRealCharacter
@@ -209,13 +210,20 @@ mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
           TwoPower k (a <> b) (n <> m)
         combine _ _ = error "internal error: malformed DirichletCharacter"
 
--- TODO: this semigroup is also a group, allow `stimes` to work for non-positives too
+-- | This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 instance Semigroup (DirichletCharacter n) where
   (<>) = mulChars
+  stimes = stimesChar
 
 instance KnownNat n => Monoid (DirichletCharacter n) where
   mempty = principalChar
   mappend = (<>)
+
+stimesChar :: Integral a => a -> DirichletCharacter n -> DirichletCharacter n
+stimesChar s (Generated xs) = Generated (map mult xs)
+  where mult :: DirichletFactor -> DirichletFactor
+        mult (OddPrime p k g n) = OddPrime p k g (s `stimes` n)
+        mult (TwoPower k a b) = TwoPower k (s `stimes` a) (s `stimes` b)
 
 -- | We define `succ` and `pred` with more efficient implementations than
 -- @`toEnum` . (+1) . `fromEnum`@.
@@ -287,7 +295,7 @@ data Template = OddTemplate { _getPrime'     :: Prime Natural
                               -- pointless here
 
 templateFromCharacter :: DirichletCharacter n -> (Product Natural, [Template])
-templateFromCharacter (Generated t) = mapM go t
+templateFromCharacter (Generated t) = traverse go t
   where go (OddPrime p k g _) = (Product m, OddTemplate p k g m)
           where p' = unPrime p
                 m = p'^(k-1)*(p'-1)
@@ -300,10 +308,10 @@ templateFromCharacter (Generated t) = mapM go t
 mkTemplate :: Natural -> (Product Natural, [Template])
 mkTemplate = go . factorise
   where go :: [(Prime Natural, Word)] -> (Product Natural, [Template])
-        go ((unPrime -> 2, 1):xs) = mapM odds xs
-        go ((unPrime -> 2, wordToInt -> k):xs) = (Product (2*m), [TwoTemplate k m]) <> mapM odds xs
+        go ((unPrime -> 2, 1):xs) = traverse odds xs
+        go ((unPrime -> 2, wordToInt -> k):xs) = (Product (2*m), [TwoTemplate k m]) <> traverse odds xs
           where m = bit (k-2)
-        go xs = mapM odds xs
+        go xs = traverse odds xs
         odds :: (Prime Natural, Word) -> (Product Natural, Template)
         odds (p, k) = (Product m, OddTemplate p k (generator p k) m)
           where p' = unPrime p
@@ -406,7 +414,7 @@ toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
 
 -- | Test if the internal DirichletCharacter structure is valid.
 validChar :: forall n. KnownNat n => DirichletCharacter n -> Bool
-validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs
+validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs && all validValued xs
   where correctDecomposition = removeTwo (factorise n) == map getPP xs
         getPP (TwoPower k _ _) = (two, fromIntegral k)
         getPP (OddPrime p k _ _) = (p, k)
@@ -414,5 +422,21 @@ validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs
         removeTwo ys = ys
         correctPrimitiveRoot TwoPower{} = True
         correctPrimitiveRoot (OddPrime p k g _) = g == generator p k
+        validValued (TwoPower k a b) = a <> a == mempty && (k-2) `stimes` b == mempty
+        validValued (OddPrime _ k _ a) = k `stimes` a == mempty
         n = natVal (Proxy :: Proxy n)
         two = head primes -- lazy way to get Prime 2
+
+-- | Get the order of the character, and the maximal possible order of a character of this modulus.
+-- The second term is the maximal order, and is carmichael(n) and is easily calculated from the
+-- factor group breakdown we have.
+orderChar :: DirichletCharacter n -> (Integer, Natural)
+orderChar (Generated xs) = foldl' combine (1,1) $ map orderFactor xs
+  where orderFactor (TwoPower k (RootOfUnity a) (RootOfUnity b)) = (denominator a `lcm` denominator b, bit (k-1))
+        orderFactor (OddPrime (unPrime -> p) k _ (RootOfUnity a)) = (denominator a, p^(k-1)*(p-1))
+        combine (o1,n1) (o2,n2) = (lcm o1 o2, lcm n1 n2)
+
+-- | Test if a Dirichlet character is <https://en.wikipedia.org/wiki/Dirichlet_character#Primitive_characters_and_conductor primitive>.
+isPrimitive :: DirichletCharacter n -> Bool
+isPrimitive chi = toInteger maxOrder == order
+  where (order, maxOrder) = orderChar chi
