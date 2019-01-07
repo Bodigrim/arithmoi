@@ -118,6 +118,12 @@ jacobiCheck (Positive n) =
         Just chi -> and [toRealFunction chi (fromIntegral j) == symbolToIntegral (jacobi j (2*n+1)) | j <- [0..2*n]]
         _ -> False
 
+-- | Primitive checker is correct (in both directions)
+primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+primitiveCheck = (==) <$> isPrimitive <*> isPrimitive'
+  where isPrimitive' chi = error "TODO: this"
+        n = natVal @n Proxy
+
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
   [ testSmallAndQuick "RootOfUnity contains roots of unity" rootOfUnityTest

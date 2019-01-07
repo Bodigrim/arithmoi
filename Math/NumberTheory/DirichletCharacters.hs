@@ -25,13 +25,16 @@ module Math.NumberTheory.DirichletCharacters
   , toComplex
   -- * Dirichlet characters
   , DirichletCharacter
-  , evaluate
-  , generalEval
-  , toFunction
+  -- ** Construction
   , indexToChar
   , indicesToChars
   , characterNumber
   , allChars
+  -- ** Evaluation
+  , evaluate
+  , generalEval
+  , toFunction
+  , allEval
   -- ** Special Dirichlet characters
   , principalChar
   , isPrincipal
@@ -49,11 +52,15 @@ module Math.NumberTheory.DirichletCharacters
 
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex, cis)
+import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
 import Data.List                                           (mapAccumL, foldl')
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          (Rational, Ratio, (%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..), Product(..))
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as MV
+import Data.Vector                                         (Vector, (!))
 import GHC.TypeNats.Compat                                 (Nat, natVal)
 import Numeric.Natural                                     (Natural)
 
@@ -192,7 +199,7 @@ generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
 generalEval chi = fmap (evaluate chi) . isMultElement
 
 -- | Convert a Dirichlet character to a complex-valued function. As in `toComplex`, the result is
--- inexact due to floating-point inaccuracies. See `toComplex` for more.
+-- inexact due to floating-point inaccuracies. See `toComplex`.
 toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
 toFunction chi = maybe 0 toComplex . generalEval chi . fromIntegral
 
@@ -440,3 +447,60 @@ orderChar (Generated xs) = foldl' combine (1,1) $ map orderFactor xs
 isPrimitive :: DirichletCharacter n -> Bool
 isPrimitive chi = toInteger maxOrder == order
   where (order, maxOrder) = orderChar chi
+
+-- | Similar to Maybe, but with more appropriate Semigroup and Monoid instances.
+data OrZero a = Zero | NonZero !a
+
+instance Semigroup a => Semigroup (OrZero a) where
+  Zero <> _ = Zero
+  _ <> Zero = Zero
+  NonZero a <> NonZero b = NonZero (a <> b)
+
+instance Monoid a => Monoid (OrZero a) where
+  mempty = NonZero mempty
+  mappend = (<>)
+
+instance Show a => Show (OrZero a) where
+  show Zero = "0"
+  show (NonZero x) = show x
+
+asNumber :: Num a => (b -> a) -> OrZero b -> a
+asNumber _ Zero = 0
+asNumber f (NonZero x) = f x
+
+-- | In general, evaluating a DirichletCharacter at a point involves solving the discrete logarithm
+-- problem, which can be hard: the implementations here are around O(sqrt n).
+-- However, evaluating a dirichlet character at every point amounts to solving the discrete
+-- logarithm problem at every point also, which can be done together in O(n) time, better than
+-- using a complex algorithm at each point separately. Thus, if a large number of evaluations
+-- of a dirichlet character are required, `allEval` will be better than `generalEval`, since
+-- computations can be shared.
+allEval :: forall n. KnownNat n => DirichletCharacter n -> Vector (OrZero RootOfUnity)
+allEval (Generated xs) = V.generate (fromIntegral n) func
+  where n = natVal (Proxy :: Proxy n)
+        vectors = map mkVector xs
+        func :: Int -> OrZero RootOfUnity
+        func m = foldMap go vectors
+          where go :: (Int, Vector (OrZero RootOfUnity)) -> OrZero RootOfUnity
+                go (modulus,v) = v ! (m `mod` modulus)
+        mkVector :: DirichletFactor -> (Int, Vector (OrZero RootOfUnity))
+        mkVector (OddPrime p k (fromIntegral -> g) a) = (modulus, w)
+          where
+            p' = unPrime p
+            modulus = fromIntegral (p'^k) :: Int
+            w = V.create $ do
+              v <- MV.replicate modulus Zero
+              -- TODO: we're in the ST monad here anyway, could be better to use STRefs to manage
+              -- this loop, the current implementation probably doesn't fuse well
+              let powers = iterateMaybe go (1,mempty)
+                  go (m,x) = if m' > 1
+                                then Just (m', x<>a)
+                                else Nothing
+                    where m' = m*g `mod` modulus
+              for_ powers $ \(m,x) -> MV.unsafeWrite v m (NonZero x)
+              -- don't bother with bounds check since m was reduced mod p^k
+              return v
+
+-- somewhere between unfoldr and iterate
+iterateMaybe :: (a -> Maybe a) -> a -> [a]
+iterateMaybe f = go where go x = x: maybe [] go (f x)
