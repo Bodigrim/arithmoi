@@ -8,12 +8,14 @@
 --
 
 {-# LANGUAGE CPP                  #-}
+{-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE LambdaCase           #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TupleSections        #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Math.NumberTheory.Moduli.PrimitiveRoot
   ( -- * Cyclic groups
@@ -47,6 +49,9 @@ import Control.Monad (guard)
 import GHC.Generics
 import Numeric.Natural
 
+import Data.Proxy
+import GHC.TypeNats.Compat
+
 -- | A multiplicative group of residues is called cyclic,
 -- if there is a primitive root @g@,
 -- whose powers generates all elements.
@@ -61,7 +66,15 @@ data CyclicGroup a
   -- ^ Residues modulo 2@p@^@k@ for __odd__ prime @p@.
   deriving (Eq, Show, Generic)
 
+data CyclicGroup' (n :: Nat)
+  = CG2'
+  | CG4'
+  | CGOddPrimePower'       (Prime Natural) Word
+  | CGDoubleOddPrimePower' (Prime Natural) Word
+  deriving (Eq, Show, Generic)
+
 instance NFData a => NFData (CyclicGroup a)
+instance NFData (CyclicGroup' n)
 
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.
@@ -86,6 +99,16 @@ cyclicGroupFromModulo = \case
     | otherwise -> Nothing
     where
       halfN = n `quot` 2
+
+cyclicGroup'FromModulo :: forall n. KnownNat n => Maybe (CyclicGroup' n)
+cyclicGroup'FromModulo = case natVal (Proxy :: Proxy n) of
+                           2 -> Just CG2'
+                           4 -> Just CG4'
+                           n | n <= 1    -> Nothing
+                             | odd n     -> uncurry CGOddPrimePower' <$> isPrimePower n
+                             | odd halfN -> uncurry CGDoubleOddPrimePower' <$> isPrimePower halfN
+                             | otherwise -> Nothing
+                             where halfN = n `quot` 2
 
 isPrimePower
   :: (Integral a, UniqueFactorisation a)
@@ -115,11 +138,17 @@ cyclicGroupToModulo = fromFactors . \case
   CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1
                             <> Coprimes.singleton (unPrime p) k
 
--- | 'PrimitiveRoot' m is a type which is only inhabited 
+-- | 'PrimitiveRoot' m is a type which is only inhabited
 -- by <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive roots> of m.
 data PrimitiveRoot m = PrimitiveRoot
   { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
   , getGroup        :: CyclicGroup Natural -- ^ Get cyclic group structure.
+  }
+  deriving (Eq, Show)
+
+data PrimitiveRoot' m = PrimitiveRoot'
+  { unPrimitiveRoot' :: MultMod m -- ^ Extract primitive root value.
+  , getGroup'        :: CyclicGroup' m -- ^ Get cyclic group structure.
   }
   deriving (Eq, Show)
 
@@ -152,6 +181,15 @@ isPrimitiveRoot' cg r =
     oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
     oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
     doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
+
+isPrimitiveRoot'2 :: KnownNat n => CyclicGroup' n -> MultMod n -> Maybe (PrimitiveRoot' n)
+isPrimitiveRoot'2 = undefined
+
+isPrimitiveRoot2 :: KnownNat n => Mod n -> Maybe (PrimitiveRoot' n)
+isPrimitiveRoot2 r = do
+  r' <- isMultElement r
+  cg <- cyclicGroup'FromModulo
+  isPrimitiveRoot'2 cg r'
 
 -- | Check whether a given modular residue is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>.
