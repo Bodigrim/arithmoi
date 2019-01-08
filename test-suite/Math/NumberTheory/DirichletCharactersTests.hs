@@ -23,7 +23,7 @@ import Data.Ratio
 import Numeric.Natural
 import Data.Semigroup
 import Data.Complex
-import Data.List (nub, genericLength, genericReplicate, isSubsequenceOf)
+import Data.List (genericLength, genericReplicate)
 import Data.Maybe (mapMaybe, isJust)
 
 import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal)
@@ -59,12 +59,12 @@ dirCharProperty test (Positive n) i =
     SomeNat (Proxy :: Proxy n) -> test chi
       where chi = indexToChar @n (i `mod` totient n)
 
--- | There should be phi(n) characters
+-- | There should be totient(n) characters
 countCharacters :: Positive Natural -> Bool
 countCharacters (Positive n) =
   case someNatVal n of
     SomeNat (Proxy :: Proxy n) ->
-      genericLength (nub [minBound :: DirichletCharacter n .. maxBound]) == totient n
+      genericLength (allChars @n) == totient n
 
 -- | The principal character should be 1 at all phi(n) places
 principalCase :: Positive Natural -> Bool
@@ -87,16 +87,18 @@ orthogonality2 :: Positive Natural -> Integer -> Bool
 orthogonality2 (Positive n) a =
   case a `modulo` n of
     SomeMod a' -> magnitude (total - correct) < (1e-13 :: Double)
-      where total = sum [maybe 0 toComplex (generalEval chi a') | chi <- [minBound .. maxBound]]
+      where total = sum [maybe 0 toComplex (generalEval chi a') | chi <- allChars]
             correct = if a' == 1
                          then fromIntegral $ totient n
                          else 0
     InfMod {} -> False
 
 -- | Manually confirm isRealCharacter is correct (in both directions)
-realityCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+realityCheck :: KnownNat n => DirichletCharacter n -> Bool
 realityCheck chi = isJust (isRealCharacter chi) == isReal'
-  where isReal' = nub (mapMaybe (generalEval chi) [minBound..maxBound]) `isSubsequenceOf` [mempty, toRootOfUnity (1 % 2)]
+  where isReal' = and [real (generalEval chi t) | t <- [minBound..maxBound]]
+        real Nothing = True
+        real (Just t) = t <> t == mempty
 
 -- | Induced characters agree with the original character.
 inducedCheck :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Bool
@@ -137,4 +139,5 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Real character checking is valid" (dirCharProperty realityCheck)
   , testSmallAndQuick "Jacobi character matches symbol" jacobiCheck
   , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
+  -- , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
   ]

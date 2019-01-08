@@ -195,13 +195,15 @@ evalFactor m =
                                              kBits = bit k - 1
 
 -- | A character can evaluate to a root of unity or zero: represented by @Nothing@.
-generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> Maybe RootOfUnity
-generalEval chi = fmap (evaluate chi) . isMultElement
+generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> OrZero RootOfUnity
+generalEval chi t = case isMultElement t of
+                      Nothing -> Zero
+                      Just x -> NonZero $ evaluate chi x
 
 -- | Convert a Dirichlet character to a complex-valued function. As in `toComplex`, the result is
 -- inexact due to floating-point inaccuracies. See `toComplex`.
 toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
-toFunction chi = maybe 0 toComplex . generalEval chi . fromIntegral
+toFunction chi = asNumber toComplex . generalEval chi . fromIntegral
 
 -- | Give the principal character for this modulus: a principal character mod \(n\) is 1 for
 -- \(a\) coprime to \(n\), and 0 otherwise.
@@ -412,9 +414,9 @@ isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else No
 -- | Evaluate a real Dirichlet character, which can only take values \(-1,0,1\).
 toRealFunction :: KnownNat n => RealCharacter n -> Natural -> Int
 toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
-                                    Nothing -> 0
-                                    Just t | t == mempty -> 1
-                                    Just t | t == RootOfUnity (1 % 2) -> -1
+                                    Zero -> 0
+                                    NonZero t | t == mempty -> 1
+                                    NonZero t | t == RootOfUnity (1 % 2) -> -1
                                     _ -> error "internal error in toRealFunction: please report this as a bug"
                                       -- A real character should not be able to evaluate to
                                       -- anything other than {-1,0,1}, so should not reach this branch
@@ -500,6 +502,21 @@ allEval (Generated xs) = V.generate (fromIntegral n) func
               for_ powers $ \(m,x) -> MV.unsafeWrite v m (NonZero x)
               -- don't bother with bounds check since m was reduced mod p^k
               return v
+        -- for powers of two we use lambda directly instead, since the generators of the cyclic
+        -- groups aren't obvious; it's possible to get them though:
+        -- 5^(lambda(5)^{-1} mod 2^(p-2)) mod 2^p
+        mkVector (TwoPower k a b) = (modulus, w)
+          where
+            modulus = bit k
+            w = V.generate modulus f
+            f m
+              | even m = Zero
+              | otherwise = NonZero ((if testBit m 1 then a else mempty) <> lambda (toInteger m'') k `stimes` b)
+                            where m' = m .&. kBits
+                                  m'' = if testBit m 1
+                                           then bit k - m'
+                                           else m'
+                                  kBits = bit k - 1
 
 -- somewhere between unfoldr and iterate
 iterateMaybe :: (a -> Maybe a) -> a -> [a]
