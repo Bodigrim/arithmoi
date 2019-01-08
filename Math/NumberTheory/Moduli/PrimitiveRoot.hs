@@ -38,7 +38,7 @@ import Data.Semigroup
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import qualified Math.NumberTheory.Euclidean as E
 import Math.NumberTheory.Euclidean.Coprimes as Coprimes (singleton)
-import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement)
+import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, MultMod, isMultElement, multElement)
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
@@ -182,8 +182,23 @@ isPrimitiveRoot' cg r =
     oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
     doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
 
-isPrimitiveRoot'2 :: KnownNat n => CyclicGroup' n -> MultMod n -> Maybe (PrimitiveRoot' n)
-isPrimitiveRoot'2 = undefined
+isPrimitiveRoot'2 :: CyclicGroup' n -> MultMod n -> Maybe (PrimitiveRoot' n)
+isPrimitiveRoot'2 cg r = if test
+                            then Just (PrimitiveRoot' r cg)
+                            else Nothing
+  where test = case cg of
+                 CG2' -> r' == 1
+                 CG4' -> r' == 3
+                 CGOddPrimePower' p k -> oddPrimePowerTest (unPrime p) k r'
+                 CGDoubleOddPrimePower' p k -> doubleOddPrimePowerTest (unPrime p) k r'
+        r' = getNatVal $ multElement r
+        oddPrimeTest p g              = let phi  = totient p
+                                            pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
+                                            exps = map (\x -> powMod g x p) pows
+                                         in g /= 0 && gcd g p == 1 && all (/= 1) exps
+        oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
+        oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
+        doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
 
 isPrimitiveRoot2 :: KnownNat n => Mod n -> Maybe (PrimitiveRoot' n)
 isPrimitiveRoot2 r = do
