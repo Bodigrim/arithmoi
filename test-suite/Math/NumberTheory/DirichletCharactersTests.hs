@@ -23,16 +23,18 @@ import Data.Ratio
 import Numeric.Natural
 import Data.Semigroup
 import Data.Complex
-import Data.List (genericLength, genericReplicate)
-import Data.Maybe (mapMaybe, isJust)
+import Data.List (genericLength)
+import Data.Maybe (isJust)
+import qualified Data.Vector as V
 
 import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal)
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.DirichletCharacters
-import Math.NumberTheory.Moduli.Jacobi
+import qualified Math.NumberTheory.Moduli.Jacobi as J
 import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
+import Math.NumberTheory.Primes
 
 rootOfUnityTest :: Integer -> Positive Integer -> Bool
 rootOfUnityTest n (Positive d) = toComplex ((d `div` gcd n d) `stimes` toRootOfUnity (n % d)) == (1 :: Complex Double)
@@ -66,13 +68,15 @@ countCharacters (Positive n) =
     SomeNat (Proxy :: Proxy n) ->
       genericLength (allChars @n) == totient n
 
--- | The principal character should be 1 at all phi(n) places
-principalCase :: Positive Natural -> Bool
-principalCase (Positive n) =
-  case someNatVal n of
-    SomeNat (Proxy :: Proxy n) ->
-      mapMaybe (generalEval chi) [minBound..maxBound] == genericReplicate (totient n) mempty
-        where chi = principalChar @n
+-- | The principal character should be 1 if gcd k n is 1 and 0 otherwise
+principalCase :: Positive Natural -> Positive Integer -> Bool
+principalCase (Positive n) (Positive k) =
+  case k `modulo` n of
+    SomeMod a -> generalEval chi a == if gcd k (fromIntegral n) > 1
+                                         then Zero
+                                         else mempty
+      where chi = principalChar
+    InfMod{} -> False
 
 -- | Test the orthogonality relations https://en.wikipedia.org/wiki/Dirichlet_character#Character_orthogonality
 orthogonality1 :: forall n. KnownNat n => DirichletCharacter n -> Bool
@@ -87,7 +91,7 @@ orthogonality2 :: Positive Natural -> Integer -> Bool
 orthogonality2 (Positive n) a =
   case a `modulo` n of
     SomeMod a' -> magnitude (total - correct) < (1e-13 :: Double)
-      where total = sum [maybe 0 toComplex (generalEval chi a') | chi <- allChars]
+      where total = sum [asNumber toComplex (generalEval chi a') | chi <- allChars]
             correct = if a' == 1
                          then fromIntegral $ totient n
                          else 0
@@ -97,18 +101,19 @@ orthogonality2 (Positive n) a =
 realityCheck :: KnownNat n => DirichletCharacter n -> Bool
 realityCheck chi = isJust (isRealCharacter chi) == isReal'
   where isReal' = and [real (generalEval chi t) | t <- [minBound..maxBound]]
-        real Nothing = True
-        real (Just t) = t <> t == mempty
+        real Zero = True
+        real (NonZero t) = t <> t == mempty
 
 -- | Induced characters agree with the original character.
-inducedCheck :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Bool
-inducedCheck chi (Positive k) =
+inducedCheck :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Natural -> Bool
+inducedCheck chi (Positive k) i =
   case someNatVal (d*k) of
     SomeNat (Proxy :: Proxy n) ->
-      case chi2 of
-        Just chi2' -> and [generalEval chi2' (fromIntegral j) == generalEval chi (fromIntegral j) | j <- [0..d*k-1], gcd j (d*k) == 1]
-        _ -> False
-        where chi2 = induced @n chi
+      case induced @n chi of
+        Just chi2 -> if (fromIntegral i) `gcd` (d*k) > 0
+                        then True
+                        else generalEval chi (fromIntegral i) == generalEval chi2 (fromIntegral i)
+        Nothing -> False
   where d = natVal @d Proxy
 
 -- | The jacobi character agrees with the jacobi symbol
@@ -117,14 +122,20 @@ jacobiCheck (Positive n) =
   case someNatVal (2*n+1) of
     SomeNat (Proxy :: Proxy n) ->
       case jacobiCharacter @n of
-        Just chi -> and [toRealFunction chi (fromIntegral j) == symbolToIntegral (jacobi j (2*n+1)) | j <- [0..2*n]]
+        Just chi -> and [toRealFunction chi (fromIntegral j) == J.symbolToIntegral (J.jacobi j (2*n+1)) | j <- [0..2*n]]
         _ -> False
 
 -- | Primitive checker is correct (in both directions)
-primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
-primitiveCheck = (==) <$> isPrimitive <*> isPrimitive'
-  where isPrimitive' chi = error "TODO: this"
-        n = natVal @n Proxy
+-- primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+-- primitiveCheck = if n > 5
+--                     then (==) <$> isPrimitive <*> isPrimitive'
+--                     else const True
+--   where isPrimitive' chi = not $ any (periodic (allEval chi)) primeFactors
+--         n = fromIntegral (natVal @n Proxy)
+--         primeFactors = map (unPrime . fst) $ factorise n
+--         periodic v k = and [allEqual [v V.! j | j <- [i,i + n `div` k .. n-1]] | i <- [0..k-1]]
+--         allEqual :: Eq a => [a] -> Bool
+--         allEqual = and . (zipWith (==) <*> tail)
 
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"

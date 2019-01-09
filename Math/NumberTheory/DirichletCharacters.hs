@@ -23,6 +23,9 @@ module Math.NumberTheory.DirichletCharacters
   , toRootOfUnity
   , fromRootOfUnity
   , toComplex
+  -- * An absorbing semigroup
+  , OrZero(..)
+  , asNumber
   -- * Dirichlet characters
   , DirichletCharacter
   -- ** Construction
@@ -50,6 +53,7 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
+import Control.Applicative                                 (Applicative(..))
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex, cis)
 import Data.Foldable                                       (for_)
@@ -439,24 +443,44 @@ validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs &
 -- | Get the order of the character, and the maximal possible order of a character of this modulus.
 -- The second term is the maximal order, and is carmichael(n) and is easily calculated from the
 -- factor group breakdown we have.
-orderChar :: DirichletCharacter n -> (Integer, Natural)
-orderChar (Generated xs) = foldl' combine (1,1) $ map orderFactor xs
-  where orderFactor (TwoPower k (RootOfUnity a) (RootOfUnity b)) = (denominator a `lcm` denominator b, bit (k-1))
-        orderFactor (OddPrime (unPrime -> p) k _ (RootOfUnity a)) = (denominator a, p^(k-1)*(p-1))
-        combine (o1,n1) (o2,n2) = (lcm o1 o2, lcm n1 n2)
+-- orderChar :: DirichletCharacter n -> (Integer, Natural)
+-- orderChar (Generated xs) = foldl' combine (1,1) $ map orderFactor xs
+--   where orderFactor (TwoPower k (RootOfUnity a) (RootOfUnity b)) = (denominator a `lcm` denominator b, bit (k-1))
+--         orderFactor (OddPrime (unPrime -> p) k _ (RootOfUnity a)) = (denominator a, p^(k-1)*(p-1))
+--         combine (o1,n1) (o2,n2) = (lcm o1 o2, lcm n1 n2)
 
 -- | Test if a Dirichlet character is <https://en.wikipedia.org/wiki/Dirichlet_character#Primitive_characters_and_conductor primitive>.
 isPrimitive :: DirichletCharacter n -> Bool
-isPrimitive chi = toInteger maxOrder == order
-  where (order, maxOrder) = orderChar chi
+isPrimitive = undefined
+-- TODO: this isn't correct. figure out a correct version and write it
+-- isPrimitive chi = toInteger maxOrder == order
+--   where (order, maxOrder) = orderChar chi
 
--- | Similar to Maybe, but with more appropriate Semigroup and Monoid instances.
+-- | Similar to Maybe, but with different Semigroup and Monoid instances.
 data OrZero a = Zero | NonZero !a
+  deriving (Eq)
 
+-- | An equivalent `Functor` instance to `Maybe`.
+instance Functor OrZero where
+  fmap _ Zero = Zero
+  fmap f (NonZero x) = NonZero (f x)
+
+-- | An equivalent `Applicative` instance to `Maybe`.
+instance Applicative OrZero where
+  pure = NonZero
+  NonZero f <*> m = fmap f m
+  Zero      <*> _ = Zero
+
+  liftA2 f (NonZero x) (NonZero y) = NonZero (f x y)
+  liftA2 _ _ _ = Zero
+
+  NonZero _ *> m = m
+  Zero      *> _ = Zero
+
+-- | `Zero` is an absorbing element for this semigroup
 instance Semigroup a => Semigroup (OrZero a) where
-  Zero <> _ = Zero
-  _ <> Zero = Zero
   NonZero a <> NonZero b = NonZero (a <> b)
+  _ <> _ = Zero
 
 instance Monoid a => Monoid (OrZero a) where
   mempty = NonZero mempty
@@ -466,6 +490,7 @@ instance Show a => Show (OrZero a) where
   show Zero = "0"
   show (NonZero x) = show x
 
+-- | Interpret an `OrZero` as a number, taking the `Zero` case to be 0.
 asNumber :: Num a => (b -> a) -> OrZero b -> a
 asNumber _ Zero = 0
 asNumber f (NonZero x) = f x
