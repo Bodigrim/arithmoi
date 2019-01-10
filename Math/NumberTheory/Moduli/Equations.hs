@@ -15,10 +15,12 @@ module Math.NumberTheory.Moduli.Equations
   , solveQuadratic
   ) where
 
+import Data.Constraint
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils (recipMod)
@@ -56,21 +58,21 @@ solveLinearCoprime m a b = (\a1 -> negate b * a1 `mod` m) <$> recipMod a m
 -- | Find all solutions of ax² + bx + c ≡ 0 (mod m).
 --
 -- >>> :set -XDataKinds
--- >>> solveQuadratic (1 :: Mod 32) 0 (-17) -- solving x² - 17 ≡ 0 (mod 32)
+-- >>> solveQuadratic sfactors (1 :: Mod 32) 0 (-17) -- solving x² - 17 ≡ 0 (mod 32)
 -- [(9 `modulo` 32),(25 `modulo` 32),(7 `modulo` 32),(23 `modulo` 32)]
 solveQuadratic
-  :: KnownNat m
-  => Mod m   -- ^ a
+  :: SFactors Integer m
+  -> Mod m   -- ^ a
   -> Mod m   -- ^ b
   -> Mod m   -- ^ c
   -> [Mod m] -- ^ list of x
-solveQuadratic a b c
-  = map fromInteger
-  $ fst
-  $ combine
-  $ map (\(p, n) -> (solveQuadraticPrimePower a' b' c' p n, unPrime p ^ n))
-  $ factorise
-  $ getMod a
+solveQuadratic sm a b c = case proofFromSFactors sm of
+  Sub Dict ->
+    map fromInteger
+    $ fst
+    $ combine
+    $ map (\(p, n) -> (solveQuadraticPrimePower a' b' c' p n, unPrime p ^ n))
+    $ unSFactors sm
   where
     a' = getVal a
     b' = getVal b

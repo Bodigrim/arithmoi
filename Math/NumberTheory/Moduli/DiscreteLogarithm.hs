@@ -6,8 +6,13 @@
 --
 
 {-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
+
+#if __GLASGOW_HASKELL__ < 801
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
+#endif
 
 module Math.NumberTheory.Moduli.DiscreteLogarithm
   ( discreteLogarithm
@@ -23,34 +28,34 @@ import GHC.TypeNats.Compat
 import Math.NumberTheory.Moduli.Chinese       (chineseRemainder2)
 import Math.NumberTheory.Moduli.Class         (MultMod(..), Mod, getVal)
 import Math.NumberTheory.Moduli.Equations     (solveLinear)
-import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..))
+import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..))
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
 import Math.NumberTheory.Primes  (unPrime)
 
 -- | Computes the discrete logarithm. Currently uses a combination of the baby-step
 -- giant-step method and Pollard's rho algorithm, with Bach reduction.
-discreteLogarithm :: KnownNat m => PrimitiveRoot m -> MultMod m -> Natural
-discreteLogarithm a b = discreteLogarithm' (getGroup a) (multElement $ unPrimitiveRoot a) (multElement b)
-
-discreteLogarithm'
-  :: KnownNat m
-  => CyclicGroup Natural  -- ^ group structure (must be the multiplicative group mod m)
-  -> Mod m                -- ^ a
-  -> Mod m                -- ^ b
-  -> Natural              -- ^ result
-discreteLogarithm' cg a b =
-  case cg of
-    CG2
-      -> 0
-      -- the only valid input was a=1, b=1
-    CG4
-      -> if b == 1 then 0 else 1
-      -- the only possible input here is a=3 with b = 1 or 3
-    CGOddPrimePower       (toInteger . unPrime -> p) k
-      -> discreteLogarithmPP p k (getVal a) (getVal b)
-    CGDoubleOddPrimePower (toInteger . unPrime -> p) k
-      -> discreteLogarithmPP p k (getVal a `rem` p^k) (getVal b `rem` p^k)
-      -- we have the isomorphism t -> t `rem` p^k from (Z/2p^kZ)* -> (Z/p^kZ)*
+--
+-- >>> :set -XDataKinds
+-- >>> import Data.Maybe
+-- >>> let cg = fromJust cyclicGroup :: CyclicGroup Integer 13
+-- >>> let rt = fromJust (isPrimitiveRoot cg 2)
+-- >>> let x  = fromJust (isMultElement 11)
+-- >>> discreteLogarithm cg rt x
+-- 7
+discreteLogarithm :: CyclicGroup Integer m -> PrimitiveRoot m -> MultMod m -> Natural
+discreteLogarithm cg (multElement . unPrimitiveRoot -> a) (multElement -> b) = case cg of
+  CG2
+    -> 0
+    -- the only valid input was a=1, b=1
+  CG4
+    -> if getVal b == 1 then 0 else 1
+    -- the only possible input here is a=3 with b = 1 or 3
+  CGOddPrimePower (unPrime -> p) k
+    -> discreteLogarithmPP p k (getVal a) (getVal b)
+  CGDoubleOddPrimePower (unPrime -> p) k
+    -> discreteLogarithmPP p k (getVal a `rem` p^k) (getVal b `rem` p^k)
+    -- we have the isomorphism t -> t `rem` p^k from (Z/2p^kZ)* -> (Z/p^kZ)*
 
 -- Implementation of Bach reduction (https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf)
 {-# INLINE discreteLogarithmPP #-}

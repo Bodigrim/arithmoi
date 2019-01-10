@@ -38,6 +38,7 @@ library
     base >=4.9 && <5,
     array >=0.5 && <0.6,
     containers >=0.5 && <0.7,
+    constraints,
     deepseq,
     exact-pi >=0.5,
     ghc-prim <0.6,
@@ -65,6 +66,7 @@ library
     Math.NumberTheory.Moduli.Equations
     Math.NumberTheory.Moduli.Jacobi
     Math.NumberTheory.Moduli.PrimitiveRoot
+    Math.NumberTheory.Moduli.Singleton
     Math.NumberTheory.Moduli.Sqrt
     Math.NumberTheory.MoebiusInversion
     Math.NumberTheory.MoebiusInversion.Int
@@ -149,6 +151,7 @@ test-suite spec
     Math.NumberTheory.Moduli.EquationsTests
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests
+    Math.NumberTheory.Moduli.SingletonTests
     Math.NumberTheory.Moduli.SqrtTests
     Math.NumberTheory.MoebiusInversionTests
     Math.NumberTheory.Powers.CubesTests
@@ -184,6 +187,7 @@ benchmark criterion
     base,
     arithmoi,
     array,
+    constraints,
     containers,
     deepseq,
     gauge,

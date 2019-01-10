@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.PrimitiveRootsBench
@@ -5,20 +7,29 @@ module Math.NumberTheory.PrimitiveRootsBench
   ) where
 
 import Gauge.Main
+import Data.Constraint
 import Data.Maybe
 
 import Math.NumberTheory.Moduli.PrimitiveRoot
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 
 primRootWrap :: Integer -> Word -> Integer -> Bool
-primRootWrap p k g = isPrimitiveRoot' (CGOddPrimePower p' k) g
-  where p' = fromJust $ isPrime p
+primRootWrap p k g = case fromJust $ cyclicGroupFromFactors [(p', k)] of
+  Some cg -> case proofFromCyclicGroup cg of
+    Sub Dict -> isJust $ isPrimitiveRoot cg (fromInteger g)
+  where
+    p' = fromJust $ isPrime p
 
 primRootWrap2 :: Integer -> Word -> Integer -> Bool
-primRootWrap2 p k g = isPrimitiveRoot' (CGDoubleOddPrimePower p' k) g
-  where p' = fromJust $ isPrime p
+primRootWrap2 p k g = case fromJust $ cyclicGroupFromFactors [(two, 1), (p', k)] of
+  Some cg -> case proofFromCyclicGroup cg of
+    Sub Dict -> isJust $ isPrimitiveRoot cg (fromInteger g)
+  where
+    two = fromJust $ isPrime 2
+    p'  = fromJust $ isPrime p
 
-cyclicWrap :: Integer -> Maybe (CyclicGroup Integer)
+cyclicWrap :: Integer -> Maybe (Some (CyclicGroup Integer))
 cyclicWrap = cyclicGroupFromModulo
 
 benchSuite :: Benchmark

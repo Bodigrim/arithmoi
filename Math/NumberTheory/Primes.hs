@@ -18,6 +18,7 @@ module Math.NumberTheory.Primes
     , nextPrime
     , precPrime
     , UniqueFactorisation(..)
+    , factorBack
     , -- * Old interface
       primes
     ) where
@@ -97,6 +98,9 @@ instance UniqueFactorisation Integer where
 instance UniqueFactorisation Natural where
   factorise = map (coerce integerToNatural *** id) . F.factorise . naturalToInteger
   isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing
+
+factorBack :: Num a => [(Prime a, Word)] -> a
+factorBack = product . map (\(p, k) -> unPrime p ^ k)
 
 -- | Smallest prime, greater or equal to argument.
 --

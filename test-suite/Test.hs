@@ -12,6 +12,7 @@ import qualified Math.NumberTheory.Moduli.DiscreteLogarithmTests as ModuliDiscre
 import qualified Math.NumberTheory.Moduli.EquationsTests as ModuliEquations
 import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
 import qualified Math.NumberTheory.Moduli.PrimitiveRootTests as ModuliPrimitiveRoot
+import qualified Math.NumberTheory.Moduli.SingletonTests as ModuliSingleton
 import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
@@ -71,6 +72,7 @@ tests = testGroup "All"
     , ModuliEquations.testSuite
     , ModuliJacobi.testSuite
     , ModuliPrimitiveRoot.testSuite
+    , ModuliSingleton.testSuite
     , ModuliSqrt.testSuite
     ]
   , MoebiusInversion.testSuite
