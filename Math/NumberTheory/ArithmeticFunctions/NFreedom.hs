@@ -109,7 +109,7 @@ nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
     -- Infinite list of lower bounds at which @sieveBlockNFree@ will be
     -- applied. This has type @Integral a => a@ instead of @Word@ because
     -- unlike the sizes of the sieve that eventually stop increasing (see
-    -- above comment), the lower bound at which @sieveBlockNFree@ does not.
+    -- above comment), the lower bound at which @sieveBlockNFree@ is called does not.
     bounds :: [a]
     bounds = scanl' (+) 1 $ map fromIntegral strides
 
