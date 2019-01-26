@@ -146,7 +146,7 @@ divideByThree = go 0
   where
     go :: Word -> EisensteinInteger -> (Word, EisensteinInteger)
     go !n z@(a :+ b) | r1 == 0 && r2 == 0 = go (n + 1) (q1 :+ q2)
-                      | otherwise          = (n, abs z)
+                     | otherwise          = (n, abs z)
       where
         -- @(a + a - b) :+ (a + b)@ is @z * (2 :+ 1)@, and @z * (2 :+ 1)/3@
         -- is the same as @z / (1 :+ (-1))@.
@@ -160,7 +160,7 @@ divideByThree = go 0
 -- The maintainer <https://github.com/cartazio/arithmoi/pull/121#issuecomment-415010647 Andrew Lelechenko>
 -- derived the following:
 --
---     * Each prime of form @3n + 1@ is actually of form @6k + 1@.
+--     * Each prime of the form @3n + 1@ is actually of the form @6k + 1@.
 --     * One has @(z + 3k)^2 ≡ z^2 + 6kz + 9k^2 ≡ z^2 + (6k + 1)z - z + 9k^2 ≡ z^2 - z + 9k^2 (mod 6k + 1)@.
 --
 -- The goal is to solve @z^2 - z + 1 ≡ 0 (mod 6k + 1)@. One has:
@@ -215,7 +215,7 @@ primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
 --        where @a, b, c, a_i@ are nonnegative integers, @N > 1@ is an integer and
 --        @π_i@ are Eisenstein primes.
 --
--- Aplying @norm@ to both sides of Theorem 8.4:
+-- Aplying @norm@ to both sides of the equation from Theorem 8.4:
 --
 -- 1. @norm μ = norm ( (-1)^a * ω^b * (1 - ω)^c * product [ π_i^a_i | i <- [1..N]] ) ==@
 -- 2. @norm μ = norm ((-1)^a) * norm (ω^b) * norm ((1 - ω)^c) * norm (product [ π_i^a_i | i <- [1..N]]) ==@
