@@ -7,6 +7,7 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -87,7 +88,7 @@ instance KnownNat m => Num (Mod m) where
   negate mx@(Mod x) =
     Mod $ if x == 0 then 0 else getNatMod mx - x
   {-# INLINE negate #-}
-  mx@(Mod x) * Mod y =
+  mx@(Mod !x) * (Mod !y) =
     Mod $ x * y `rem` getNatMod mx -- `rem` is slightly faster than `mod`
   {-# INLINE (*) #-}
   abs = id
