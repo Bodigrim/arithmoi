@@ -13,9 +13,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE UnboxedTuples              #-}
 
 module Math.NumberTheory.Moduli.Class
   ( -- * Known modulo
@@ -45,10 +47,10 @@ import Data.Proxy
 import Data.Ratio
 import Data.Semigroup
 import Data.Type.Equality
+import GHC.Exts
 import GHC.Integer.GMP.Internals
+import GHC.Natural (Natural(..), powModNatural)
 import GHC.TypeNats.Compat
-
-import GHC.Natural (Natural, powModNatural)
 
 -- | Wrapper for residues modulo @m@.
 --
@@ -88,9 +90,25 @@ instance KnownNat m => Num (Mod m) where
   negate mx@(Mod x) =
     Mod $ if x == 0 then 0 else getNatMod mx - x
   {-# INLINE negate #-}
+
+  -- If modulo is small and fits into one machine word,
+  -- there is no need to use long arithmetic at all
+  -- and we can save some allocations.
+  mx@(Mod (NatS# x#)) * (Mod (NatS# y#)) = case getNatMod mx of
+    NatS# m# -> let !(# z1#, z2# #) = timesWord2# x# y# in
+                let !(# _, r# #) = quotRemWord2# z1# z2# m# in
+                Mod (NatS# r#)
+    NatJ# b# -> let !(# z1#, z2# #) = timesWord2# x# y# in
+                let r# = wordToBigNat2 z1# z2# `remBigNat` b# in
+                Mod $ if isTrue# (sizeofBigNat# r# ==# 1#)
+                  then NatS# (bigNatToWord r#)
+                  else NatJ# r#
+
   mx@(Mod !x) * (Mod !y) =
-    Mod $ x * y `rem` getNatMod mx -- `rem` is slightly faster than `mod`
+    Mod $ x * y `rem` getNatMod mx
+    -- `rem` is slightly faster than `mod`
   {-# INLINE (*) #-}
+
   abs = id
   {-# INLINE abs #-}
   signum = const $ Mod 1
