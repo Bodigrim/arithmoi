@@ -48,6 +48,18 @@ succGeneric = \case
   Prime 5 -> Prime 7
   Prime p -> head $ mapMaybe isPrime $ map fromWheel30 [toWheel30 p + 1 ..]
 
+succGenericBounded
+  :: (Bits a, Integral a, UniqueFactorisation a, Bounded a)
+  => Prime a
+  -> Prime a
+succGenericBounded = \case
+  Prime 2 -> Prime 3
+  Prime 3 -> Prime 5
+  Prime 5 -> Prime 7
+  Prime p -> case mapMaybe isPrime $ map fromWheel30 [toWheel30 p + 1 .. toWheel30 maxBound] of
+    []    -> error "Enum.succ{Prime}: tried to take `succ' near `maxBound'"
+    q : _ -> q
+
 predGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a
 predGeneric = \case
   Prime 2 -> error "Enum.pred{Prime}: tried to take `pred' of 2"
@@ -61,7 +73,9 @@ enumFromGeneric :: Integral a => Prime a -> [Prime a]
 enumFromGeneric p@(Prime p')
   = coerce
   $ dropWhile (< p)
-  $ concatMap primeList
+  $ concat
+  $ takeWhile (not . null)
+  $ map primeList
   $ psieveFrom
   $ toInteger p'
 
@@ -121,11 +135,11 @@ instance Enum (Prime Int) where
     where
       Prime p = nthPrime (intToInteger n)
   fromEnum = integerToInt . primeCount . intToInteger . unPrime
-  succ = succGeneric -- FIXME
+  succ = succGenericBounded
   pred = predGeneric
-  enumFrom = enumFromGeneric -- FIXME
+  enumFrom = enumFromGeneric
   enumFromTo = enumFromToGeneric
-  enumFromThen = enumFromThenGeneric -- FIXME
+  enumFromThen = enumFromThenGeneric
   enumFromThenTo = enumFromThenToGeneric
 
 instance Enum (Prime Word) where
@@ -135,9 +149,9 @@ instance Enum (Prime Word) where
     where
       Prime p = nthPrime (intToInteger n)
   fromEnum = integerToInt . primeCount . wordToInteger . unPrime
-  succ = succGeneric -- FIXME
+  succ = succGenericBounded
   pred = predGeneric
-  enumFrom = enumFromGeneric -- FIXME
+  enumFrom = enumFromGeneric
   enumFromTo = enumFromToGeneric
-  enumFromThen = enumFromThenGeneric -- FIXME
+  enumFromThen = enumFromThenGeneric
   enumFromThenTo = enumFromThenToGeneric
