@@ -165,6 +165,7 @@ test-suite spec
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests
+    Math.NumberTheory.Primes.SequenceTests
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests
     Math.NumberTheory.PrimesTests
