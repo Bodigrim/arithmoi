@@ -4,6 +4,13 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
+
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase        #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Math.NumberTheory.Primes
     ( Prime
     , unPrime
@@ -19,9 +26,10 @@ import Data.Bits
 import Data.Coerce
 import Data.Maybe
 
+import Math.NumberTheory.Primes.Counting (nthPrime, primeCount)
 import qualified Math.NumberTheory.Primes.Factorisation as F (factorise)
 import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes)
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, psieveFrom, primeSieve)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 import Math.NumberTheory.Utils.FromIntegral
@@ -112,3 +120,134 @@ precPrime n
                   dropWhile (> n) $ map fromWheel30 [toWheel30 n, toWheel30 n - 1 ..]
                   -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be > n.
                   -- E. g., fromWheel30 (toWheel30 100) == 101
+
+-------------------------------------------------------------------------------
+-- Prime sequences
+
+data Algorithm = IsPrime | Sieve
+
+chooseAlgorithm :: Integral a => a -> a -> Algorithm
+chooseAlgorithm from to
+  | to <= fromIntegral sieveRange
+  && to < from + truncate (sqrt (fromIntegral from) :: Double)
+  = IsPrime
+  | to > fromIntegral sieveRange
+  && to < from + truncate (0.036 * sqrt (fromIntegral from) + 40000 :: Double)
+  = IsPrime
+  | otherwise
+  = Sieve
+
+succGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a
+succGeneric = \case
+  Prime 2 -> Prime 3
+  Prime 3 -> Prime 5
+  Prime 5 -> Prime 7
+  Prime p -> head $ mapMaybe isPrime $ map fromWheel30 [toWheel30 p + 1 ..]
+
+succGenericBounded
+  :: (Bits a, Integral a, UniqueFactorisation a, Bounded a)
+  => Prime a
+  -> Prime a
+succGenericBounded = \case
+  Prime 2 -> Prime 3
+  Prime 3 -> Prime 5
+  Prime 5 -> Prime 7
+  Prime p -> case mapMaybe isPrime $ map fromWheel30 [toWheel30 p + 1 .. toWheel30 maxBound] of
+    []    -> error "Enum.succ{Prime}: tried to take `succ' near `maxBound'"
+    q : _ -> q
+
+predGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a
+predGeneric = \case
+  Prime 2 -> error "Enum.pred{Prime}: tried to take `pred' of 2"
+  Prime 3 -> Prime 2
+  Prime 5 -> Prime 3
+  Prime 7 -> Prime 5
+  Prime p -> head $ mapMaybe isPrime $ map fromWheel30 [toWheel30 p - 1, toWheel30 p - 2 ..]
+
+-- 'dropWhile' is important, because 'psieveFrom' can actually contain primes less than p.
+enumFromGeneric :: Integral a => Prime a -> [Prime a]
+enumFromGeneric p@(Prime p')
+  = coerce
+  $ dropWhile (< p)
+  $ concat
+  $ takeWhile (not . null)
+  $ map primeList
+  $ psieveFrom
+  $ toInteger p'
+
+enumFromToGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> [Prime a]
+enumFromToGeneric p@(Prime p') q@(Prime q') = takeWhile (<= q) $ dropWhile (< p) $
+  case chooseAlgorithm p' q' of
+    IsPrime -> Prime 2 : Prime 3 : Prime 5 : mapMaybe isPrime (map fromWheel30 [toWheel30 p' .. toWheel30 q'])
+    Sieve   ->
+      if q' < fromIntegral sieveRange
+      then           primeList $ primeSieve $ toInteger q'
+      else concatMap primeList $ psieveFrom $ toInteger p'
+
+enumFromThenGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> [Prime a]
+enumFromThenGeneric p@(Prime p') (Prime q') = case p' `compare` q' of
+  LT -> filter (\(Prime r') -> (r' - p') `mod` delta == 0) $ enumFromGeneric p
+    where
+      delta = q' - p'
+  EQ -> repeat p
+  GT -> filter (\(Prime r') -> (p' - r') `mod` delta == 0) $ reverse $ enumFromToGeneric (Prime 2) p
+    where
+      delta = p' - q'
+
+enumFromThenToGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> Prime a -> [Prime a]
+enumFromThenToGeneric p@(Prime p') (Prime q') r = case p' `compare` q' of
+  LT -> filter (\(Prime r') -> (r' - p') `mod` delta == 0) $ enumFromToGeneric p r
+    where
+      delta = q' - p'
+  EQ -> repeat p
+  GT -> filter (\(Prime r') -> (p' - r') `mod` delta == 0) $ reverse $ enumFromToGeneric (Prime 2) p
+    where
+      delta = p' - q'
+
+instance Enum (Prime Integer) where
+  toEnum = nthPrime . intToInteger
+  fromEnum = integerToInt . primeCount . unPrime
+  succ = succGeneric
+  pred = predGeneric
+  enumFrom = enumFromGeneric
+  enumFromTo = enumFromToGeneric
+  enumFromThen = enumFromThenGeneric
+  enumFromThenTo = enumFromThenToGeneric
+
+instance Enum (Prime Natural) where
+  toEnum = Prime . integerToNatural . unPrime . nthPrime . intToInteger
+  fromEnum = integerToInt . primeCount . naturalToInteger . unPrime
+  succ = succGeneric
+  pred = predGeneric
+  enumFrom = enumFromGeneric
+  enumFromTo = enumFromToGeneric
+  enumFromThen = enumFromThenGeneric
+  enumFromThenTo = enumFromThenToGeneric
+
+instance Enum (Prime Int) where
+  toEnum n = if p > intToInteger maxBound
+    then error $ "Enum.toEnum{Prime}: " ++ show n ++ "th prime = " ++ show p ++ " is out of bounds of Int"
+    else Prime (integerToInt p)
+    where
+      Prime p = nthPrime (intToInteger n)
+  fromEnum = integerToInt . primeCount . intToInteger . unPrime
+  succ = succGenericBounded
+  pred = predGeneric
+  enumFrom = enumFromGeneric
+  enumFromTo = enumFromToGeneric
+  enumFromThen = enumFromThenGeneric
+  enumFromThenTo = enumFromThenToGeneric
+
+instance Enum (Prime Word) where
+  toEnum n = if p > wordToInteger maxBound
+    then error $ "Enum.toEnum{Prime}: " ++ show n ++ "th prime = " ++ show p ++ " is out of bounds of Word"
+    else Prime (integerToWord p)
+    where
+      Prime p = nthPrime (intToInteger n)
+  fromEnum = integerToInt . primeCount . wordToInteger . unPrime
+  succ = succGenericBounded
+  pred = predGeneric
+  enumFrom = enumFromGeneric
+  enumFromTo = enumFromToGeneric
+  enumFromThen = enumFromThenGeneric
+  enumFromThenTo = enumFromThenToGeneric

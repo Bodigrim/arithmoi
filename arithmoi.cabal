@@ -105,7 +105,6 @@ library
     Math.NumberTheory.Primes.Counting.Impl
     Math.NumberTheory.Primes.Factorisation.Montgomery
     Math.NumberTheory.Primes.Factorisation.TrialDivision
-    Math.NumberTheory.Primes.Sequence
     Math.NumberTheory.Primes.Sieve.Eratosthenes
     Math.NumberTheory.Primes.Sieve.Indexing
     Math.NumberTheory.Primes.Testing.Certificates.Internal
