@@ -195,12 +195,12 @@ enumFromThenGeneric p@(Prime p') (Prime q') = case p' `compare` q' of
       delta = p' - q'
 
 enumFromThenToGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> Prime a -> [Prime a]
-enumFromThenToGeneric p@(Prime p') (Prime q') r = case p' `compare` q' of
-  LT -> filter (\(Prime r') -> (r' - p') `mod` delta == 0) $ enumFromToGeneric p r
+enumFromThenToGeneric p@(Prime p') (Prime q') r@(Prime r') = case p' `compare` q' of
+  LT -> filter (\(Prime t') -> (t' - p') `mod` delta == 0) $ enumFromToGeneric p r
     where
       delta = q' - p'
-  EQ -> repeat p
-  GT -> filter (\(Prime r') -> (p' - r') `mod` delta == 0) $ reverse $ enumFromToGeneric (Prime 2) p
+  EQ -> if p' <= r' then repeat p else []
+  GT -> filter (\(Prime t') -> (p' - t') `mod` delta == 0) $ reverse $ enumFromToGeneric r p
     where
       delta = p' - q'
 
