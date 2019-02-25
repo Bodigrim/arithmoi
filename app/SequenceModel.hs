@@ -6,6 +6,7 @@ module Main where
 import Numeric.GSL.Fitting
 
 -- | Benchmarks Sequence/filterIsPrime
+-- ([start, length], ([time in microseconds], weight))
 filterIsPrimeBenchData :: [([Double], ([Double], Double))]
 filterIsPrimeBenchData =
   [ ([100000, 1000], ([777], 0.1))
@@ -38,6 +39,7 @@ filterIsPrimeBenchApprox ([from, len], ([exact], _)) = [from, len, exact, fromIn
     appr = len * d
 
 -- | Benchmarks Sequence/eratosthenes
+-- ([start, length], ([time in microseconds], weight))
 eratosthenesData :: [([Double], ([Double], Double))]
 eratosthenesData =
   [ ([10000000000,1000000], ([21490], 0.1))
