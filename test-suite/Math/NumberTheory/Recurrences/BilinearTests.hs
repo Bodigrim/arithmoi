@@ -17,11 +17,21 @@ module Math.NumberTheory.Recurrences.BilinearTests
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC hiding (NonNegative(..), Positive(..))
 
 import Data.Ratio
 
 import Math.NumberTheory.Recurrences.Bilinear
 import Math.NumberTheory.TestUtils
+
+import Math.NumberTheory.Primes
+import Data.List (intersect, sort, nub)
+
+countCoprimesProperty :: [Prime Int] -> Positive (Large Int) -> Property
+countCoprimesProperty ps' (Positive (Large n)) = countCoprimes ps n ===
+  length (filter (\m -> null $ intersect ps $ map fst $ factorise m) [1..n])
+  where
+    ps = nub $ sort ps'
 
 binomialProperty1 :: NonNegative Int -> Bool
 binomialProperty1 (NonNegative i) = length (binomial @Integer !! i) == i + 1
@@ -207,7 +217,9 @@ eulerPAt1SpecialCase1 = assertEqual "eulerPolyAt1"
 
 testSuite :: TestTree
 testSuite = testGroup "Bilinear"
-  [ testGroup "binomial"
+  [ QC.testProperty "countCoprimes" countCoprimesProperty
+
+  , testGroup "binomial"
     [ testSmallAndQuick "shape"      binomialProperty1
     , testSmallAndQuick "left side"  binomialProperty2
     , testSmallAndQuick "right side" binomialProperty3

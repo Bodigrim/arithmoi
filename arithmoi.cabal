@@ -234,3 +234,15 @@ executable sequence-model
   hs-source-dirs: app
   default-language: Haskell2010
   ghc-options: -Wall -Widentities
+
+executable coprimes
+  build-depends:
+    base,
+    arithmoi,
+    containers,
+    semirings,
+    time
+  main-is: Coprimes.hs
+  hs-source-dirs: app
+  default-language: Haskell2010
+  ghc-options: -Wall -Widentities

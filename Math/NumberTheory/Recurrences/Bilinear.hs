@@ -39,6 +39,8 @@ module Math.NumberTheory.Recurrences.Bilinear
   , binomialRotated
   , binomialLine
   , binomialDiagonal
+  , foo4
+  , countCoprimes
     -- * Other recurrences
   , stirling1
   , stirling2
@@ -59,6 +61,7 @@ import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.Recurrences.Linear (factorial)
+import Math.NumberTheory.Primes
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle).
 --
@@ -71,7 +74,7 @@ import Math.NumberTheory.Recurrences.Linear (factorial)
 -- >>> take 6 binomial :: [[Int]]
 -- [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1],[1,5,10,10,5,1]]
 binomial :: Semiring a => [[a]]
-binomial = iterate (\l -> zipWith plus (l ++ [zero]) (zero : l)) [one]
+binomial = iterate (\xs -> zipListWithTail plus (zero : xs) zero) [one]
 {-# SPECIALIZE binomial :: [[Int]]     #-}
 {-# SPECIALIZE binomial :: [[Word]]    #-}
 {-# SPECIALIZE binomial :: [[Integer]] #-}
@@ -123,6 +126,35 @@ binomialDiagonal n = scanl'
 {-# SPECIALIZE binomialDiagonal :: Word    -> [Word]    #-}
 {-# SPECIALIZE binomialDiagonal :: Integer -> [Integer] #-}
 {-# SPECIALIZE binomialDiagonal :: Natural -> [Natural] #-}
+
+-- Implementation by https://github.com/CarlEdman
+foo4 :: [a] -> [[[a]]]
+foo4 = scanl' go [[]] . zip (map binomialDiagonal [0..]) . init . tails
+  where
+    go p (bs, as) = [q : qs | (q, b) <- zip as bs, qs <- take b p]
+
+-- List of primes must be strictly ascending.
+countCoprimes :: forall a. (Show a, Integral a) => [Prime a] -> a -> a
+countCoprimes [] n = n
+countCoprimes ps n
+  = sum
+  $ zipWith (*) (iterate negate 1)
+  $ map (sum . map (n `quot`))
+  $ ([1] :)
+  $ takeWhile (not . null)
+  $ map (filter (<= n))
+  $ map (map $ product . map unPrime)
+  $ map cutoff
+  $ tail
+  $ foo4 ps
+  where
+    cutoff :: [[Prime a]] -> [[Prime a]]
+    cutoff [] = []
+    cutoff xss@(xs : _) = takeWhile predicate xss
+      where
+        lim = n `quot` product (map unPrime $ tail xs)
+        predicate [] = True
+        predicate (x : _) = unPrime x <= lim
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --
@@ -301,6 +333,16 @@ zipIndexedListWithTail f n as a = case as of
       []       -> let v = f m y a in [v]
       (z : zs) -> let v = f m y z in (v : go (succ m) z zs)
 {-# INLINE zipIndexedListWithTail #-}
+
+zipListWithTail :: (a -> a -> b) -> [a] -> a -> [b]
+zipListWithTail f as a = case as of
+  []       -> []
+  (x : xs) -> go x xs
+  where
+    go y ys = case ys of
+      []       -> let v = f y a in [v]
+      (z : zs) -> let v = f y z in (v : go z zs)
+{-# INLINE zipListWithTail #-}
 
 -- | Helper for common code in @bernoulli, euler, eulerPolyAt1. All three
 -- sequences rely on @stirling2@ and have the same general structure of
