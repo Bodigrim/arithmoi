@@ -40,7 +40,7 @@ import Math.NumberTheory.Moduli.Class (getNatMod, getNatVal, KnownNat, Mod, Mult
 import Math.NumberTheory.Powers.General (highestPower)
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Prefactored
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 
 import Control.DeepSeq
 import Control.Monad (guard)

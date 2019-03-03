@@ -23,11 +23,15 @@ module Math.NumberTheory.Utils
     , mergeBy
 
     , recipMod
+
+    , toWheel30
+    , fromWheel30
     ) where
 
 #include "MachDeps.h"
 
 import Prelude hiding (mod, quotRem)
+import qualified Prelude as P
 
 import GHC.Base
 
@@ -198,3 +202,16 @@ bigNatToNatural :: BigNat -> Natural
 bigNatToNatural bn
   | isTrue# (sizeofBigNat# bn ==# 1#) = NatS# (bigNatToWord bn)
   | otherwise = NatJ# bn
+
+-------------------------------------------------------------------------------
+-- Helpers for mapping to rough numbers and back.
+-- Copypasted from Data.BitStream.WheelMapping
+
+toWheel30 :: (Integral a, Bits a) => a -> a
+toWheel30 i = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
+  where
+    (q, r) = i `P.quotRem` 30
+
+fromWheel30 :: (Num a, Bits a) => a -> a
+fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)
+              + ((i `shiftL` 1 - i `shiftR` 1) .&. 2)

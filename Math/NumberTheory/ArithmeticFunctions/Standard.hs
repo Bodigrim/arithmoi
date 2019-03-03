@@ -47,7 +47,7 @@ import Data.Semigroup
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.ArithmeticFunctions.NFreedom (nFrees, nFreesBlock)
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.FromIntegral
 
 import Numeric.Natural

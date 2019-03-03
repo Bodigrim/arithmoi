@@ -16,7 +16,8 @@ module Math.NumberTheory.PrimesTests
 
 import Test.Tasty
 
-import Math.NumberTheory.Primes
+import Math.NumberTheory.Primes (unPrime)
+import Math.NumberTheory.Primes.Sieve (primeSieve, primeList, primes)
 import Math.NumberTheory.TestUtils
 
 primesSumWonk :: Int -> Int

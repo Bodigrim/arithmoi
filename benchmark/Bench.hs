@@ -14,6 +14,7 @@ import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
 import Math.NumberTheory.PrimitiveRootsBench as PrimitiveRoots
 import Math.NumberTheory.RecurrencesBench as Recurrences
+import Math.NumberTheory.SequenceBench as Sequence
 import Math.NumberTheory.SieveBlockBench as SieveBlock
 import Math.NumberTheory.SmoothNumbersBench as SmoothNumbers
 import Math.NumberTheory.ZetaBench as Zeta
@@ -32,6 +33,7 @@ main = defaultMain
   , Primes.benchSuite
   , PrimitiveRoots.benchSuite
   , Recurrences.benchSuite
+  , Sequence.benchSuite
   , SieveBlock.benchSuite
   , SmoothNumbers.benchSuite
   , Zeta.benchSuite

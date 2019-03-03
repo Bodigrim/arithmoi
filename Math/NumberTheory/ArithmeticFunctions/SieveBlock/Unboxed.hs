@@ -28,7 +28,7 @@ import GHC.Exts
 
 import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius)
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Primes (primes)
+import Math.NumberTheory.Primes.Sieve (primes)
 import Math.NumberTheory.Primes.Types (Prime(..))
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils (splitOff#)
