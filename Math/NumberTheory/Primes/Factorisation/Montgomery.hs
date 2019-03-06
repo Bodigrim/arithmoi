@@ -77,6 +77,12 @@ import Math.NumberTheory.Utils
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
 --   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
 --   an arbitrary manner from the bit-pattern of @n@.
+--
+-- __Warning:__ there are no guarantees of any particular
+-- order of prime factors, do not expect them to be ascending. E. g.,
+--
+-- >>> factorise 10251562501
+-- [(101701,1),(100801,1)]
 factorise :: Integer -> [(Integer, Word)]
 factorise n
     | abs n == 1 = []

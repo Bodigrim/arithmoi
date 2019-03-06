@@ -58,6 +58,12 @@ class UniqueFactorisation a where
   -- for 'Math.NumberTheory.Primes.Factorisation.factorise'.
   -- If you were looking for the latter, please import
   -- "Math.NumberTheory.Primes.Factorisation" instead of this module.
+  --
+  -- __Warning:__ there are no guarantees of any particular
+  -- order of prime factors, do not expect them to be ascending. E. g.,
+  --
+  -- >>> factorise 10251562501
+  -- [(101701,1),(100801,1)]
   factorise :: a -> [(Prime a, Word)]
   -- | Check whether an argument is prime.
   -- If it is then return an associated prime.
