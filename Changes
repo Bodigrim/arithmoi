@@ -1,3 +1,56 @@
+0.9.0.0
+    This release supports GHC 8.0, 8.2, 8.4 and 8.6.
+
+    Breaking changes:
+
+        Remove 'Prime' type family and introduce 'Prime' newtype. This newtype
+        is now used extensively in public API:
+
+        primes :: Integral a => [Prime a]
+        primeList :: Integral a => PrimeSieve -> [Prime a]
+        sieveFrom :: Integer -> [Prime Integer]
+        nthPrime :: Integer -> Prime Integer
+
+        'sbcFunctionOnPrimePower' now accepts 'Prime Word' instead of 'Word'.
+
+        'Math.NumberTheory.Primes.{Factorisation,Testing,Counting,Sieve}'
+        are no longer re-exported from 'Math.NumberTheory.Primes'.
+        Merge 'Math.NumberTheory.UniqueFactorisation' into 'Math.NumberTheory.Primes' (#135, #153).
+
+        Remove deprecated 'Math.NumberTheory.GCD' and 'Math.NumberTheory.GCD.LowLevel'.
+
+        Deprecate 'Math.NumberTheory.Recurrencies.*'.
+        Use 'Math.NumberTheory.Recurrences.*' instead (#146).
+
+    New features:
+
+        New functions 'nextPrime' and 'precPrime'. Implement an instance of 'Enum' for primes (#153):
+
+        > [nextPrime 101 .. precPrime 130]
+        [Prime 101,Prime 103,Prime 107,Prime 109,Prime 113,Prime 127]
+
+        Support Gaussian and Eisenstein integers in smooth numbers (#138).
+
+        Add the Hurwitz zeta function on non-negative integer arguments (#126).
+
+        Implement efficient tests of n-freeness: pointwise and in interval. See 'isNFree' and 'nFreesBlock' (#145).
+
+        Generate preimages of the totient and the sum-of-divisors functions (#142):
+
+        > inverseTotient 120 :: [Integer]
+        [155,310,183,366,225,450,175,350,231,462,143,286,244,372,396,308,248]
+
+        Generate coefficients of Faulhaber polynomials 'faulhaberPoly' (#70).
+
+    Improvements:
+
+        Better precision for exact values of Riemann zeta and Dirichlet beta
+        functions (#123).
+
+        Speed up certain cases of modular multiplication (#160).
+
+        Extend Chinese theorem to non-coprime moduli (#71).
+
 0.8.0.0
     This release supports GHC 7.10, 8.0, 8.2, 8.4 and 8.6.
 
