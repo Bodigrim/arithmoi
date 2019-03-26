@@ -40,7 +40,7 @@ import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 --
 -- > SieveBlockConfig
 -- >   { sbcEmpty                = 1
--- >   , sbcFunctionOnPrimePower = (\p a -> (p - 1) * p ^ (a - 1)
+-- >   , sbcFunctionOnPrimePower = \p a -> (unPrime p - 1) * unPrime p ^ (a - 1)
 -- >   , sbcAppend               = (*)
 -- >   }
 data SieveBlockConfig a = SieveBlockConfig
