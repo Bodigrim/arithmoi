@@ -23,7 +23,7 @@ import Numeric.Natural       (Natural)
 -- Example:
 --
 -- >>> take 10 pents
--- [0, 1, 2, 5, 7, 12 ,15, 22, 26, 35]
+-- [0,1,2,5,7,12,15,22,26,35]
 pents :: (Enum a, Num a) => [a]
 pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
                    (scanl (\acc n -> acc + 3 * n - 2) 1 [2..])
@@ -40,10 +40,10 @@ pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
 -- Examples:
 --
 -- >>> pentagonalSigns [1..5]
--- [1, 2, -3, -4, 5]
+-- [1,2,-3,-4,5]
 --
 -- >>> pentagonalSigns [1..6]
--- [1, 2, -3, -4, 5, 6]
+-- [1,2,-3,-4,5,6]
 pentagonalSigns :: Num a => [a] -> [a]
 pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
@@ -71,9 +71,10 @@ pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 -- | Infinite zero-based table of <https://oeis.org/A000041 partition numbers>.
 --
 -- >>> take 10 partition
--- [1, 1, 2, 3, 5, 7, 11, 15, 22, 30]
+-- [1,1,2,3,5,7,11,15,22,30]
 --
 -- >>> :set -XDataKinds
+-- >>> import Math.NumberTheory.Moduli.Class
 -- >>> partition !! 1000 :: Mod 1000
 -- (991 `modulo` 1000)
 partition :: Num a => [a]

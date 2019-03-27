@@ -159,7 +159,7 @@ invertMod mx
 --
 -- >>> :set -XDataKinds
 -- >>> powMod (3 :: Mod 10) 4
--- > (1 `modulo` 10)
+-- (1 `modulo` 10)
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod mx a
   | a < 0     = error $ "^{Mod}: negative exponent"
@@ -232,7 +232,7 @@ invertGroup (MultMod a) = case invertMod a of
 --
 -- >>> 2 `modulo` 10 + 4 `modulo` 15
 -- (1 `modulo` 5)
--- >>> 2 `modulo` 10 * 4 `modulo` 15
+-- >>> (2 `modulo` 10) * (4 `modulo` 15)
 -- (3 `modulo` 5)
 -- >>> 2 `modulo` 10 + fromRational (3 % 7)
 -- (1 `modulo` 10)
@@ -329,7 +329,7 @@ instance Fractional SomeMod where
 --
 -- >>> invertSomeMod (3 `modulo` 10)
 -- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
--- >>> invertMod (4 `modulo` 10)
+-- >>> invertSomeMod (4 `modulo` 10)
 -- Nothing
 -- >>> invertSomeMod (fromRational (2 % 5))
 -- Just 5 % 2

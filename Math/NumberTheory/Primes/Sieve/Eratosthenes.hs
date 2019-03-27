@@ -150,22 +150,21 @@ takeWhileIncreasing = \case
 -- 'primes' is a polymorphic list, so the results of computations are not retained in memory.
 -- Make it monomorphic to take advantages of memoization. Compare
 --
--- >>> :set +s
--- >>> primes !! 1000000 :: Int
--- 15485867
+-- >>> primes !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (5.32 secs, 6,945,267,496 bytes)
--- >>> primes !! 1000000 :: Int
--- 15485867
+-- >>> primes !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (5.19 secs, 6,945,267,496 bytes)
 --
 -- against
 --
--- >>> let primes' = primes :: [Int]
--- >>> primes' !! 1000000 :: Int
--- 15485867
+-- >>> let primes' = primes :: [Prime Int]
+-- >>> primes' !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (5.29 secs, 6,945,269,856 bytes)
--- >>> primes' !! 1000000 :: Int
--- 15485867
+-- >>> primes' !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (0.02 secs, 336,232 bytes)
 primes :: Integral a => [Prime a]
 primes

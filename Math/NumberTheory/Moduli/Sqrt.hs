@@ -47,7 +47,7 @@ import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 --
 -- >>> :set -XDataKinds
 -- >>> sqrtsMod (1 :: Mod 60)
--- > [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
+-- [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
 sqrtsMod :: KnownNat m => Mod m -> [Mod m]
 sqrtsMod a = map fromInteger $ sqrtsModFactorisation (getVal a) (factorise (getMod a))
 
@@ -73,6 +73,8 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
 
 -- | List all square roots modulo the power of a prime.
 --
+-- >>> import Data.Maybe
+-- >>> import Math.NumberTheory.Primes
 -- >>> sqrtsModPrimePower 7 (fromJust (isPrime 3)) 2
 -- [4,5]
 -- >>> sqrtsModPrimePower 9 (fromJust (isPrime 3)) 3
@@ -104,6 +106,8 @@ sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
 
 -- | List all square roots by prime modulo.
 --
+-- >>> import Data.Maybe
+-- >>> import Math.NumberTheory.Primes
 -- >>> sqrtsModPrime 1 (fromJust (isPrime 5))
 -- [1,4]
 -- >>> sqrtsModPrime 0 (fromJust (isPrime 5))

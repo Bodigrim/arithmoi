@@ -16,7 +16,7 @@ module Math.NumberTheory.Zeta.Utils
 -- first one provided as argument.
 --
 -- >>> take 10 $ intertwine [0, 2 ..] [1, 3 ..]
--- [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+-- [0,1,2,3,4,5,6,7,8,9]
 intertwine :: [a] -> [a] -> [a]
 intertwine [] ys = ys
 intertwine (x : xs) ys = x : intertwine ys xs
@@ -25,7 +25,7 @@ intertwine (x : xs) ys = x : intertwine ys xs
 -- Do NOT use with finite lists.
 --
 -- >>> take 10 (skipOdds [0, 1 ..])
--- [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+-- [0,2,4,6,8,10,12,14,16,18]
 skipOdds :: [a] -> [a]
 skipOdds (x : _ : xs) = x : skipOdds xs
 skipOdds xs = xs
@@ -34,6 +34,6 @@ skipOdds xs = xs
 -- Do NOT use with finite lists.
 --
 -- >>> take 10 (skipEvens [0, 1 ..])
--- [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+-- [1,3,5,7,9,11,13,15,17,19]
 skipEvens :: [a] -> [a]
 skipEvens = skipOdds . tail

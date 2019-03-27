@@ -42,7 +42,7 @@ import Math.NumberTheory.Utils.FromIntegral
 --
 -- >>> powMod 3 101 (2^60-1 :: Integer)
 -- 1018105167100379328 -- correct
--- >>> powMod 3 101 (2^60-1 :: Int64)
+-- >>> powMod 3 101 (2^60-1 :: Int)
 -- 1115647832265427613 -- incorrect due to overflow
 -- >>> powModInt 3 101 (2^60-1 :: Int)
 -- 1018105167100379328 -- correct

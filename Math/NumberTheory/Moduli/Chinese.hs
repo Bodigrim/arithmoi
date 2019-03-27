@@ -136,16 +136,18 @@ chineseWrap _ _ (InfMod r1) (InfMod r2)
 -- | Same as 'chineseCoprime', but operates on residues.
 --
 -- >>> :set -XDataKinds
+-- >>> import Math.NumberTheory.Moduli.Class
 -- >>> (1 `modulo` 2) `chineseCoprimeSomeMod` (2 `modulo` 3)
 -- Just (5 `modulo` 6)
 -- >>> (3 `modulo` 4) `chineseCoprimeSomeMod` (5 `modulo` 6)
--- Just (11 `modulo` 12)
+-- Nothing
 chineseCoprimeSomeMod :: SomeMod -> SomeMod -> Maybe SomeMod
 chineseCoprimeSomeMod = chineseWrap (*) chineseCoprime
 
 -- | Same as 'chinese', but operates on residues.
 --
 -- >>> :set -XDataKinds
+-- >>> import Math.NumberTheory.Moduli.Class
 -- >>> (1 `modulo` 2) `chineseSomeMod` (2 `modulo` 3)
 -- Just (5 `modulo` 6)
 -- >>> (3 `modulo` 4) `chineseSomeMod` (5 `modulo` 6)

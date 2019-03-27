@@ -69,7 +69,7 @@ instance NFData a => NFData (CyclicGroup a)
 -- >>> cyclicGroupFromModulo 4
 -- Just CG4
 -- >>> cyclicGroupFromModulo (2 * 13 ^ 3)
--- Just (CGDoubleOddPrimePower (PrimeNat 13) 3)
+-- Just (CGDoubleOddPrimePower (Prime 13) 3)
 -- >>> cyclicGroupFromModulo (4 * 13)
 -- Nothing
 cyclicGroupFromModulo
@@ -99,11 +99,11 @@ isPrimePower n = (, k) <$> isPrime m
 -- a cyclic multiplicative group of residues.
 --
 -- >>> cyclicGroupToModulo CG4
--- Prefactored {prefValue = 4, prefFactors = Coprimes {unCoprimes = fromList [(2,2)]}}
+-- Prefactored {prefValue = 4, prefFactors = Coprimes {unCoprimes = [(2,2)]}}
 --
--- >>> :set -XTypeFamilies
--- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (PrimeNat 13) 3)
--- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = fromList [(2,1),(13,3)]}}
+-- >>> import Data.Maybe
+-- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (fromJust (isPrime 13)) 3)
+-- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = [(13,3),(2,1)]}}
 cyclicGroupToModulo
   :: (E.Euclidean a, Ord a, UniqueFactorisation a)
   => CyclicGroup a
@@ -115,7 +115,7 @@ cyclicGroupToModulo = fromFactors . \case
   CGDoubleOddPrimePower p k -> Coprimes.singleton 2 1
                             <> Coprimes.singleton (unPrime p) k
 
--- | 'PrimitiveRoot' m is a type which is only inhabited 
+-- | 'PrimitiveRoot' m is a type which is only inhabited
 -- by <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive roots> of m.
 data PrimitiveRoot m = PrimitiveRoot
   { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
@@ -158,14 +158,9 @@ isPrimitiveRoot' cg r =
 --
 -- >>> :set -XDataKinds
 -- >>> isPrimitiveRoot (1 :: Mod 13)
--- False
+-- Nothing
 -- >>> isPrimitiveRoot (2 :: Mod 13)
--- True
---
--- Here is how to list all primitive roots:
---
--- >>> mapMaybe isPrimitiveRoot [minBound .. maxBound] :: [Mod 13]
--- [(2 `modulo` 13), (6 `modulo` 13), (7 `modulo` 13), (11 `modulo` 13)]
+-- Just (PrimitiveRoot {unPrimitiveRoot = MultMod {multElement = (2 `modulo` 13)}, getGroup = CGOddPrimePower (Prime 13) 1})
 --
 -- This function is a convenient wrapper around 'isPrimitiveRoot''. The latter
 -- provides better control and performance, if you need them.

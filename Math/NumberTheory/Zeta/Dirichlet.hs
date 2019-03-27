@@ -26,9 +26,7 @@ import Math.NumberTheory.Zeta.Utils   (intertwine, skipOdds)
 --
 -- >>> approximateValue (betasOdd !! 25) :: Double
 -- 0.9999999999999987
---
--- Using 'Data.Number.Fixed.Fixed':
---
+-- >>> import Data.Number.Fixed
 -- >>> approximateValue (betasOdd !! 25) :: Fixed Prec50
 -- 0.99999999999999999999999960726927497384196726751694
 betasOdd :: [ExactPi]
@@ -46,7 +44,7 @@ betasEven eps = (1 / 2) : hurwitz
   where
     hurwitz :: [a]
     hurwitz =
-        zipWith3 (\quarter threeQuarters four -> 
+        zipWith3 (\quarter threeQuarters four ->
             (quarter - threeQuarters) / four)
         (tail . skipOdds $ zetaHurwitz eps 0.25)
         (tail . skipOdds $ zetaHurwitz eps 0.75)
@@ -61,7 +59,7 @@ betasEven eps = (1 / 2) : hurwitz
 -- 'Math.NumberTheory.Zeta.Hurwitz.zetaHurwitz' recurrence.
 --
 -- >>> take 5 (betas 1e-14) :: [Double]
--- [0.5,0.7853981633974483,0.9159655941772191,0.9689461462593693,0.988944551741105]
+-- [0.5,0.7853981633974483,0.9159655941772189,0.9689461462593694,0.9889445517411051]
 betas :: (Floating a, Ord a) => a -> [a]
 betas eps = e : o : scanl1 f (intertwine es os)
   where

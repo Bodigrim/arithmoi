@@ -63,7 +63,7 @@ class UniqueFactorisation a where
   -- order of prime factors, do not expect them to be ascending. E. g.,
   --
   -- >>> factorise 10251562501
-  -- [(101701,1),(100801,1)]
+  -- [(Prime 101701,1),(Prime 100801,1)]
   factorise :: a -> [(Prime a, Word)]
   -- | Check whether an argument is prime.
   -- If it is then return an associated prime.

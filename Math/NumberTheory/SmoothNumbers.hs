@@ -44,9 +44,9 @@ newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 --
 -- >>> import qualified Data.Set as Set
 -- >>> fromSet (Set.fromList [2, 3])
--- Just (SmoothBasis [2, 3])
+-- Just (SmoothBasis {unSmoothBasis = [2,3]})
 -- >>> fromSet (Set.fromList [2, 4])
--- Just (SmoothBasis [2, 4])
+-- Just (SmoothBasis {unSmoothBasis = [2,4]})
 -- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
 -- Nothing
 fromSet :: E.Euclidean a => S.Set a -> Maybe (SmoothBasis a)
@@ -55,11 +55,11 @@ fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elem
 -- | Build a 'SmoothBasis' from a list of numbers ≥2.
 --
 -- >>> fromList [2, 3]
--- Just (SmoothBasis [2, 3])
+-- Just (SmoothBasis {unSmoothBasis = [2,3]})
 -- >>> fromList [2, 2]
--- Just (SmoothBasis [2])
+-- Just (SmoothBasis {unSmoothBasis = [2]})
 -- >>> fromList [2, 4]
--- Just (SmoothBasis [2, 4])
+-- Just (SmoothBasis {unSmoothBasis = [2,4]})
 -- >>> fromList [1, 3] -- should be >= 2
 -- Nothing
 fromList :: E.Euclidean a => [a] -> Maybe (SmoothBasis a)
@@ -70,7 +70,7 @@ fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
 -- | Build a 'SmoothBasis' from a list of primes below given bound.
 --
 -- >>> fromSmoothUpperBound 10
--- Just (SmoothBasis [2, 3, 5, 7])
+-- Just (SmoothBasis {unSmoothBasis = [2,3,5,7]})
 -- >>> fromSmoothUpperBound 1
 -- Nothing
 fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
@@ -114,7 +114,7 @@ smoothOver' norm pl =
 --
 -- >>> import Data.Maybe
 -- >>> take 10 (smoothOver (fromJust (fromList [2, 5])))
--- [1, 2, 4, 5, 8, 10, 16, 20, 25, 32]
+-- [1,2,4,5,8,10,16,20,25,32]
 smoothOver :: Integral a => SmoothBasis a -> [a]
 smoothOver = smoothOver' abs
 
@@ -128,7 +128,7 @@ smoothOver = smoothOver' abs
 --
 -- >>> import Data.Maybe
 -- >>> smoothOverInRange (fromJust (fromList [2, 5])) 100 200
--- [100, 125, 128, 160, 200]
+-- [100,125,128,160,200]
 smoothOverInRange :: forall a. Integral a => SmoothBasis a -> a -> a -> [a]
 smoothOverInRange s lo hi
   = takeWhile (<= hi)
@@ -148,7 +148,7 @@ smoothOverInRange s lo hi
 --
 -- >>> import Data.Maybe
 -- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
--- [100, 125, 128, 160, 200]
+-- [100,125,128,160,200]
 smoothOverInRangeBF
   :: forall a. (Enum a, E.Euclidean a)
   => SmoothBasis a

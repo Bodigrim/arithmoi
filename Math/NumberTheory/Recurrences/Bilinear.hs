@@ -178,7 +178,7 @@ bernoulli = helperForB_E_EP id (map recip [1..])
 -- | <https://en.wikipedia.org/wiki/Faulhaber%27s_formula Faulhaber's formula>.
 --
 -- >>> sum (map (^ 10) [0..100])
--- sum (map (^ 10) [0..100])
+-- 959924142434241924250
 -- >>> sum $ zipWith (*) (faulhaberPoly 10) (iterate (* 100) 1)
 -- 959924142434241924250 % 1
 faulhaberPoly :: Integral a => Int -> [Ratio a]
@@ -217,7 +217,7 @@ euler' = tail $ helperForB_E_EP tail as
 -- as the denominators in @euler'@ are always @1@.
 --
 -- >>> take 10 euler :: [Integer]
--- [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0]
+-- [1,0,-1,0,5,0,-61,0,1385,0]
 euler :: forall a . Integral a => [a]
 euler = map numerator euler'
 

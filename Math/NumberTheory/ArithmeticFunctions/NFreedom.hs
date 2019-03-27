@@ -40,7 +40,7 @@ import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 -- undefined, __if__ the function terminates.
 --
 -- >>> sieveBlockNFree 2 1 10
--- [True, True, True, False, True, True, True, False, False, True]
+-- [True,True,True,False,True,True,True,False,False,True]
 sieveBlockNFree
   :: forall a . Integral a
   => Word

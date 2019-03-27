@@ -35,29 +35,23 @@ import Math.NumberTheory.Primes.Types
 --
 -- For instance, let @p@ and @q@ be big primes:
 --
--- >>> let p, q :: Integer
--- >>>     p = 1000000000000000000000000000057
--- >>>     q = 2000000000000000000000000000071
+-- >>> let p = 1000000000000000000000000000057 :: Integer
+-- >>> let q = 2000000000000000000000000000071 :: Integer
 --
--- It would be  difficult to compute prime factorisation of their product
--- as is:
--- 'factorise' would take ages. Things become different if we simply
+-- It would be difficult to compute the totient function
+-- of their product as is, because once we multiplied them
+-- the information of factors is lost and
+-- 'Math.NumberTheory.ArithmeticFunctions.totient' (@p@ * @q@)
+-- would take ages. Things become different if we simply
 -- change types of @p@ and @q@ to prefactored ones:
 --
--- >>> let p, q :: Prefactored Integer
--- >>>     p = 1000000000000000000000000000057
--- >>>     q = 2000000000000000000000000000071
+-- >>> let p = 1000000000000000000000000000057 :: Prefactored Integer
+-- >>> let q = 2000000000000000000000000000071 :: Prefactored Integer
 --
--- Now prime factorisation is done instantly:
+-- Now the 'Math.NumberTheory.ArithmeticFunctions.totient' function
+-- can be computed instantly:
 --
--- >>> factorise (p * q)
--- [(PrimeNat 1000000000000000000000000000057, 1), (PrimeNat 2000000000000000000000000000071, 1)]
--- >>> factorise (p^2 * q^3)
--- [(PrimeNat 1000000000000000000000000000057, 2), (PrimeNat 2000000000000000000000000000071, 3)]
---
--- Moreover, we can instantly compute 'Math.NumberTheory.ArithmeticFunctions.totient' and its iterations.
--- It works fine, because output of 'Math.NumberTheory.ArithmeticFunctions.totient' is also prefactored.
---
+-- >>> import Math.NumberTheory.ArithmeticFunctions
 -- >>> prefValue $ totient (p^2 * q^3)
 -- 8000000000000000000000000001752000000000000000000000000151322000000000000000000000006445392000000000000000000000135513014000000000000000000001126361040
 -- >>> prefValue $ totient $ totient (p^2 * q^3)
@@ -65,14 +59,11 @@ import Math.NumberTheory.Primes.Types
 --
 -- Let us look under the hood:
 --
+-- >>> import Math.NumberTheory.ArithmeticFunctions
 -- >>> prefFactors $ totient (p^2 * q^3)
--- Coprimes {unCoprimes = fromList [(2,4),(3,3),
---   (41666666666666666666666666669,1),(111111111111111111111111111115,1),
---   (1000000000000000000000000000057,1),(2000000000000000000000000000071,2)]}
+-- Coprimes {unCoprimes = [(1000000000000000000000000000057,1),(41666666666666666666666666669,1),(2000000000000000000000000000071,2),(111111111111111111111111111115,1),(2,4),(3,3)]}
 -- >>> prefFactors $ totient $ totient (p^2 * q^3)
--- Coprimes {unCoprimes = fromList [(2,22),(3,8),(5,3),(39521,1),(199937,1),(6046667,1),
---   (227098769,1),(361696272343,1),(85331809838489,1),(22222222222222222222222222223,1),
---   (41666666666666666666666666669,1),(2000000000000000000000000000071,1)]}
+-- Coprimes {unCoprimes = [(39521,1),(6046667,1),(22222222222222222222222222223,1),(2000000000000000000000000000071,1),(361696272343,1),(85331809838489,1),(227098769,1),(199937,1),(5,3),(41666666666666666666666666669,1),(2,22),(3,8)]}
 --
 -- Pairwise coprimality of factors is crucial, because it allows
 -- us to process them independently, possibly even
@@ -92,7 +83,7 @@ data Prefactored a = Prefactored
 -- | Create 'Prefactored' from a given number.
 --
 -- >>> fromValue 123
--- Prefactored {prefValue = 123, prefFactors = Coprimes {unCoprimes = fromList [(123,1)]}}
+-- Prefactored {prefValue = 123, prefFactors = Coprimes {unCoprimes = [(123,1)]}}
 fromValue :: (Eq a, Num a) => a -> Prefactored a
 fromValue a = Prefactored a (singleton a 1)
 
@@ -100,9 +91,9 @@ fromValue a = Prefactored a (singleton a 1)
 -- (but not neccesarily prime) factors with multiplicities.
 --
 -- >>> fromFactors (splitIntoCoprimes [(140, 1), (165, 1)])
--- Prefactored {prefValue = 23100, prefFactors = Coprimes {unCoprimes = fromList [(5,2),(28,1),(33,1)]}}
+-- Prefactored {prefValue = 23100, prefFactors = Coprimes {unCoprimes = [(28,1),(33,1),(5,2)]}}
 -- >>> fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
--- Prefactored {prefValue = 88045650000, prefFactors = Coprimes {unCoprimes = fromList [(5,5),(28,2),(33,3)]}}
+-- Prefactored {prefValue = 88045650000, prefFactors = Coprimes {unCoprimes = [(28,2),(33,3),(5,5)]}}
 fromFactors :: Num a => Coprimes a Word -> Prefactored a
 fromFactors as = Prefactored (product (map (uncurry (^)) (unCoprimes as))) as
 

@@ -53,6 +53,7 @@ import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 --
 -- This is a thin wrapper over 'sieveBlock', read more details there.
 --
+-- >>> import Math.NumberTheory.ArithmeticFunctions
 -- >>> runFunctionOverBlock carmichaelA 1 10
 -- [1,1,2,2,4,2,6,2,6,4]
 runFunctionOverBlock
