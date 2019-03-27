@@ -15,7 +15,11 @@
 
         'Math.NumberTheory.Primes.{Factorisation,Testing,Counting,Sieve}'
         are no longer re-exported from 'Math.NumberTheory.Primes'.
-        Merge 'Math.NumberTheory.UniqueFactorisation' into 'Math.NumberTheory.Primes' (#135, #153).
+        Merge 'Math.NumberTheory.UniqueFactorisation' into
+        'Math.NumberTheory.Primes' (#135, #153).
+
+        Due to the changes above 'Math.NumberTheory.Primes.factorise' with
+        an 'Integer' argument now returns [(Integer, Word)] instead of [(Integer, Int)].
 
         Remove deprecated 'Math.NumberTheory.GCD' and 'Math.NumberTheory.GCD.LowLevel'.
 

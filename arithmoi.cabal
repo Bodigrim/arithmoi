@@ -92,6 +92,7 @@ library
     Math.NumberTheory.Recurrences.Linear
     Math.NumberTheory.Recurrencies.Linear
     Math.NumberTheory.SmoothNumbers
+    Math.NumberTheory.UniqueFactorisation
     Math.NumberTheory.Zeta
     Math.NumberTheory.Zeta.Dirichlet
     Math.NumberTheory.Zeta.Hurwitz
