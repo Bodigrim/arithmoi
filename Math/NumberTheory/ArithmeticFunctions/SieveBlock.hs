@@ -38,7 +38,7 @@ import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Primes.Sieve (primes)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
-import Math.NumberTheory.Utils (splitOff)
+import Math.NumberTheory.Utils (splitOff#)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 
 -- | 'runFunctionOverBlock' @f@ @x@ @l@ evaluates an arithmetic function
@@ -122,7 +122,7 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
 
       forM_ [offset, offset + p .. len - 1] $ \ix -> do
         W# a# <- MV.unsafeRead as ix
-        let !(W# pow#, W# a'#) = splitOff (W# p#) (W# (a# `quotWord#` p#))
+        let !(# pow#, a'# #) = splitOff# p# (a# `quotWord#` p#)
         MV.unsafeWrite as ix (W# a'#)
         MV.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (I# (word2Int# pow#))) ix
 
