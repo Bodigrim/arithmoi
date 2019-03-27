@@ -13,7 +13,6 @@
 -- Top-level definitions in this module are polymorphic, so the results of computations are not retained in memory.
 -- Make them monomorphic to take advantages of memoization. Compare
 --
--- >>> :set +s
 -- >>> binomial !! 1000 !! 1000 :: Integer
 -- 1
 -- (0.01 secs, 1,385,512 bytes)

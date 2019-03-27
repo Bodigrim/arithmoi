@@ -17,7 +17,6 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE UnboxedTuples              #-}
 
 module Math.NumberTheory.Moduli.Class
   ( -- * Known modulo
@@ -90,19 +89,6 @@ instance KnownNat m => Num (Mod m) where
   negate mx@(Mod x) =
     Mod $ if x == 0 then 0 else getNatMod mx - x
   {-# INLINE negate #-}
-
-  -- If modulo is small and fits into one machine word,
-  -- there is no need to use long arithmetic at all
-  -- and we can save some allocations.
-  mx@(Mod (NatS# x#)) * (Mod (NatS# y#)) = case getNatMod mx of
-    NatS# m# -> let !(# z1#, z2# #) = timesWord2# x# y# in
-                let !(# _, r# #) = quotRemWord2# z1# z2# m# in
-                Mod (NatS# r#)
-    NatJ# b# -> let !(# z1#, z2# #) = timesWord2# x# y# in
-                let r# = wordToBigNat2 z1# z2# `remBigNat` b# in
-                Mod $ if isTrue# (sizeofBigNat# r# ==# 1#)
-                  then NatS# (bigNatToWord r#)
-                  else NatJ# r#
 
   mx@(Mod !x) * (Mod !y) =
     Mod $ x * y `rem` getNatMod mx

@@ -6,19 +6,17 @@
 --
 -- Some utilities, mostly for bit twiddling.
 --
-{-# LANGUAGE CPP, MagicHash, UnboxedTuples, BangPatterns #-}
+{-# LANGUAGE CPP, MagicHash, BangPatterns #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Utils
     ( shiftToOddCount
     , shiftToOdd
     , shiftToOdd#
-    , shiftToOddCount#
     , bitCountWord
     , bitCountInt
     , bitCountWord#
     , uncheckedShiftR
     , splitOff
-    , splitOff#
 
     , mergeBy
 
@@ -61,22 +59,21 @@ shiftToOddCount n = case shiftOCInteger (fromIntegral n) of
 -- | Specialised version for @'Word'@.
 --   Precondition: argument strictly positive (not checked).
 shiftOCWord :: Word -> (Word, Word)
-shiftOCWord (W# w#) = case shiftToOddCount# w# of
-                        (# z# , u# #) -> (W# z#, W# u#)
+shiftOCWord (W# w#) = shiftToOddCount# w#
 
 -- | Specialised version for @'Int'@.
 --   Precondition: argument nonzero (not checked).
 shiftOCInt :: Int -> (Word, Int)
 shiftOCInt (I# i#) = case shiftToOddCount# (int2Word# i#) of
-                        (# z#, u# #) -> (W# z#, I# (word2Int# u#))
+                        (z#, u#) -> (z#, fromIntegral u#)
 
 -- | Specialised version for @'Integer'@.
 --   Precondition: argument nonzero (not checked).
 shiftOCInteger :: Integer -> (Word, Integer)
 shiftOCInteger n@(S# i#) =
     case shiftToOddCount# (int2Word# i#) of
-      (# 0##, _ #) -> (0, n)
-      (# z#, w# #) -> (W# z#, wordToInteger w#)
+      (0, _) -> (0, n)
+      (z#, w#) -> (z#, fromIntegral w#)
 shiftOCInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
                                  z#  -> (W# z#, bigNatToInteger (bn# `shiftRBigNat` (word2Int# z#)))
@@ -89,8 +86,8 @@ shiftOCInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
 shiftOCNatural :: Natural -> (Word, Natural)
 shiftOCNatural n@(NatS# i#) =
     case shiftToOddCount# i# of
-      (# 0##, _ #) -> (0, n)
-      (# z#, w# #) -> (W# z#, NatS# w#)
+      (0, _) -> (0, n)
+      (z#, w#) -> (z#, fromIntegral w#)
 shiftOCNatural n@(NatJ# bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
                                  z#  -> (W# z#, bigNatToNatural (bn# `shiftRBigNat` (word2Int# z#)))
@@ -143,9 +140,9 @@ shiftToOdd# :: Word# -> Word#
 shiftToOdd# w# = uncheckedShiftRL# w# (word2Int# (ctz# w#))
 
 -- | Like @'shiftToOdd#'@, but count the number of places to shift too.
-shiftToOddCount# :: Word# -> (# Word#, Word# #)
+shiftToOddCount# :: Word# -> (Word, Word)
 shiftToOddCount# w# = case ctz# w# of
-                        k# -> (# k#, uncheckedShiftRL# w# (word2Int# k#) #)
+                        k# -> (W# k#, W# (uncheckedShiftRL# w# (word2Int# k#)))
 
 -- | Number of 1-bits in a @'Word#'@.
 bitCountWord# :: Word# -> Int#
@@ -168,17 +165,6 @@ splitOff p n = go 0 n
       (q, 0) -> go (k + 1) q
       _      -> (k, m)
 {-# INLINABLE splitOff #-}
-
--- | It is difficult to convince GHC to unbox output of 'splitOff' and 'splitOff.go',
--- so we fallback to a specialized unboxed version to minimize allocations.
-splitOff# :: Word# -> Word# -> (# Word#, Word# #)
-splitOff# _ 0## = (# 0##, 0## #)
-splitOff# p n = go 0## n
-  where
-    go k m = case m `quotRemWord#` p of
-      (# q, 0## #) -> go (k `plusWord#` 1##) q
-      _            -> (# k, m #)
-{-# INLINABLE splitOff# #-}
 
 -- | Merges two ordered lists into an ordered list. Checks for neither its
 -- precondition or postcondition.
