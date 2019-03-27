@@ -150,6 +150,7 @@ takeWhileIncreasing = \case
 -- 'primes' is a polymorphic list, so the results of computations are not retained in memory.
 -- Make it monomorphic to take advantages of memoization. Compare
 --
+-- >>> :set +s
 -- >>> primes !! 1000000 :: Prime Int
 -- Prime 15485867
 -- (5.32 secs, 6,945,267,496 bytes)
