@@ -20,7 +20,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , divisors, divisorsA
   , divisorsList, divisorsListA
   , divisorsSmall, divisorsSmallA
-  , tau, tauA
+  , divisorCount, tau, tauA
   , sigma, sigmaA
   , totient, totientA
   , jordan, jordanA
@@ -99,6 +99,13 @@ divisorsHelperSmall _ 0 = IS.empty
 divisorsHelperSmall p 1 = IS.singleton p
 divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelperSmall #-}
+
+-- | Synonym for 'tau'.
+--
+-- >>> map divisorCount [1..10]
+-- [1,2,2,3,2,4,2,4,3,4]
+divisorCount :: (UniqueFactorisation n, Num a) => n -> a
+divisorCount = tau
 
 -- | See 'tauA'.
 tau :: (UniqueFactorisation n, Num a) => n -> a
