@@ -57,7 +57,7 @@ instance Show a => Show (PrimePowers a) where
 -- | Convert a list of powers of a prime into an atomic Dirichlet series
 -- (Section 4, Step 2).
 atomicSeries
-  :: (Semiring b, Num a, Ord a)
+  :: Num a
   => (a -> b)               -- ^ How to inject a number into a semiring
   -> ArithmeticFunction a c -- ^ Arithmetic function, which we aim to inverse
   -> PrimePowers a          -- ^ List of powers of a prime
@@ -67,7 +67,7 @@ atomicSeries point (ArithmeticFunction f g) (PrimePowers p ks) =
 
 -- | See section 5.1 of the paper.
 invTotient
-  :: forall a. (Num a, UniqueFactorisation a, Eq a)
+  :: forall a. (UniqueFactorisation a, Eq a)
   => [(Prime a, Word)]
   -- ^ Factorisation of a value of the totient function
   -> [PrimePowers a]
@@ -183,7 +183,7 @@ strategy (ArithmeticFunction f g) factors args = (Nothing, ret) : rets
 -- | Main workhorse.
 invertFunction
   :: forall a b c.
-     (Num a, Ord a, Semiring b, Euclidean c, UniqueFactorisation c, Ord c)
+     (Num a, Semiring b, Euclidean c, UniqueFactorisation c, Ord c)
   => (a -> b)
   -- ^ How to inject a number into a semiring
   -> ArithmeticFunction a c

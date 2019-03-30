@@ -22,7 +22,7 @@ import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
 import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
-import Math.NumberTheory.Primes              (UniqueFactorisation, unPrime)
+import Math.NumberTheory.Primes              (unPrime)
 import Math.NumberTheory.Primes.Sieve        (primes)
 import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
@@ -89,7 +89,7 @@ sieveBlockNFree n lowIndex len'
 --
 -- When @n@ is @0@ or @1@, the resulting list is @[1]@.
 nFrees
-    :: forall a . (Integral a, UniqueFactorisation a)
+    :: forall a. Integral a
     => Word
     -- ^ Power @n@ to be used to generate @n@-free numbers.
     -> [a]

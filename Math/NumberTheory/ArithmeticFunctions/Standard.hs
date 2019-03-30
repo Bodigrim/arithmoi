@@ -57,13 +57,13 @@ multiplicative :: Num a => (Prime n -> Word -> a) -> ArithmeticFunction n a
 multiplicative f = ArithmeticFunction ((Product .) . f) getProduct
 
 -- | See 'divisorsA'.
-divisors :: (UniqueFactorisation n, Num n, Ord n) => n -> Set n
+divisors :: (UniqueFactorisation n, Ord n) => n -> Set n
 divisors = runFunction divisorsA
 {-# SPECIALIZE divisors :: Natural -> Set Natural #-}
 {-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
 -- | The set of all (positive) divisors of an argument.
-divisorsA :: forall n. (UniqueFactorisation n, Num n, Ord n) => ArithmeticFunction n (Set n)
+divisorsA :: forall n. (UniqueFactorisation n, Ord n) => ArithmeticFunction n (Set n)
 divisorsA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> SetProduct $ divisorsHelper p k) (S.insert 1 . getSetProduct)
 
 divisorsHelper :: Num n => n -> Word -> Set n
@@ -73,11 +73,11 @@ divisorsHelper p a = S.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToI
 {-# INLINE divisorsHelper #-}
 
 -- | See 'divisorsListA'.
-divisorsList :: (UniqueFactorisation n, Num n) => n -> [n]
+divisorsList :: UniqueFactorisation n => n -> [n]
 divisorsList = runFunction divisorsListA
 
 -- | The unsorted list of all (positive) divisors of an argument, produced in lazy fashion.
-divisorsListA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n [n]
+divisorsListA :: forall n. UniqueFactorisation n => ArithmeticFunction n [n]
 divisorsListA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) k -> ListProduct $ divisorsListHelper p k) ((1 :) . getListProduct)
 
 divisorsListHelper :: Num n => n -> Word -> [n]
@@ -137,23 +137,23 @@ sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
 {-# INLINE sigmaHelper #-}
 
 -- | See 'totientA'.
-totient :: (UniqueFactorisation n, Num n) => n -> n
+totient :: UniqueFactorisation n => n -> n
 totient = runFunction totientA
 
 -- | Calculates the totient of a positive number @n@, i.e.
 --   the number of @k@ with @1 <= k <= n@ and @'gcd' n k == 1@,
 --   in other words, the order of the group of units in @&#8484;/(n)@.
-totientA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
+totientA :: forall n. UniqueFactorisation n => ArithmeticFunction n n
 totientA = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper p
 
 -- | See 'jordanA'.
-jordan :: (UniqueFactorisation n, Num n) => Word -> n -> n
+jordan :: UniqueFactorisation n => Word -> n -> n
 jordan = runFunction . jordanA
 
 -- | Calculates the k-th Jordan function of an argument.
 --
 -- > jordanA 1 = totientA
-jordanA :: forall n. (UniqueFactorisation n, Num n) => Word -> ArithmeticFunction n n
+jordanA :: forall n. UniqueFactorisation n => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
 jordanA a = multiplicative $ \((unPrime :: Prime n -> n) -> p) -> jordanHelper (p ^ wordToInt a)
@@ -251,11 +251,11 @@ bigOmegaA :: ArithmeticFunction n Word
 bigOmegaA = additive $ const id
 
 -- | See 'expMangoldtA'.
-expMangoldt :: (UniqueFactorisation n, Num n) => n -> n
+expMangoldt :: UniqueFactorisation n => n -> n
 expMangoldt = runFunction expMangoldtA
 
 -- | The exponent of von Mangoldt function. Use @log expMangoldtA@ to recover von Mangoldt function itself.
-expMangoldtA :: forall n. (UniqueFactorisation n, Num n) => ArithmeticFunction n n
+expMangoldtA :: forall n. UniqueFactorisation n => ArithmeticFunction n n
 expMangoldtA = ArithmeticFunction (\((unPrime :: Prime n -> n) -> p) _ -> MangoldtOne p) runMangoldt
 
 data Mangoldt a
@@ -285,7 +285,7 @@ isNFree n = runFunction (isNFreeA n)
 -- | Check if an integer is @n@-free. An integer @x@ is @n@-free if in its
 -- factorisation into prime factors, no factor has an exponent larger than or
 -- equal to @n@.
-isNFreeA :: UniqueFactorisation n => Word -> ArithmeticFunction n Bool
+isNFreeA :: Word -> ArithmeticFunction n Bool
 isNFreeA n = ArithmeticFunction (\_ pow -> All $ pow < n) getAll
 
 newtype LCM a = LCM { getLCM :: a }

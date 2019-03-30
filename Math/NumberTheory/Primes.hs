@@ -37,7 +37,7 @@ import Math.NumberTheory.Utils.FromIntegral
 import Numeric.Natural
 
 -- | A class for unique factorisation domains.
-class UniqueFactorisation a where
+class Num a => UniqueFactorisation a where
   -- | Factorise a number into a product of prime powers.
   -- Factorisation of 0 is an undefined behaviour. Otherwise
   -- following invariants hold:

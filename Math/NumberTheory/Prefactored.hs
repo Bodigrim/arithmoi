@@ -97,7 +97,7 @@ fromValue a = Prefactored a (singleton a 1)
 fromFactors :: Num a => Coprimes a Word -> Prefactored a
 fromFactors as = Prefactored (product (map (uncurry (^)) (unCoprimes as))) as
 
-instance (Euclidean a, Ord a) => Num (Prefactored a) where
+instance Euclidean a => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
     = fromValue (v1 + v2)
   Prefactored v1 _ - Prefactored v2 _
@@ -109,7 +109,7 @@ instance (Euclidean a, Ord a) => Num (Prefactored a) where
   signum (Prefactored v _) = Prefactored (signum v) mempty
   fromInteger n = fromValue (fromInteger n)
 
-instance (Eq a, Num a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
+instance (Euclidean a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (\(p, k) -> (Prime $ fromValue $ unPrime p, k * xm)) (factorise x)) (unCoprimes f)
   isPrime (Prefactored _ f) = case unCoprimes f of

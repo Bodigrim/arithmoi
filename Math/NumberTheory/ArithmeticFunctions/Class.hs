@@ -47,7 +47,7 @@ runFunction :: UniqueFactorisation n => ArithmeticFunction n a -> n -> a
 runFunction f = runFunctionOnFactors f . factorise
 
 -- | Convert to a function on prime factorisation.
-runFunctionOnFactors :: UniqueFactorisation n => ArithmeticFunction n a -> [(Prime n, Word)] -> a
+runFunctionOnFactors :: ArithmeticFunction n a -> [(Prime n, Word)] -> a
 runFunctionOnFactors (ArithmeticFunction f g)
   = g
   . mconcat

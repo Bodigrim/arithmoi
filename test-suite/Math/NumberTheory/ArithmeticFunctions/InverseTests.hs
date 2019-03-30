@@ -20,7 +20,6 @@ module Math.NumberTheory.ArithmeticFunctions.InverseTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.Semiring (Semiring(..))
 import qualified Data.Set as S
 
 import Math.NumberTheory.ArithmeticFunctions
@@ -33,10 +32,10 @@ import Math.NumberTheory.TestUtils
 -------------------------------------------------------------------------------
 -- Totient
 
-totientProperty1 :: forall a. (Semiring a, Euclidean a, Integral a, UniqueFactorisation a, Ord a) => Positive a -> Bool
+totientProperty1 :: forall a. (Euclidean a, Integral a, UniqueFactorisation a) => Positive a -> Bool
 totientProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseTotient (totient x)
 
-totientProperty2 :: (Semiring a, Euclidean a, Integral a, UniqueFactorisation a, Ord a) => Positive a -> Bool
+totientProperty2 :: (Euclidean a, Integral a, UniqueFactorisation a) => Positive a -> Bool
 totientProperty2 (Positive x) = all (== x) (S.map totient (asSetOfPreimages inverseTotient x))
 
 -- | http://oeis.org/A055506
@@ -135,10 +134,10 @@ totientSpecialCases3 = zipWith mkAssert (tail factorial) totientMaxFactorial
 -------------------------------------------------------------------------------
 -- Sigma
 
-sigmaProperty1 :: forall a. (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
+sigmaProperty1 :: forall a. (Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
 sigmaProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseSigma (sigma 1 x)
 
-sigmaProperty2 :: (Semiring a, Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
+sigmaProperty2 :: (Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
 sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1) (asSetOfPreimages inverseSigma x))
 
 -- | http://oeis.org/A055486
