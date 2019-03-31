@@ -9,7 +9,6 @@
 --
 
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
@@ -24,8 +23,9 @@ module Math.NumberTheory.ArithmeticFunctions.SieveBlock
   , sieveBlockMoebius
   ) where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, when)
 import Control.Monad.ST (runST)
+import Data.Bits
 import Data.Coerce
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as MG
@@ -36,11 +36,11 @@ import GHC.Exts
 
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius, sieveBlockMoebius)
-import Math.NumberTheory.Logarithms (integerLogBase')
+import Math.NumberTheory.Logarithms (wordLog2, integerLogBase')
 import Math.NumberTheory.Primes.Sieve (primes)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
-import Math.NumberTheory.Utils (splitOff#)
+import Math.NumberTheory.Utils (splitOff)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 
 -- | A record, which specifies a function to evaluate over a block.
@@ -125,7 +125,7 @@ sieveBlock
   -> Word
   -> v a
 sieveBlock _ _ 0 = G.empty
-sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
+sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
 
     let lowIndex :: Int
         lowIndex = wordToInt lowIndex'
@@ -133,37 +133,56 @@ sieveBlock (SieveBlockConfig empty f append) lowIndex' len' = runST $ do
         len :: Int
         len = wordToInt len'
 
-    as <- U.unsafeThaw $ U.enumFromN lowIndex' len
-    bs <- MG.replicate len empty
-
-    let highIndex :: Int
+        highIndex :: Int
         highIndex = lowIndex + len - 1
+
+        highIndex' :: Word
+        highIndex' = intToWord highIndex
 
         ps :: [Int]
         ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
 
-    forM_ ps $ \p -> do
+    as <- MU.replicate len 1
+    bs <- MG.replicate len empty
 
-      let p# :: Word#
-          !p'@(W# p#) = intToWord p
+    let doPrime 2 = do
+          let fs = V.generate (wordLog2 highIndex')
+                (\k -> f (Prime 2) (intToWord k + 1))
+              npLow  = (lowIndex' + 1) `shiftR` 1
+              npHigh = highIndex'      `shiftR` 1
+          forM_ [npLow .. npHigh] $ \np@(W# np#) -> do
+            let ix = wordToInt (np `shiftL` 1) - lowIndex :: Int
+                tz = I# (word2Int# (ctz# np#))
+            MU.unsafeModify as (\x -> x `shiftL` (tz + 1)) ix
+            MG.unsafeModify bs (\y -> y `append` V.unsafeIndex fs tz) ix
 
-          fs :: v a
-          fs = G.generate
-            (integerLogBase' (toInteger p) (toInteger highIndex))
-            (\k -> f (Prime p') (intToWord k + 1))
+        doPrime p = do
+          let p' = intToWord p
+              f0 = f (Prime p') 1
+              logp = integerLogBase' (toInteger p) (toInteger highIndex) - 1
+              fs = V.generate logp (\k -> f (Prime p') (intToWord k + 2))
+              npLow  = (lowIndex + p - 1) `quot` p
+              npHigh = highIndex          `quot` p
 
-          offset :: Int
-          offset = negate lowIndex `mod` p
+          forM_ [npLow .. npHigh] $ \np -> do
+            let !(I# ix#) = np * p - lowIndex
+                (q, r) = np `quotRem` p
+            if r /= 0
+            then do
+              MU.unsafeModify as (\x -> x * p')        (I# ix#)
+              MG.unsafeModify bs (\y -> y `append` f0) (I# ix#)
+            else do
+              let (pow, _) = splitOff p q
+              MU.unsafeModify as (\x -> x * p' ^ (pow + 2))                          (I# ix#)
+              MG.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (wordToInt pow)) (I# ix#)
 
-      forM_ [offset, offset + p .. len - 1] $ \ix -> do
-        W# a# <- MU.unsafeRead as ix
-        let !(# pow#, a'# #) = splitOff# p# (a# `quotWord#` p#)
-        MU.unsafeWrite as ix (W# a'#)
-        MG.unsafeModify bs (\y -> y `append` G.unsafeIndex fs (I# (word2Int# pow#))) ix
+    forM_ ps doPrime
 
     forM_ [0 .. len - 1] $ \k -> do
       a <- MU.unsafeRead as k
-      MG.unsafeModify bs (\b -> if a /= 1 then b `append` f (Prime a) 1 else b) k
+      let a' = intToWord (k + lowIndex)
+      when (a /= a') $
+        MG.unsafeModify bs (\b -> b `append` f (Prime $ a' `quot` a) 1) k
 
     G.unsafeFreeze bs
 
