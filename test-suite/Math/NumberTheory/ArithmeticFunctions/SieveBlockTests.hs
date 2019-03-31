@@ -98,7 +98,7 @@ testSuite = testGroup "SieveBlock"
     ]
   , testGroup "unboxed"
     [ testCase "id"      $ unboxedTest $ multiplicativeConfig (^)
-    , testCase "tau"     $ unboxedTest $ multiplicativeConfig (const id)
+    , testCase "tau"     $ unboxedTest $ multiplicativeConfig (\_ a -> succ a )
     , testCase "moebius" $ unboxedTest moebiusConfig
     , testCase "totient" $ unboxedTest $ multiplicativeConfig (\p a -> (p - 1) * p ^ (a - 1))
     ]
