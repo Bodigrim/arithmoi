@@ -18,8 +18,8 @@
         Merge 'Math.NumberTheory.UniqueFactorisation' into
         'Math.NumberTheory.Primes' (#135, #153).
 
-        Due to the changes above 'Math.NumberTheory.Primes.factorise' with
-        an 'Integer' argument now returns [(Integer, Word)] instead of [(Integer, Int)].
+        From now on 'Math.NumberTheory.Primes.Factorisation.factorise'
+        and similar functions return [(Integer, Word)] instead of [(Integer, Int)].
 
         Remove deprecated 'Math.NumberTheory.GCD' and 'Math.NumberTheory.GCD.LowLevel'.
 
