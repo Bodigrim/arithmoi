@@ -108,6 +108,6 @@ testSuite = testGroup "SmoothNumbers"
       [ testSmallAndQuick "Gaussian" isSmoothProperty1
       , testSmallAndQuick "Eisenstein" isSmoothProperty2
       ]
-    , testCase "all distinct for base [1+3*ι,6+8*ι]" isSmoothSpecialCase1
+    , testCase "all distinct for base [1+3*i,6+8*i]" isSmoothSpecialCase1
     ]
   ]
