@@ -61,7 +61,7 @@ class (Eq a, Num a) => Euclidean a where
   lcm 0 _ =  0
   lcm x y =  abs ((x `quot` (gcd x y)) * y)
 
-  -- | Test whether two numbers are coprime .
+  -- | Test whether two numbers are coprime.
   coprime :: a -> a -> Bool
   coprime x y = gcd x y == 1
 
