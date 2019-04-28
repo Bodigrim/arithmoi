@@ -99,7 +99,6 @@ library
     Math.NumberTheory.Zeta.Riemann
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.Class
-    Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
     Math.NumberTheory.ArithmeticFunctions.Standard
     Math.NumberTheory.Moduli.SqrtOld
     Math.NumberTheory.Primes.Counting.Approximate
