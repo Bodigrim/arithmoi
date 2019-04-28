@@ -21,7 +21,7 @@ import GHC.Integer.GMP.Internals              (recipModInteger, powModInteger)
 import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.Chinese       (chineseRemainder2)
-import Math.NumberTheory.Moduli.Class         (KnownNat, MultMod(..), Mod, getVal)
+import Math.NumberTheory.Moduli.Class         (MultMod(..), Mod, getVal)
 import Math.NumberTheory.Moduli.Equations     (solveLinear)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..), CyclicGroup(..))
 import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
