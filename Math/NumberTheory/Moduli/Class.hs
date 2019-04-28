@@ -264,9 +264,17 @@ data SomeMod where
   InfMod  :: Rational -> SomeMod
 
 instance Eq SomeMod where
-  SomeMod mx == SomeMod my = getMod mx == getMod my && getVal mx == getVal my
+  SomeMod mx == SomeMod my =
+    getMod mx == getMod my && getVal mx == getVal my
   InfMod rx  == InfMod ry  = rx == ry
   _          == _          = False
+
+instance Ord SomeMod where
+  SomeMod mx `compare` SomeMod my =
+    getMod mx `compare` getMod my <> getVal mx `compare` getVal my
+  SomeMod{} `compare` InfMod{} = LT
+  InfMod{} `compare` SomeMod{} = GT
+  InfMod rx `compare` InfMod ry = rx `compare` ry
 
 instance Show SomeMod where
   show = \case
