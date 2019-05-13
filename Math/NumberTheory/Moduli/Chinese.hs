@@ -78,7 +78,7 @@ chineseCoprime (n1, m1) (n2, m2) = case d of
 -- Nothing
 chinese :: forall a. Euclidean a => (a, a) -> (a, a) -> Maybe a
 chinese (n1, m1) (n2, m2)
-  | n1 `mod` g == n2 `mod` g
+  | (n1 - n2) `mod` g == 0
   = chineseCoprime (n1 `mod` m1', m1') (n2 `mod` m2', m2')
   | otherwise
   = Nothing
