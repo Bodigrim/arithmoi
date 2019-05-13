@@ -65,7 +65,7 @@ size = coerce (M.size @a @b)
 -- and all a_i and b_i are divisors of n. Return Dirichlet series cs,
 -- which contains all terms as * bs = sum_i m_i/c_i^s such that c_i divides n.
 timesAndCrop
-  :: (Euclidean a, Ord a, Semiring b)
+  :: (Num a, Euclidean a, Ord a, Semiring b)
   => a
   -> DirichletSeries a b
   -> DirichletSeries a b

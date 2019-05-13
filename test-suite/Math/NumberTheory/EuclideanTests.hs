@@ -34,7 +34,7 @@ import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.TestUtils
 
 -- | Check that 'extendedGCD' is consistent with documentation.
-extendedGCDProperty :: forall a. (Bits a, Euclidean a, Ord a) => AnySign a -> AnySign a -> Bool
+extendedGCDProperty :: forall a. (Bits a, Num a, Euclidean a, Ord a) => AnySign a -> AnySign a -> Bool
 extendedGCDProperty (AnySign a) (AnySign b)
   | isNatural a = True -- extendedGCD does not make sense for Natural
   | otherwise =
@@ -50,7 +50,7 @@ isNatural :: Bits a => a -> Bool
 isNatural a = isNothing (bitSizeMaybe a) && not (isSigned a)
 
 -- | Check that numbers are coprime iff their gcd equals to 1.
-coprimeProperty :: (Euclidean a) => AnySign a -> AnySign a -> Bool
+coprimeProperty :: (Eq a, Num a, Euclidean a) => AnySign a -> AnySign a -> Bool
 coprimeProperty (AnySign a) (AnySign b) = coprime a b == (gcd a b == 1)
 
 splitIntoCoprimesProperty1 :: [(Positive Natural, Power Word)] -> Bool

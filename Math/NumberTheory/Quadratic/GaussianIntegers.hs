@@ -88,21 +88,22 @@ absSignum z@(a :+ b)
     | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
     | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
+instance ED.GcdDomain GaussianInteger
+
 instance ED.Euclidean GaussianInteger where
-    quotRem = divHelper quot
-    divMod  = divHelper div
+    degree = fromInteger . norm
+    quotRem = divHelper
 
 divHelper
-    :: (Integer -> Integer -> Integer)
-    -> GaussianInteger
+    :: GaussianInteger
     -> GaussianInteger
     -> (GaussianInteger, GaussianInteger)
-divHelper divide g h =
-    let nr :+ ni = g * conjugate h
+divHelper g h = (q, r)
+    where
+        nr :+ ni = g * conjugate h
         denom = norm h
-        q = divide nr denom :+ divide ni denom
-        p = h * q
-    in (q, g - p)
+        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+ ((ni + signum ni * denom `quot` 2) `quot` denom)
+        r = g - h * q
 
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger

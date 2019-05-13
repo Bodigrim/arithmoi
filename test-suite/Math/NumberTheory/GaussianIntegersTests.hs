@@ -128,10 +128,15 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
     inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis
     isAssociate = z' `elem` map (\e -> z * (0 :+ 1) ^ e) [0 .. 3]
 
+-- | Verify that @rem@ produces a remainder smaller than the divisor with
+-- regards to the Euclidean domain's function.
+remProperty :: GaussianInteger -> GaussianInteger -> Bool
+remProperty x y = (y == 0) || (norm $ x `ED.rem` y) < (norm y)
+
 gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
+  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0
   where
     z = ED.gcd z1 z2
 
@@ -145,10 +150,10 @@ gcdGProperty2 z z1 z2
 
 -- | a special case that tests rounding/truncating in GCD.
 gcdGSpecialCase1 :: Assertion
-gcdGSpecialCase1 = assertEqual "gcdG" 1 $ ED.gcd (12 :+ 23) (23 :+ 34)
+gcdGSpecialCase1 = assertEqual "gcdG" (-1) $ ED.gcd (12 :+ 23) (23 :+ 34)
 
 gcdGSpecialCase2 :: Assertion
-gcdGSpecialCase2 = assertEqual "gcdG" 1 $ ED.gcd (0 :+ 3) (2 :+ 2)
+gcdGSpecialCase2 = assertEqual "gcdG" (0 :+ (-1)) $ ED.gcd (0 :+ 3) (2 :+ 2)
 
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers" $
@@ -170,6 +175,7 @@ testSuite = testGroup "GaussianIntegers" $
   , testCase          "counting primes"          numberOfPrimes
   , testSmallAndQuick "signumAbsProperty"        signumAbsProperty
   , testSmallAndQuick "absProperty"              absProperty
+  , testSmallAndQuick "remProperty"              remProperty
   , testGroup "gcd"
     [ testSmallAndQuick "is divisor"            gcdGProperty1
     , testSmallAndQuick "is greatest"           gcdGProperty2

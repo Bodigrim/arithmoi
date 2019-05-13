@@ -42,22 +42,10 @@ absProperty z = isOrigin || (inFirstSextant && isAssociate)
     inFirstSextant = x' > y' && y' >= 0
     isAssociate = z' `elem` map (\e -> z * (1 E.:+ 1) ^ e) [0 .. 5]
 
--- | Verify that @div@ and @mod@ are what `divMod` produces.
-divModProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-divModProperty1 x y = y == 0 || (q == q' && r == r')
-  where
-    (q, r) = ED.divMod x y
-    q'     = ED.div x y
-    r'     = ED.mod x y
-
--- | Verify that @divModE` produces the right quotient and remainder.
-divModProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-divModProperty2 x y = (y == 0) || (x `ED.div` y) * y + (x `ED.mod` y) == x
-
--- | Verify that @divModE@ produces a remainder smaller than the divisor with
+-- | Verify that @rem@ produces a remainder smaller than the divisor with
 -- regards to the Euclidean domain's function.
-modProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-modProperty1 x y = (y == 0) || (E.norm $ x `ED.mod` y) < (E.norm y)
+remProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
+remProperty1 x y = (y == 0) || (E.norm $ x `ED.rem` y) < (E.norm y)
 
 -- | Verify that @quot@ and @rem@ are what `quotRem` produces.
 quotRemProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
@@ -75,7 +63,7 @@ quotRemProperty2 x y = (y == 0) || (x `ED.quot` y) * y + (x `ED.rem` y) == x
 gcdEProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
+  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0
   where
     z = ED.gcd z1 z2
 
@@ -90,7 +78,7 @@ gcdEProperty2 z z1 z2
 
 -- | A special case that tests rounding/truncating in GCD.
 gcdESpecialCase1 :: Assertion
-gcdESpecialCase1 = assertEqual "gcd" 1 $ ED.gcd (12 E.:+ 23) (23 E.:+ 34)
+gcdESpecialCase1 = assertEqual "gcd" (1 E.:+ 1) $ ED.gcd (12 E.:+ 23) (23 E.:+ 34)
 
 findPrimesProperty1 :: Positive Int -> Bool
 findPrimesProperty1 (Positive index) =
@@ -153,10 +141,8 @@ testSuite = testGroup "EisensteinIntegers" $
   [ testSmallAndQuick "forall z . z == signum z * abs z" signumAbsProperty
   , testSmallAndQuick "abs z rotates to the first sextant" absProperty
   , testGroup "Division"
-    [ testSmallAndQuick "divE and modE work properly" divModProperty1
-    , testSmallAndQuick "divModE works properly" divModProperty2
-    , testSmallAndQuick "The remainder's norm is smaller than the divisor's"
-                        modProperty1
+    [ testSmallAndQuick "The remainder's norm is smaller than the divisor's"
+                        remProperty1
 
     , testSmallAndQuick "quotE and remE work properly" quotRemProperty1
     , testSmallAndQuick "quotRemE works properly" quotRemProperty2

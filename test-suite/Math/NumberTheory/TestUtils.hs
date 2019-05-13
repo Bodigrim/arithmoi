@@ -118,10 +118,10 @@ isOddPrime p = if (unPrime p :: a) == 2 then Nothing else Just p
 -------------------------------------------------------------------------------
 -- SmoothNumbers
 
-instance (Ord a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
+instance (Ord a, Num a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
   arbitrary = (fmap getPositive <$> arbitrary) `suchThatMap` SN.fromList
 
-instance (Ord a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
+instance (Ord a, Num a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
   series = (fmap getPositive <$> series) `suchThatMapSerial` SN.fromList
 
 -------------------------------------------------------------------------------

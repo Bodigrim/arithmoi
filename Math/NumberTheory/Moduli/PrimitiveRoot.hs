@@ -105,7 +105,7 @@ isPrimePower n = (, k) <$> isPrime m
 -- >>> cyclicGroupToModulo (CGDoubleOddPrimePower (fromJust (isPrime 13)) 3)
 -- Prefactored {prefValue = 4394, prefFactors = Coprimes {unCoprimes = [(13,3),(2,1)]}}
 cyclicGroupToModulo
-  :: E.Euclidean a
+  :: (Eq a, Num a, E.Euclidean a)
   => CyclicGroup a
   -> Prefactored a
 cyclicGroupToModulo = fromFactors . \case
@@ -175,5 +175,5 @@ isPrimitiveRoot r = do
   return $ PrimitiveRoot r' cg
 
 -- | Calculate the size of a given cyclic group.
-groupSize :: (E.Euclidean a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
+groupSize :: (Eq a, E.Euclidean a, UniqueFactorisation a) => CyclicGroup a -> Prefactored a
 groupSize = totient . cyclicGroupToModulo

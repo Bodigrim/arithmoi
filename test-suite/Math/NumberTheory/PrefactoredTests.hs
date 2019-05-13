@@ -26,7 +26,7 @@ import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.TestUtils
 
-isValid :: Euclidean a => Prefactored a -> Bool
+isValid :: (Eq a, Num a, Euclidean a) => Prefactored a -> Bool
 isValid pref
   = abs n == abs (product (map (uncurry (^)) fs))
   && and [ coprime g h | ((g, _) : gs) <- tails fs, (h, _) <- gs ]

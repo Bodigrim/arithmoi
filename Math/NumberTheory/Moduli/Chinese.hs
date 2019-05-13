@@ -31,7 +31,7 @@ module Math.NumberTheory.Moduli.Chinese
   , chineseRemainder2
   ) where
 
-import Prelude hiding (mod, rem, quot, gcd, lcm)
+import Prelude hiding (rem, quot, gcd, lcm)
 
 import Control.Monad (foldM)
 import Data.Foldable
@@ -54,7 +54,7 @@ import Math.NumberTheory.Utils (recipMod, splitOff)
 -- Just 5
 -- >>> chineseCoprime (3, 4) (5, 6)
 -- Nothing -- moduli must be coprime
-chineseCoprime :: Euclidean a => (a, a) -> (a, a) -> Maybe a
+chineseCoprime :: (Integral a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
 chineseCoprime (n1, m1) (n2, m2) = case d of
   1 -> Just $ ((1 - u * m1) * n1 + (1 - v * m2) * n2) `mod` (m1 * m2)
   _ -> Nothing
@@ -76,7 +76,7 @@ chineseCoprime (n1, m1) (n2, m2) = case d of
 -- Just 11
 -- >>> chinese (3, 4) (2, 6)
 -- Nothing
-chinese :: forall a. Euclidean a => (a, a) -> (a, a) -> Maybe a
+chinese :: forall a. (Integral a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
 chinese (n1, m1) (n2, m2)
   | (n1 - n2) `rem` g == 0
   = chineseCoprime (n1 `mod` m1', m1') (n2 `mod` m2', m2')

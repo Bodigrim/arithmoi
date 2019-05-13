@@ -33,14 +33,14 @@ import Data.Semiring (Semiring)
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
-import Math.NumberTheory.Euclidean (Euclidean)
+import Math.NumberTheory.Euclidean (GcdDomain, Euclidean)
 import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
 -------------------------------------------------------------------------------
 -- AnySign
 
 newtype AnySign a = AnySign { getAnySign :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary, Semiring, Euclidean)
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary, Semiring, GcdDomain, Euclidean)
 
 instance (Monad m, Serial m a) => Serial m (AnySign a) where
   series = AnySign <$> series
@@ -59,6 +59,7 @@ instance Show1 AnySign where
 
 deriving instance Functor Positive
 deriving instance Semiring a => Semiring (Positive a)
+deriving instance GcdDomain a => GcdDomain (Positive a)
 deriving instance Euclidean a => Euclidean (Positive a)
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (Positive a) where
@@ -83,6 +84,7 @@ instance Show1 Positive where
 
 deriving instance Functor NonNegative
 deriving instance Semiring a => Semiring (NonNegative a)
+deriving instance GcdDomain a => GcdDomain (NonNegative a)
 deriving instance Euclidean a => Euclidean (NonNegative a)
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (NonNegative a) where
@@ -137,7 +139,7 @@ instance Show1 Huge where
 -- Power
 
 newtype Power a = Power { getPower :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Semiring, Euclidean)
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Semiring, GcdDomain, Euclidean)
 
 instance (Monad m, Num a, Ord a, Serial m a) => Serial m (Power a) where
   series = Power <$> series `suchThatSerial` (> 0)

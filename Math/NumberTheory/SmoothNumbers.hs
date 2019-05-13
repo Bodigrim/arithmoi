@@ -11,6 +11,7 @@
 --
 
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Math.NumberTheory.SmoothNumbers
   ( -- * Create a smooth basis
@@ -32,6 +33,7 @@ import Prelude hiding (div, mod, gcd)
 import Data.Coerce
 import Data.List (nub)
 import qualified Data.Set as S
+
 import qualified Math.NumberTheory.Euclidean as E
 import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Sieve (primes)
@@ -49,7 +51,7 @@ newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 -- Just (SmoothBasis {unSmoothBasis = [2,4]})
 -- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
 -- Nothing
-fromSet :: E.Euclidean a => S.Set a -> Maybe (SmoothBasis a)
+fromSet :: (Eq a, Num a, E.GcdDomain a) => S.Set a -> Maybe (SmoothBasis a)
 fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
 
 -- | Build a 'SmoothBasis' from a list of numbers ≥2.
@@ -62,7 +64,7 @@ fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elem
 -- Just (SmoothBasis {unSmoothBasis = [2,4]})
 -- >>> fromList [1, 3] -- should be >= 2
 -- Nothing
-fromList :: E.Euclidean a => [a] -> Maybe (SmoothBasis a)
+fromList :: (Eq a, Num a, E.GcdDomain a) => [a] -> Maybe (SmoothBasis a)
 fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
   where
     l' = nub l
@@ -85,7 +87,11 @@ fromSmoothUpperBound n = if (n < 2)
 -- This function relies on the fact that for any element of a smooth basis @p@
 -- and any @a@ it is true that @norm (a * p) > norm a@.
 -- This condition is not checked.
-smoothOver' :: forall a b . (Eq a, Num a, Ord b) => (a -> b) -> SmoothBasis a -> [a]
+smoothOver'
+  :: forall a b. (Eq a, Num a, Ord b)
+  => (a -> b)
+  -> SmoothBasis a
+  -> [a]
 smoothOver' norm pl =
     foldr
     (\p l -> mergeListLists $ iterate (map $ abs . (p*)) l)
@@ -115,7 +121,7 @@ smoothOver' norm pl =
 -- >>> import Data.Maybe
 -- >>> take 10 (smoothOver (fromJust (fromList [2, 5])))
 -- [1,2,4,5,8,10,16,20,25,32]
-smoothOver :: Integral a => SmoothBasis a -> [a]
+smoothOver :: (Ord a, Num a) => SmoothBasis a -> [a]
 smoothOver = smoothOver' abs
 
 -- | Generate an ascending list of
@@ -150,7 +156,7 @@ smoothOverInRange s lo hi
 -- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
 -- [100,125,128,160,200]
 smoothOverInRangeBF
-  :: forall a. (Enum a, E.Euclidean a)
+  :: (Eq a, Enum a, Num a, E.Euclidean a)
   => SmoothBasis a
   -> a
   -> a
@@ -170,7 +176,7 @@ isValid pl = length pl /= 0 && v' pl
 
 -- | @isSmooth@ checks if a given number is smooth under a certain @SmoothBasis@.
 -- Does not check if the @SmoothBasis@ is valid.
-isSmooth :: forall a . E.Euclidean a => SmoothBasis a -> a -> Bool
+isSmooth :: forall a. (Eq a, Num a, E.Euclidean a) => SmoothBasis a -> a -> Bool
 isSmooth prs x = mf (unSmoothBasis prs) x
   where
     mf :: [a] -> a -> Bool

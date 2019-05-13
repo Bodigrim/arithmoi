@@ -155,7 +155,7 @@ invSigma fs
 -- This allows us to crop resulting Dirichlet series (see 'filter' calls
 -- in 'invertFunction' below) at the end of each batch, saving time and memory.
 strategy
-  :: forall a c. (Euclidean c, Ord c)
+  :: forall a c. (Num c, Euclidean c, Ord c)
   => ArithmeticFunction a c
   -- ^ Arithmetic function, which we aim to inverse
   -> [(Prime c, Word)]
@@ -362,7 +362,7 @@ instance Semiring MinNatural where
 
 -- | Helper to extract a set of preimages for 'inverseTotient' or 'inverseSigma'.
 asSetOfPreimages
-  :: (Euclidean a, Integral a)
+  :: (Ord a, Semiring a, Num a)
   => (forall b. Semiring b => (a -> b) -> a -> b)
   -> a
   -> S.Set a

@@ -160,7 +160,7 @@ bitCountWord = popCount
 bitCountInt :: Int -> Int
 bitCountInt = popCount
 
-splitOff :: Euclidean a => a -> a -> (Word, a)
+splitOff :: (Eq a, Num a, Euclidean a) => a -> a -> (Word, a)
 splitOff _ 0 = (0, 0) -- prevent infinite loop
 splitOff p n = go 0 n
   where
@@ -194,7 +194,7 @@ mergeBy cmp = loop
 
 -- | Work around https://ghc.haskell.org/trac/ghc/ticket/14085
 recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger (x `mod` m) m of
+recipMod x m = case recipModInteger (x `P.mod` m) m of
   0 -> Nothing
   y -> Just y
 

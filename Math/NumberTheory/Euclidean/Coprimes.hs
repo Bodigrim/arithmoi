@@ -33,7 +33,7 @@ newtype Coprimes a b = Coprimes {
   }
   deriving (Eq, Show)
 
-doPair :: (Euclidean a, Eq b, Num b) => a -> b -> a -> b -> (a, a, [(a, b)])
+doPair :: (Eq a, Num a, Euclidean a, Eq b, Num b) => a -> b -> a -> b -> (a, a, [(a, b)])
 doPair x xm y ym = case gcd x y of
   1 -> (x, y, [])
   g -> (x', y', concat rests)
@@ -46,7 +46,7 @@ doPair x xm y ym = case gcd x y of
         where
           (w', t', acc) = doPair w ym t tm
 
-_propDoPair :: (Euclidean a, Integral b) => a -> b -> a -> b -> Bool
+_propDoPair :: (Eq a, Num a, Euclidean a, Integral b) => a -> b -> a -> b -> Bool
 _propDoPair x xm y ym
   =  x `rem` x' == 0
   && y `rem` y' == 0
@@ -61,7 +61,7 @@ _propDoPair x xm y ym
 
 insertInternal
   :: forall a b.
-     (Euclidean a, Eq b, Num b)
+     (Eq a, Num a, Euclidean a, Eq b, Num b)
   => a
   -> b
   -> Coprimes a b
@@ -94,17 +94,17 @@ singleton a b = Coprimes [(a, b)]
 -- Coprimes {unCoprimes = [(7,1),(5,2),(3,3),(2,4)]}
 -- >>> insert 2 4 (insert 7 1 (insert 5 2 (singleton 4 3)))
 -- Coprimes {unCoprimes = [(7,1),(5,2),(2,10)]}
-insert :: (Euclidean a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
+insert :: (Eq a, Num a, Euclidean a, Eq b, Num b) => a -> b -> Coprimes a b -> Coprimes a b
 insert x xm ys = Coprimes $ unCoprimes zs <> unCoprimes ws
   where
     (zs, ws) = insertInternal x xm ys
 
-instance (Euclidean a, Eq b, Num b) => Semigroup (Coprimes a b) where
+instance (Eq a, Num a, Euclidean a, Eq b, Num b) => Semigroup (Coprimes a b) where
   (Coprimes xs) <> ys = Coprimes $ unCoprimes zs <> foldMap unCoprimes wss
     where
       (zs, wss) = mapAccumL (\vs (x, xm) -> insertInternal x xm vs) ys xs
 
-instance (Euclidean a, Eq b, Num b) => Monoid (Coprimes a b) where
+instance (Eq a, Num a, Euclidean a, Eq b, Num b) => Monoid (Coprimes a b) where
   mempty  = Coprimes []
   mappend = (<>)
 
@@ -120,5 +120,5 @@ instance (Euclidean a, Eq b, Num b) => Monoid (Coprimes a b) where
 -- Coprimes {unCoprimes = [(28,1),(33,1),(5,2)]}
 -- >>> splitIntoCoprimes [(360, 1), (210, 1)]
 -- Coprimes {unCoprimes = [(7,1),(5,2),(3,3),(2,4)]}
-splitIntoCoprimes :: (Euclidean a, Eq b, Num b) => [(a, b)] -> Coprimes a b
+splitIntoCoprimes :: (Eq a, Num a, Euclidean a, Eq b, Num b) => [(a, b)] -> Coprimes a b
 splitIntoCoprimes = foldl (\acc (x, xm) -> insert x xm acc) mempty
