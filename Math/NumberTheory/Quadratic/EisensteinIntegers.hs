@@ -31,6 +31,7 @@ import Data.Coerce
 import Data.List                                       (mapAccumL, partition)
 import Data.Maybe                                      (fromMaybe)
 import Data.Ord                                        (comparing)
+import qualified Data.Semiring as S
 import GHC.Generics                                    (Generic)
 
 import qualified Math.NumberTheory.Euclidean            as ED
@@ -74,6 +75,16 @@ instance Num EisensteinInteger where
     negate (a :+ b) = (-a) :+ (-b)
     fromInteger n = n :+ 0
     signum = snd . absSignum
+
+instance S.Semiring EisensteinInteger where
+    plus          = (+)
+    times         = (*)
+    zero          = 0 :+ 0
+    one           = 1 :+ 0
+    fromNatural n = fromIntegral n :+ 0
+
+instance S.Ring EisensteinInteger where
+    negate = negate
 
 -- | Returns an @EisensteinInteger@'s sign, and its associate in the first
 -- sextant.
