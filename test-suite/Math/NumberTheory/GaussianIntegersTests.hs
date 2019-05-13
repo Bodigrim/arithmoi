@@ -147,6 +147,9 @@ gcdGProperty2 z z1 z2
 gcdGSpecialCase1 :: Assertion
 gcdGSpecialCase1 = assertEqual "gcdG" 1 $ ED.gcd (12 :+ 23) (23 :+ 34)
 
+gcdGSpecialCase2 :: Assertion
+gcdGSpecialCase2 = assertEqual "gcdG" 1 $ ED.gcd (0 :+ 3) (2 :+ 2)
+
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers" $
   [ testGroup "factorise" (
@@ -171,5 +174,6 @@ testSuite = testGroup "GaussianIntegers" $
     [ testSmallAndQuick "is divisor"            gcdGProperty1
     , testSmallAndQuick "is greatest"           gcdGProperty2
     , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
+    , testCase          "(0 :+ 3) (2 :+ 2)"     gcdGSpecialCase2
     ]
   ]
