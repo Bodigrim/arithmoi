@@ -139,7 +139,7 @@ bernoulliProperty1 (NonNegative m)
   = case signum (bernoulli !! m) of
     1  -> m == 0 || m `mod` 4 == 2
     0  -> m /= 1 && odd m
-    -1 -> m == 1 || (m /= 0 && m `mod` 4 == 0)
+    -1 -> m == 1 || (m /= 0 && m `rem` 4 == 0)
     _  -> False
 
 bernoulliProperty2 :: NonNegative Int -> Bool

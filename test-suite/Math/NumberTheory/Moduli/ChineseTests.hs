@@ -37,14 +37,17 @@ chineseRemainderProperty rms' = case chineseRemainder rms of
 
 -- | Check that 'chineseRemainder' matches 'chineseRemainder2'.
 chineseRemainder2Property :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
-chineseRemainder2Property r1 (Positive m1) r2 (Positive m2) = gcd m1 m2 /= 1
-  || Just (chineseRemainder2 (r1, m1) (r2, m2)) == chineseRemainder [(r1, m1), (r2, m2)]
+chineseRemainder2Property r1 (Positive m1) r2 (Positive m2)
+  | gcd m1 m2 /= 1 = True
+  | otherwise      = case chineseRemainder [(r1, m1), (r2, m2)] of
+    Nothing -> False
+    Just ch -> (ch - chineseRemainder2 (r1, m1) (r2, m2)) `rem` (m1 * m2) == 0
 
 chineseCoprimeProperty :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
 chineseCoprimeProperty n1 (Positive m1) n2 (Positive m2) = case gcd m1 m2 of
   1 -> case chineseCoprime (n1, m1) (n2, m2) of
     Nothing -> False
-    Just n  -> (n - n1) `mod` m1 == 0 && (n - n2) `mod` m2 == 0
+    Just n  -> (n - n1) `rem` m1 == 0 && (n - n2) `rem` m2 == 0
   _ -> case chineseCoprime (n1, m1) (n2, m2) of
     Nothing -> True
     Just{}  -> False
@@ -53,13 +56,13 @@ chineseProperty :: Integer -> Positive Integer -> Integer -> Positive Integer ->
 chineseProperty n1 (Positive m1) n2 (Positive m2) = if compatible
   then case chinese (n1, m1) (n2, m2) of
     Nothing -> False
-    Just n  -> (n - n1) `mod` m1 == 0 && (n - n2) `mod` m2 == 0
+    Just n  -> (n - n1) `rem` m1 == 0 && (n - n2) `rem` m2 == 0
   else case chineseCoprime (n1, m1) (n2, m2) of
     Nothing -> True
     Just{}  -> False
   where
     g = gcd m1 m2
-    compatible = (n1 - n2) `mod` g == 0
+    compatible = (n1 - n2) `rem` g == 0
 
 
 testSuite :: TestTree

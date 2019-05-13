@@ -34,7 +34,7 @@ powerMod b e m = (b `modulo` fromInteger m) ^ e
 -- | Check that 'invertMod' inverts numbers modulo.
 invertModProperty :: AnySign Integer -> Positive Integer -> Bool
 invertModProperty (AnySign k) (Positive m) = case invertMod k m of
-  Nothing            -> k `mod` m == 0 || gcd k m > 1
+  Nothing            -> k `rem` m == 0 || gcd k m > 1
   Just InfMod{}      -> False
   Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1
 

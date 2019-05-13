@@ -68,7 +68,7 @@ instance KnownNat n => Eq (Point a24 n) where
   Point _ 0 == Point _ 0 = True
   Point _ 0 == _         = False
   _         == Point _ 0 = False
-  p@(Point x1 z1) == Point x2 z2 = let n = pointN p in (x1 * z2 - x2 * z1) `mod` n == 0
+  p@(Point x1 z1) == Point x2 z2 = let n = pointN p in (x1 * z2 - x2 * z1) `rem` n == 0
 
 -- | For debugging.
 instance (KnownNat a24, KnownNat n) => Show (Point a24 n) where

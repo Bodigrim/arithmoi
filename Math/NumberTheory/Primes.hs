@@ -192,21 +192,21 @@ enumFromToGeneric p@(Prime p') q@(Prime q') = takeWhile (<= q) $ dropWhile (< p)
 
 enumFromThenGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> [Prime a]
 enumFromThenGeneric p@(Prime p') (Prime q') = case p' `compare` q' of
-  LT -> filter (\(Prime r') -> (r' - p') `mod` delta == 0) $ enumFromGeneric p
+  LT -> filter (\(Prime r') -> (r' - p') `rem` delta == 0) $ enumFromGeneric p
     where
       delta = q' - p'
   EQ -> repeat p
-  GT -> filter (\(Prime r') -> (p' - r') `mod` delta == 0) $ reverse $ enumFromToGeneric (Prime 2) p
+  GT -> filter (\(Prime r') -> (p' - r') `rem` delta == 0) $ reverse $ enumFromToGeneric (Prime 2) p
     where
       delta = p' - q'
 
 enumFromThenToGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> Prime a -> [Prime a]
 enumFromThenToGeneric p@(Prime p') (Prime q') r@(Prime r') = case p' `compare` q' of
-  LT -> filter (\(Prime t') -> (t' - p') `mod` delta == 0) $ enumFromToGeneric p r
+  LT -> filter (\(Prime t') -> (t' - p') `rem` delta == 0) $ enumFromToGeneric p r
     where
       delta = q' - p'
   EQ -> if p' <= r' then repeat p else []
-  GT -> filter (\(Prime t') -> (p' - t') `mod` delta == 0) $ reverse $ enumFromToGeneric r p
+  GT -> filter (\(Prime t') -> (p' - t') `rem` delta == 0) $ reverse $ enumFromToGeneric r p
     where
       delta = p' - q'
 

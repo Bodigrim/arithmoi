@@ -123,7 +123,7 @@ solveQuadraticPrime a b c (unPrime -> 2 :: Integer)
     (_, False)   -> [1]
     _            -> []
 solveQuadraticPrime a b c p
-  | a `mod` p' == 0
+  | a `rem` p' == 0
   = solveLinear' p' b c
   | otherwise
   = map (\n -> n * recipModInteger (2 * a) p' `mod` p')

@@ -266,7 +266,7 @@ factorise g = concat $
       | unPrime p `mod` 3 == 2
       = let e' = e `quot` 2 in (z `quotI` (unPrime p ^ e'), [(Prime (unPrime p :+ 0), e')])
 
-      -- The @`mod` 3 == 0@ case need not be verified because the
+      -- The @`rem` 3 == 0@ case need not be verified because the
       -- only Eisenstein primes whose norm are a multiple of 3
       -- are @1 - ω@ and its associates, which have already been
       -- removed by the above @go z (3, e)@ pattern match.

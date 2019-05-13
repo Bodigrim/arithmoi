@@ -39,10 +39,10 @@ nubOrd = map head . group . sort
 sqrtsModPrimeProperty1 :: AnySign Integer -> Prime Integer -> Bool
 sqrtsModPrimeProperty1 (AnySign n) p'@(unPrime -> p) = case sqrtsModPrime n p' of
   []     -> jacobi n p == MinusOne
-  rt : _ -> (p == 2 || jacobi n p /= MinusOne) && (rt ^ 2 - n) `mod` p == 0
+  rt : _ -> (p == 2 || jacobi n p /= MinusOne) && (rt ^ 2 - n) `rem` p == 0
 
 sqrtsModPrimeProperty2 :: AnySign Integer -> Prime Integer -> Bool
-sqrtsModPrimeProperty2 (AnySign n) p'@(unPrime -> p) = all (\rt -> (rt ^ 2 - n) `mod` p == 0) (sqrtsModPrime n p')
+sqrtsModPrimeProperty2 (AnySign n) p'@(unPrime -> p) = all (\rt -> (rt ^ 2 - n) `rem` p == 0) (sqrtsModPrime n p')
 
 sqrtsModPrimeProperty3 :: AnySign Integer -> Prime Integer -> Bool
 sqrtsModPrimeProperty3 (AnySign n) p'@(unPrime -> p) = nubOrd rts == sort rts
@@ -58,7 +58,7 @@ tonelliShanksProperty1 (Positive n) p'@(unPrime -> p) = p `mod` 4 /= 1 || jacobi
     rt : _ = sqrtsModPrime n p'
 
 tonelliShanksProperty2 :: Prime Integer -> Bool
-tonelliShanksProperty2 p'@(unPrime -> p) = p `mod` 4 /= 1 || (rt ^ 2 - n) `mod` p == 0
+tonelliShanksProperty2 p'@(unPrime -> p) = p `mod` 4 /= 1 || (rt ^ 2 - n) `rem` p == 0
   where
     n  = head $ filter (\s -> jacobi s p == One) [2..p-1]
     rt : _ = sqrtsModPrime n p'
@@ -80,7 +80,7 @@ tonelliShanksSpecialCases =
 
 sqrtsModPrimePowerProperty1 :: AnySign Integer -> (Prime Integer, Power Word) -> Bool
 sqrtsModPrimePowerProperty1 (AnySign n) (p'@(unPrime -> p), Power e) = gcd n p > 1
-  || all (\rt -> (rt ^ 2 - n) `mod` (p ^ e) == 0) (sqrtsModPrimePower n p' e)
+  || all (\rt -> (rt ^ 2 - n) `rem` (p ^ e) == 0) (sqrtsModPrimePower n p' e)
 
 sqrtsModPrimePowerProperty2 :: AnySign Integer -> Power Word -> Bool
 sqrtsModPrimePowerProperty2 n e = sqrtsModPrimePowerProperty1 n (fromJust $ isPrime (2 :: Integer), e)
@@ -152,7 +152,7 @@ sqrtsModPrimePowerSpecialCase11 =
 sqrtsModFactorisationProperty1 :: AnySign Integer -> [(Prime Integer, Power Word)] -> Bool
 sqrtsModFactorisationProperty1 (AnySign n) (take 10 . map unwrapPP -> pes'@(map (first unPrime) -> pes))
   = nubOrd ps /= sort ps || all
-    (\rt -> all (\(p, e) -> (rt ^ 2 - n) `mod` (p ^ e) == 0) pes)
+    (\rt -> all (\(p, e) -> (rt ^ 2 - n) `rem` (p ^ e) == 0) pes)
     (take 1000 $ sqrtsModFactorisation n pes')
   where
     ps = map fst pes

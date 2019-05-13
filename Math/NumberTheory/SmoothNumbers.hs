@@ -176,6 +176,6 @@ isSmooth prs x = mf (unSmoothBasis prs) x
     mf :: [a] -> a -> Bool
     mf _         0 = False
     mf []        n = abs n == 1 -- mf means manually factor
-    mf pl@(p:ps) n = if E.mod n p == 0
-                     then mf pl (E.div n p)
+    mf pl@(p:ps) n = if E.rem n p == 0
+                     then mf pl (E.quot n p)
                      else mf ps n
