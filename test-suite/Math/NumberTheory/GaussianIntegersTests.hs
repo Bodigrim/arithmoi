@@ -18,6 +18,9 @@ import Control.Monad (zipWithM_)
 import Data.Euclidean
 import Data.List (groupBy, sort)
 import Data.Maybe (fromJust, mapMaybe)
+import Data.Proxy
+import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC hiding (NonNegative(..), Positive(..))
@@ -185,4 +188,6 @@ testSuite = testGroup "GaussianIntegers" $
     , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
     , testCase          "(0 :+ 3) (2 :+ 2)"     gcdGSpecialCase2
     ]
+  , testGroup "GcdDomain laws" $ map (uncurry QC.testProperty) $ lawsProperties $ gcdDomainLaws (Proxy :: Proxy GaussianInteger)
+  , testGroup "Euclidean laws" $ map (uncurry QC.testProperty) $ lawsProperties $ euclideanLaws (Proxy :: Proxy GaussianInteger)
   ]

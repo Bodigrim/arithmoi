@@ -16,6 +16,9 @@ module Math.NumberTheory.EisensteinIntegersTests
 import Prelude hiding (gcd, rem, quot, quotRem)
 import Data.Euclidean
 import Data.Maybe (fromJust, isJust)
+import Data.Proxy
+import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.QuickCheck.Classes
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
                                                       testCase)
@@ -180,4 +183,6 @@ testSuite = testGroup "EisensteinIntegers" $
                           factoriseProperty3
       , testCase          "factorise 15:+12" factoriseSpecialCase1
       ]
+  , testGroup "GcdDomain laws" $ map (uncurry QC.testProperty) $ lawsProperties $ gcdDomainLaws (Proxy :: Proxy E.EisensteinInteger)
+  , testGroup "Euclidean laws" $ map (uncurry QC.testProperty) $ lawsProperties $ euclideanLaws (Proxy :: Proxy E.EisensteinInteger)
   ]
