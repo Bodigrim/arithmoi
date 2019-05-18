@@ -55,7 +55,7 @@ doPair x xm y ym
       xgs' = if isUnit g' then xgs else ((g', xm + ym) : xgs)
 
       (y', rests) = mapAccumL go (y `unsafeDivide` g) xgs'
-      go w (t, tm) = (w', if isUnit t' then acc else (t', tm) : acc)
+      go w (t, tm) = (w', if isUnit t' || tm == 0 then acc else (t', tm) : acc)
         where
           (w', t', acc) = doPair w ym t tm
 

@@ -7,6 +7,8 @@
 -- Tests for Math.NumberTheory.Recurrences.Bilinear
 --
 
+{-# LANGUAGE TypeApplications #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.Recurrences.BilinearTests
@@ -25,18 +27,18 @@ import Math.NumberTheory.Recurrences.Bilinear (bernoulli, binomial, euler,
 import Math.NumberTheory.TestUtils
 
 binomialProperty1 :: NonNegative Int -> Bool
-binomialProperty1 (NonNegative i) = length (binomial !! i) == i + 1
+binomialProperty1 (NonNegative i) = length (binomial @Integer !! i) == i + 1
 
 binomialProperty2 :: NonNegative Int -> Bool
-binomialProperty2 (NonNegative i) = binomial !! i !! 0 == 1
+binomialProperty2 (NonNegative i) = binomial @Integer !! i !! 0 == 1
 
 binomialProperty3 :: NonNegative Int -> Bool
-binomialProperty3 (NonNegative i) = binomial !! i !! i == 1
+binomialProperty3 (NonNegative i) = binomial @Integer !! i !! i == 1
 
 binomialProperty4 :: Positive Int -> Positive Int -> Bool
 binomialProperty4 (Positive i) (Positive j)
   =  j >= i
-  || binomial !! i !! j
+  || binomial @Integer !! i !! j
   == binomial !! (i - 1) !! (j - 1)
   +  binomial !! (i - 1) !! j
 

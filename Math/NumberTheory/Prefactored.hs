@@ -81,7 +81,7 @@ data Prefactored a = Prefactored
   , prefFactors :: Coprimes a Word
     -- ^ List of pairwise coprime (but not neccesarily prime) factors,
     -- accompanied by their multiplicities.
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 -- | Create 'Prefactored' from a given number.
 --

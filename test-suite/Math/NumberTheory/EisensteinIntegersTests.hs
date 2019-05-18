@@ -22,7 +22,6 @@ import Test.QuickCheck.Classes
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
                                                       testCase)
-import Test.Tasty.QuickCheck as QC hiding (Positive(..))
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.Primes

@@ -23,7 +23,6 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, g
 import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck as QC hiding (NonNegative(..), Positive(..))
 
 import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt

@@ -46,7 +46,9 @@ module Math.NumberTheory.Recurrences.Bilinear
   , faulhaberPoly
   ) where
 
+import Data.Euclidean (GcdDomain(..))
 import Data.List
+import Data.Maybe
 import Data.Ratio
 import Numeric.Natural
 
@@ -63,10 +65,10 @@ import Math.NumberTheory.Recurrences.Linear (factorial)
 -- Use the symmetry of Pascal triangle @binomial !! n !! k == binomial !! n !! (n - k)@ to speed up computations.
 --
 -- One could also consider 'Math.Combinat.Numbers.binomial' to compute stand-alone values.
-binomial :: Integral a => [[a]]
+binomial :: (Num a, GcdDomain a) => [[a]]
 binomial = map f [0..]
   where
-    f n = scanl (\x k -> x * (n - k + 1) `div` k) 1 [1..n]
+    f n = scanl (\x k -> fromJust $ x * (fromInteger $ n - k + 1) `divide` fromInteger k) 1 [1..n]
 {-# SPECIALIZE binomial :: [[Int]]     #-}
 {-# SPECIALIZE binomial :: [[Word]]    #-}
 {-# SPECIALIZE binomial :: [[Integer]] #-}
@@ -182,7 +184,7 @@ bernoulli = helperForB_E_EP id (map recip [1..])
 -- 959924142434241924250
 -- >>> sum $ zipWith (*) (faulhaberPoly 10) (iterate (* 100) 1)
 -- 959924142434241924250 % 1
-faulhaberPoly :: Integral a => Int -> [Ratio a]
+faulhaberPoly :: (GcdDomain a, Integral a) => Int -> [Ratio a]
 -- Implementation by https://github.com/CarlEdman
 faulhaberPoly p
   = zipWith (*) ((0:)
