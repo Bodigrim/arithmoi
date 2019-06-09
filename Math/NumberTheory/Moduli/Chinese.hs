@@ -76,7 +76,7 @@ chineseCoprime (n1, m1) (n2, m2) = case d of
 -- Just 11
 -- >>> chinese (3, 4) (2, 6)
 -- Nothing
-chinese :: forall a. (Integral a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
+chinese :: forall a. (Integral a, GcdDomain a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
 chinese (n1, m1) (n2, m2)
   | (n1 - n2) `rem` g == 0
   = chineseCoprime (n1 `mod` m1', m1') (n2 `mod` m2', m2')

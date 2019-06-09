@@ -84,7 +84,7 @@ data Prefactored a = Prefactored
 --
 -- >>> fromValue 123
 -- Prefactored {prefValue = 123, prefFactors = Coprimes {unCoprimes = [(123,1)]}}
-fromValue :: (Eq a, Num a) => a -> Prefactored a
+fromValue :: (Eq a, GcdDomain a) => a -> Prefactored a
 fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
@@ -97,7 +97,7 @@ fromValue a = Prefactored a (singleton a 1)
 fromFactors :: Num a => Coprimes a Word -> Prefactored a
 fromFactors as = Prefactored (product (map (uncurry (^)) (unCoprimes as))) as
 
-instance (Eq a, Num a, Euclidean a) => Num (Prefactored a) where
+instance (Eq a, Num a, GcdDomain a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
     = fromValue (v1 + v2)
   Prefactored v1 _ - Prefactored v2 _
@@ -109,7 +109,7 @@ instance (Eq a, Num a, Euclidean a) => Num (Prefactored a) where
   signum (Prefactored v _) = Prefactored (signum v) mempty
   fromInteger n = fromValue (fromInteger n)
 
-instance (Eq a, Num a, Euclidean a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
+instance (Eq a, Num a, GcdDomain a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (\(p, k) -> (Prime $ fromValue $ unPrime p, k * xm)) (factorise x)) (unCoprimes f)
   isPrime (Prefactored _ f) = case unCoprimes f of
