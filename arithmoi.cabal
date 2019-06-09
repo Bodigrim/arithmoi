@@ -45,7 +45,7 @@ library
     integer-logarithms >=1.0,
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
-    semirings >= 0.2,
+    semirings >= 0.4.2,
     vector >= 0.12
   exposed-modules:
     GHC.TypeNats.Compat
