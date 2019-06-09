@@ -52,7 +52,7 @@ newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 -- Just (SmoothBasis {unSmoothBasis = [2,4]})
 -- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
 -- Nothing
-fromSet :: (Eq a, Num a, E.GcdDomain a) => S.Set a -> Maybe (SmoothBasis a)
+fromSet :: (Eq a, E.GcdDomain a) => S.Set a -> Maybe (SmoothBasis a)
 fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
 
 -- | Build a 'SmoothBasis' from a list of numbers ≥2.
@@ -65,7 +65,7 @@ fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elem
 -- Just (SmoothBasis {unSmoothBasis = [2,4]})
 -- >>> fromList [1, 3] -- should be >= 2
 -- Nothing
-fromList :: (Eq a, Num a, E.GcdDomain a) => [a] -> Maybe (SmoothBasis a)
+fromList :: (Eq a, E.GcdDomain a) => [a] -> Maybe (SmoothBasis a)
 fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
   where
     l' = nub l
@@ -77,9 +77,9 @@ fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
 -- >>> fromSmoothUpperBound 1
 -- Nothing
 fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
-fromSmoothUpperBound n = if (n < 2)
-                         then Nothing
-                         else Just $ SmoothBasis $ takeWhile (<= n) $ map unPrime primes
+fromSmoothUpperBound n
+  | n < 2     = Nothing
+  | otherwise = Just $ SmoothBasis $ takeWhile (<= n) $ map unPrime primes
 
 -- | Helper used by @smoothOver@ (@Integral@ constraint) and @smoothOver'@
 -- (@Euclidean@ constraint) Since the typeclass constraint is just
@@ -95,7 +95,7 @@ smoothOver'
   -> [a]
 smoothOver' norm pl =
     foldr
-    (\p l -> mergeListLists $ iterate (map $ abs . (p*)) l)
+    (\p l -> mergeListLists $ iterate (map (* p)) l)
     [1]
     (nub $ unSmoothBasis pl)
   where
@@ -111,9 +111,9 @@ smoothOver' norm pl =
         go2 a [] = a
         go2 [] b = b
         go2 a@(ah:at) b@(bh:bt)
-          | norm bh < norm ah   = bh : (go2 a bt)
-          | ah == bh    = ah : (go2 at bt)
-          | otherwise = ah : (go2 at b)
+          | norm bh < norm ah = bh : (go2 a bt)
+          | abs ah == abs bh  = ah : (go2 at bt)
+          | otherwise         = ah : (go2 at b)
 
 -- | Generate an infinite ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -136,12 +136,11 @@ smoothOver = smoothOver' abs
 -- >>> import Data.Maybe
 -- >>> smoothOverInRange (fromJust (fromList [2, 5])) 100 200
 -- [100,125,128,160,200]
-smoothOverInRange :: forall a. Integral a => SmoothBasis a -> a -> a -> [a]
+smoothOverInRange :: (Ord a, Num a) => SmoothBasis a -> a -> a -> [a]
 smoothOverInRange s lo hi
   = takeWhile (<= hi)
   $ dropWhile (< lo)
-  $ coerce
-  $ smoothOver (coerce s :: SmoothBasis (E.WrappedIntegral a))
+  $ smoothOver s
 
 -- | Generate an ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -167,13 +166,9 @@ smoothOverInRangeBF prs lo hi
   $ filter (isSmooth prs)
   $ coerce [lo..hi]
 
--- | isValid assumes that the list is sorted and unique and then checks if the list is suitable to be a SmoothBasis.
-isValid :: (Eq a, Num a) => [a] -> Bool
-isValid pl = length pl /= 0 && v' pl
-  where
-    v' :: (Eq a, Num a) => [a] -> Bool
-    v' []     = True
-    v' (x:xs) = x /= 0 && abs x /= 1 && abs x == x && v' xs
+isValid :: (Eq a, E.GcdDomain a) => [a] -> Bool
+isValid [] = False
+isValid xs = all (\x -> not (isZero x) && not (E.isUnit x)) xs
 
 -- | @isSmooth@ checks if a given number is smooth under a certain @SmoothBasis@.
 -- Does not check if the @SmoothBasis@ is valid.
