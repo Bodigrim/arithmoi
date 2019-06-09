@@ -30,8 +30,7 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Ord (Down(..))
-import Data.Semigroup
-import Data.Semiring (Semiring(..))
+import Data.Semiring (Semiring(..), Mul(..))
 import Data.Set (Set)
 import qualified Data.Set as S
 import Numeric.Natural
@@ -155,7 +154,7 @@ invSigma fs
 -- This allows us to crop resulting Dirichlet series (see 'filter' calls
 -- in 'invertFunction' below) at the end of each batch, saving time and memory.
 strategy
-  :: forall a c. (Num c, Euclidean c, Ord c)
+  :: forall a c. (GcdDomain c, Ord c)
   => ArithmeticFunction a c
   -- ^ Arithmetic function, which we aim to inverse
   -> [(Prime c, Word)]
@@ -176,7 +175,7 @@ strategy (ArithmeticFunction f g) factors args = (Nothing, ret) : rets
       -> ([PrimePowers a], (Maybe (Prime c, Word), [PrimePowers a]))
     go ts (p, k) = (rs, (Just (p, k), qs))
       where
-        predicate (PrimePowers q ls) = any (\l -> g (f q l) `rem` unPrime p == 0) ls
+        predicate (PrimePowers q ls) = any (\l -> isJust $ g (f q l) `divide` unPrime p) ls
         (qs, rs) = partition predicate ts
 
 -- | Main workhorse.
@@ -362,8 +361,8 @@ instance Semiring MinNatural where
 
 -- | Helper to extract a set of preimages for 'inverseTotient' or 'inverseSigma'.
 asSetOfPreimages
-  :: (Ord a, Semiring a, Num a)
+  :: (Ord a, Semiring a)
   => (forall b. Semiring b => (a -> b) -> a -> b)
   -> a
   -> S.Set a
-asSetOfPreimages f = S.mapMonotonic getProduct . f (S.singleton . Product)
+asSetOfPreimages f = S.mapMonotonic getMul . f (S.singleton . Mul)

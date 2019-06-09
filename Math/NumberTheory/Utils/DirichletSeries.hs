@@ -27,6 +27,7 @@ import Prelude hiding (filter, last, rem, quot, snd, lookup)
 import Data.Coerce
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
@@ -78,7 +79,7 @@ timesAndCrop n (DirichletSeries as) (DirichletSeries bs)
   | (b, fb) <- M.assocs bs
   , let nb = n `quot` b
   , (a, fa) <- takeWhile ((<= nb) . fst) (M.assocs as)
-  , nb `rem` a == 0
+  , isJust (nb `divide` a)
   ]
 {-# SPECIALISE timesAndCrop :: Semiring b => Int -> DirichletSeries Int b -> DirichletSeries Int b -> DirichletSeries Int b #-}
 {-# SPECIALISE timesAndCrop :: Semiring b => Word -> DirichletSeries Word b -> DirichletSeries Word b -> DirichletSeries Word b #-}
