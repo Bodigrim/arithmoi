@@ -32,6 +32,7 @@ module Math.NumberTheory.SmoothNumbers
 import Prelude hiding (div, mod, gcd)
 import Data.Coerce
 import Data.List (nub)
+import Data.Semiring (isZero)
 import qualified Data.Set as S
 
 import qualified Math.NumberTheory.Euclidean as E
@@ -156,7 +157,7 @@ smoothOverInRange s lo hi
 -- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
 -- [100,125,128,160,200]
 smoothOverInRangeBF
-  :: (Eq a, Enum a, Num a, E.Euclidean a)
+  :: (Eq a, Enum a, E.GcdDomain a)
   => SmoothBasis a
   -> a
   -> a
@@ -176,12 +177,11 @@ isValid pl = length pl /= 0 && v' pl
 
 -- | @isSmooth@ checks if a given number is smooth under a certain @SmoothBasis@.
 -- Does not check if the @SmoothBasis@ is valid.
-isSmooth :: forall a. (Eq a, Num a, E.Euclidean a) => SmoothBasis a -> a -> Bool
-isSmooth prs x = mf (unSmoothBasis prs) x
+isSmooth :: (Eq a, E.GcdDomain a) => SmoothBasis a -> a -> Bool
+isSmooth prs x = not (isZero x) && go (unSmoothBasis prs) x
   where
-    mf :: [a] -> a -> Bool
-    mf _         0 = False
-    mf []        n = abs n == 1 -- mf means manually factor
-    mf pl@(p:ps) n = if E.rem n p == 0
-                     then mf pl (E.quot n p)
-                     else mf ps n
+    go :: (Eq a, E.GcdDomain a) => [a] -> a -> Bool
+    go [] n = E.isUnit n
+    go pps@(p:ps) n = case n `E.divide` p of
+      Nothing -> go ps n
+      Just q  -> go pps q || go ps n

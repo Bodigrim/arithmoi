@@ -18,10 +18,17 @@ module Math.NumberTheory.Euclidean
   , Euclidean(..)
   , WrappedIntegral(..)
   , extendedGCD
+  , isUnit
   ) where
 
 import Prelude hiding (divMod, div, gcd, lcm, mod, quotRem, quot, rem)
 import Data.Euclidean
+import Data.Maybe
+import Data.Semiring (Semiring(..), isZero)
+
+-- | Check whether an element is a unit of the ring.
+isUnit :: (Eq a, GcdDomain a) => a -> Bool
+isUnit x = not (isZero x) && isJust (one `divide` x)
 
 -- | Calculate the greatest common divisor of two numbers and coefficients
 --   for the linear combination.
