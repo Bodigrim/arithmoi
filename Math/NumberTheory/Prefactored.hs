@@ -18,9 +18,12 @@ module Math.NumberTheory.Prefactored
   , fromFactors
   ) where
 
+import Prelude hiding ((^), gcd)
 import Control.Arrow
-
 import Data.Semigroup
+import Data.Semiring (Semiring(..), Mul(..), (^))
+import qualified Data.Semiring as Semiring
+import Unsafe.Coerce
 
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
@@ -84,7 +87,7 @@ data Prefactored a = Prefactored
 --
 -- >>> fromValue 123
 -- Prefactored {prefValue = 123, prefFactors = Coprimes {unCoprimes = [(123,1)]}}
-fromValue :: (Eq a, Num a) => a -> Prefactored a
+fromValue :: (Eq a, GcdDomain a) => a -> Prefactored a
 fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
@@ -94,10 +97,10 @@ fromValue a = Prefactored a (singleton a 1)
 -- Prefactored {prefValue = 23100, prefFactors = Coprimes {unCoprimes = [(28,1),(33,1),(5,2)]}}
 -- >>> fromFactors (splitIntoCoprimes [(140, 2), (165, 3)])
 -- Prefactored {prefValue = 88045650000, prefFactors = Coprimes {unCoprimes = [(28,2),(33,3),(5,5)]}}
-fromFactors :: Num a => Coprimes a Word -> Prefactored a
-fromFactors as = Prefactored (product (map (uncurry (^)) (unCoprimes as))) as
+fromFactors :: Semiring a => Coprimes a Word -> Prefactored a
+fromFactors as = Prefactored (getMul $ foldMap (\(a, k) -> Mul $ a ^ k) (unCoprimes as)) as
 
-instance Euclidean a => Num (Prefactored a) where
+instance (Eq a, Num a, GcdDomain a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _
     = fromValue (v1 + v2)
   Prefactored v1 _ - Prefactored v2 _
@@ -109,7 +112,7 @@ instance Euclidean a => Num (Prefactored a) where
   signum (Prefactored v _) = Prefactored (signum v) mempty
   fromInteger n = fromValue (fromInteger n)
 
-instance (Euclidean a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
+instance (Eq a, GcdDomain a, UniqueFactorisation a) => UniqueFactorisation (Prefactored a) where
   factorise (Prefactored _ f)
     = concatMap (\(x, xm) -> map (\(p, k) -> (Prime $ fromValue $ unPrime p, k * xm)) (factorise x)) (unCoprimes f)
   isPrime (Prefactored _ f) = case unCoprimes f of

@@ -118,10 +118,10 @@ isOddPrime p = if (unPrime p :: a) == 2 then Nothing else Just p
 -------------------------------------------------------------------------------
 -- SmoothNumbers
 
-instance (Ord a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
+instance (Ord a, Num a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
   arbitrary = (fmap getPositive <$> arbitrary) `suchThatMap` SN.fromList
 
-instance (Ord a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
+instance (Ord a, Num a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
   series = (fmap getPositive <$> series) `suchThatMapSerial` SN.fromList
 
 -------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ type TestableIntegral wrapper =
 
 testIntegralProperty
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Euclidean a, Semiring a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
+  => String -> (forall a. (GcdDomain a, Euclidean a, Semiring a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
 testIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> bool)
@@ -184,7 +184,7 @@ testIntegralPropertyNoLarge name f = testGroup name
 
 testSameIntegralProperty
   :: forall wrapper1 wrapper2 bool. (TestableIntegral wrapper1, TestableIntegral wrapper2, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Euclidean a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
+  => String -> (forall a. (GcdDomain a, Euclidean a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper1 a -> wrapper2 a -> bool) -> TestTree
 testSameIntegralProperty name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper1 Int     -> wrapper2 Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper1 Word    -> wrapper2 Word    -> bool)

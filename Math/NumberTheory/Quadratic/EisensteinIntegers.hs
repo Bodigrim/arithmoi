@@ -107,25 +107,26 @@ ids = take 6 (iterate ((1 + ω) *) 1)
 associates :: EisensteinInteger -> [EisensteinInteger]
 associates e = map (e *) ids
 
+instance ED.GcdDomain EisensteinInteger
+
 instance ED.Euclidean EisensteinInteger where
-  quotRem = divHelper quot
-  divMod  = divHelper div
+    degree = fromInteger . norm
+    quotRem = divHelper
 
 -- | Function that does most of the underlying work for @divMod@ and
 -- @quotRem@, apart from choosing the specific integer division algorithm.
 -- This is instead done by the calling function (either @divMod@ which uses
 -- @div@, or @quotRem@, which uses @quot@.)
 divHelper
-    :: (Integer -> Integer -> Integer)
-    -> EisensteinInteger
+    :: EisensteinInteger
     -> EisensteinInteger
     -> (EisensteinInteger, EisensteinInteger)
-divHelper divide g h =
-    let nr :+ ni = g * conjugate h
+divHelper g h = (q, r)
+    where
+        nr :+ ni = g * conjugate h
         denom = norm h
-        q = divide nr denom :+ divide ni denom
-        p = h * q
-    in (q, g - p)
+        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+   ((ni + signum ni * denom `quot` 2) `quot` denom)
+        r = g - h * q
 
 -- | Conjugate a Eisenstein integer.
 conjugate :: EisensteinInteger -> EisensteinInteger
@@ -190,7 +191,7 @@ divideByThree = go 0
 findPrime :: Prime Integer -> U.Prime EisensteinInteger
 findPrime p = case sqrtsModPrime (9*k*k - 1) p of
     []    -> error "findPrime: argument must be prime p = 6k + 1"
-    z : _ -> Prime $ ED.gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
+    z : _ -> Prime $ abs $ ED.gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
     where
         k :: Integer
         k = unPrime p `div` 6

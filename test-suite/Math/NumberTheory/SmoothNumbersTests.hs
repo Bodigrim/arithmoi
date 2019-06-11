@@ -13,7 +13,7 @@ module Math.NumberTheory.SmoothNumbersTests
   ( testSuite
   ) where
 
-import Prelude hiding (mod)
+import Prelude hiding (mod, rem)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -23,17 +23,17 @@ import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean (Euclidean (..), WrappedIntegral (..))
+import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes (Prime (..))
 import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.SmoothNumbers
 import Math.NumberTheory.TestUtils
 
-fromSetListProperty :: (Euclidean a, Ord a) => [a] -> Bool
+fromSetListProperty :: (Num a, Euclidean a, Ord a) => [a] -> Bool
 fromSetListProperty xs = fromSet (S.fromList xs) == fromList (sort xs)
 
-isSmoothPropertyHelper :: Euclidean a => (a -> Integer) -> [a] -> Int -> Int -> Bool
+isSmoothPropertyHelper :: (Eq a, Num a, Euclidean a) => (a -> Integer) -> [a] -> Int -> Int -> Bool
 isSmoothPropertyHelper norm primes' i1 i2 =
     let primes = take i1 primes'
         basis  = fromJust (fromList primes)
@@ -52,14 +52,14 @@ fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of
     Nothing -> n < 2
     Just sb -> head (genericDrop (n - 1) (smoothOver (coerce sb))) == n
   where
-    n = WrappedIntegral n' `mod` 5000
+    n = WrapIntegral n' `rem` 5000
 
 smoothOverInRangeProperty :: Integral a => SmoothBasis a -> Positive a -> Positive a -> Bool
 smoothOverInRangeProperty s (Positive lo') (Positive diff')
   = xs == ys
   where
-    lo   = WrappedIntegral lo'   `mod` 2^18
-    diff = WrappedIntegral diff' `mod` 2^18
+    lo   = WrapIntegral lo'   `rem` 2^18
+    diff = WrapIntegral diff' `rem` 2^18
     hi   = lo + diff
     xs   = smoothOverInRange   (coerce s) lo hi
     ys   = smoothOverInRangeBF (coerce s) lo hi

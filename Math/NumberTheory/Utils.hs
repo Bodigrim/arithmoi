@@ -39,6 +39,7 @@ import GHC.Integer.GMP.Internals
 import GHC.Natural
 
 import Data.Bits
+import Data.Semiring (Semiring(..), isZero)
 import Math.NumberTheory.Euclidean
 
 uncheckedShiftR :: Word -> Int -> Word
@@ -160,12 +161,13 @@ bitCountWord = popCount
 bitCountInt :: Int -> Int
 bitCountInt = popCount
 
-splitOff :: Euclidean a => a -> a -> (Word, a)
-splitOff _ 0 = (0, 0) -- prevent infinite loop
-splitOff p n = go 0 n
+splitOff :: (Eq a, GcdDomain a) => a -> a -> (Word, a)
+splitOff p n
+  | isZero n  = (0, zero) -- prevent infinite loop
+  | otherwise = go 0 n
   where
-    go !k m = case m `quotRem` p of
-      (q, 0) -> go (k + 1) q
+    go !k m = case m `divide` p of
+      Just q -> go (k + 1) q
       _      -> (k, m)
 {-# INLINABLE splitOff #-}
 
@@ -194,7 +196,7 @@ mergeBy cmp = loop
 
 -- | Work around https://ghc.haskell.org/trac/ghc/ticket/14085
 recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger (x `mod` m) m of
+recipMod x m = case recipModInteger (x `P.mod` m) m of
   0 -> Nothing
   y -> Just y
 
