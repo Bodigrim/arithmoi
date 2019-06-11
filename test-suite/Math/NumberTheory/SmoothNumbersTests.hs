@@ -76,6 +76,10 @@ isSmoothSpecialCase1 = assertBool "should be distinct" $ nub l == l
     b = fromJust $ fromList [1+3*G.ι,6+8*G.ι]
     l = take 10 $ map abs $ smoothOver' G.norm b
 
+isSmoothSpecialCase2 :: Assertion
+isSmoothSpecialCase2 = assertBool "should be smooth" $ isSmooth b 6
+  where
+    b = fromJust $ fromList [4, 3, 6, 10, 7::Int]
 
 testSuite :: TestTree
 testSuite = testGroup "SmoothNumbers"
@@ -108,5 +112,6 @@ testSuite = testGroup "SmoothNumbers"
       , testSmallAndQuick "Eisenstein" isSmoothProperty2
       ]
     , testCase "all distinct for base [1+3*i,6+8*i]" isSmoothSpecialCase1
+    , testCase "6 is smooth for base [4,3,6,10,7]" isSmoothSpecialCase2
     ]
   ]
