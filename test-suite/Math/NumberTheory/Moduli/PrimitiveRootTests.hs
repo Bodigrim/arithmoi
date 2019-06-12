@@ -18,6 +18,7 @@ module Math.NumberTheory.Moduli.PrimitiveRootTests
 
 import Prelude hiding (gcd)
 import Test.Tasty
+import Test.Tasty.HUnit
 
 import qualified Data.Set as S
 import Data.List (genericTake, genericLength)
@@ -53,6 +54,9 @@ cyclicGroupProperty3 (Positive n) = case isPrime n of
   Nothing -> True
   Just _  -> 2 * n < n {- overflow check -}
           || isJust (cyclicGroupFromModulo n)
+
+cyclicGroupSpecialCase1 :: Assertion
+cyclicGroupSpecialCase1 = assertBool "should be non-cyclic" $ isNothing $ fromModulo (8 :: Integer)
 
 allUnique :: Ord a => [a] -> Bool
 allUnique = go S.empty
@@ -109,6 +113,7 @@ testSuite = testGroup "Primitive root"
     [ testIntegralProperty "cyclicGroupToModulo . cyclicGroupFromModulo" cyclicGroupProperty1
     , testIntegralProperty "cyclic group mod p" cyclicGroupProperty2
     , testIntegralProperty "cyclic group mod 2p" cyclicGroupProperty3
+    , testCase "cyclic group mod 8" cyclicGroupSpecialCase1
     ]
   , testGroup "isPrimitiveRoot'"
     [ testGroup "primitive root is coprime with modulo"
