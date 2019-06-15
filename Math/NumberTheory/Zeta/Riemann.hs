@@ -8,6 +8,8 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-# OPTIONS_HADDOCK hide #-}
+
 module Math.NumberTheory.Zeta.Riemann
   ( zetas
   , zetasEven
@@ -45,11 +47,6 @@ zetasOdd eps = (1 / 0) : tail (skipEvens $ zetaHurwitz eps 1)
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Riemann zeta-function at integer arguments, starting with @ζ(0)@.
---
--- Computations for odd arguments were formerly performed in accordance to
--- <https://cr.yp.to/bib/2000/borwein.pdf Computational strategies for the Riemann zeta function>
--- by J. M. Borwein, D. M. Bradley, R. E. Crandall, formula (57), but now use
--- the 'Math.NumberTheory.Zeta.Hurwitz.zetaHurwitz' recurrence.
 --
 -- >>> take 5 (zetas 1e-14) :: [Double]
 -- [-0.5,Infinity,1.6449340668482264,1.2020569031595942,1.0823232337111381]
