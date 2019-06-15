@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 module Math.NumberTheory.SequenceBench
   ( benchSuite
@@ -11,8 +12,8 @@ import Data.Array.Unboxed
 import Data.Bits
 
 import Math.NumberTheory.Primes (Prime(..))
-import Math.NumberTheory.Primes.Sieve as P
-import Math.NumberTheory.Primes.Testing as P
+import Math.NumberTheory.Primes.Sieve
+import Math.NumberTheory.Primes.Testing
 
 filterIsPrime :: (Integer, Integer) -> Integer
 filterIsPrime (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ filter isPrime (map toPrim [toIdx p .. toIdx q])

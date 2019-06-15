@@ -29,17 +29,15 @@ module Math.NumberTheory.Quadratic.EisensteinIntegers
 import Control.DeepSeq
 import Data.Coerce
 import Data.List                                       (mapAccumL, partition)
-import Data.Maybe                                      (fromMaybe)
+import Data.Maybe
 import Data.Ord                                        (comparing)
 import qualified Data.Semiring as S
 import GHC.Generics                                    (Generic)
 
 import qualified Math.NumberTheory.Euclidean            as ED
 import Math.NumberTheory.Moduli.Sqrt
-import qualified Math.NumberTheory.Primes.Sieve         as Sieve
-import qualified Math.NumberTheory.Primes.Testing       as Testing
 import Math.NumberTheory.Primes.Types
-import qualified Math.NumberTheory.Primes  as U
+import qualified Math.NumberTheory.Primes as U
 import Math.NumberTheory.Utils                          (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -145,8 +143,8 @@ isPrime e | e == 0                     = False
           -- Special case, @1 - ω@ is the only Eisenstein prime with norm @3@,
           --  and @abs (1 - ω) = 2 + ω@.
           | a' == 2 && b' == 1         = True
-          | b' == 0 && a' `mod` 3 == 2 = Testing.isPrime a'
-          | nE `mod` 3 == 1            = Testing.isPrime nE
+          | b' == 0 && a' `mod` 3 == 2 = isJust $ U.isPrime a'
+          | nE `mod` 3 == 1            = isJust $ U.isPrime nE
           | otherwise = False
   where nE       = norm e
         a' :+ b' = abs e
@@ -206,7 +204,7 @@ primes :: [Prime EisensteinInteger]
 primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
   where
     leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) Sieve.primes
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) U.primes
     rightPrimes' = filter (\prime -> unPrime prime `mod` 3 == 1) $ tail rightPrimes
     l = [unPrime p :+ 0 | p <- leftPrimes]
     r = [g | p <- rightPrimes', let x :+ y = unPrime (findPrime p), g <- [x :+ y, x :+ (x - y)]]

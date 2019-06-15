@@ -10,6 +10,7 @@
 {-# LANGUAGE LambdaCase        #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 module Math.NumberTheory.Primes
     ( Prime

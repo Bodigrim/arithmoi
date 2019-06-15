@@ -67,8 +67,8 @@ import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
-import Math.NumberTheory.Primes.Sieve.Eratosthenes
-import Math.NumberTheory.Primes.Sieve.Indexing
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom, primeList)
+import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Unsafe

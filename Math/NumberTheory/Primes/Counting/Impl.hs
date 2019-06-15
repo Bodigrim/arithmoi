@@ -23,8 +23,9 @@ module Math.NumberTheory.Primes.Counting.Impl
 #include "MachDeps.h"
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-import Math.NumberTheory.Primes.Sieve.Indexing
-import Math.NumberTheory.Primes.Counting.Approximate
+    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo, countToNth, countAll, nthPrimeCt)
+import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
+import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Powers.Cubes

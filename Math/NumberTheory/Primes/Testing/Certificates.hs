@@ -1,11 +1,12 @@
 -- |
 -- Module:      Math.NumberTheory.Primes.Testing.Certificates
+-- Description: Deprecated
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 --
 -- Certificates for primality or compositeness.
-module Math.NumberTheory.Primes.Testing.Certificates
+module Math.NumberTheory.Primes.Testing.Certificates {-# DEPRECATED "This module will be removed in the next release" #-}
     ( -- * Certificates
       Certificate(..)
     , argueCertificate

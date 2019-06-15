@@ -22,8 +22,7 @@ import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
 import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
-import Math.NumberTheory.Primes              (unPrime)
-import Math.NumberTheory.Primes.Sieve        (primes)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
 -- | Evaluate the `Math.NumberTheory.ArithmeticFunctions.isNFree` function over a block.

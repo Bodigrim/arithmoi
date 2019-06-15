@@ -1,5 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Primes.Factorisation
+-- Description: Deprecated
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
@@ -12,7 +13,7 @@
 -- and in the case of the Carmichael function that the list of prime factors
 -- with their multiplicities is ascending.
 
-module Math.NumberTheory.Primes.Factorisation
+module Math.NumberTheory.Primes.Factorisation {-# DEPRECATED "Use 'Math.NumberTheory.Primes.factorise' instead" #-}
     ( -- * Factorisation functions
       -- $algorithm
       -- ** Complete factorisation

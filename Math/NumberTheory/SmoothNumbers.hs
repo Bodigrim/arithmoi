@@ -36,8 +36,7 @@ import Data.Semiring (isZero)
 import qualified Data.Set as S
 
 import qualified Math.NumberTheory.Euclidean as E
-import Math.NumberTheory.Primes (unPrime)
-import Math.NumberTheory.Primes.Sieve (primes)
+import Math.NumberTheory.Primes
 
 -- | An abstract representation of a smooth basis.
 -- It consists of a set of numbers ≥2.

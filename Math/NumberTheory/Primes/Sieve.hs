@@ -1,5 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Primes.Sieve
+-- Description: Deprecated
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
@@ -13,7 +14,8 @@
 -- However, that means we must store data for primes up to the square root of
 -- where sieving is done, thus sieving primes up to @n@ requires
 -- @/O/(sqrt n/log n)@ space.
-module Math.NumberTheory.Primes.Sieve
+
+module Math.NumberTheory.Primes.Sieve {-# DEPRECATED "Use 'Enum' instance of 'Math.NumberTheory.Primes.Prime' instead" #-}
     ( -- * Limitations
       -- $limits
 

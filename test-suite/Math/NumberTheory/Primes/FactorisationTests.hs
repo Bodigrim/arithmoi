@@ -16,11 +16,12 @@ module Math.NumberTheory.Primes.FactorisationTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Arrow
 import Control.Monad (zipWithM_)
 import Data.List (nub, sort)
+import Data.Maybe
 
-import Math.NumberTheory.Primes.Factorisation
-import Math.NumberTheory.Primes.Testing
+import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
 
 specialCases :: [(Integer, [(Integer, Word)])]
@@ -58,13 +59,13 @@ lazyCases =
   ]
 
 factoriseProperty1 :: Assertion
-factoriseProperty1 = assertEqual "0" [] (factorise 1)
+factoriseProperty1 = assertEqual "0" [] (factorise (1 :: Int))
 
 factoriseProperty2 :: Positive Integer -> Bool
 factoriseProperty2 (Positive n) = factorise n == factorise (negate n)
 
 factoriseProperty3 :: Positive Integer -> Bool
-factoriseProperty3 (Positive n) = all (isPrime . fst) (factorise n)
+factoriseProperty3 (Positive n) = all (isJust . isPrime . unPrime . fst) (factorise n)
 
 factoriseProperty4 :: Positive Integer -> Bool
 factoriseProperty4 (Positive n) = bases == nub (sort bases)
@@ -72,13 +73,13 @@ factoriseProperty4 (Positive n) = bases == nub (sort bases)
     bases = map fst $ factorise n
 
 factoriseProperty5 :: Positive Integer -> Bool
-factoriseProperty5 (Positive n) = product (map (uncurry (^)) (factorise n)) == n
+factoriseProperty5 (Positive n) = product (map (\(p, k) -> unPrime p ^ k) (factorise n)) == n
 
 factoriseProperty6 :: (Integer, [(Integer, Word)]) -> Assertion
-factoriseProperty6 (n, fs) = assertEqual (show n) (sort fs) (sort (factorise n))
+factoriseProperty6 (n, fs) = assertEqual (show n) (sort fs) (sort $ map (first unPrime) $ factorise n)
 
 factoriseProperty7 :: (Integer, [(Integer, Word)]) -> Assertion
-factoriseProperty7 (n, fs) = zipWithM_ (assertEqual (show n)) fs (factorise n)
+factoriseProperty7 (n, fs) = zipWithM_ (assertEqual (show n)) fs (map (first unPrime) $ factorise n)
 
 testSuite :: TestTree
 testSuite = testGroup "Factorisation"

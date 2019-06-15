@@ -24,7 +24,7 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
 import Control.DeepSeq (NFData)
 import Data.Coerce
 import Data.List (mapAccumL, partition)
-import Data.Maybe (fromMaybe)
+import Data.Maybe
 import Data.Ord (comparing)
 import qualified Data.Semiring as S
 import GHC.Generics
@@ -33,9 +33,7 @@ import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.Primes.Types
-import qualified Math.NumberTheory.Primes.Sieve as Sieve
-import qualified Math.NumberTheory.Primes.Testing as Testing
-import qualified Math.NumberTheory.Primes  as U
+import qualified Math.NumberTheory.Primes as U
 import Math.NumberTheory.Utils              (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -116,9 +114,9 @@ norm (x :+ y) = x * x + y * y
 -- |Compute whether a given Gaussian integer is prime.
 isPrime :: GaussianInteger -> Bool
 isPrime g@(x :+ y)
-    | x == 0 && y /= 0 = abs y `mod` 4 == 3 && Testing.isPrime y
-    | y == 0 && x /= 0 = abs x `mod` 4 == 3 && Testing.isPrime x
-    | otherwise        = Testing.isPrime $ norm g
+    | x == 0 && y /= 0 = abs y `mod` 4 == 3 && isJust (U.isPrime y)
+    | y == 0 && x /= 0 = abs x `mod` 4 == 3 && isJust (U.isPrime x)
+    | otherwise        = isJust $ U.isPrime $ norm g
 
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes (up to associates), in order of ascending
@@ -127,7 +125,7 @@ primes :: [U.Prime GaussianInteger]
 primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
   where
     leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) (tail Sieve.primes)
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) (tail U.primes)
     l = [unPrime p :+ 0 | p <- leftPrimes]
     r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
 

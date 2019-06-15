@@ -1,5 +1,6 @@
 -- |
 -- Module:      Math.NumberTheory.Primes.Factorisation.Certified
+-- Description: Deprecated
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
@@ -9,7 +10,7 @@
 -- For large numbers, this will be very slow in general.
 -- Use only if you're paranoid or must be /really/ sure.
 {-# LANGUAGE BangPatterns, CPP #-}
-module Math.NumberTheory.Primes.Factorisation.Certified
+module Math.NumberTheory.Primes.Factorisation.Certified {-# DEPRECATED "This module will be removed in the next release" #-}
   ( certifiedFactorisation
   , certificateFactorisation
   , provenFactorisation

@@ -4,19 +4,18 @@ module Math.NumberTheory.SmoothNumbersBench
   ( benchSuite
   ) where
 
-import Data.List (genericTake)
 import Data.Maybe
 import Gauge.Main
 
-import Math.NumberTheory.Euclidean (Euclidean)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.SmoothNumbers
 
-doBench :: (Euclidean a, Integral a) => a -> a
-doBench lim = sum $ genericTake lim $ smoothOver $ fromJust $ fromSmoothUpperBound lim
+doBench :: Int -> Int
+doBench lim = sum $ take lim $ smoothOver $ fromJust $ fromList $ map unPrime [nextPrime 2 .. precPrime lim]
 
 benchSuite :: Benchmark
 benchSuite = bgroup "SmoothNumbers"
-  [ bench "100"      $ nf doBench    (100 :: Int)
-  , bench "1000"     $ nf doBench   (1000 :: Int)
-  , bench "10000"    $ nf doBench  (10000 :: Int)
+  [ bench "100"      $ nf doBench   100
+  , bench "1000"     $ nf doBench  1000
+  , bench "10000"    $ nf doBench 10000
   ]

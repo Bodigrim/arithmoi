@@ -17,7 +17,7 @@ module Math.NumberTheory.Primes.Factorisation.TrialDivision
     , trialDivisionPrimeTo
     ) where
 
-import Math.NumberTheory.Primes.Sieve.Eratosthenes
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve, psieveList)
 import Math.NumberTheory.Powers.Squares
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils

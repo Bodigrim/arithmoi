@@ -33,13 +33,13 @@ import Data.Maybe
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Class
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Primes.Sieve.Eratosthenes
-import Math.NumberTheory.Primes.Types (unPrime)
-import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve)
+import Math.NumberTheory.Utils
 
 -- | A certificate of either compositeness or primality of an
 --   'Integer'. Only numbers @> 1@ can be certified, trying to
