@@ -151,7 +151,6 @@ test-suite spec
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests
     Math.NumberTheory.Moduli.SqrtTests
-    Math.NumberTheory.MoebiusInversion.IntTests
     Math.NumberTheory.MoebiusInversionTests
     Math.NumberTheory.Powers.CubesTests
     Math.NumberTheory.Powers.FourthTests

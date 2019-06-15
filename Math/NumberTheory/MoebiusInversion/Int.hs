@@ -10,7 +10,9 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Math.NumberTheory.MoebiusInversion.Int
+{-# OPTIONS_HADDOCK hide #-}
+
+module Math.NumberTheory.MoebiusInversion.Int {-# DEPRECATED "Use Math.NumberTheory.MoebiusInversion" #-}
     ( generalInversion
     , totientSum
     ) where

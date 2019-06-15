@@ -15,7 +15,6 @@ import qualified Math.NumberTheory.Moduli.PrimitiveRootTests as ModuliPrimitiveR
 import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
-import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversionInt
 
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
@@ -74,10 +73,7 @@ tests = testGroup "All"
     , ModuliPrimitiveRoot.testSuite
     , ModuliSqrt.testSuite
     ]
-  , testGroup "MoebiusInversion"
-    [ MoebiusInversion.testSuite
-    , MoebiusInversionInt.testSuite
-    ]
+  , MoebiusInversion.testSuite
   , Prefactored.testSuite
   , testGroup "Primes"
     [ Primes.testSuite
