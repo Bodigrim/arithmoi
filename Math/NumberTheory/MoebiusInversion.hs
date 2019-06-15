@@ -17,20 +17,32 @@ module Math.NumberTheory.MoebiusInversion
 
 import Control.Monad
 import Control.Monad.ST
-import qualified Data.Vector.Mutable as MV
+import Data.Proxy
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as MG
 
 import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Utils.FromIntegral
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,
 --   computed via generalised Möbius inversion.
 --   See <http://mathworld.wolfram.com/TotientSummatoryFunction.html> for the
 --   formula used for @totientSum@.
-totientSum :: Int -> Integer
-totientSum n
-  | n < 1 = 0
-  | otherwise = generalInversion (triangle . fromIntegral) n
+--
+-- >>> import Data.Proxy
+-- >>> totientSum (Proxy :: Proxy Data.Vector.Unboxed.Vector) 100 :: Int
+-- 3044
+-- >>> totientSum (Proxy :: Proxy Data.Vector.Vector) 100 :: Integer
+-- 3044
+totientSum
+    :: (Integral t, G.Vector v t)
+    => Proxy v
+    -> Word
+    -> t
+totientSum _ 0 = 0
+totientSum proxy n = generalInversion proxy (triangle . fromIntegral) n
   where
-    triangle k = (k*(k+1)) `quot` 2
+    triangle k = (k * (k + 1)) `quot` 2
 
 -- | @generalInversion g n@ evaluates the generalised Möbius inversion of @g@
 --   at the argument @n@.
@@ -76,28 +88,36 @@ totientSum n
 --   The value @f n@ is then computed by @generalInversion g n@. Note that when
 --   many values of @f@ are needed, there are far more efficient methods, this
 --   method is only appropriate to compute isolated values of @f@.
-generalInversion :: (Int -> Integer) -> Int -> Integer
-generalInversion fun n
-    | n < 1     = error "Möbius inversion only defined on positive domain"
-    | n == 1    = fun 1
-    | n == 2    = fun 2 - fun 1
-    | n == 3    = fun 3 - 2*fun 1
-    | otherwise = fastInvert fun n
+generalInversion
+    :: (Num t, G.Vector v t)
+    => Proxy v
+    -> (Word -> t)
+    -> Word
+    -> t
+generalInversion proxy fun n = case n of
+    0 ->error "Möbius inversion only defined on positive domain"
+    1 -> fun 1
+    2 -> fun 2 - fun 1
+    3 -> fun 3 - 2*fun 1
+    _ -> runST (fastInvertST proxy (fun . intToWord) (wordToInt n))
 
-fastInvert :: (Int -> Integer) -> Int -> Integer
-fastInvert fun n = runST (fastInvertST fun n)
-
-fastInvertST :: forall s. (Int -> Integer) -> Int -> ST s Integer
-fastInvertST fun n = do
+fastInvertST
+    :: forall s t v.
+       (Num t, G.Vector v t)
+    => Proxy v
+    -> (Int -> t)
+    -> Int
+    -> ST s t
+fastInvertST _ fun n = do
     let !k0 = integerSquareRoot (n `quot` 2)
         !mk0 = n `quot` (2*k0+1)
         kmax a m = (a `quot` m - 1) `quot` 2
 
-    small <- MV.unsafeNew (mk0 + 1) :: ST s (MV.MVector s Integer)
-    MV.unsafeWrite small 0 0
-    MV.unsafeWrite small 1 $! (fun 1)
+    small <- MG.unsafeNew (mk0 + 1) :: ST s (G.Mutable v s t)
+    MG.unsafeWrite small 0 0
+    MG.unsafeWrite small 1 $! (fun 1)
     when (mk0 >= 2) $
-        MV.unsafeWrite small 2 $! (fun 2 - fun 1)
+        MG.unsafeWrite small 2 $! (fun 2 - fun 1)
 
     let calcit :: Int -> Int -> Int -> ST s (Int, Int)
         calcit switch change i
@@ -107,22 +127,22 @@ fastInvertST fun n = do
                 let mloop !acc k !m
                         | k < switch    = kloop acc k
                         | otherwise     = do
-                            val <- MV.unsafeRead small m
+                            val <- MG.unsafeRead small m
                             let nxtk = kmax i (m+1)
                             mloop (acc - fromIntegral (k-nxtk)*val) nxtk (m+1)
                     kloop !acc k
                         | k == 0    = do
-                            MV.unsafeWrite small i $! acc
+                            MG.unsafeWrite small i $! acc
                             calcit switch change (i+1)
                         | otherwise = do
-                            val <- MV.unsafeRead small (i `quot` (2*k+1))
+                            val <- MG.unsafeRead small (i `quot` (2*k+1))
                             kloop (acc-val) (k-1)
                 mloop (fun i - fun (i `quot` 2)) ((i-1) `quot` 2) 1
 
     (sw, ch) <- calcit 1 8 3
-    large <- MV.unsafeNew k0 :: ST s (MV.MVector s Integer)
+    large <- MG.unsafeNew k0 :: ST s (G.Mutable v s t)
 
-    let calcbig :: Int -> Int -> Int -> ST s (MV.MVector s Integer)
+    let calcbig :: Int -> Int -> Int -> ST s (G.Mutable v s t)
         calcbig switch change j
             | j == 0    = return large
             | (2*j-1)*change <= n   = calcbig (switch+1) (change + 4*switch+6) j
@@ -131,21 +151,21 @@ fastInvertST fun n = do
                     mloop !acc k m
                         | k < switch    = kloop acc k
                         | otherwise     = do
-                            val <- MV.unsafeRead small m
+                            val <- MG.unsafeRead small m
                             let nxtk = kmax i (m+1)
                             mloop (acc - fromIntegral (k-nxtk)*val) nxtk (m+1)
                     kloop !acc k
                         | k == 0    = do
-                            MV.unsafeWrite large (j-1) $! acc
+                            MG.unsafeWrite large (j-1) $! acc
                             calcbig switch change (j-1)
                         | otherwise = do
                             let m = i `quot` (2*k+1)
                             val <- if m <= mk0
-                                     then MV.unsafeRead small m
-                                     else MV.unsafeRead large (k*(2*j-1)+j-1)
+                                     then MG.unsafeRead small m
+                                     else MG.unsafeRead large (k*(2*j-1)+j-1)
                             kloop (acc-val) (k-1)
                 mloop (fun i - fun (i `quot` 2)) ((i-1) `quot` 2) 1
 
     mvec <- calcbig sw ch k0
-    MV.unsafeRead mvec 0
+    MG.unsafeRead mvec 0
 
