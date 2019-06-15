@@ -86,13 +86,9 @@ library
     Math.NumberTheory.Quadratic.GaussianIntegers
     Math.NumberTheory.Quadratic.EisensteinIntegers
     Math.NumberTheory.Recurrences
-    Math.NumberTheory.Recurrencies
     Math.NumberTheory.Recurrences.Bilinear
-    Math.NumberTheory.Recurrencies.Bilinear
     Math.NumberTheory.Recurrences.Linear
-    Math.NumberTheory.Recurrencies.Linear
     Math.NumberTheory.SmoothNumbers
-    Math.NumberTheory.UniqueFactorisation
     Math.NumberTheory.Zeta
     Math.NumberTheory.Zeta.Dirichlet
     Math.NumberTheory.Zeta.Hurwitz
