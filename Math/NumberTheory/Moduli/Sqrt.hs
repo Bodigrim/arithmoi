@@ -17,15 +17,6 @@ module Math.NumberTheory.Moduli.Sqrt
   , sqrtsModFactorisation
   , sqrtsModPrimePower
   , sqrtsModPrime
-    -- * Old interface
-  , Old.sqrtModP
-  , Old.sqrtModPList
-  , Old.sqrtModP'
-  , Old.tonelliShanks
-  , Old.sqrtModPP
-  , Old.sqrtModPPList
-  , Old.sqrtModF
-  , Old.sqrtModFList
   ) where
 
 import Control.Monad (liftM2)
@@ -40,8 +31,6 @@ import Math.NumberTheory.Primes.Sieve (sieveFrom)
 import Math.NumberTheory.Primes (factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
-
-import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 
 -- | List all modular square roots.
 --
