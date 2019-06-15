@@ -4,7 +4,8 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Arithmetic on Montgomery elliptic curve.
+-- Arithmetic on Montgomery elliptic curves.
+-- This is an internal module, exposed only for purposes of testing.
 --
 
 {-# LANGUAGE BangPatterns        #-}
@@ -15,6 +16,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 module Math.NumberTheory.Curves.Montgomery
   ( Point
