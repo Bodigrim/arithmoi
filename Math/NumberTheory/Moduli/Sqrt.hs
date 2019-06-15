@@ -26,8 +26,7 @@ import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class (Mod, getVal, getMod, KnownNat)
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Powers.Modular (powMod)
-import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Primes.Sieve (sieveFrom)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes (factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
@@ -50,7 +49,7 @@ sqrtsModFactorisation _ []  = [0]
 sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
   where
     ms :: [Integer]
-    ms = map (\(Prime p, pow) -> p ^ pow) pps
+    ms = map (\(p, pow) -> unPrime p ^ pow) pps
 
     rs :: [[Integer]]
     rs = map (\(p, pow) -> sqrtsModPrimePower n p pow) pps
@@ -70,7 +69,7 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
 -- [3,12,21,24,6,15]
 sqrtsModPrimePower :: Integer -> Prime Integer -> Word -> [Integer]
 sqrtsModPrimePower nn p 1 = sqrtsModPrime nn p
-sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
+sqrtsModPrimePower nn (unPrime -> prime) expo = let primeExpo = prime ^ expo in
   case splitOff prime (nn `mod` primeExpo) of
     (_, 0) -> [0, prime ^ ((expo + 1) `quot` 2) .. primeExpo - 1]
     (kk, n)
@@ -104,8 +103,8 @@ sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
 -- >>> sqrtsModPrime 2 (fromJust (isPrime 5))
 -- []
 sqrtsModPrime :: Integer -> Prime Integer -> [Integer]
-sqrtsModPrime n (Prime 2) = [n `mod` 2]
-sqrtsModPrime n (Prime prime) = case jacobi n prime of
+sqrtsModPrime n (unPrime -> 2) = [n `mod` 2]
+sqrtsModPrime n (unPrime -> prime) = case jacobi n prime of
   MinusOne -> []
   Zero     -> [0]
   One      -> let r = sqrtModP' (n `mod` prime) prime in [r, prime - r]
@@ -165,9 +164,10 @@ tonelliShanks square prime = loop rc t1 generator log2
 
 -- | prime must be odd, n must be coprime with prime
 sqrtModPP' :: Integer -> Integer -> Word -> Maybe Integer
-sqrtModPP' n prime expo = case sqrtsModPrime n (Prime prime) of
-                            []    -> Nothing
-                            r : _ -> fixup r
+sqrtModPP' n prime expo = case jacobi n prime of
+  MinusOne -> Nothing
+  Zero     -> Nothing
+  One      -> fixup $ sqrtModP' (n `mod` prime) prime
   where
     fixup r = let diff' = r*r-n
               in if diff' == 0
@@ -224,11 +224,14 @@ rem8 n = fromIntegral n .&. 7
 
 findNonSquare :: Integer -> Integer
 findNonSquare n
-    | rem8 n == 5 || rem8 n == 3  = 2
-    | otherwise = search primelist
+    | rem8 n == 5 || rem8 n == 3 = 2
+    | otherwise = search candidates
       where
-        primelist = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67]
-                        ++ map unPrime (sieveFrom (68 + n `rem` 4)) -- prevent sharing
+        -- It is enough to consider only prime candidates, but
+        -- the probability that the smallest non-residue is > 67
+        -- is small and 'jacobi' test is fast,
+        -- so we use [71..n] instead of filter isPrime [71..n].
+        candidates = 3:5:7:11:13:17:19:23:29:31:37:41:43:47:53:59:61:67:[71..n]
         search (p:ps) = case jacobi p n of
           MinusOne -> p
           _        -> search ps
