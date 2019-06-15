@@ -18,6 +18,7 @@ import Data.List (groupBy, sort)
 import Data.Maybe (fromJust, mapMaybe)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC hiding (NonNegative(..), Positive(..))
 
 import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Quadratic.GaussianIntegers
@@ -112,8 +113,8 @@ orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs
 
 numberOfPrimes :: Assertion
 numberOfPrimes = assertEqual "counting primes: OEIS A091100"
-  [16,100,668,4928,38404,313752,2658344]
-  [4 * (length $ takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..7]]
+  [16,100,668,4928,38404,313752]
+  [4 * (length $ takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..6]]
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
@@ -178,7 +179,8 @@ testSuite = testGroup "GaussianIntegers" $
   , testSmallAndQuick "remProperty"              remProperty
   , testGroup "gcd"
     [ testSmallAndQuick "is divisor"            gcdGProperty1
-    , testSmallAndQuick "is greatest"           gcdGProperty2
+    -- smallcheck takes too long
+    , QC.testProperty   "is greatest"           gcdGProperty2
     , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
     , testCase          "(0 :+ 3) (2 :+ 2)"     gcdGSpecialCase2
     ]

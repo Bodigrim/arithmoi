@@ -175,13 +175,15 @@ testSuite = testGroup "Euclidean"
       [ testCase          "case 1"                   splitIntoCoprimesSpecialCase1
       , testCase          "case 2"                   splitIntoCoprimesSpecialCase2
       , testSmallAndQuick "Natural" (splitIntoCoprimesProperty4 @Natural)
-      , testSmallAndQuick "Integer" (splitIntoCoprimesProperty4 @Integer)
-      , testSmallAndQuick "Gaussian" (splitIntoCoprimesProperty4 @GaussianInteger)
+      -- smallcheck for Integer and GaussianInteger takes too long
+      , QC.testProperty "Integer" (splitIntoCoprimesProperty4 @Integer)
+      , QC.testProperty "Gaussian" (splitIntoCoprimesProperty4 @GaussianInteger)
       ]
     , testGroup "output factors are non-unit"
       [ testSmallAndQuick "Natural" (splitIntoCoprimesProperty5 @Natural)
-      , testSmallAndQuick "Integer" (splitIntoCoprimesProperty5 @Integer)
-      , testSmallAndQuick "Gaussian" (splitIntoCoprimesProperty5 @GaussianInteger)
+      -- smallcheck for Integer and GaussianInteger takes too long
+      , QC.testProperty "Integer" (splitIntoCoprimesProperty5 @Integer)
+      , QC.testProperty "Gaussian" (splitIntoCoprimesProperty5 @GaussianInteger)
       ]
     ]
   , testGroup "Coprimes"
@@ -191,7 +193,8 @@ testSuite = testGroup "Euclidean"
     ,  testCase         "test insert with non-coprime base"   insertReturnsCorrectValuesWhenNotCoprimeBase
     ,  testGroup "property union"
       [ testSmallAndQuick "Natural" (unionProperty1 @Natural)
-      , testSmallAndQuick "Integer" (unionProperty1 @Integer)
+      -- smallcheck for Integer takes too long
+      , QC.testProperty "Integer" (unionProperty1 @Integer)
       ]
     ]
   ]

@@ -17,6 +17,7 @@ import Data.Maybe (fromJust, isJust)
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
                                                       testCase)
+import Test.Tasty.QuickCheck as QC hiding (Positive(..))
 
 import qualified Math.NumberTheory.Euclidean as ED
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
@@ -151,7 +152,8 @@ testSuite = testGroup "EisensteinIntegers" $
   , testGroup "g.c.d."
     [ testSmallAndQuick "The g.c.d. of two Eisenstein integers divides them"
                         gcdEProperty1
-    , testSmallAndQuick "Common divisor divides gcd"
+    -- smallcheck takes too long
+    , QC.testProperty "Common divisor divides gcd"
                         gcdEProperty2
     , testCase          "g.c.d. (12 :+ 23) (23 :+ 34)" gcdESpecialCase1
     ]

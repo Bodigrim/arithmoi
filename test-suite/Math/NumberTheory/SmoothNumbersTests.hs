@@ -89,7 +89,7 @@ testSuite = testGroup "SmoothNumbers"
     , testSmallAndQuick "Integer" (fromSetListProperty :: [Integer] -> Bool)
     , testSmallAndQuick "Natural" (fromSetListProperty :: [Natural] -> Bool)
     ]
-  , testIntegralProperty "fromSmoothUpperBound" fromSmoothUpperBoundProperty
+  , testIntegralPropertyNoLarge "fromSmoothUpperBound" fromSmoothUpperBoundProperty
   , testGroup "smoothOverInRange == smoothOverInRangeBF"
     [ testSmallAndQuick "Int"
       (smoothOverInRangeProperty :: SmoothBasis Int -> Positive Int -> Positive Int -> Bool)
