@@ -18,20 +18,16 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Coerce
-import Data.List (genericDrop, nub, sort)
+import Data.List (nub)
 import Data.Maybe (fromJust)
-import qualified Data.Set as S
 import Numeric.Natural
 
 import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes (Prime (..))
 import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
-import Math.NumberTheory.SmoothNumbers
+import Math.NumberTheory.SmoothNumbers (SmoothBasis, fromList, isSmooth, smoothOver, smoothOver')
 import Math.NumberTheory.TestUtils
-
-fromSetListProperty :: (Num a, Euclidean a, Ord a) => [a] -> Bool
-fromSetListProperty xs = fromSet (S.fromList xs) == fromList (sort xs)
 
 isSmoothPropertyHelper :: (Eq a, Num a, Euclidean a) => (a -> Integer) -> [a] -> Int -> Int -> Bool
 isSmoothPropertyHelper norm primes' i1 i2 =
@@ -47,12 +43,22 @@ isSmoothProperty2 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty2 (Positive i1) (Positive i2) =
     isSmoothPropertyHelper E.norm (map unPrime E.primes) i1 i2
 
-fromSmoothUpperBoundProperty :: Integral a => Positive a -> Bool
-fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of
-    Nothing -> n < 2
-    Just sb -> head (genericDrop (n - 1) (smoothOver (coerce sb))) == n
-  where
-    n = WrapIntegral n' `rem` 5000
+smoothOverInRange :: (Ord a, Num a) => SmoothBasis a -> a -> a -> [a]
+smoothOverInRange s lo hi
+  = takeWhile (<= hi)
+  $ dropWhile (< lo)
+  $ smoothOver s
+
+smoothOverInRangeBF
+  :: (Eq a, Enum a, GcdDomain a)
+  => SmoothBasis a
+  -> a
+  -> a
+  -> [a]
+smoothOverInRangeBF prs lo hi
+  = coerce
+  $ filter (isSmooth prs)
+  $ coerce [lo..hi]
 
 smoothOverInRangeProperty :: Integral a => SmoothBasis a -> Positive a -> Positive a -> Bool
 smoothOverInRangeProperty s (Positive lo') (Positive diff')
@@ -83,14 +89,7 @@ isSmoothSpecialCase2 = assertBool "should be smooth" $ isSmooth b 6
 
 testSuite :: TestTree
 testSuite = testGroup "SmoothNumbers"
-  [ testGroup "fromSet == fromList"
-    [ testSmallAndQuick "Int"     (fromSetListProperty :: [Int] -> Bool)
-    , testSmallAndQuick "Word"    (fromSetListProperty :: [Word] -> Bool)
-    , testSmallAndQuick "Integer" (fromSetListProperty :: [Integer] -> Bool)
-    , testSmallAndQuick "Natural" (fromSetListProperty :: [Natural] -> Bool)
-    ]
-  , testIntegralPropertyNoLarge "fromSmoothUpperBound" fromSmoothUpperBoundProperty
-  , testGroup "smoothOverInRange == smoothOverInRangeBF"
+  [ testGroup "smoothOverInRange == smoothOverInRangeBF"
     [ testSmallAndQuick "Int"
       (smoothOverInRangeProperty :: SmoothBasis Int -> Positive Int -> Positive Int -> Bool)
     , testSmallAndQuick "Word"

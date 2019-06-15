@@ -54,6 +54,7 @@ newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
 -- Nothing
 fromSet :: (Eq a, E.GcdDomain a) => S.Set a -> Maybe (SmoothBasis a)
 fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
+{-# DEPRECATED fromSet "Use 'fromList' instead " #-}
 
 -- | Build a 'SmoothBasis' from a list of numbers ≥2.
 --
@@ -80,6 +81,7 @@ fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
 fromSmoothUpperBound n
   | n < 2     = Nothing
   | otherwise = Just $ SmoothBasis $ takeWhile (<= n) $ map unPrime primes
+{-# DEPRECATED fromSmoothUpperBound "Use 'fromList' with an appropriate list of primes instead " #-}
 
 -- | Helper used by @smoothOver@ (@Integral@ constraint) and @smoothOver'@
 -- (@Euclidean@ constraint) Since the typeclass constraint is just
@@ -141,6 +143,7 @@ smoothOverInRange s lo hi
   = takeWhile (<= hi)
   $ dropWhile (< lo)
   $ smoothOver s
+{-# DEPRECATED smoothOverInRange "Use 'smoothOver' instead" #-}
 
 -- | Generate an ascending list of
 -- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
@@ -165,6 +168,7 @@ smoothOverInRangeBF prs lo hi
   = coerce
   $ filter (isSmooth prs)
   $ coerce [lo..hi]
+{-# DEPRECATED smoothOverInRangeBF "Use filtering by 'isSmooth' instead" #-}
 
 isValid :: (Eq a, E.GcdDomain a) => [a] -> Bool
 isValid [] = False
