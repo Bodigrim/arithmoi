@@ -30,7 +30,7 @@ library
   build-depends:
     base >=4.10 && <5,
     array >=0.5 && <0.6,
-    bitvec,
+    bitvec >=0.2,
     containers >=0.5.8 && <0.7,
     chimera >=0.3,
     constraints,
@@ -90,6 +90,7 @@ library
     Math.NumberTheory.Primes.Counting.Impl
     Math.NumberTheory.Primes.Factorisation.Montgomery
     Math.NumberTheory.Primes.Factorisation.TrialDivision
+    Math.NumberTheory.Primes.Sieve.Atkin
     Math.NumberTheory.Primes.Sieve.Eratosthenes
     Math.NumberTheory.Primes.Sieve.Indexing
     Math.NumberTheory.Primes.Small
