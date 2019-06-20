@@ -228,3 +228,14 @@ executable sequence-model
   main-is: SequenceModel.hs
   hs-source-dirs: app
   default-language: Haskell2010
+
+executable atkin
+  build-depends:
+    base,
+    arithmoi,
+    containers
+  buildable: True
+  main-is: Atkin.hs
+  hs-source-dirs: app
+  default-language: Haskell2010
+  ghc-options: -O2 -Wall
