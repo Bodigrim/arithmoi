@@ -23,7 +23,6 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
-import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Roots
 import qualified Math.NumberTheory.Primes.Sieve.Eratosthenes as E
 import Math.NumberTheory.Primes.Types
@@ -268,7 +267,15 @@ crossMultiples sp vec m =
     \k -> MU.unsafeWrite vec (k - spLowBound sp) (Bit False)
   where
     -- k0 is the smallest non-negative k such that 60k+delta = 0 (mod m)
-    k0 = (`quot` 60) $ (\k -> if k < 0 then k + 60 * m else k) $ fst $ fromJust $ chinese (spDelta sp, 60) (0, m)
+    k0 = solveCongruence (spDelta sp) m
     -- k1 = k0 (mod m), k1 >= lowBound
     (q, r) = spLowBound sp `quotRem` m
     k1 = if r < k0 then q * m + k0 else (q + 1) * m + k0
+
+-- Find the smallest k such that 60k+delta = 0 (mod m)
+-- Should be equal to
+-- (`quot` 60) $ fromJust $ chineseCoprime (delta, 60) (0, m)
+solveCongruence :: Int -> Int -> Int
+solveCongruence delta m = (- recip60 * delta) `mod` m
+  where
+    recip60 = fromInteger $ fromJust $ recipMod 60 (toInteger m)
