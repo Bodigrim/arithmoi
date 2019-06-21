@@ -17,7 +17,6 @@ module Math.NumberTheory.Primes.Sieve.Atkin
 import Control.Monad
 import Control.Monad.ST
 import Data.Bit
-import Data.Foldable
 import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
@@ -31,24 +30,52 @@ import Math.NumberTheory.Utils
 atkinPrimeList :: PrimeSieve -> [Int]
 atkinPrimeList (PrimeSieve low len segments)
   | len60 == 0 = []
-  | len60 == 1 = takeWhile (< high) $ dropWhile (< low) $ 2 : 3 : 5 : doIx 0
-  | otherwise
-  =  dropWhile (< low) (2 : 3 : 5 : doIx 0)
-  ++ concatMap doIx [1 .. len60 - 2]
-  ++ takeWhile (< high) (doIx $ len60 - 1)
+  | otherwise = takeWhile (< high) $ dropWhile (< low) $ 2 : 3 : 5 : merge l0 l1
   where
+    list00 = map (\k -> 60 * (low60 + k) + fromWheel30  0) (listBits $ segments V.!  0)
+    list01 = map (\k -> 60 * (low60 + k) + fromWheel30  1) (listBits $ segments V.!  1)
+    list02 = map (\k -> 60 * (low60 + k) + fromWheel30  2) (listBits $ segments V.!  2)
+    list03 = map (\k -> 60 * (low60 + k) + fromWheel30  3) (listBits $ segments V.!  3)
+    list04 = map (\k -> 60 * (low60 + k) + fromWheel30  4) (listBits $ segments V.!  4)
+    list05 = map (\k -> 60 * (low60 + k) + fromWheel30  5) (listBits $ segments V.!  5)
+    list06 = map (\k -> 60 * (low60 + k) + fromWheel30  6) (listBits $ segments V.!  6)
+    list07 = map (\k -> 60 * (low60 + k) + fromWheel30  7) (listBits $ segments V.!  7)
+    list08 = map (\k -> 60 * (low60 + k) + fromWheel30  8) (listBits $ segments V.!  8)
+    list09 = map (\k -> 60 * (low60 + k) + fromWheel30  9) (listBits $ segments V.!  9)
+    list10 = map (\k -> 60 * (low60 + k) + fromWheel30 10) (listBits $ segments V.! 10)
+    list11 = map (\k -> 60 * (low60 + k) + fromWheel30 11) (listBits $ segments V.! 11)
+    list12 = map (\k -> 60 * (low60 + k) + fromWheel30 12) (listBits $ segments V.! 12)
+    list13 = map (\k -> 60 * (low60 + k) + fromWheel30 13) (listBits $ segments V.! 13)
+    list14 = map (\k -> 60 * (low60 + k) + fromWheel30 14) (listBits $ segments V.! 14)
+    list15 = map (\k -> 60 * (low60 + k) + fromWheel30 15) (listBits $ segments V.! 15)
+
+    lst0 = merge list00 list01
+    lst1 = merge list02 list03
+    lst2 = merge list04 list05
+    lst3 = merge list06 list07
+    lst4 = merge list08 list09
+    lst5 = merge list10 list11
+    lst6 = merge list12 list13
+    lst7 = merge list14 list15
+
+    ls0 = merge lst0 lst1
+    ls1 = merge lst2 lst3
+    ls2 = merge lst4 lst5
+    ls3 = merge lst6 lst7
+
+    l0 = merge ls0 ls1
+    l1 = merge ls2 ls3
+
     low60 = low `quot` 60
     len60 = (low + len + 59) `quot` 60 - low60
     high = low + len
 
-    js = map fromWheel30 [0..15]
-
-    doIx k
-      = map ((+ 60 * (low60 + k)) . fst)
-      $ filter (unBit . snd)
-      $ zip js
-      $ toList
-      $ V.map (U.! k) segments
+merge :: Ord a => [a] -> [a] -> [a]
+merge [] ys = ys
+merge xs [] = xs
+merge xs@(x:xs') ys@(y:ys')
+  | x < y     = x : merge xs' ys
+  | otherwise = y : merge xs ys'
 
 data PrimeSieve = PrimeSieve
   { _psLowBound :: !Int
