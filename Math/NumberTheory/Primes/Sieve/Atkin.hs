@@ -83,7 +83,7 @@ sieveSegment
 sieveSegment sp = runST $ do
   vec <- MU.new (spLength sp)
   U.forM_ (fgs V.! toWheel30 (spDelta sp)) $
-    traverseLatticePoints sp (\k -> unsafeFlipBit vec (k - spLowBound sp))
+    traverseLatticePoints sp vec
   algo3steps456 sp vec
   U.unsafeFreeze vec
 
@@ -106,25 +106,25 @@ fgs = V.generate 16 (dispatch . fromWheel30)
 
 traverseLatticePoints
   :: SieveParams
-  -> (Int -> ST s ())
+  -> MU.MVector s Bit
   -> (Int, Int)
   -> ST s ()
-traverseLatticePoints sp action (x0, y0)
+traverseLatticePoints sp vec (x0, y0)
   | spDelta sp `mod` 4 == 1
-  = traverseLatticePoints1 sp action (x0, y0)
+  = traverseLatticePoints1 sp vec (x0, y0)
   | spDelta sp `mod` 6 == 1
-  = traverseLatticePoints2 sp action (x0, y0)
+  = traverseLatticePoints2 sp vec (x0, y0)
   | spDelta sp `mod` 12 == 11
-  = traverseLatticePoints3 sp action (x0, y0)
+  = traverseLatticePoints3 sp vec (x0, y0)
   | otherwise
   = error "traverseLatticePoints: unexpected delta"
 
 traverseLatticePoints1
   :: SieveParams
-  -> (Int -> ST s ())
+  -> MU.MVector s Bit
   -> (Int, Int)
   -> ST s ()
-traverseLatticePoints1 !sp action (!x0, !y0) =
+traverseLatticePoints1 !sp vec (!x0, !y0) =
   go kMax xMax y0
   where
     forwardY  (k, y) = (k +     y + 15, y + 30)
@@ -132,27 +132,27 @@ traverseLatticePoints1 !sp action (!x0, !y0) =
     backwardX (k, x) = (k - 2 * x + 15, x - 15)
 
     -- Step 1
-    k0 = (4 * x0 * x0 + y0 * y0 - spDelta sp) `quot` 60
+    k0 = (4 * x0 * x0 + y0 * y0 - spDelta sp) `quot` 60 - spLowBound sp
 
     -- Step 2
     (kMax, xMax)
       = backwardX
       $ head
-      $ dropWhile (\(k, _) -> k < spHighBound sp)
+      $ dropWhile (\(k, _) -> k < spLength sp)
       $ iterate forwardX
       $ (k0, x0)
 
     -- Step 4
     adjustY (!k, !y)
-      | k >= spLowBound sp
+      | k >= 0
       = (k, y)
       | otherwise
       = adjustY $ forwardY (k, y)
 
     -- Step 6
     doActions (!k, !y)
-      | k < spHighBound sp
-      = action k >> doActions (forwardY (k, y))
+      | k < spLength sp
+      = unsafeFlipBit vec k >> doActions (forwardY (k, y))
       | otherwise
       = pure ()
 
@@ -166,10 +166,10 @@ traverseLatticePoints1 !sp action (!x0, !y0) =
 
 traverseLatticePoints2
   :: SieveParams
-  -> (Int -> ST s ())
+  -> MU.MVector s Bit
   -> (Int, Int)
   -> ST s ()
-traverseLatticePoints2 sp action (x0, y0) =
+traverseLatticePoints2 sp vec (x0, y0) =
   go kMax xMax y0
   where
     forwardY  (k, y) = (k + y + 15, y + 30)
@@ -177,27 +177,27 @@ traverseLatticePoints2 sp action (x0, y0) =
     backwardX (k, x) = (k - x +  5, x - 10)
 
     -- Step 1
-    k0 = (3 * x0 * x0 + y0 * y0 - spDelta sp) `quot` 60
+    k0 = (3 * x0 * x0 + y0 * y0 - spDelta sp) `quot` 60 - spLowBound sp
 
     -- Step 2
     (kMax, xMax)
       = backwardX
       $ head
-      $ dropWhile (\(k, _) -> k < spHighBound sp)
+      $ dropWhile (\(k, _) -> k < spLength sp)
       $ iterate forwardX
       $ (k0, x0)
 
     -- Step 4
     adjustY (!k, !y)
-      | k >= spLowBound sp
+      | k >= 0
       = (k, y)
       | otherwise
       = adjustY $ forwardY (k, y)
 
     -- Step 6
     doActions (!k, !y)
-      | k < spHighBound sp
-      = action k >> doActions (forwardY (k, y))
+      | k < spLength sp
+      = unsafeFlipBit vec k >> doActions (forwardY (k, y))
       | otherwise
       = pure ()
 
@@ -211,30 +211,30 @@ traverseLatticePoints2 sp action (x0, y0) =
 
 traverseLatticePoints3
   :: SieveParams
-  -> (Int -> ST s ())
+  -> MU.MVector s Bit
   -> (Int, Int)
   -> ST s ()
-traverseLatticePoints3 sp action (x0, y0) =
+traverseLatticePoints3 sp vec (x0, y0) =
   go k0 x0 y0
   where
     forwardY  (k, y) = (k - y - 15, y + 30)
     forwardX  (k, x) = (k + x +  5, x + 10)
 
     -- Step 1
-    k0 = (3 * x0 * x0 - y0 * y0 - spDelta sp) `quot` 60
+    k0 = (3 * x0 * x0 - y0 * y0 - spDelta sp) `quot` 60 - spLowBound sp
 
     -- Step 6
     doActions (!k, !x, !y)
-      | k >= spLowBound sp && y < x
-      = action k >> (let (k', y') = forwardY (k, y) in doActions (k', x, y'))
+      | k >= 0 && y < x
+      = unsafeFlipBit vec k >> (let (k', y') = forwardY (k, y) in doActions (k', x, y'))
       | otherwise
       = pure ()
 
     go !k !x !y
-      | k >= spHighBound sp
+      | k >= spLength sp
       , x <= y
       = pure ()
-      | k >= spHighBound sp
+      | k >= spLength sp
       = let (k', y') = forwardY (k, y) in
         go k' x y'
       | otherwise
