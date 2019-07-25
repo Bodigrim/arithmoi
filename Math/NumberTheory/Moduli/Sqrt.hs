@@ -21,23 +21,25 @@ module Math.NumberTheory.Moduli.Sqrt
 
 import Control.Monad (liftM2)
 import Data.Bits
+import Data.Constraint
 
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class (Mod, getVal, getMod, KnownNat)
+import Math.NumberTheory.Moduli.Class hiding (powMod)
 import Math.NumberTheory.Moduli.Jacobi
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Powers.Modular (powMod)
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Primes (factorise)
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | List all modular square roots.
 --
 -- >>> :set -XDataKinds
--- >>> sqrtsMod (1 :: Mod 60)
+-- >>> sqrtsMod sfactors (1 :: Mod 60)
 -- [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
-sqrtsMod :: KnownNat m => Mod m -> [Mod m]
-sqrtsMod a = map fromInteger $ sqrtsModFactorisation (getVal a) (factorise (getMod a))
+sqrtsMod :: SFactors Integer m -> Mod m -> [Mod m]
+sqrtsMod sm a = case proofFromSFactors sm of
+  Sub Dict -> map fromInteger $ sqrtsModFactorisation (getVal a) (unSFactors sm)
 
 -- | List all square roots modulo a number, the factorisation of which is
 -- passed as a second argument.

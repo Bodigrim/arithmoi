@@ -59,8 +59,7 @@ import Numeric.Natural
 import Math.NumberTheory.Euclidean
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
-import Math.NumberTheory.Moduli.PrimitiveRoot (CyclicGroup(..))
-import Math.NumberTheory.Primes (UniqueFactorisation, Prime, unPrime)
+import Math.NumberTheory.Primes (UniqueFactorisation)
 import qualified Math.NumberTheory.SmoothNumbers as SN
 
 import Math.NumberTheory.TestUtils.MyCompose
@@ -83,37 +82,6 @@ instance Arbitrary GaussianInteger where
 
 instance Monad m => Serial m GaussianInteger where
   series = cons2 (:+)
-
--------------------------------------------------------------------------------
--- Cyclic group
-
-instance (Eq a, Num a, UniqueFactorisation a, Arbitrary a) => Arbitrary (CyclicGroup a) where
-  arbitrary = frequency
-    [ (1, pure CG2)
-    , (1, pure CG4)
-    , (9, CGOddPrimePower
-      <$> (arbitrary :: Gen (Prime a)) `suchThatMap` isOddPrime
-      <*> (getPower <$> arbitrary))
-    , (9, CGDoubleOddPrimePower
-      <$> (arbitrary :: Gen (Prime a)) `suchThatMap` isOddPrime
-      <*> (getPower <$> arbitrary))
-    ]
-
-instance (Monad m, Eq a, Num a, UniqueFactorisation a, Serial m a) => Serial m (CyclicGroup a) where
-  series = pure CG2
-        \/ pure CG4
-        \/ (CGOddPrimePower
-           <$> (series :: Series m (Prime a)) `suchThatMapSerial` isOddPrime
-           <*> (getPower <$> series))
-        \/ (CGDoubleOddPrimePower
-           <$> (series :: Series m (Prime a)) `suchThatMapSerial` isOddPrime
-           <*> (getPower <$> series))
-
-isOddPrime
-  :: forall a. (Eq a, Num a, UniqueFactorisation a)
-  => Prime a
-  -> Maybe (Prime a)
-isOddPrime p = if (unPrime p :: a) == 2 then Nothing else Just p
 
 -------------------------------------------------------------------------------
 -- SmoothNumbers

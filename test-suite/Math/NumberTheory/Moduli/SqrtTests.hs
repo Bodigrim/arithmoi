@@ -25,6 +25,7 @@ import Data.Maybe (fromJust)
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli hiding (invertMod)
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes (unPrime, isPrime, Prime)
 import Math.NumberTheory.TestUtils
 
@@ -185,7 +186,7 @@ sqrtsModFactorisationSpecialCase2 =
 
 sqrtsModProperty1 :: AnySign Integer -> Positive Natural -> Bool
 sqrtsModProperty1 (AnySign n) (Positive m) = case n `modulo` m of
-  SomeMod x -> sort (sqrtsMod x) == filter (\rt -> rt * rt == x) [minBound .. maxBound]
+  SomeMod x -> sort (sqrtsMod sfactors x) == filter (\rt -> rt * rt == x) [minBound .. maxBound]
   InfMod{} -> True
 
 testSuite :: TestTree
