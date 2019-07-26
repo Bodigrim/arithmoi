@@ -7,6 +7,8 @@
 -- Atkin sieve.
 --
 
+{-# LANGUAGE BangPatterns #-}
+
 module Math.NumberTheory.Primes.Sieve.Atkin
   ( atkinPrimeList
   , atkinSieve
@@ -122,7 +124,7 @@ traverseLatticePoints1
   -> (Int -> ST s ())
   -> (Int, Int)
   -> ST s ()
-traverseLatticePoints1 sp action (x0, y0) =
+traverseLatticePoints1 !sp action (!x0, !y0) =
   go kMax xMax y0
   where
     forwardY  (k, y) = (k +     y + 15, y + 30)
@@ -141,20 +143,20 @@ traverseLatticePoints1 sp action (x0, y0) =
       $ (k0, x0)
 
     -- Step 4
-    adjustY
-      = head
-      . dropWhile (\(k, _) -> k < spLowBound sp)
-      . iterate forwardY
+    adjustY (!k, !y)
+      | k >= spLowBound sp
+      = (k, y)
+      | otherwise
+      = adjustY $ forwardY (k, y)
 
     -- Step 6
-    doActions (k, y)
-      = traverse_ action
-      $ takeWhile (< spHighBound sp)
-      $ map fst
-      $ iterate forwardY
-      $ (k, y)
+    doActions (!k, !y)
+      | k < spHighBound sp
+      = action k >> doActions (forwardY (k, y))
+      | otherwise
+      = pure ()
 
-    go k x y
+    go !k !x !y
       | x <= 0 = pure ()
       | otherwise = do
         let (k', y') = adjustY (k, y)
@@ -186,20 +188,20 @@ traverseLatticePoints2 sp action (x0, y0) =
       $ (k0, x0)
 
     -- Step 4
-    adjustY
-      = head
-      . dropWhile (\(k, _) -> k < spLowBound sp)
-      . iterate forwardY
+    adjustY (!k, !y)
+      | k >= spLowBound sp
+      = (k, y)
+      | otherwise
+      = adjustY $ forwardY (k, y)
 
     -- Step 6
-    doActions (k, y)
-      = traverse_ action
-      $ takeWhile (< spHighBound sp)
-      $ map fst
-      $ iterate forwardY
-      $ (k, y)
+    doActions (!k, !y)
+      | k < spHighBound sp
+      = action k >> doActions (forwardY (k, y))
+      | otherwise
+      = pure ()
 
-    go k x y
+    go !k !x !y
       | x <= 0 = pure ()
       | otherwise = do
         let (k', y') = adjustY (k, y)
@@ -222,14 +224,13 @@ traverseLatticePoints3 sp action (x0, y0) =
     k0 = (3 * x0 * x0 - y0 * y0 - spDelta sp) `quot` 60
 
     -- Step 6
-    doActions (k, x, y)
-      = traverse_ action
-      $ map fst
-      $ takeWhile (\(k', y') -> k' >= spLowBound sp && y' < x)
-      $ iterate forwardY
-      $ (k, y)
+    doActions (!k, !x, !y)
+      | k >= spLowBound sp && y < x
+      = action k >> (let (k', y') = forwardY (k, y) in doActions (k', x, y'))
+      | otherwise
+      = pure ()
 
-    go k x y
+    go !k !x !y
       | k >= spHighBound sp
       , x <= y
       = pure ()
