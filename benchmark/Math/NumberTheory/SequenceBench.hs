@@ -8,15 +8,18 @@ import Gauge.Main
 
 import Data.Array.Unboxed
 import Data.Bits
+import Data.Maybe
 
-import Math.NumberTheory.Primes (Prime(..), nextPrime, precPrime)
-import Math.NumberTheory.Primes.Testing
+import Math.NumberTheory.Primes
 
 filterIsPrime :: (Integer, Integer) -> Integer
-filterIsPrime (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ filter isPrime (map toPrim [toIdx p .. toIdx q])
+filterIsPrime (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ filter (isJust . isPrime) (map toPrim [toIdx p .. toIdx q])
 
 eratosthenes :: (Integer, Integer) -> Integer
 eratosthenes (p, q) = sum (map unPrime [nextPrime p .. precPrime q])
+
+atkin :: (Integer, Integer) -> Integer
+atkin (p, q) = toInteger $ sum $ atkinPrimeList $ atkinSieve (fromInteger p) (fromInteger $ q - p)
 
 filterIsPrimeBench :: Benchmark
 filterIsPrimeBench = bgroup "filterIsPrime" $
@@ -33,10 +36,20 @@ eratosthenesBench = bgroup "eratosthenes" $
   , x == 10 || y == 7
   ]
 
+atkinBench :: Benchmark
+atkinBench = bgroup "atkin" $
+  map (\(x, y) -> bench (show (x, y)) $ nf atkin (x, x + y))
+  [ (10 ^ x, 10 ^ y)
+  | x <- [10..17]
+  , y <- [6..x-1]
+  , x == 10 || y == 7
+  ]
+
 benchSuite :: Benchmark
 benchSuite = bgroup "Sequence"
     [ filterIsPrimeBench
     , eratosthenesBench
+    , atkinBench
     ]
 
 -------------------------------------------------------------------------------
