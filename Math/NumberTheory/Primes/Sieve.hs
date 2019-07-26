@@ -27,8 +27,12 @@ module Math.NumberTheory.Primes.Sieve {-# DEPRECATED "Use 'Enum' instance of 'Ma
     , psieveList
     , psieveFrom
     , primeList
+
+    , atkinPrimeList
+    , atkinSieve
     ) where
 
+import Math.NumberTheory.Primes.Sieve.Atkin
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 -- $limits

@@ -52,6 +52,11 @@ primesProperty2 _ = assertEqual "primes matches isPrime"
   (map unPrime primes :: [a])
   (filter (isPrime . toInteger) [1..maxBound])
 
+atkinPrimesProperty1 :: Assertion
+atkinPrimesProperty1 = assertEqual "atkinPrimes matches isPrime"
+  (atkinPrimeList $ atkinSieve 1 lim1)
+  (filter (isPrime . toInteger) [1..lim1])
+
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
 primeSieveProperty1 :: AnySign Integer -> Bool
 primeSieveProperty1 (AnySign highBound')
@@ -89,7 +94,8 @@ sieveFromProperty2 (AnySign lowBound')
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
-  [ testGroup "primes"
+  [ testCase "atkinPrimes" atkinPrimesProperty1
+  , testGroup "primes"
     [ testCase "Int"     (primesProperty1 (Proxy :: Proxy Int))
     , testCase "Word"    (primesProperty1 (Proxy :: Proxy Word))
     , testCase "Integer" (primesProperty1 (Proxy :: Proxy Integer))

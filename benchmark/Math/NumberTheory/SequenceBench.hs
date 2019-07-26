@@ -23,6 +23,9 @@ eratosthenes (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ map unPrime $ i
         then           primeList $ primeSieve q
         else concatMap primeList $ psieveFrom p
 
+atkin :: (Integer, Integer) -> Integer
+atkin (p, q) = toInteger $ sum $ atkinPrimeList $ atkinSieve (fromInteger p) (fromInteger $ q - p)
+
 filterIsPrimeBench :: Benchmark
 filterIsPrimeBench = bgroup "filterIsPrime" $
   map (\(x, y) -> bench (show (x, y)) $ nf filterIsPrime (x, x + y))
@@ -40,10 +43,20 @@ eratosthenesBench = bgroup "eratosthenes" $
   , x == 10 || y == 7
   ]
 
+atkinBench :: Benchmark
+atkinBench = bgroup "atkin" $
+  map (\(x, y) -> bench (show (x, y)) $ nf atkin (x, x + y))
+  [ (10 ^ x, 10 ^ y)
+  | x <- [10..17]
+  , y <- [6..x-1]
+  , x == 10 || y == 7
+  ]
+
 benchSuite :: Benchmark
 benchSuite = bgroup "Sequence"
     [ filterIsPrimeBench
     , eratosthenesBench
+    , atkinBench
     ]
 
 -------------------------------------------------------------------------------
