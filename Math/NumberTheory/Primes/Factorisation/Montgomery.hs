@@ -59,6 +59,7 @@ import Data.Maybe
 import Data.Semigroup
 #endif
 import Data.Traversable
+import Data.Vector.Unboxed (toList)
 
 import GHC.TypeNats.Compat
 
@@ -67,10 +68,10 @@ import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
 import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom, primeList)
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
+import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Primes.Types (unPrime)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 
@@ -100,10 +101,10 @@ factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdea
 --   seem to be slower than the 'StdGen' based variant.
 stepFactorisation :: Integer -> [(Integer, Word)]
 stepFactorisation n
-    = let (sfs,mb) = smallFactors 100000 n
+    = let (sfs,mb) = smallFactors n
       in sfs ++ case mb of
                   Nothing -> []
-                  Just r  -> curveFactorisation (Just 10000000000) bailliePSW
+                  Just r  -> curveFactorisation (Just $ 65536 * 65536) bailliePSW
                                                 (\m k -> (if k < (m-1) then k else error "Curves exhausted",k+1)) 6 Nothing r
 
 -- | @'defaultStdGenFactorisation'@ first strips off all small prime factors and then,
@@ -122,10 +123,10 @@ defaultStdGenFactorisation sg n
 --   @n@ must be larger than @1@.
 defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer, Word)]
 defaultStdGenFactorisation' sg n
-    = let (sfs,mb) = smallFactors 100000 n
+    = let (sfs,mb) = smallFactors n
       in sfs ++ case mb of
                   Nothing -> []
-                  Just m  -> stdGenFactorisation (Just 10000000000) sg Nothing m
+                  Just m  -> stdGenFactorisation (Just $ 65536 * 65536) sg Nothing m
 
 ----------------------------------------------------------------------------------------------------
 --                                    Factorisation wrappers                                      --
@@ -155,7 +156,7 @@ stdGenFactorisation primeBound sg digits n
 --   make a huge difference. So, if the default takes too long, try another one; or you can improve your
 --   chances for a quick result by running several instances in parallel.
 --
---   'curveFactorisation' @n@ requires that small (< 100000) prime factors of @n@
+--   'curveFactorisation' @n@ requires that small (< 65536) prime factors of @n@
 --   have been stripped before. Otherwise it is likely to cycle forever. When in doubt,
 --   use 'defaultStdGenFactorisation'.
 --
@@ -288,8 +289,9 @@ montgomeryFactorisation b1 b2 s = case newPoint (getVal s) n of
       g -> Just g
   where
     n = getMod s
-    smallPrimes = takeWhile (<= b1) (2 : 3 : 5 : list primeStore)
-    smallPowers = map findPower smallPrimes
+    smallPowers
+      = map findPower
+      $ takeWhile (<= b1) (2 : 3 : 5 : list primeStore)
     findPower p = go p
       where
         go acc
@@ -346,23 +348,24 @@ list :: [PrimeSieve] -> [Word]
 list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
                                 | PS vO bs <- sieves, let { (_,li) = bounds bs; off = fromInteger vO; }]
 
--- | @'smallFactors' bound n@ finds all prime divisors of @n > 1@ up to @bound@ by trial division and returns the
+-- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
-smallFactors :: Integer -> Integer -> ([(Integer, Word)], Maybe Integer)
-smallFactors bd n = case shiftToOddCount n of
+smallFactors :: Integer -> ([(Integer, Word)], Maybe Integer)
+smallFactors n = case shiftToOddCount n of
                       (0,m) -> go m prms
                       (k,m) -> (2,k) <: if m == 1 then ([],Nothing) else go m prms
   where
-    prms = map unPrime $ tail (primeStore >>= primeList)
+    prms = map fromIntegral $ toList smallPrimes
     x <: ~(l,b) = (x:l,b)
+    go m []
+      | m < 65536 * 65536 = ([(m, 1)], Nothing)
+      | otherwise         = ([], Just m)
     go m (p:ps)
-        | m < p*p   = ([(m,1)], Nothing)
-        | bd < p    = ([], Just m)
-        | otherwise = case splitOff p m of
-                        (0,_) -> go m ps
-                        (k,r) | r == 1 -> ([(p,k)], Nothing)
-                              | otherwise -> (p,k) <: go r ps
-    go m [] = ([(m,1)], Nothing)
+      | m < p*p   = ([(m,1)], Nothing)
+      | otherwise = case splitOff p m of
+                      (0,_) -> go m ps
+                      (k,r) | r == 1 -> ([(p,k)], Nothing)
+                            | otherwise -> (p,k) <: go r ps
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try

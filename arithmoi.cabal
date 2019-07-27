@@ -83,6 +83,7 @@ library
     Math.NumberTheory.Primes.Factorisation
     Math.NumberTheory.Primes.Factorisation.Certified
     Math.NumberTheory.Primes.Sieve
+    Math.NumberTheory.Primes.Small
     Math.NumberTheory.Primes.Testing
     Math.NumberTheory.Primes.Testing.Certificates
     Math.NumberTheory.Quadratic.GaussianIntegers

@@ -32,27 +32,24 @@ import Math.NumberTheory.Primes.Testing.Probabilistic
 certifiedFactorisation :: Integer -> [(Integer, Word)]
 certifiedFactorisation = map fst . certificateFactorisation
 
--- | @'certificateFactorisation' n@ produces a 'provenFactorisation'
---   with a default bound of @100000@.
+-- | @'certificateFactorisation' n@ produces a 'provenFactorisation'.
 certificateFactorisation :: Integer -> [((Integer, Word),PrimalityProof)]
-certificateFactorisation n = provenFactorisation 100000 n
+certificateFactorisation n = provenFactorisation n
 
--- | @'provenFactorisation' bound n@ constructs a the prime factorisation of @n@
+-- | @'provenFactorisation' n@ constructs a the prime factorisation of @n@
 --   (which must be positive) together with proofs of primality of the factors,
---   using trial division up to @bound@ (which is arbitrarily replaced by @2000@
---   if the supplied value is smaller) and elliptic curve factorisation for the
+--   using trial division up to 2^16 and elliptic curve factorisation for the
 --   remaining factors if necessary.
 --
 --   Construction of primality proofs can take a /very/ long time, so this
 --   will usually be slow (but should be faster than using 'factorise' and
 --   proving the primality of the factors from scratch).
-provenFactorisation :: Integer -> Integer -> [((Integer, Word),PrimalityProof)]
-provenFactorisation _ 1 = []
-provenFactorisation bd n
+provenFactorisation :: Integer -> [((Integer, Word),PrimalityProof)]
+provenFactorisation 1 = []
+provenFactorisation n
     | n < 2     = error "provenFactorisation: argument not positive"
-    | bd < 2000 = provenFactorisation 2000 n
-    | otherwise = test $
-      case smallFactors bd n of
+    | otherwise = let bd = 65536 in test $
+      case smallFactors n of
         (sfs,mb) -> map (\t@(p,_) -> (t, smallCert p)) sfs
             ++ case mb of
                  Nothing -> []

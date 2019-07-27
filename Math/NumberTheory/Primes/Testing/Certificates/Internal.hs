@@ -248,7 +248,7 @@ certify n
                     ((p,_):_) | p < n       -> Composite (Factors n p (n `quot` p))
                               | otherwise   -> Prime (TrialDivision n r2)
                     _ -> error "Impossible"
-    | otherwise = case smallFactors 100000 n of
+    | otherwise = case smallFactors n of
                     ([], Just _) | not (isStrongFermatPP n 2) -> Composite (StrongFermat n 2)
                                  | not (lucasTest n) -> Composite (LucasSelfridge n)
                                  | otherwise -> Prime (certifyBPSW n)       -- if it isn't we error and ask for a report.

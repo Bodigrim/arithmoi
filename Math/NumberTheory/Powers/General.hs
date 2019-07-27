@@ -28,6 +28,7 @@ import GHC.Integer.Logarithms (integerLog2#)
 import Data.Bits
 import Data.List (foldl')
 import qualified Data.Set as Set
+import Data.Vector.Unboxed (toList)
 
 import Numeric.Natural
 
@@ -38,6 +39,7 @@ import Math.NumberTheory.Utils  (shiftToOddCount
 import qualified Math.NumberTheory.Powers.Squares as P2
 import qualified Math.NumberTheory.Powers.Cubes as P3
 import qualified Math.NumberTheory.Powers.Fourth as P4
+import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Utils.FromIntegral (intToWord, wordToInt)
 
 -- | Calculate an integer root, @'integerRoot' k n@ computes the (floor of) the @k@-th
@@ -256,20 +258,18 @@ findHighPower e pws m s (p:ps)
       (k,r) -> findHighPower (gcd k e) ((p,k):pws) r (P2.integerSquareRoot r) ps
 findHighPower e pws m _ [] = finishPower e pws m
 
+smallOddPrimes :: [Integer]
+smallOddPrimes
+  = takeWhile (< spBound)
+  $ map fromIntegral
+  $ tail
+  $ toList smallPrimes
+
 spBEx :: Word
 spBEx = 14
 
 spBound :: Integer
 spBound = 2^spBEx
-
-smallOddPrimes :: [Integer]
-smallOddPrimes = 3:5:primes'
-  where
-    primes' = 7:11:13:17:19:23:29:filter isPrime (takeWhile (< spBound) $ scanl (+) 31 (cycle [6,4,2,4,2,4,6,2]))
-    isPrime n = go primes'
-      where
-        go (p:ps) = (p*p > n) || (n `rem` p /= 0 && go ps)
-        go []     = True
 
 -- n large, has no prime divisors < spBound
 finishPower :: Word -> [(Integer, Word)] -> Integer -> (Integer, Word)
