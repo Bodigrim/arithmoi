@@ -20,6 +20,7 @@ module Math.NumberTheory.ArithmeticFunctions.InverseTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Bits (Bits)
 import qualified Data.Set as S
 
 import Math.NumberTheory.ArithmeticFunctions
@@ -134,10 +135,10 @@ totientSpecialCases3 = zipWith mkAssert (tail factorial) totientMaxFactorial
 -------------------------------------------------------------------------------
 -- Sigma
 
-sigmaProperty1 :: forall a. (Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
+sigmaProperty1 :: forall a. (Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a) => Positive a -> Bool
 sigmaProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseSigma (sigma 1 x)
 
-sigmaProperty2 :: (Euclidean a, UniqueFactorisation a, Integral a) => Positive a -> Bool
+sigmaProperty2 :: (Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a) => Positive a -> Bool
 sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1) (asSetOfPreimages inverseSigma x))
 
 -- | http://oeis.org/A055486

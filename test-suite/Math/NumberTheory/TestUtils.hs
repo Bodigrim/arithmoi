@@ -59,7 +59,7 @@ import Numeric.Natural
 import Math.NumberTheory.Euclidean
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
-import Math.NumberTheory.Primes (UniqueFactorisation)
+import Math.NumberTheory.Primes (Prime, UniqueFactorisation)
 import qualified Math.NumberTheory.SmoothNumbers as SN
 
 import Math.NumberTheory.TestUtils.MyCompose
@@ -138,7 +138,7 @@ testIntegralProperty name f = testGroup name
 
 testIntegralPropertyNoLarge
   :: forall wrapper bool. (TestableIntegral wrapper, SC.Testable IO bool, QC.Testable bool)
-  => String -> (forall a. (Euclidean a, Semiring a, Integral a, Bits a, UniqueFactorisation a, Show a) => wrapper a -> bool) -> TestTree
+  => String -> (forall a. (Euclidean a, Semiring a, Integral a, Bits a, UniqueFactorisation a, Show a, Enum (Prime a)) => wrapper a -> bool) -> TestTree
 testIntegralPropertyNoLarge name f = testGroup name
   [ SC.testProperty "smallcheck Int"     (f :: wrapper Int     -> bool)
   , SC.testProperty "smallcheck Word"    (f :: wrapper Word    -> bool)

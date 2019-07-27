@@ -10,6 +10,7 @@
 -- by M. A. Alekseyev.
 
 {-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -26,6 +27,7 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
   ) where
 
 import Prelude hiding (rem, quot)
+import Data.Bits (Bits)
 import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -89,7 +91,7 @@ invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
 
 -- | See section 5.2 of the paper.
 invSigma
-  :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)
+  :: forall a. (Euclidean a, Integral a, UniqueFactorisation a, Enum (Prime a), Bits a)
   => [(Prime a, Word)]
   -- ^ Factorisation of a value of the sum-of-divisors function
   -> [PrimePowers a]
@@ -131,7 +133,7 @@ invSigma fs
     pksSmall :: Map (Prime a) (Set Word)
     pksSmall = M.fromDistinctAscList
       [ (p, pows)
-      | p <- takeWhile ((< lim) . unPrime) primes
+      | p <- [nextPrime 2 .. precPrime lim]
       , let pows = doPrime p
       , not (null pows)
       ]
@@ -300,7 +302,7 @@ inverseTotient point = invertFunction point totientA invTotient
 -- >>> unMaxWord (inverseSigma MaxWord 120)
 -- 95
 inverseSigma
-  :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a)
+  :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a)
   => (a -> b)
   -> a
   -> b

@@ -160,7 +160,7 @@ sieveBlockMoebius lowIndex' len'
     -- Bit fiddling in 'mapper' is correct only
     -- if all sufficiently small (<= 191) primes has been sieved out.
     ps :: [Int]
-    ps = takeWhile (<= (191 `max` integerSquareRoot highIndex)) $ map unPrime primes
+    ps = map unPrime [nextPrime 2 .. precPrime (191 `max` integerSquareRoot highIndex)]
 
     mapper :: Int -> Word8 -> Word8
     mapper ix val

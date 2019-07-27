@@ -37,7 +37,7 @@ import GHC.Exts
 import Math.NumberTheory.ArithmeticFunctions.Class
 import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius, sieveBlockMoebius)
 import Math.NumberTheory.Logarithms (wordLog2, integerLogBase')
-import Math.NumberTheory.Primes (primes)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Powers.Squares (integerSquareRoot)
 import Math.NumberTheory.Utils (splitOff)
@@ -140,7 +140,7 @@ sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
         highIndex' = intToWord highIndex
 
         ps :: [Int]
-        ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
+        ps = if highIndex < 4 then [] else map unPrime [nextPrime 2 .. precPrime (integerSquareRoot highIndex)]
 
     as <- MU.replicate len 1
     bs <- MG.replicate len empty

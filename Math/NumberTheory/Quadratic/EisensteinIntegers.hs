@@ -204,7 +204,7 @@ primes :: [Prime EisensteinInteger]
 primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
   where
     leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) U.primes
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) [U.nextPrime 2 ..]
     rightPrimes' = filter (\prime -> unPrime prime `mod` 3 == 1) $ tail rightPrimes
     l = [unPrime p :+ 0 | p <- leftPrimes]
     r = [g | p <- rightPrimes', let x :+ y = unPrime (findPrime p), g <- [x :+ y, x :+ (x - y)]]

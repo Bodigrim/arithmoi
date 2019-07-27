@@ -125,7 +125,7 @@ primes :: [U.Prime GaussianInteger]
 primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
   where
     leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) (tail U.primes)
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) [U.nextPrime 3 ..]
     l = [unPrime p :+ 0 | p <- leftPrimes]
     r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
 

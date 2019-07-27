@@ -10,8 +10,9 @@
 -- over a set {3, 4}, and 24 is not.
 --
 
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Math.NumberTheory.SmoothNumbers
   ( -- * Create a smooth basis
@@ -30,6 +31,7 @@ module Math.NumberTheory.SmoothNumbers
   ) where
 
 import Prelude hiding (div, mod, gcd)
+import Data.Bits (Bits)
 import Data.Coerce
 import Data.List (nub)
 import Data.Semiring (isZero)
@@ -76,10 +78,13 @@ fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
 -- Just (SmoothBasis {unSmoothBasis = [2,3,5,7]})
 -- >>> fromSmoothUpperBound 1
 -- Nothing
-fromSmoothUpperBound :: Integral a => a -> Maybe (SmoothBasis a)
+fromSmoothUpperBound
+  :: (Integral a, Enum (Prime a), Bits a, UniqueFactorisation a)
+  => a
+  -> Maybe (SmoothBasis a)
 fromSmoothUpperBound n
   | n < 2     = Nothing
-  | otherwise = Just $ SmoothBasis $ takeWhile (<= n) $ map unPrime primes
+  | otherwise = Just $ SmoothBasis $ map unPrime [nextPrime 2 .. precPrime n]
 {-# DEPRECATED fromSmoothUpperBound "Use 'fromList' with an appropriate list of primes instead " #-}
 
 -- | Helper used by @smoothOver@ (@Integral@ constraint) and @smoothOver'@
