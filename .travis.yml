@@ -31,7 +31,6 @@ before_cache:
 matrix:
   include:
     - compiler: "ghc-8.8.1"
-      env: GHCHEAD=true
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.8.1], sources: [hvr-ghc]}}
     - compiler: "ghc-8.6.5"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.5], sources: [hvr-ghc]}}
@@ -41,13 +40,6 @@ matrix:
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.2.2], sources: [hvr-ghc]}}
     - compiler: "ghc-8.0.2"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.0.2], sources: [hvr-ghc]}}
-    - compiler: "ghc-head"
-      env: GHCHEAD=true
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-head], sources: [hvr-ghc]}}
-
-  allow_failures:
-    - compiler: "ghc-8.8.1"
-    - compiler: "ghc-head"
 
 before_install:
   - HC=/opt/ghc/bin/${CC}
