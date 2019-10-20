@@ -38,6 +38,7 @@ module Math.NumberTheory.TestUtils
   , testSameIntegralProperty3
   , testIntegral2Property
   , testSmallAndQuick
+  , testEqualSmallAndQuick
 
   -- * Export for @Zeta@ tests
   , assertEqualUpToEps
@@ -87,10 +88,11 @@ instance Monad m => Serial m GaussianInteger where
 -- SmoothNumbers
 
 instance (Ord a, Num a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a) where
-  arbitrary = (fmap getPositive <$> arbitrary) `suchThatMap` SN.fromList
+  arbitrary = SN.fromList <$> arbitrary
+  shrink xs = SN.fromList <$> shrink (SN.unSmoothBasis xs)
 
 instance (Ord a, Num a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
-  series = (fmap getPositive <$> series) `suchThatMapSerial` SN.fromList
+  series = SN.fromList <$> series
 
 -------------------------------------------------------------------------------
 
@@ -243,14 +245,24 @@ testIntegral2Property name f = testGroup name
   ]
 
 testSmallAndQuick
-  :: SC.Testable IO a
-  => QC.Testable a
-  => String -> a -> TestTree
+  :: (SC.Testable IO a, QC.Testable a)
+  => String
+  -> a
+  -> TestTree
 testSmallAndQuick name f = testGroup name
   [ SC.testProperty "smallcheck" f
   , QC.testProperty "quickcheck" f
   ]
 
+testEqualSmallAndQuick
+  :: (Serial IO a, Arbitrary a, Show a, Eq b, Show b)
+  => String
+  -> (a -> (b, b))
+  -> TestTree
+testEqualSmallAndQuick name f = testGroup name
+  [ SC.testProperty "smallcheck" (uncurry (==)  . f)
+  , QC.testProperty "quickcheck" (uncurry (===) . f)
+  ]
 
 -- | Used in @Math.NumberTheory.Zeta.DirichletTests@ and
 -- @Math.NumberTheory.Zeta.RiemannTests@.

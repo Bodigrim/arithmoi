@@ -4,14 +4,13 @@ module Math.NumberTheory.SmoothNumbersBench
   ( benchSuite
   ) where
 
-import Data.Maybe
 import Gauge.Main
 
 import Math.NumberTheory.Primes
 import Math.NumberTheory.SmoothNumbers
 
 doBench :: Int -> Int
-doBench lim = sum $ take lim $ smoothOver $ fromJust $ fromList $ map unPrime [nextPrime 2 .. precPrime lim]
+doBench lim = sum $ take lim $ smoothOver $ fromList $ map unPrime [nextPrime 2 .. precPrime lim]
 
 benchSuite :: Benchmark
 benchSuite = bgroup "SmoothNumbers"
