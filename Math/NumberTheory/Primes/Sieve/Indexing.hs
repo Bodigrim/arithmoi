@@ -6,7 +6,6 @@
 --
 -- Auxiliary stuff, conversion between number and index,
 -- remainders modulo 30 and related things.
-{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Indexing
     ( idxPr
     , toPrim

@@ -11,8 +11,6 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 
-{-# OPTIONS_HADDOCK hide #-}
-
 module Math.NumberTheory.ArithmeticFunctions.Class
   ( ArithmeticFunction(..)
   , runFunction

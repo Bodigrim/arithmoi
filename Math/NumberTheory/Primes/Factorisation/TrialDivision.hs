@@ -13,7 +13,6 @@
 module Math.NumberTheory.Primes.Factorisation.TrialDivision
     ( trialDivisionWith
     , trialDivisionTo
-    , trialDivisionPrimeWith
     , trialDivisionPrimeTo
     ) where
 

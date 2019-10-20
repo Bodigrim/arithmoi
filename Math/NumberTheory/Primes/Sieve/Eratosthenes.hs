@@ -13,10 +13,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
-{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
     ( primes
-    , sieveFrom
     , psieveFrom
     , PrimeSieve(..)
     , psieveList
@@ -368,11 +366,6 @@ countFromTo start end ba = do
           w <- unsafeRead wa sb
           let !w1 = w `shiftR` si
           return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
-
--- | @'sieveFrom' n@ creates the list of primes not less than @n@.
-sieveFrom :: Integer -> [Prime Integer]
-sieveFrom n = case psieveFrom n of
-                        ps -> dropWhile ((< n) . unPrime) (ps >>= primeList)
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain

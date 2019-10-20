@@ -7,7 +7,6 @@
 -- Some utilities, mostly for bit twiddling.
 --
 {-# LANGUAGE CPP, MagicHash, UnboxedTuples, BangPatterns #-}
-{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Utils
     ( shiftToOddCount
     , shiftToOdd

@@ -27,22 +27,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-{-# OPTIONS_HADDOCK hide #-}
 
 module Math.NumberTheory.Primes.Factorisation.Montgomery
   ( -- *  Complete factorisation functions
     -- ** Functions with input checking
     factorise
-  , defaultStdGenFactorisation
-    -- ** Functions without input checking
-  , factorise'
-  , stepFactorisation
-  , defaultStdGenFactorisation'
-    -- * Partial factorisation
+  --   -- * Partial factorisation
   , smallFactors
-  , stdGenFactorisation
-  , curveFactorisation
-    -- ** Single curve worker
+  --   -- ** Single curve worker
   , montgomeryFactorisation
   , findParms
   ) where
@@ -94,30 +86,6 @@ factorise n
 -- | Like 'factorise', but without input checking, hence @n > 1@ is required.
 factorise' :: Integer -> [(Integer, Word)]
 factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdeadbeef) n
-
--- | @'stepFactorisation'@ is like 'factorise'', except that it doesn't use a
---   pseudo random generator but steps through the curves in order.
---   This strategy turns out to be surprisingly fast, on average it doesn't
---   seem to be slower than the 'StdGen' based variant.
-stepFactorisation :: Integer -> [(Integer, Word)]
-stepFactorisation n
-    = let (sfs,mb) = smallFactors n
-      in sfs ++ case mb of
-                  Nothing -> []
-                  Just r  -> curveFactorisation (Just $ 65536 * 65536) bailliePSW
-                                                (\m k -> (if k < (m-1) then k else error "Curves exhausted",k+1)) 6 Nothing r
-
--- | @'defaultStdGenFactorisation'@ first strips off all small prime factors and then,
---   if the factorisation is not complete, proceeds to curve factorisation.
---   For negative numbers, a factor of @-1@ is included, the factorisation of @1@
---   is empty. Since @0@ has no prime factorisation, a zero argument causes
---   an error.
-defaultStdGenFactorisation :: StdGen -> Integer -> [(Integer, Word)]
-defaultStdGenFactorisation sg n
-    | n == 0    = error "0 has no prime factorisation"
-    | n < 0     = (-1,1) : defaultStdGenFactorisation sg (-n)
-    | n == 1    = []
-    | otherwise = defaultStdGenFactorisation' sg n
 
 -- | Like 'defaultStdGenFactorisation', but without input checking, so
 --   @n@ must be larger than @1@.

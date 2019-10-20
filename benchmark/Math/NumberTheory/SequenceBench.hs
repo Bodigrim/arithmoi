@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-{-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 module Math.NumberTheory.SequenceBench
   ( benchSuite
@@ -7,21 +6,17 @@ module Math.NumberTheory.SequenceBench
 
 import Gauge.Main
 
-import Data.Array.IArray ((!))
 import Data.Array.Unboxed
 import Data.Bits
 
-import Math.NumberTheory.Primes (Prime(..))
-import Math.NumberTheory.Primes.Sieve
+import Math.NumberTheory.Primes (Prime(..), nextPrime, precPrime)
 import Math.NumberTheory.Primes.Testing
 
 filterIsPrime :: (Integer, Integer) -> Integer
 filterIsPrime (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ filter isPrime (map toPrim [toIdx p .. toIdx q])
 
 eratosthenes :: (Integer, Integer) -> Integer
-eratosthenes (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ map unPrime $ if q < toInteger sieveRange
-        then           primeList $ primeSieve q
-        else concatMap primeList $ psieveFrom p
+eratosthenes (p, q) = sum (map unPrime [nextPrime p .. precPrime q])
 
 filterIsPrimeBench :: Benchmark
 filterIsPrimeBench = bgroup "filterIsPrime" $
@@ -48,9 +43,6 @@ benchSuite = bgroup "Sequence"
 
 -------------------------------------------------------------------------------
 -- Utils copypasted from internal modules
-
-sieveRange :: Int
-sieveRange = 30*128*1024
 
 rho :: Int -> Int
 rho i = residues ! i

@@ -13,7 +13,6 @@
 
 {-# OPTIONS_GHC -fno-warn-type-defaults  #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
-{-# OPTIONS_GHC -fno-warn-deprecations   #-}
 
 module Math.NumberTheory.EuclideanTests
   ( testSuite

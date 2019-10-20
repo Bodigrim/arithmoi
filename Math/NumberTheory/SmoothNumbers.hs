@@ -17,45 +17,23 @@
 module Math.NumberTheory.SmoothNumbers
   ( -- * Create a smooth basis
     SmoothBasis
-  , fromSet
   , fromList
-  , fromSmoothUpperBound
     -- * Generate smooth numbers
   , smoothOver
   , smoothOver'
-  , smoothOverInRange
-  , smoothOverInRangeBF
-
   -- * Verify if a number is smooth
   , isSmooth
   ) where
 
 import Prelude hiding (div, mod, gcd)
-import Data.Bits (Bits)
-import Data.Coerce
 import Data.List (nub)
 import Data.Semiring (isZero)
-import qualified Data.Set as S
 
 import qualified Math.NumberTheory.Euclidean as E
-import Math.NumberTheory.Primes
 
 -- | An abstract representation of a smooth basis.
 -- It consists of a set of numbers ≥2.
 newtype SmoothBasis a = SmoothBasis { unSmoothBasis :: [a] } deriving (Eq, Show)
-
--- | Build a 'SmoothBasis' from a set of numbers ≥2.
---
--- >>> import qualified Data.Set as Set
--- >>> fromSet (Set.fromList [2, 3])
--- Just (SmoothBasis {unSmoothBasis = [2,3]})
--- >>> fromSet (Set.fromList [2, 4])
--- Just (SmoothBasis {unSmoothBasis = [2,4]})
--- >>> fromSet (Set.fromList [1, 3]) -- should be >= 2
--- Nothing
-fromSet :: (Eq a, E.GcdDomain a) => S.Set a -> Maybe (SmoothBasis a)
-fromSet s = if isValid l then Just (SmoothBasis l) else Nothing where l = S.elems s
-{-# DEPRECATED fromSet "Use 'fromList' instead " #-}
 
 -- | Build a 'SmoothBasis' from a list of numbers ≥2.
 --
@@ -71,21 +49,6 @@ fromList :: (Eq a, E.GcdDomain a) => [a] -> Maybe (SmoothBasis a)
 fromList l = if isValid l' then Just (SmoothBasis l') else Nothing
   where
     l' = nub l
-
--- | Build a 'SmoothBasis' from a list of primes below given bound.
---
--- >>> fromSmoothUpperBound 10
--- Just (SmoothBasis {unSmoothBasis = [2,3,5,7]})
--- >>> fromSmoothUpperBound 1
--- Nothing
-fromSmoothUpperBound
-  :: (Integral a, Enum (Prime a), Bits a, UniqueFactorisation a)
-  => a
-  -> Maybe (SmoothBasis a)
-fromSmoothUpperBound n
-  | n < 2     = Nothing
-  | otherwise = Just $ SmoothBasis $ map unPrime [nextPrime 2 .. precPrime n]
-{-# DEPRECATED fromSmoothUpperBound "Use 'fromList' with an appropriate list of primes instead " #-}
 
 -- | Helper used by @smoothOver@ (@Integral@ constraint) and @smoothOver'@
 -- (@Euclidean@ constraint) Since the typeclass constraint is just
@@ -130,49 +93,6 @@ smoothOver' norm pl =
 -- [1,2,4,5,8,10,16,20,25,32]
 smoothOver :: (Ord a, Num a) => SmoothBasis a -> [a]
 smoothOver = smoothOver' abs
-
--- | Generate an ascending list of
--- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
--- over a given smooth basis in a given range.
---
--- It may appear inefficient
--- for short, but distant ranges;
--- consider using 'smoothOverInRangeBF' in such cases.
---
--- >>> import Data.Maybe
--- >>> smoothOverInRange (fromJust (fromList [2, 5])) 100 200
--- [100,125,128,160,200]
-smoothOverInRange :: (Ord a, Num a) => SmoothBasis a -> a -> a -> [a]
-smoothOverInRange s lo hi
-  = takeWhile (<= hi)
-  $ dropWhile (< lo)
-  $ smoothOver s
-{-# DEPRECATED smoothOverInRange "Use 'smoothOver' instead" #-}
-
--- | Generate an ascending list of
--- <https://en.wikipedia.org/wiki/Smooth_number smooth numbers>
--- over a given smooth basis in a given range.
---
--- It is inefficient
--- for large or starting near 0 ranges;
--- consider using 'smoothOverInRange' in such cases.
---
--- Suffix BF stands for the brute force algorithm, involving a lot of divisions.
---
--- >>> import Data.Maybe
--- >>> smoothOverInRangeBF (fromJust (fromList [2, 5])) 100 200
--- [100,125,128,160,200]
-smoothOverInRangeBF
-  :: (Eq a, Enum a, E.GcdDomain a)
-  => SmoothBasis a
-  -> a
-  -> a
-  -> [a]
-smoothOverInRangeBF prs lo hi
-  = coerce
-  $ filter (isSmooth prs)
-  $ coerce [lo..hi]
-{-# DEPRECATED smoothOverInRangeBF "Use filtering by 'isSmooth' instead" #-}
 
 isValid :: (Eq a, E.GcdDomain a) => [a] -> Bool
 isValid [] = False

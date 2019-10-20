@@ -8,8 +8,6 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-# OPTIONS_HADDOCK hide #-}
-
 module Math.NumberTheory.Zeta.Dirichlet
   ( betas
   , betasEven

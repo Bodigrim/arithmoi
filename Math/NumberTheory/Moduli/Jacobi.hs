@@ -13,8 +13,6 @@
 {-# LANGUAGE CPP          #-}
 {-# LANGUAGE LambdaCase   #-}
 
-{-# OPTIONS_GHC -fno-warn-deprecations  #-}
-
 module Math.NumberTheory.Moduli.Jacobi
   ( JacobiSymbol(..)
   , jacobi
