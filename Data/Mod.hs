@@ -8,6 +8,7 @@
 --
 
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -35,7 +36,25 @@ import Data.Ratio
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import GHC.Natural (Natural(..), powModNatural)
-import GHC.TypeNats.Compat
+
+#if MIN_VERSION_base(4,11,0)
+import GHC.TypeNats hiding (Mod)
+#elif MIN_VERSION_base(4,10,0)
+import GHC.TypeNats
+#else
+
+import GHC.TypeLits hiding (natVal, someNatVal)
+import qualified GHC.TypeLits as TL
+
+natVal :: KnownNat n => proxy n -> Natural
+natVal = fromInteger . TL.natVal
+
+someNatVal :: Natural -> SomeNat
+someNatVal n = case TL.someNatVal (toInteger n) of
+  Nothing -> error "someNatVal: impossible negative argument"
+  Just sn -> sn
+
+#endif
 
 -- | Wrapper for residues modulo @m@.
 --
