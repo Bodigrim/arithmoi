@@ -49,6 +49,7 @@ library
     semirings >= 0.5.2,
     vector >= 0.12
   exposed-modules:
+    Data.Mod
     GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Inverse
