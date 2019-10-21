@@ -50,6 +50,16 @@ import Data.Type.Equality
 import GHC.Natural (Natural(..))
 import GHC.TypeNats.Compat
 
+-- | Linking type and value levels: extract modulo @m@ as a value.
+getMod :: KnownNat m => Mod m -> Integer
+getMod = toInteger . natVal
+{-# INLINE getMod #-}
+
+-- | Linking type and value levels: extract modulo @m@ as a value.
+getNatMod :: KnownNat m => Mod m -> Natural
+getNatMod = natVal
+{-# INLINE getNatMod #-}
+
 -- | This type represents elements of the multiplicative group mod m, i.e.
 -- those elements which are coprime to m. Use @toMultElement@ to construct.
 newtype MultMod m = MultMod {

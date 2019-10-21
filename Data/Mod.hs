@@ -21,12 +21,9 @@
 {-# LANGUAGE UnboxedTuples              #-}
 
 module Data.Mod
-  ( -- * Known modulo
-    Mod
+  ( Mod
   , getVal
   , getNatVal
-  , getMod
-  , getNatMod
   , invertMod
   , powMod
   , (^%)
