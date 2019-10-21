@@ -30,6 +30,7 @@ module Data.Mod
   ) where
 
 import Data.Ratio
+import Data.Semiring (Semiring(..), Ring(..))
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import GHC.Natural (Natural(..), powModNatural)
@@ -118,6 +119,26 @@ instance KnownNat m => Num (Mod m) where
     where
       mx = Mod $ fromInteger $ x `mod` getMod mx
   {-# INLINE fromInteger #-}
+
+instance KnownNat m => Semiring (Mod m) where
+  plus  = (+)
+  {-# INLINE plus #-}
+  times = (*)
+  {-# INLINE times #-}
+  zero  = Mod 0
+  {-# INLINE zero #-}
+  one   = mx
+    where
+      mx = if getNatMod mx > 1 then Mod 1 else Mod 0
+  {-# INLINE one #-}
+  fromNatural x = mx
+    where
+      mx = Mod $ x `mod` getNatMod mx
+  {-# INLINE fromNatural #-}
+
+instance KnownNat m => Ring (Mod m) where
+  negate = Prelude.negate
+  {-# INLINE negate #-}
 
 -- | Beware that division by residue, which is not coprime with the modulo,
 -- will result in runtime error. Consider using 'invertMod' instead.
