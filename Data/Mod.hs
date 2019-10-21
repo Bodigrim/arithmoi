@@ -10,6 +10,7 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
@@ -29,9 +30,12 @@ module Data.Mod
   , (^%)
   ) where
 
+import Control.DeepSeq
+import Data.Euclidean (GcdDomain(..), Euclidean(..), Field)
 import Data.Ratio
 import Data.Semiring (Semiring(..), Ring(..))
 import GHC.Exts
+import GHC.Generics
 import GHC.Integer.GMP.Internals
 import GHC.Natural (Natural(..), powModNatural)
 
@@ -68,7 +72,9 @@ someNatVal n = case TL.someNatVal (toInteger n) of
 --
 -- Note that modulo cannot be negative.
 newtype Mod (m :: Nat) = Mod Natural
-  deriving (Eq, Ord, Enum)
+  deriving (Eq, Ord, Enum, Generic)
+
+instance NFData (Mod m)
 
 instance KnownNat m => Show (Mod m) where
   show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (getMod m) ++ ")"
