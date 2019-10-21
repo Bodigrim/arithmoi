@@ -57,7 +57,7 @@ import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
-import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo, Mod, getVal)
 import Math.NumberTheory.Roots.General     (highestPower, largePFPower)
 import Math.NumberTheory.Roots.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
@@ -256,7 +256,7 @@ montgomeryFactorisation b1 b2 s = case newPoint (getVal s) n of
         g -> Just g
       g -> Just g
   where
-    n = getMod s
+    n = toInteger (natVal s)
     smallPowers
       = map findPower
       $ takeWhile (<= b1) (2 : 3 : 5 : list primeStore)

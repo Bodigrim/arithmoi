@@ -22,9 +22,9 @@ import Control.Monad (liftM2)
 import Data.Bits
 import Data.Constraint
 import Data.Maybe
+import Data.Mod hiding (powMod)
 
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class hiding (powMod)
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Powers.Modular (powMod)

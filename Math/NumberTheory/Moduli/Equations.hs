@@ -17,10 +17,11 @@ module Math.NumberTheory.Moduli.Equations
 
 import Data.Constraint
 import Data.Maybe
+import Data.Mod
 import GHC.Integer.GMP.Internals
+import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Primes
@@ -39,7 +40,7 @@ solveLinear
   => Mod m   -- ^ a
   -> Mod m   -- ^ b
   -> [Mod m] -- ^ list of x
-solveLinear a b = map fromInteger $ solveLinear' (getMod a) (getVal a) (getVal b)
+solveLinear a b = map fromInteger $ solveLinear' (toInteger (natVal a)) (getVal a) (getVal b)
 
 solveLinear' :: Integer -> Integer -> Integer -> [Integer]
 solveLinear' m a b = case solveLinearCoprime m' (a `quot` d) (b `quot` d) of
