@@ -114,7 +114,7 @@ instance KnownNat m => Num (Mod m) where
                   else NatJ# r#
 
   mx@(Mod !x) * (Mod !y) =
-    Mod $ x * y `rem` getNatMod mx
+    Mod $ x * y `Prelude.rem` getNatMod mx
     -- `rem` is slightly faster than `mod`
   {-# INLINE (*) #-}
 
@@ -160,6 +160,26 @@ instance KnownNat m => Fractional (Mod m) where
     Nothing -> throw DivideByZero
     Just y  -> y
   {-# INLINE recip #-}
+
+-- | Division by residue, which is not coprime with the modulo,
+-- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+instance KnownNat m => GcdDomain (Mod m) where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+-- | Division by residue, which is not coprime with the modulo,
+-- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+instance KnownNat m => Euclidean (Mod m) where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+-- | Division by residue, which is not coprime with the modulo,
+-- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+instance KnownNat m => Field (Mod m)
 
 -- | Linking type and value levels: extract modulo @m@ as a value.
 getMod :: KnownNat m => Mod m -> Integer
