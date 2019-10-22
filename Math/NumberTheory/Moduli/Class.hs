@@ -60,6 +60,11 @@ getNatMod :: KnownNat m => Mod m -> Natural
 getNatMod = natVal
 {-# INLINE getNatMod #-}
 
+-- | Synonym of '(^%)'.
+powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
+powMod = (^%)
+{-# INLINE powMod #-}
+
 -- | This type represents elements of the multiplicative group mod m, i.e.
 -- those elements which are coprime to m. Use @toMultElement@ to construct.
 newtype MultMod m = MultMod {
@@ -69,7 +74,7 @@ newtype MultMod m = MultMod {
 instance KnownNat m => Semigroup (MultMod m) where
   MultMod a <> MultMod b = MultMod (a * b)
   stimes k a@(MultMod a')
-    | k >= 0 = MultMod (powMod a' k)
+    | k >= 0 = MultMod (a' ^% k)
     | otherwise = invertGroup $ stimes (-k) a
   -- ^ This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
 

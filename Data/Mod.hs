@@ -26,7 +26,6 @@ module Data.Mod
   , getVal
   , getNatVal
   , invertMod
-  , powMod
   , (^%)
   ) where
 
@@ -221,32 +220,27 @@ invertMod mx
 -- | Drop-in replacement for 'Prelude.^', with much better performance.
 --
 -- >>> :set -XDataKinds
--- >>> powMod (3 :: Mod 10) 4
+-- >>> (3 :: Mod 10) ^% 4
 -- (1 `modulo` 10)
-powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
-powMod mx a
+(^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
+mx ^% a
   | a < 0     = error $ "^{Mod}: negative exponent"
   | otherwise = Mod $ powModNatural (getNatVal mx) (fromIntegral a) (getNatMod mx)
-{-# INLINABLE [1] powMod #-}
+{-# INLINABLE [1] (^%) #-}
 
-{-# SPECIALISE [1] powMod ::
+{-# SPECIALISE [1] (^%) ::
   KnownNat m => Mod m -> Integer -> Mod m,
   KnownNat m => Mod m -> Natural -> Mod m,
   KnownNat m => Mod m -> Int     -> Mod m,
   KnownNat m => Mod m -> Word    -> Mod m #-}
 
 {-# RULES
-"powMod/2/Integer"     forall x. powMod x (2 :: Integer) = let u = x in u*u
-"powMod/3/Integer"     forall x. powMod x (3 :: Integer) = let u = x in u*u*u
-"powMod/2/Int"         forall x. powMod x (2 :: Int)     = let u = x in u*u
-"powMod/3/Int"         forall x. powMod x (3 :: Int)     = let u = x in u*u*u
-"powMod/2/Word"        forall x. powMod x (2 :: Word)    = let u = x in u*u
-"powMod/3/Word"        forall x. powMod x (3 :: Word)    = let u = x in u*u*u
+"powMod/2/Integer"     forall x. x ^% (2 :: Integer) = let u = x in u*u
+"powMod/3/Integer"     forall x. x ^% (3 :: Integer) = let u = x in u*u*u
+"powMod/2/Int"         forall x. x ^% (2 :: Int)     = let u = x in u*u
+"powMod/3/Int"         forall x. x ^% (3 :: Int)     = let u = x in u*u*u
+"powMod/2/Word"        forall x. x ^% (2 :: Word)    = let u = x in u*u
+"powMod/3/Word"        forall x. x ^% (3 :: Word)    = let u = x in u*u*u
 #-}
-
--- | Infix synonym of 'powMod'.
-(^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
-(^%) = powMod
-{-# INLINE (^%) #-}
 
 infixr 8 ^%

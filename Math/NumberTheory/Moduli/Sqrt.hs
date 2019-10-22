@@ -22,7 +22,7 @@ import Control.Monad (liftM2)
 import Data.Bits
 import Data.Constraint
 import Data.Maybe
-import Data.Mod hiding (powMod)
+import Data.Mod
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Jacobi
