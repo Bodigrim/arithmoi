@@ -80,32 +80,32 @@ newtype Mod (m :: Nat) = Mod
 instance NFData (Mod m)
 
 instance KnownNat m => Show (Mod m) where
-  show m = "(" ++ show (getVal m) ++ " `modulo` " ++ show (getMod m) ++ ")"
+  show m = "(" ++ show (unMod m) ++ " `modulo` " ++ show (natVal m) ++ ")"
 
 instance KnownNat m => Bounded (Mod m) where
   minBound = Mod 0
-  maxBound = let mx = Mod (getNatMod mx - 1) in mx
+  maxBound = let mx = Mod (natVal mx - 1) in mx
 
 instance KnownNat m => Num (Mod m) where
   mx@(Mod x) + Mod y =
     Mod $ if xy >= m then xy - m else xy
     where
       xy = x + y
-      m = getNatMod mx
+      m = natVal mx
   {-# INLINE (+) #-}
   mx@(Mod x) - Mod y =
     Mod $ if x >= y then x - y else m + x - y
     where
-      m = getNatMod mx
+      m = natVal mx
   {-# INLINE (-) #-}
   negate mx@(Mod x) =
-    Mod $ if x == 0 then 0 else getNatMod mx - x
+    Mod $ if x == 0 then 0 else natVal mx - x
   {-# INLINE negate #-}
 
   -- If modulo is small and fits into one machine word,
   -- there is no need to use long arithmetic at all
   -- and we can save some allocations.
-  mx@(Mod (NatS# x#)) * (Mod (NatS# y#)) = case getNatMod mx of
+  mx@(Mod (NatS# x#)) * (Mod (NatS# y#)) = case natVal mx of
     NatS# m# -> let !(# z1#, z2# #) = timesWord2# x# y# in
                 let !(# _, r# #) = quotRemWord2# z1# z2# m# in
                 Mod (NatS# r#)
@@ -116,7 +116,7 @@ instance KnownNat m => Num (Mod m) where
                   else NatJ# r#
 
   mx@(Mod !x) * (Mod !y) =
-    Mod $ x * y `Prelude.rem` getNatMod mx
+    Mod $ x * y `Prelude.rem` natVal mx
     -- `rem` is slightly faster than `mod`
   {-# INLINE (*) #-}
 
@@ -126,7 +126,7 @@ instance KnownNat m => Num (Mod m) where
   {-# INLINE signum #-}
   fromInteger x = mx
     where
-      mx = Mod $ fromInteger $ x `mod` getMod mx
+      mx = Mod $ fromInteger $ x `mod` toInteger (natVal mx)
   {-# INLINE fromInteger #-}
 
 instance KnownNat m => Semiring (Mod m) where
@@ -138,11 +138,11 @@ instance KnownNat m => Semiring (Mod m) where
   {-# INLINE zero #-}
   one   = mx
     where
-      mx = if getNatMod mx > 1 then Mod 1 else Mod 0
+      mx = if natVal mx > 1 then Mod 1 else Mod 0
   {-# INLINE one #-}
   fromNatural x = mx
     where
-      mx = Mod $ x `mod` getNatMod mx
+      mx = Mod $ x `mod` natVal mx
   {-# INLINE fromNatural #-}
 
 instance KnownNat m => Ring (Mod m) where
@@ -183,26 +183,6 @@ instance KnownNat m => Euclidean (Mod m) where
 -- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
 instance KnownNat m => Field (Mod m)
 
--- | Linking type and value levels: extract modulo @m@ as a value.
-getMod :: KnownNat m => Mod m -> Integer
-getMod = toInteger . natVal
-{-# INLINE getMod #-}
-
--- | Linking type and value levels: extract modulo @m@ as a value.
-getNatMod :: KnownNat m => Mod m -> Natural
-getNatMod = natVal
-{-# INLINE getNatMod #-}
-
--- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-getVal :: Mod m -> Integer
-getVal (Mod x) = toInteger x
-{-# INLINE getVal #-}
-
--- | The canonical representative of the residue class, always between 0 and @m-1@ inclusively.
-getNatVal :: Mod m -> Natural
-getNatVal (Mod x) = x
-{-# INLINE getNatVal #-}
-
 -- | Computes the modular inverse, if the residue is coprime with the modulo.
 --
 -- >>> :set -XDataKinds
@@ -217,7 +197,7 @@ invertMod mx
     else Just $ Mod $ fromInteger y
   where
     -- first argument of recipModInteger is guaranteed to be positive
-    y = recipModInteger (getVal mx) (getMod mx)
+    y = recipModInteger (toInteger (unMod mx)) (toInteger (natVal mx))
 {-# INLINABLE invertMod #-}
 
 -- | Drop-in replacement for 'Prelude.^', with much better performance.
@@ -228,7 +208,7 @@ invertMod mx
 (^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 mx ^% a
   | a < 0     = error $ "^{Mod}: negative exponent"
-  | otherwise = Mod $ powModNatural (getNatVal mx) (fromIntegral a) (getNatMod mx)
+  | otherwise = Mod $ powModNatural (unMod mx) (fromIntegral a) (natVal mx)
 {-# INLINABLE [1] (^%) #-}
 
 {-# SPECIALISE [1] (^%) ::
