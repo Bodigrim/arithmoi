@@ -207,8 +207,10 @@ invertMod mx
 -- (1 `modulo` 10)
 (^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 mx ^% a
-  | a < 0     = error $ "^{Mod}: negative exponent"
-  | otherwise = Mod $ powModNatural (unMod mx) (fromIntegral a) (natVal mx)
+  | a < 0     = case invertMod mx of
+    Nothing ->  throw DivideByZero
+    Just my ->  Mod $ powModNatural (unMod my) (fromIntegral (-a)) (natVal mx)
+  | otherwise = Mod $ powModNatural (unMod mx) (fromIntegral a)    (natVal mx)
 {-# INLINABLE [1] (^%) #-}
 
 {-# SPECIALISE [1] (^%) ::
@@ -218,6 +220,8 @@ mx ^% a
   KnownNat m => Mod m -> Word    -> Mod m #-}
 
 {-# RULES
+"powMod"               forall (x :: KnownNat m => Mod m) p. x ^ p = x ^% p
+
 "powMod/2/Integer"     forall x. x ^% (2 :: Integer) = let u = x in u*u
 "powMod/3/Integer"     forall x. x ^% (3 :: Integer) = let u = x in u*u*u
 "powMod/2/Int"         forall x. x ^% (2 :: Int)     = let u = x in u*u
