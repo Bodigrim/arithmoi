@@ -30,6 +30,7 @@ module Data.Mod
   , (^%)
   ) where
 
+import Control.Exception
 import Control.DeepSeq
 import Data.Euclidean (GcdDomain(..), Euclidean(..), Field)
 import Data.Ratio
@@ -146,8 +147,8 @@ instance KnownNat m => Ring (Mod m) where
   negate = Prelude.negate
   {-# INLINE negate #-}
 
--- | Beware that division by residue, which is not coprime with the modulo,
--- will result in runtime error. Consider using 'invertMod' instead.
+-- | Division by residue, which is not coprime with the modulo,
+-- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
 instance KnownNat m => Fractional (Mod m) where
   fromRational r = case denominator r of
     1   -> num
@@ -156,7 +157,7 @@ instance KnownNat m => Fractional (Mod m) where
       num = fromInteger (numerator r)
   {-# INLINE fromRational #-}
   recip mx = case invertMod mx of
-    Nothing -> error $ "recip{Mod}: residue is not coprime with modulo"
+    Nothing -> throw DivideByZero
     Just y  -> y
   {-# INLINE recip #-}
 
