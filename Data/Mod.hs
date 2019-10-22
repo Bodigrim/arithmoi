@@ -19,6 +19,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE UnboxedTuples              #-}
 
 module Data.Mod
@@ -75,12 +76,25 @@ newtype Mod (m :: Nat) = Mod
   -- ^ The canonical representative of the residue class,
   -- always between 0 and m-1 inclusively.
   }
-  deriving (Eq, Ord, Enum, Generic)
+  deriving (Eq, Ord, Generic)
 
 instance NFData (Mod m)
 
 instance KnownNat m => Show (Mod m) where
   show m = "(" ++ show (unMod m) ++ " `modulo` " ++ show (natVal m) ++ ")"
+
+instance KnownNat m => Enum (Mod m) where
+  succ x = if x == maxBound then throw Overflow  else coerce (succ @Natural) x
+  pred x = if x == minBound then throw Underflow else coerce (pred @Natural) x
+
+  toEnum   = fromIntegral
+  fromEnum = fromIntegral . unMod
+
+  enumFrom x       = enumFromTo x maxBound
+  enumFromThen x y = enumFromThenTo x y (if y >= x then maxBound else minBound)
+
+  enumFromTo     = coerce (enumFromTo     @Natural)
+  enumFromThenTo = coerce (enumFromThenTo @Natural)
 
 instance KnownNat m => Bounded (Mod m) where
   minBound = Mod 0
