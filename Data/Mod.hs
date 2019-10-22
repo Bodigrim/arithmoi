@@ -4,7 +4,7 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Safe modular arithmetic with modulo on type level.
+-- Modular arithmetic with modulo on type level.
 --
 
 {-# LANGUAGE BangPatterns               #-}
@@ -58,23 +58,25 @@ someNatVal n = case TL.someNatVal (toInteger n) of
 
 #endif
 
--- | Wrapper for residues modulo @m@.
+-- | This data type represents
+-- <https://en.wikipedia.org/wiki/Modular_arithmetic#Integers_modulo_n integers modulo m>,
+-- equipped with useful instances.
 --
--- @Mod 3 :: Mod 10@ stands for the class of integers, congruent to 3 modulo 10 (…−17, −7, 3, 13, 23…).
--- The modulo is stored on type level, so it is impossible, for example, to add up by mistake
--- residues with different moduli.
+-- For example, 3 :: 'Mod' 10 stands for the class of integers
+-- congruent to 3 modulo 10: …−17, −7, 3, 13, 23…
 --
 -- >>> :set -XDataKinds
--- >>> (3 :: Mod 10) + (4 :: Mod 12)
--- error: Couldn't match type ‘12’ with ‘10’...
--- >>> (3 :: Mod 10) + 8
--- (1 `modulo` 10)
+-- >>> 3 + 8 :: Mod 10
+-- (1 `modulo` 10) -- because 3 + 8 = 11 ≡ 1 (mod 10)
 --
--- Note that modulo cannot be negative.
+-- __Warning:__ division by residue, which is not
+-- <https://en.wikipedia.org/wiki/Coprime_integers coprime>
+-- with the modulo, throws 'DivideByZero'.
+-- Consider using 'invertMod' for non-prime moduli.
 newtype Mod (m :: Nat) = Mod
   { unMod :: Natural
   -- ^ The canonical representative of the residue class,
-  -- always between 0 and m-1 inclusively.
+  -- always between 0 and m - 1 inclusively.
   }
   deriving (Eq, Ord, Generic)
 
@@ -163,8 +165,7 @@ instance KnownNat m => Ring (Mod m) where
   negate = Prelude.negate
   {-# INLINE negate #-}
 
--- | Division by residue, which is not coprime with the modulo,
--- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+-- | See the warning about division above.
 instance KnownNat m => Fractional (Mod m) where
   fromRational r = case denominator r of
     1   -> num
@@ -177,48 +178,55 @@ instance KnownNat m => Fractional (Mod m) where
     Just y  -> y
   {-# INLINE recip #-}
 
--- | Division by residue, which is not coprime with the modulo,
--- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+-- | See the warning about division above.
 instance KnownNat m => GcdDomain (Mod m) where
   divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
 
--- | Division by residue, which is not coprime with the modulo,
--- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+-- | See the warning about division above.
 instance KnownNat m => Euclidean (Mod m) where
   degree      = const 0
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
 
--- | Division by residue, which is not coprime with the modulo,
--- will throw 'DivideByZero'. Consider using 'invertMod' for non-prime moduli.
+-- | See the warning about division above.
 instance KnownNat m => Field (Mod m)
 
--- | Computes the modular inverse, if the residue is coprime with the modulo.
+-- | If an argument is
+-- <https://en.wikipedia.org/wiki/Coprime_integers coprime>
+-- with the modulo, return its modular inverse.
+-- Otherwise return 'Nothing'.
 --
 -- >>> :set -XDataKinds
--- >>> invertMod (3 :: Mod 10)
--- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
--- >>> invertMod (4 :: Mod 10)
--- Nothing
+-- >>> invertMod 3 :: Mod 10
+-- Just (7 `modulo` 10) -- because 3 * 7 = 21 ≡ 1 (mod 10)
+-- >>> invertMod 4 :: Mod 10
+-- Nothing -- because 4 and 10 are not coprime
 invertMod :: KnownNat m => Mod m -> Maybe (Mod m)
 invertMod mx
   = if y <= 0
     then Nothing
     else Just $ Mod $ fromInteger y
   where
-    -- first argument of recipModInteger is guaranteed to be positive
     y = recipModInteger (toInteger (unMod mx)) (toInteger (natVal mx))
 {-# INLINABLE invertMod #-}
 
--- | Drop-in replacement for 'Prelude.^', with much better performance.
+-- | Drop-in replacement for 'Prelude.^' with much better performance.
+-- Negative powers are allowed, but may throw 'DivideByZero', if an argument
+-- is not <https://en.wikipedia.org/wiki/Coprime_integers coprime> with the modulo.
+--
+-- Building with @-O@ triggers a rewrite rule 'Prelude.^' = '^%'.
 --
 -- >>> :set -XDataKinds
--- >>> (3 :: Mod 10) ^% 4
--- (1 `modulo` 10)
+-- >>> 3 ^% 4 :: Mod 10
+-- (1 `modulo` 10) -- because 3 ^ 4 = 81 ≡ 1 (mod 10)
+-- >>> 3 ^% (-1) :: Mod 10
+-- (7 `modulo` 10) -- because 3 * 7 = 21 ≡ 1 (mod 10)
+-- >>> 4 ^% (-1) :: Mod 10
+-- (*** Exception: divide by zero -- because 4 and 10 are not coprime
 (^%) :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 mx ^% a
   | a < 0     = case invertMod mx of
