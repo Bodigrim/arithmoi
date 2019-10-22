@@ -23,8 +23,7 @@
 
 module Data.Mod
   ( Mod
-  , getVal
-  , getNatVal
+  , unMod
   , invertMod
   , (^%)
   ) where
@@ -71,7 +70,11 @@ someNatVal n = case TL.someNatVal (toInteger n) of
 -- (1 `modulo` 10)
 --
 -- Note that modulo cannot be negative.
-newtype Mod (m :: Nat) = Mod Natural
+newtype Mod (m :: Nat) = Mod
+  { unMod :: Natural
+  -- ^ The canonical representative of the residue class,
+  -- always between 0 and m-1 inclusively.
+  }
   deriving (Eq, Ord, Enum, Generic)
 
 instance NFData (Mod m)

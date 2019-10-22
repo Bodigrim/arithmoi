@@ -40,7 +40,7 @@ solveLinear
   => Mod m   -- ^ a
   -> Mod m   -- ^ b
   -> [Mod m] -- ^ list of x
-solveLinear a b = map fromInteger $ solveLinear' (toInteger (natVal a)) (getVal a) (getVal b)
+solveLinear a b = map fromInteger $ solveLinear' (toInteger (natVal a)) (toInteger (unMod a)) (toInteger (unMod b))
 
 solveLinear' :: Integer -> Integer -> Integer -> [Integer]
 solveLinear' m a b = case solveLinearCoprime m' (a `quot` d) (b `quot` d) of
@@ -76,9 +76,9 @@ solveQuadratic sm a b c = case proofFromSFactors sm of
     $ map (\(p, n) -> (solveQuadraticPrimePower a' b' c' p n, unPrime p ^ n))
     $ unSFactors sm
   where
-    a' = getVal a
-    b' = getVal b
-    c' = getVal c
+    a' = toInteger $ unMod a
+    b' = toInteger $ unMod b
+    c' = toInteger $ unMod c
 
     combine :: [([Integer], Integer)] -> ([Integer], Integer)
     combine = foldl

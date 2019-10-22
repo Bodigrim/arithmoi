@@ -39,7 +39,7 @@ import Math.NumberTheory.Utils.FromIntegral
 -- [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
 sqrtsMod :: SFactors Integer m -> Mod m -> [Mod m]
 sqrtsMod sm a = case proofFromSFactors sm of
-  Sub Dict -> map fromInteger $ sqrtsModFactorisation (getVal a) (unSFactors sm)
+  Sub Dict -> map fromInteger $ sqrtsModFactorisation (toInteger (unMod a)) (unSFactors sm)
 
 -- | List all square roots modulo a number, the factorisation of which is
 -- passed as a second argument.

@@ -60,6 +60,16 @@ getNatMod :: KnownNat m => Mod m -> Natural
 getNatMod = natVal
 {-# INLINE getNatMod #-}
 
+-- | The canonical representative of the residue class, always between 0 and m-1 inclusively.
+getVal :: Mod m -> Integer
+getVal = toInteger . unMod
+{-# INLINE getVal #-}
+
+-- | The canonical representative of the residue class, always between 0 and m-1 inclusively.
+getNatVal :: Mod m -> Natural
+getNatVal = unMod
+{-# INLINE getNatVal #-}
+
 -- | Synonym of '(^%)'.
 powMod :: (KnownNat m, Integral a) => Mod m -> a -> Mod m
 powMod = (^%)
