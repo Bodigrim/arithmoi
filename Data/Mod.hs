@@ -4,23 +4,19 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Modular arithmetic with modulo on type level.
+-- <https://en.wikipedia.org/wiki/Modular_arithmetic Modular arithmetic>
+-- with modulo on type level.
 --
 
-{-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE MagicHash                  #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE UnboxedTuples              #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE CPP              #-}
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE KindSignatures   #-}
+{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE MagicHash        #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE UnboxedTuples    #-}
 
 module Data.Mod
   ( Mod
