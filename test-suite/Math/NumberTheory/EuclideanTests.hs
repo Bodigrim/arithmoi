@@ -4,7 +4,7 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Tests for Math.NumberTheory.Euclidean
+-- Tests for Math.NumberTheory.Euclidean.Coprimes
 --
 
 {-# LANGUAGE CPP                 #-}
@@ -25,31 +25,15 @@ import Test.Tasty.QuickCheck as QC hiding (Positive(..))
 
 import Control.Arrow
 import Data.Bits
+import Data.Euclidean
 import Data.Maybe
 import Data.Semigroup
 import Data.List (tails, sort)
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.TestUtils
-
--- | Check that 'extendedGCD' is consistent with documentation.
-extendedGCDProperty :: forall a. (Bits a, Num a, GcdDomain a, Euclidean a, Ord a) => AnySign a -> AnySign a -> Bool
-extendedGCDProperty (AnySign a) (AnySign b)
-  | isNatural a = True -- extendedGCD does not make sense for Natural
-  | otherwise =
-  u * a + v * b == d
-  && d == gcd a b
-  -- (-1) >= 0 is true for unsigned types
-  && (abs u < abs b || abs b <= 1 || (-1 :: a) >= 0)
-  && (abs v < abs a || abs a <= 1 || (-1 :: a) >= 0)
-  where
-    (d, u, v) = extendedGCD a b
-
-isNatural :: Bits a => a -> Bool
-isNatural a = isNothing (bitSizeMaybe a) && not (isSigned a)
 
 -- | Check that numbers are coprime iff their gcd equals to 1.
 coprimeProperty :: (Eq a, Num a, GcdDomain a, Euclidean a) => AnySign a -> AnySign a -> Bool
@@ -152,8 +136,7 @@ unionProperty1 xs ys
 
 testSuite :: TestTree
 testSuite = testGroup "Euclidean"
-  [ testSameIntegralProperty "extendedGCD" extendedGCDProperty
-  , testSameIntegralProperty "coprime"     coprimeProperty
+  [ testSameIntegralProperty "coprime"     coprimeProperty
   , testGroup "splitIntoCoprimes"
     [ testGroup "preserves product of factors"
       [ testSmallAndQuick "Natural" (splitIntoCoprimesProperty1 @Natural)

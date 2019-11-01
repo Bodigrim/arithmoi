@@ -27,13 +27,13 @@ module Math.NumberTheory.TestUtils.Wrappers where
 
 import Control.Applicative
 import Data.Coerce
+import Data.Euclidean
 import Data.Functor.Classes
 import Data.Semiring (Semiring)
 
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
 
-import Math.NumberTheory.Euclidean (GcdDomain, Euclidean)
 import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
 -------------------------------------------------------------------------------

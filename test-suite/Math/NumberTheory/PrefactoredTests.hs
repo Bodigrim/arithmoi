@@ -18,10 +18,10 @@ module Math.NumberTheory.PrefactoredTests
 import Test.Tasty
 
 import Control.Arrow (second)
+import Data.Euclidean
 import Data.List (tails)
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Prefactored
 import Math.NumberTheory.TestUtils

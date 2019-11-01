@@ -21,15 +21,16 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     findPrime,
 ) where
 
+import Prelude hiding (quot, quotRem)
 import Control.DeepSeq (NFData)
 import Data.Coerce
+import Data.Euclidean
 import Data.List (mapAccumL, partition)
 import Data.Maybe
 import Data.Ord (comparing)
 import qualified Data.Semiring as S
 import GHC.Generics
 
-import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Powers (integerSquareRoot)
 import Math.NumberTheory.Primes.Types
@@ -86,9 +87,9 @@ absSignum z@(a :+ b)
     | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
     | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
-instance ED.GcdDomain GaussianInteger
+instance GcdDomain GaussianInteger
 
-instance ED.Euclidean GaussianInteger where
+instance Euclidean GaussianInteger where
     degree = fromInteger . norm
     quotRem = divHelper
 

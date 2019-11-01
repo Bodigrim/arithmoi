@@ -28,6 +28,7 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
 
 import Prelude hiding (rem, quot)
 import Data.Bits (Bits)
+import Data.Euclidean
 import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -42,7 +43,6 @@ import qualified Data.Set as S
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Powers
 import Math.NumberTheory.Primes

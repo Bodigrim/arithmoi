@@ -20,15 +20,15 @@ import Prelude hiding (gcd)
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Set as S
+import Data.Euclidean
 import Data.List (genericTake, genericLength)
 import Data.Maybe (isJust, isNothing, mapMaybe)
-import Numeric.Natural
 import Data.Proxy
+import qualified Data.Set as S
 import GHC.TypeNats.Compat
+import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Moduli.Singleton

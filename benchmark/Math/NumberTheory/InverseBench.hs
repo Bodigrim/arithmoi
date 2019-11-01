@@ -9,10 +9,10 @@ module Math.NumberTheory.InverseBench
 
 import Gauge.Main
 import Data.Bits (Bits)
+import Data.Euclidean
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions.Inverse
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes
 
 fact :: (Enum a, Num a) => a

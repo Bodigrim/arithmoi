@@ -3,6 +3,7 @@
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
 -- Licence:     MIT
 -- Maintainer:  Alexandre Rodrigues Baldé <alexandrer_b@outlook.com>
+-- Description: Deprecated
 --
 -- This module exports a class to represent Euclidean domains.
 --
@@ -13,7 +14,7 @@
 {-# LANGUAGE MagicHash                  #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 
-module Math.NumberTheory.Euclidean
+module Math.NumberTheory.Euclidean {-# DEPRECATED "Use Data.Euclidean instead" #-}
   ( GcdDomain(..)
   , Euclidean(..)
   , WrappedIntegral(..)

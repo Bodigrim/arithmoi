@@ -20,14 +20,13 @@ module Math.NumberTheory.Euclidean.Coprimes
 
 import Prelude hiding (gcd, quot, rem)
 import Data.Coerce
+import Data.Euclidean
 import Data.List (tails, mapAccumL)
 import Data.Maybe
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
 import Data.Semiring (Semiring(..), isZero)
-
-import Math.NumberTheory.Euclidean
 
 -- | A list of pairwise coprime numbers
 -- with their multiplicities.
@@ -40,6 +39,10 @@ unsafeDivide :: GcdDomain a => a -> a -> a
 unsafeDivide x y = case x `divide` y of
   Nothing -> error "violated prerequisite of unsafeDivide"
   Just z  -> z
+
+-- | Check whether an element is a unit of the ring.
+isUnit :: (Eq a, GcdDomain a) => a -> Bool
+isUnit x = not (isZero x) && isJust (one `divide` x)
 
 doPair :: (Eq a, GcdDomain a, Eq b, Num b) => a -> b -> a -> b -> (a, a, [(a, b)])
 doPair x xm y ym

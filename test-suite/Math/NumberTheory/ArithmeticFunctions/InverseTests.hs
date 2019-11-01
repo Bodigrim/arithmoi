@@ -21,11 +21,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Bits (Bits)
+import Data.Euclidean
 import qualified Data.Set as S
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.Inverse
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences
 import Math.NumberTheory.TestUtils

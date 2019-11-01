@@ -20,12 +20,12 @@ module Math.NumberTheory.Prefactored
 
 import Prelude hiding ((^), gcd)
 import Control.Arrow
+import Data.Euclidean
 import Data.Semigroup
 import Data.Semiring (Semiring(..), Mul(..), (^))
 import qualified Data.Semiring as Semiring
 import Unsafe.Coerce
 
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types

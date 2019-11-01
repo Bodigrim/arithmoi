@@ -25,13 +25,12 @@ module Math.NumberTheory.Utils.DirichletSeries
 
 import Prelude hiding (filter, last, rem, quot, snd, lookup)
 import Data.Coerce
+import Data.Euclidean
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Semiring (Semiring(..))
 import Numeric.Natural
-
-import Math.NumberTheory.Euclidean
 
 -- Sparse Dirichlet series are represented by an ascending list of pairs.
 -- For instance, [(a, b), (c, d)] stands for 1 + b/a^s + d/c^s.

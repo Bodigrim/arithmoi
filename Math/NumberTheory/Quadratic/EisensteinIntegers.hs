@@ -26,15 +26,16 @@ module Math.NumberTheory.Quadratic.EisensteinIntegers
   , primes
   ) where
 
+import Prelude hiding (quot, quotRem, gcd)
 import Control.DeepSeq
 import Data.Coerce
+import Data.Euclidean
 import Data.List                                       (mapAccumL, partition)
 import Data.Maybe
 import Data.Ord                                        (comparing)
 import qualified Data.Semiring as S
 import GHC.Generics                                    (Generic)
 
-import qualified Math.NumberTheory.Euclidean            as ED
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Primes.Types
 import qualified Math.NumberTheory.Primes as U
@@ -105,9 +106,9 @@ ids = take 6 (iterate ((1 + ω) *) 1)
 associates :: EisensteinInteger -> [EisensteinInteger]
 associates e = map (e *) ids
 
-instance ED.GcdDomain EisensteinInteger
+instance GcdDomain EisensteinInteger
 
-instance ED.Euclidean EisensteinInteger where
+instance Euclidean EisensteinInteger where
     degree = fromInteger . norm
     quotRem = divHelper
 
@@ -189,7 +190,7 @@ divideByThree = go 0
 findPrime :: Prime Integer -> U.Prime EisensteinInteger
 findPrime p = case sqrtsModPrime (9*k*k - 1) p of
     []    -> error "findPrime: argument must be prime p = 6k + 1"
-    z : _ -> Prime $ abs $ ED.gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
+    z : _ -> Prime $ abs $ gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
     where
         k :: Integer
         k = unPrime p `div` 6

@@ -20,10 +20,10 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Coerce
+import Data.Euclidean
 import Data.List (nub)
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes (Prime (..))
 import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E

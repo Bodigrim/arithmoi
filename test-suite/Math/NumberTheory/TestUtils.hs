@@ -53,11 +53,11 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, g
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/))
 
 import Data.Bits
+import Data.Euclidean
 import Data.Semiring (Semiring)
 import GHC.Exts
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
 import Math.NumberTheory.Quadratic.GaussianIntegers (GaussianInteger(..))
 import Math.NumberTheory.Primes (Prime, UniqueFactorisation)

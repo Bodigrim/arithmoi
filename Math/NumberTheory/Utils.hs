@@ -32,14 +32,12 @@ module Math.NumberTheory.Utils
 import Prelude hiding (mod, quotRem)
 import qualified Prelude as P
 
+import Data.Bits
+import Data.Euclidean
+import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
-
 import GHC.Integer.GMP.Internals
 import GHC.Natural
-
-import Data.Bits
-import Data.Semiring (Semiring(..), isZero)
-import Math.NumberTheory.Euclidean
 
 uncheckedShiftR :: Word -> Int -> Word
 uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)

@@ -188,12 +188,12 @@ benchmark criterion
     gauge,
     integer-logarithms,
     random,
+    semirings,
     vector
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.DiscreteLogarithmBench
     Math.NumberTheory.EisensteinIntegersBench
-    Math.NumberTheory.EuclideanBench
     Math.NumberTheory.GaussianIntegersBench
     Math.NumberTheory.InverseBench
     Math.NumberTheory.JacobiBench

@@ -5,7 +5,6 @@ import Gauge.Main
 import Math.NumberTheory.ArithmeticFunctionsBench as ArithmeticFunctions
 import Math.NumberTheory.DiscreteLogarithmBench as DiscreteLogarithm
 import Math.NumberTheory.EisensteinIntegersBench as Eisenstein
-import Math.NumberTheory.EuclideanBench as Euclidean
 import Math.NumberTheory.GaussianIntegersBench as Gaussian
 import Math.NumberTheory.InverseBench as Inverse
 import Math.NumberTheory.JacobiBench as Jacobi
@@ -24,7 +23,6 @@ main = defaultMain
   [ ArithmeticFunctions.benchSuite
   , DiscreteLogarithm.benchSuite
   , Eisenstein.benchSuite
-  , Euclidean.benchSuite
   , Gaussian.benchSuite
   , Inverse.benchSuite
   , Jacobi.benchSuite
