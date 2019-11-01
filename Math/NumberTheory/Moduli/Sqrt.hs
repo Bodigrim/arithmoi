@@ -12,8 +12,7 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( -- * New interface
-    sqrtsMod
+  ( sqrtsMod
   , sqrtsModFactorisation
   , sqrtsModPrimePower
   , sqrtsModPrime
@@ -22,6 +21,7 @@ module Math.NumberTheory.Moduli.Sqrt
 import Control.Monad (liftM2)
 import Data.Bits
 import Data.Constraint
+import Data.Maybe
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class hiding (powMod)
@@ -59,7 +59,10 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
     cs :: [[(Integer, Integer)]]
     cs = zipWith (\l m -> map (\x -> (x, m)) l) rs ms
 
-    comb t1@(_, m1) t2@(_, m2) = (chineseRemainder2 t1 t2, m1 * m2)
+    comb t1@(_, m1) t2@(_, m2) = (if ch < 0 then ch + m else ch, m)
+      where
+        ch = fromJust $ chineseCoprime t1 t2
+        m = m1 * m2
 
 -- | List all square roots modulo the power of a prime.
 --

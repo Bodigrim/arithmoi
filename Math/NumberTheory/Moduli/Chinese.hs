@@ -180,6 +180,7 @@ chineseRemainder remainders = foldM addRem 0 remainders
         let cf = modulus `quot` m
         inv <- recipMod cf m
         Just $! (acc + inv*cf*r) `rem` modulus
+{-# DEPRECATED chineseRemainder "Use 'chineseCoprime' instead" #-}
 
 -- | @chineseRemainder2 (r_1,m_1) (r_2,m_2)@ calculates the solution of
 --
@@ -191,6 +192,7 @@ chineseRemainder2 :: (Integer, Integer) -> (Integer, Integer) -> Integer
 chineseRemainder2 (n1, m1) (n2, m2) = ((1 - u * m1) * n1 + (1 - v * m2) * n2) `Prelude.mod` (m1 * m2)
   where
     (_, u, v) = extendedGCD m1 m2
+{-# DEPRECATED chineseRemainder2 "Use 'chineseCoprime' instead" #-}
 
 -------------------------------------------------------------------------------
 -- Utils

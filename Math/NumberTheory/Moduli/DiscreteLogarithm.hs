@@ -19,13 +19,13 @@ module Math.NumberTheory.Moduli.DiscreteLogarithm
   ) where
 
 import qualified Data.IntMap.Strict as M
-import Data.Maybe                             (maybeToList)
+import Data.Maybe
 import Data.Proxy
 import Numeric.Natural                        (Natural)
 import GHC.Integer.GMP.Internals              (recipModInteger, powModInteger)
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Moduli.Chinese       (chineseRemainder2)
+import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class         (MultMod(..), Mod, getVal)
 import Math.NumberTheory.Moduli.Equations     (solveLinear)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..))
@@ -61,14 +61,15 @@ discreteLogarithm cg (multElement . unPrimitiveRoot -> a) (multElement -> b) = c
 {-# INLINE discreteLogarithmPP #-}
 discreteLogarithmPP :: Integer -> Word -> Integer -> Integer -> Natural
 discreteLogarithmPP p 1 a b = discreteLogarithmPrime p a b
-discreteLogarithmPP p k a b = fromInteger result
+discreteLogarithmPP p k a b = fromInteger $ if result < 0 then result + pkMinusPk1 else result
   where
     baseSol    = toInteger $ discreteLogarithmPrime p (a `rem` p) (b `rem` p)
     thetaA     = theta p pkMinusOne a
     thetaB     = theta p pkMinusOne b
     pkMinusOne = p^(k-1)
+    pkMinusPk1 = pkMinusOne * (p - 1)
     c          = (recipModInteger thetaA pkMinusOne * thetaB) `rem` pkMinusOne
-    result     = chineseRemainder2 (baseSol, p-1) (c, pkMinusOne)
+    result     = fromJust $ chineseCoprime (baseSol, p-1) (c, pkMinusOne)
 
 -- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
 {-# INLINE theta #-}

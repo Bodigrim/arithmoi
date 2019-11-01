@@ -16,6 +16,7 @@ module Math.NumberTheory.Moduli.Equations
   ) where
 
 import Data.Constraint
+import Data.Maybe
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Chinese
@@ -80,7 +81,7 @@ solveQuadratic sm a b c = case proofFromSFactors sm of
 
     combine :: [([Integer], Integer)] -> ([Integer], Integer)
     combine = foldl
-      (\(xs, xm) (ys, ym) -> ([ chineseRemainder2 (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
+      (\(xs, xm) (ys, ym) -> ([ fromJust $ chineseCoprime (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
       ([0], 1)
 
 solveQuadraticPrimePower
