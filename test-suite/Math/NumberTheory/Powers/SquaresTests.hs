@@ -18,8 +18,6 @@ module Math.NumberTheory.Powers.SquaresTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.Maybe
-
 import Math.NumberTheory.Roots
 import Math.NumberTheory.TestUtils
 

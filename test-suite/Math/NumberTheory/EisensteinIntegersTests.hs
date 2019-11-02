@@ -25,8 +25,7 @@ import Test.Tasty.HUnit                               (Assertion, assertEqual,
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.Primes
-import Math.NumberTheory.TestUtils                    (Positive (..),
-                                                       testSmallAndQuick)
+import Math.NumberTheory.TestUtils
 
 -- | Check that @signum@ and @abs@ satisfy @z == signum z * abs z@, where @z@ is
 -- an @EisensteinInteger@.
@@ -182,6 +181,6 @@ testSuite = testGroup "EisensteinIntegers" $
                           factoriseProperty3
       , testCase          "factorise 15:+12" factoriseSpecialCase1
       ]
-  , testGroup "GcdDomain laws" $ map (uncurry QC.testProperty) $ lawsProperties $ gcdDomainLaws (Proxy :: Proxy E.EisensteinInteger)
-  , testGroup "Euclidean laws" $ map (uncurry QC.testProperty) $ lawsProperties $ euclideanLaws (Proxy :: Proxy E.EisensteinInteger)
+  , lawsToTest $ gcdDomainLaws (Proxy :: Proxy E.EisensteinInteger)
+  , lawsToTest $ euclideanLaws (Proxy :: Proxy E.EisensteinInteger)
   ]
