@@ -80,7 +80,7 @@ powModWord (W# x) (W# y) (W# m) = W# (GMP.powModWord x y m)
 
 -- | Specialised version of 'powMod', able to handle large moduli correctly.
 --
--- >> powModInt 3 101 (2^60-1)
+-- >>> powModInt 3 101 (2^60-1)
 -- 1018105167100379328
 powModInt :: Int -> Int -> Int -> Int
 powModInt x y m
