@@ -25,7 +25,7 @@ import GHC.TypeNats.Compat
 import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Utils
-import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Roots.Squares
 
 -- | @isPrime n@ tests whether @n@ is a prime (negative or positive).
 --   It is a combination of trial division and Baillie-PSW test.

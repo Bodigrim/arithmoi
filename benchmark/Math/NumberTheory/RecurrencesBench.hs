@@ -6,7 +6,7 @@ module Math.NumberTheory.RecurrencesBench
 
 import Gauge.Main
 
-import Math.NumberTheory.Euclidean (GcdDomain)
+import Data.Euclidean (GcdDomain)
 import Math.NumberTheory.Recurrences (binomial, eulerian1, eulerian2,
                                       stirling1, stirling2, partition)
 

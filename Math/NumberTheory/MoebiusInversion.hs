@@ -21,7 +21,7 @@ import Data.Proxy
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as MG
 
-import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Roots.Squares
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | @totientSum n@ is, for @n > 0@, the sum of @[totient k | k <- [1 .. n]]@,

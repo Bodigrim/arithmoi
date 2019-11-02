@@ -26,7 +26,7 @@ import Test.Tasty.HUnit
 
 import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt
-import Math.NumberTheory.Powers (integerSquareRoot)
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes (Prime, unPrime, UniqueFactorisation(..))
 import Math.NumberTheory.TestUtils
 

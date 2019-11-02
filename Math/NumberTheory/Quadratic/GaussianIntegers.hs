@@ -32,7 +32,7 @@ import qualified Data.Semiring as S
 import GHC.Generics
 
 import Math.NumberTheory.Moduli.Sqrt
-import Math.NumberTheory.Powers (integerSquareRoot)
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes.Types
 import qualified Math.NumberTheory.Primes as U
 import Math.NumberTheory.Utils              (mergeBy)

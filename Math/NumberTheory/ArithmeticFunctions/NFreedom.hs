@@ -23,7 +23,7 @@ import Data.List                             (scanl')
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
-import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
+import Math.NumberTheory.Roots.Squares      (integerSquareRoot)
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 

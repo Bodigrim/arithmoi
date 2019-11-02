@@ -3,6 +3,7 @@
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
+-- Description: Deprecated
 --
 -- Calculating integer roots, modular powers and related things.
 -- This module reexports the most needed functions from the implementation
@@ -10,7 +11,11 @@
 -- in particular some unsafe functions which omit some tests for performance
 -- reasons.
 --
+
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
+
 module Math.NumberTheory.Powers
+  {-# DEPRECATED "Use Math.NumberTheory.Roots or Math.NumberTheory.Powers.Modular" #-}
   ( -- *  Integer Roots
     -- ** Square roots
     integerSquareRoot

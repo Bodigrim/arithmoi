@@ -26,8 +26,8 @@ import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Powers.Squares
-import Math.NumberTheory.Powers.Cubes
+import Math.NumberTheory.Roots.Squares
+import Math.NumberTheory.Roots.Cubes
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Unsafe
 

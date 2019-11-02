@@ -42,7 +42,7 @@ import Data.Bits
 import Data.Word
 #endif
 
-import Math.NumberTheory.Powers.Squares (integerSquareRoot)
+import Math.NumberTheory.Roots.Squares (integerSquareRoot)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral

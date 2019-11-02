@@ -58,8 +58,8 @@ import GHC.TypeNats.Compat
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Moduli.Class
-import Math.NumberTheory.Powers.General     (highestPower, largePFPower)
-import Math.NumberTheory.Powers.Squares     (integerSquareRoot')
+import Math.NumberTheory.Roots.General     (highestPower, largePFPower)
+import Math.NumberTheory.Roots.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small

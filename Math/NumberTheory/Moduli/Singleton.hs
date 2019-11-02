@@ -60,7 +60,7 @@ import GHC.TypeNats.Compat
 import Numeric.Natural
 import Unsafe.Coerce
 
-import Math.NumberTheory.Powers
+import Math.NumberTheory.Roots.General (highestPower)
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 

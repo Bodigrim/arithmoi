@@ -9,7 +9,6 @@ import Math.NumberTheory.GaussianIntegersBench as Gaussian
 import Math.NumberTheory.InverseBench as Inverse
 import Math.NumberTheory.JacobiBench as Jacobi
 import Math.NumberTheory.MertensBench as Mertens
-import Math.NumberTheory.PowersBench as Powers
 import Math.NumberTheory.PrimesBench as Primes
 import Math.NumberTheory.PrimitiveRootsBench as PrimitiveRoots
 import Math.NumberTheory.RecurrencesBench as Recurrences
@@ -27,7 +26,6 @@ main = defaultMain
   , Inverse.benchSuite
   , Jacobi.benchSuite
   , Mertens.benchSuite
-  , Powers.benchSuite
   , Primes.benchSuite
   , PrimitiveRoots.benchSuite
   , Recurrences.benchSuite

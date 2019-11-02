@@ -30,7 +30,7 @@ import Math.NumberTheory.Moduli.Class         (MultMod(..), Mod, getVal)
 import Math.NumberTheory.Moduli.Equations     (solveLinear)
 import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot(..))
 import Math.NumberTheory.Moduli.Singleton
-import Math.NumberTheory.Powers.Squares       (integerSquareRoot)
+import Math.NumberTheory.Roots.Squares       (integerSquareRoot)
 import Math.NumberTheory.Primes  (unPrime)
 
 -- | Computes the discrete logarithm. Currently uses a combination of the baby-step

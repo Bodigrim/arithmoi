@@ -14,7 +14,7 @@ import Data.Bits
 import GHC.Integer.GMP.Internals
 
 import Math.NumberTheory.Moduli.Class
-import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Roots.Squares
 import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
