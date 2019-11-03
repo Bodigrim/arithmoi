@@ -22,7 +22,7 @@ import GHC.Base
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo, Mod, getVal, (^%))
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Roots.Squares

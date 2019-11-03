@@ -14,11 +14,11 @@ module Math.NumberTheory.Moduli.EquationsTests
 import Test.Tasty
 
 import Data.List
+import Data.Mod
 import Data.Proxy
 import GHC.TypeNats.Compat
 import Numeric.Natural
 
-import Math.NumberTheory.Moduli.Class
 import Math.NumberTheory.Moduli.Equations
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.TestUtils

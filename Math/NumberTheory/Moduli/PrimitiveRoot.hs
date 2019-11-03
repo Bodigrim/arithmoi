@@ -27,14 +27,14 @@ module Math.NumberTheory.Moduli.PrimitiveRoot
   , isPrimitiveRoot
   ) where
 
+import Control.Monad (guard)
+import Data.Constraint
+
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.Moduli.Class hiding (powMod)
+import Math.NumberTheory.Moduli.Class (MultMod(..), isMultElement, Mod, getNatVal)
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Primes
-
-import Control.Monad (guard)
-import Data.Constraint
 
 -- | 'PrimitiveRoot' m is a type which is only inhabited
 -- by <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive roots> of m.

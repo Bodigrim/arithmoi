@@ -29,7 +29,7 @@ import GHC.TypeNats.Compat
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Class (getVal, multElement)
 import Math.NumberTheory.Moduli.PrimitiveRoot
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes

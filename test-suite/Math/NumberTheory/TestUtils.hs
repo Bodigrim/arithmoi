@@ -42,20 +42,23 @@ module Math.NumberTheory.TestUtils
 
   -- * Export for @Zeta@ tests
   , assertEqualUpToEps
+
+  , lawsToTest
   ) where
 
-import Test.SmallCheck.Series (cons2)
+import Test.QuickCheck.Classes
+import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/), cons2)
 import Test.Tasty
 import Test.Tasty.HUnit       (Assertion, assertBool)
 import Test.Tasty.SmallCheck as SC
 import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
 
-import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/))
-
 import Data.Bits
 import Data.Euclidean
+import Data.Mod
 import Data.Semiring (Semiring)
 import GHC.Exts
+import GHC.TypeNats.Compat
 import Numeric.Natural
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
@@ -93,6 +96,12 @@ instance (Ord a, Num a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a
 
 instance (Ord a, Num a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
   series = SN.fromList <$> series
+
+-------------------------------------------------------------------------------
+-- Mod
+
+instance KnownNat m => Arbitrary (Mod m) where
+  arbitrary = oneof [arbitraryBoundedEnum, fromInteger <$> arbitrary]
 
 -------------------------------------------------------------------------------
 
@@ -269,3 +278,7 @@ testEqualSmallAndQuick name f = testGroup name
 assertEqualUpToEps :: String -> Double -> Double -> Double -> Assertion
 assertEqualUpToEps msg eps expected actual
   = assertBool msg (abs (expected - actual) < eps)
+
+lawsToTest :: Laws -> TestTree
+lawsToTest (Laws name props) =
+  testGroup name $ map (uncurry QC.testProperty) props

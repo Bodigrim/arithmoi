@@ -187,6 +187,6 @@ testSuite = testGroup "GaussianIntegers" $
     , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
     , testCase          "(0 :+ 3) (2 :+ 2)"     gcdGSpecialCase2
     ]
-  , testGroup "GcdDomain laws" $ map (uncurry QC.testProperty) $ lawsProperties $ gcdDomainLaws (Proxy :: Proxy GaussianInteger)
-  , testGroup "Euclidean laws" $ map (uncurry QC.testProperty) $ lawsProperties $ euclideanLaws (Proxy :: Proxy GaussianInteger)
+  , lawsToTest $ gcdDomainLaws (Proxy :: Proxy GaussianInteger)
+  , lawsToTest $ euclideanLaws (Proxy :: Proxy GaussianInteger)
   ]

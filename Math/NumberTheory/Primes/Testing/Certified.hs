@@ -13,7 +13,7 @@ import Data.List
 import Data.Bits
 import GHC.Integer.GMP.Internals
 
-import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.Roots.Squares
 import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
