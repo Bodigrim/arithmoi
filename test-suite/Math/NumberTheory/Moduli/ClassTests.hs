@@ -21,9 +21,7 @@ import Test.Tasty
 import qualified Test.Tasty.QuickCheck as QC
 
 import Data.Maybe
-import Data.Proxy
 import Numeric.Natural
-import Test.QuickCheck.Classes
 
 import Math.NumberTheory.Moduli hiding (invertMod)
 import Math.NumberTheory.TestUtils
@@ -193,40 +191,4 @@ testSuite = testGroup "Class"
     , testSmallAndQuick "mul" infModMulProperty
     ]
   , testSmallAndQuick "getVal/getMod" getValModProperty
-
-  , testGroup "Mod 1" $ map lawsToTest $ let p = Proxy :: Proxy (Mod 1) in
-    [ eqLaws          p
-    , ordLaws         p
-    , numLaws         p
-    , semiringLaws    p
-    , ringLaws        p
-    , showLaws        p
-    ]
-  , testGroup "Mod 2310" $ map lawsToTest $ let p = Proxy :: Proxy (Mod 2310) in
-    [ eqLaws          p
-    , ordLaws         p
-    , boundedEnumLaws p
-    , numLaws         p
-    , semiringLaws    p
-    , ringLaws        p
-    , showLaws        p
-    ]
-  , testGroup "Mod 123456789012345678901234567890" $ map lawsToTest $ let p = Proxy :: Proxy (Mod 123456789012345678901234567890) in
-    [ eqLaws          p
-    , ordLaws         p
-    , boundedEnumLaws p
-    , numLaws         p
-    , semiringLaws    p
-    , ringLaws        p
-    , showLaws        p
-    ]
-  , testGroup "Mod 18446744073709551626" $ map lawsToTest $ let p = Proxy :: Proxy (Mod 18446744073709551626) in
-    [ eqLaws          p
-    , ordLaws         p
-    , boundedEnumLaws p
-    , numLaws         p
-    , semiringLaws    p
-    , ringLaws        p
-    , showLaws        p
-    ]
   ]

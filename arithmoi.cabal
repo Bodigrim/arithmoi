@@ -44,12 +44,12 @@ library
     ghc-prim <0.6,
     integer-gmp <1.1,
     integer-logarithms >=1.0,
+    mod,
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
     semirings >= 0.5.2,
     vector >= 0.12
   exposed-modules:
-    Data.Mod
     GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Inverse
@@ -130,6 +130,7 @@ test-suite spec
     containers,
     exact-pi >=0.4.1.1,
     integer-gmp <1.1,
+    mod,
     QuickCheck >=2.10,
     quickcheck-classes >=0.6.3,
     semirings >= 0.2,

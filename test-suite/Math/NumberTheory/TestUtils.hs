@@ -55,10 +55,8 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, g
 
 import Data.Bits
 import Data.Euclidean
-import Data.Mod
 import Data.Semiring (Semiring)
 import GHC.Exts
-import GHC.TypeNats.Compat
 import Numeric.Natural
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
@@ -96,12 +94,6 @@ instance (Ord a, Num a, Euclidean a, Arbitrary a) => Arbitrary (SN.SmoothBasis a
 
 instance (Ord a, Num a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) where
   series = SN.fromList <$> series
-
--------------------------------------------------------------------------------
--- Mod
-
-instance KnownNat m => Arbitrary (Mod m) where
-  arbitrary = oneof [arbitraryBoundedEnum, fromInteger <$> arbitrary]
 
 -------------------------------------------------------------------------------
 
