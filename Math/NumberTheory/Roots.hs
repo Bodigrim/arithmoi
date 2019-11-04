@@ -9,6 +9,7 @@
 module Math.NumberTheory.Roots
   ( -- * Square roots
     integerSquareRoot
+  , integerSquareRootRem
   , isSquare
   , exactSquareRoot
   -- * Cube roots
