@@ -74,7 +74,7 @@ pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 -- [1,1,2,3,5,7,11,15,22,30]
 --
 -- >>> :set -XDataKinds
--- >>> import Math.NumberTheory.Moduli.Class
+-- >>> import Data.Mod
 -- >>> partition !! 1000 :: Mod 1000
 -- (991 `modulo` 1000)
 partition :: Num a => [a]

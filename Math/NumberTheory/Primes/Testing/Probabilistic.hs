@@ -5,7 +5,12 @@
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 --
 -- Probabilistic primality tests, Miller-Rabin and Baillie-PSW.
-{-# LANGUAGE CPP, MagicHash, BangPatterns #-}
+
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE MagicHash           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Math.NumberTheory.Primes.Testing.Probabilistic
   ( isPrime
   , millerRabinV
@@ -18,11 +23,12 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
 #include "MachDeps.h"
 
 import Data.Bits
+import Data.Mod
+import Data.Proxy
 import GHC.Base
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo, Mod, getVal, (^%))
 import Math.NumberTheory.Moduli.Jacobi
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Roots.Squares
@@ -82,15 +88,14 @@ isStrongFermatPP n b
   | n < 0          = error "isStrongFermatPP: negative argument"
   | n <= 1         = False
   | n == 2         = True
-  | otherwise      = case b `modulo` fromInteger n of
-                       SomeMod b' -> isStrongFermatPPMod b'
-                       InfMod{}   -> True
+  | otherwise      = case someNatVal (fromInteger n) of
+                     SomeNat (_ :: Proxy t) -> isStrongFermatPPMod (fromInteger b :: Mod t)
 
 isStrongFermatPPMod :: KnownNat n => Mod n -> Bool
 isStrongFermatPPMod b = b == 0 || a == 1 || go t a
   where
     m = -1
-    (t, u) = shiftToOddCount $ getVal m
+    (t, u) = shiftToOddCount $ unMod m
     a = b ^% u
 
     go 0 _ = False
@@ -113,9 +118,8 @@ isStrongFermatPPMod b = b == 0 || a == 1 || go t a
 --   of prime bases is reasonable to find out whether it's worth the
 --   effort to undertake the prime factorisation).
 isFermatPP :: Integer -> Integer -> Bool
-isFermatPP n b = case b `modulo` fromInteger n of
-  SomeMod b' -> b' ^% (n-1) == 1
-  InfMod{}   -> True
+isFermatPP n b = case someNatVal (fromInteger n) of
+  SomeNat (_ :: Proxy t) -> (fromInteger b :: Mod t) ^% (n-1) == 1
 
 -- | Primality test after Baillie, Pomerance, Selfridge and Wagstaff.
 --   The Baillie-PSW test consists of a strong Fermat probable primality

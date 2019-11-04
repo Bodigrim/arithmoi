@@ -47,6 +47,8 @@ import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
 import Data.Maybe
+import Data.Mod
+import Data.Proxy
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
@@ -57,7 +59,6 @@ import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
-import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo, Mod, getVal)
 import Math.NumberTheory.Roots.General     (highestPower, largePFPower)
 import Math.NumberTheory.Roots.Squares     (integerSquareRoot')
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
@@ -186,9 +187,8 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         workFact m _ _ 0 = return $ singleCompositeFactor m 1
         workFact m b1 b2 count = do
           s <- rndR m
-          case s `modulo` fromInteger m of
-            InfMod{} -> error "impossible case"
-            SomeMod sm -> case montgomeryFactorisation b1 b2 sm of
+          case someNatVal (fromInteger m) of
+            SomeNat (_ :: Proxy t) -> case montgomeryFactorisation b1 b2 (fromInteger s :: Mod t) of
               Nothing -> workFact m b1 b2 (count - 1)
               Just d  -> do
                 let cs = unCoprimes $ splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
@@ -241,7 +241,7 @@ modifyPowers f (Factors pfs cfs)
 --
 --   The result is maybe a nontrivial divisor of @n@.
 montgomeryFactorisation :: KnownNat n => Word -> Word -> Mod n -> Maybe Integer
-montgomeryFactorisation b1 b2 s = case newPoint (getVal s) n of
+montgomeryFactorisation b1 b2 s = case newPoint (toInteger (unMod s)) n of
   Nothing             -> Nothing
   Just (SomePoint p0) -> do
     -- Small step: for each prime p <= b1

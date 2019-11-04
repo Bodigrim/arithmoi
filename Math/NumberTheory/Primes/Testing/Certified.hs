@@ -5,15 +5,20 @@
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 --
 -- Deterministic primality testing.
+
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Math.NumberTheory.Primes.Testing.Certified
   ( isCertifiedPrime
   ) where
 
 import Data.List
 import Data.Bits
+import Data.Mod
+import Data.Proxy
 import GHC.Integer.GMP.Internals
+import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.Roots.Squares
 import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
@@ -230,9 +235,8 @@ findLoop :: Integer -> Word -> Word -> Word -> Integer -> Either Integer Integer
 findLoop _ _  _  0  s = Left s
 findLoop n lo hi ct s
     | n <= s+2  = Left 6
-    | otherwise = case s `modulo` fromInteger n of
-                    InfMod{}   -> error "impossible case"
-                    SomeMod sn -> case montgomeryFactorisation lo hi sn of
+    | otherwise = case someNatVal (fromInteger n) of
+                    SomeNat (_ :: Proxy t) -> case montgomeryFactorisation lo hi (fromInteger s :: Mod t) of
                       Nothing -> findLoop n lo hi (ct-1) (s+1)
                       Just fct
                         | bailliePSW fct -> Right fct
