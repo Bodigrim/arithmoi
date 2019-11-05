@@ -106,7 +106,6 @@ library
     Math.NumberTheory.Roots.Cubes
     Math.NumberTheory.Roots.Fourth
     Math.NumberTheory.Roots.General
-    Math.NumberTheory.Roots.Modular
     Math.NumberTheory.Roots.Squares
     Math.NumberTheory.Roots.Squares.Internal
     Math.NumberTheory.Unsafe
