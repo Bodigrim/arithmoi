@@ -7,7 +7,7 @@ module Math.NumberTheory.JacobiBench
 import Gauge.Main
 import Numeric.Natural
 
-import Math.NumberTheory.Moduli.Jacobi
+import Math.NumberTheory.Moduli.Sqrt
 
 doBench :: Integral a => (a -> a -> JacobiSymbol) -> a -> a
 doBench func lim = sum [ x + y | y <- [3, 5 .. lim], x <- [0..y], func x y == One ]

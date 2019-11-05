@@ -92,6 +92,7 @@ library
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.Class
     Math.NumberTheory.ArithmeticFunctions.Standard
+    Math.NumberTheory.Moduli.JacobiSymbol
     Math.NumberTheory.Primes.Counting.Approximate
     Math.NumberTheory.Primes.Counting.Impl
     Math.NumberTheory.Primes.Factorisation.Montgomery

@@ -29,7 +29,7 @@ import GHC.Base
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Moduli.Jacobi
+import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Roots.Squares
 

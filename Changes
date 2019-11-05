@@ -10,6 +10,9 @@
         Deprecate 'Math.NumberTheory.Powers' except 'Math.NumberTheory.Powers.Modular'.
         Use 'Math.NumberTheory.Roots' instead.
 
+        Deprecate 'Math.NumberTheory.Moduli.Jacobi', use 'Math.NumberTheory.Moduli.Sqrt'
+        instead.
+
 0.10.0.0
     This release supports GHC 8.0, 8.2, 8.4, 8.6 and 8.8.
 

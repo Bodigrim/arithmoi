@@ -23,7 +23,7 @@ import Data.Bits
 import Data.Semigroup
 #endif
 
-import Math.NumberTheory.Moduli hiding (invertMod)
+import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.TestUtils
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 2

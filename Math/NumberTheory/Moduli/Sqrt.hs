@@ -4,7 +4,8 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Modular square roots.
+-- Modular square roots and
+-- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.
 --
 
 {-# LANGUAGE BangPatterns #-}
@@ -12,10 +13,14 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( sqrtsMod
+  ( -- * Modular square roots
+    sqrtsMod
   , sqrtsModFactorisation
   , sqrtsModPrimePower
   , sqrtsModPrime
+    -- * Jacobi symbol
+  , JacobiSymbol(..)
+  , jacobi
   ) where
 
 import Control.Monad (liftM2)
@@ -25,7 +30,7 @@ import Data.Maybe
 import Data.Mod
 
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Jacobi
+import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Powers.Modular (powMod)
 import Math.NumberTheory.Primes
