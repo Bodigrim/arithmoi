@@ -66,6 +66,7 @@ library
     Math.NumberTheory.Moduli.DiscreteLogarithm
     Math.NumberTheory.Moduli.Equations
     Math.NumberTheory.Moduli.Jacobi
+    Math.NumberTheory.Moduli.Multiplicative
     Math.NumberTheory.Moduli.PrimitiveRoot
     Math.NumberTheory.Moduli.Singleton
     Math.NumberTheory.Moduli.Sqrt
@@ -93,6 +94,7 @@ library
     Math.NumberTheory.ArithmeticFunctions.Class
     Math.NumberTheory.ArithmeticFunctions.Standard
     Math.NumberTheory.Moduli.JacobiSymbol
+    Math.NumberTheory.Moduli.SomeMod
     Math.NumberTheory.Primes.Counting.Approximate
     Math.NumberTheory.Primes.Counting.Impl
     Math.NumberTheory.Primes.Factorisation.Montgomery

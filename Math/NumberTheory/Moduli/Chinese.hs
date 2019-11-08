@@ -37,11 +37,12 @@ import qualified Prelude
 import Control.Monad (foldM)
 import Data.Euclidean
 import Data.Foldable
+import Data.Mod
 import Data.Ratio
 import Data.Semiring (Semiring(..), (^), Ring, minus)
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo, Mod, getVal, invertMod)
+import Math.NumberTheory.Moduli.SomeMod
 import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Utils (recipMod, splitOff)
 
@@ -119,7 +120,7 @@ chineseWrap
   -> SomeMod
   -> Maybe SomeMod
 chineseWrap f g (SomeMod n1) (SomeMod n2)
-  = fmap (`modulo` fromInteger (f m1 m2)) (g (getVal n1, m1) (getVal n2, m2))
+  = fmap (`modulo` fromInteger (f m1 m2)) (g (toInteger $ unMod n1, m1) (toInteger $ unMod n2, m2))
   where
     m1 = toInteger $ natVal n1
     m2 = toInteger $ natVal n2
