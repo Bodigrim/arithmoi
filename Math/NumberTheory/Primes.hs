@@ -248,6 +248,10 @@ instance Enum (Prime Int) where
   enumFromThen = enumFromThenGeneric
   enumFromThenTo = enumFromThenToGeneric
 
+instance Bounded (Prime Int) where
+  minBound = Prime 2
+  maxBound = precPrime maxBound
+
 instance Enum (Prime Word) where
   toEnum n = if p > wordToInteger maxBound
     then error $ "Enum.toEnum{Prime}: " ++ show n ++ "th prime = " ++ show p ++ " is out of bounds of Word"
@@ -261,3 +265,7 @@ instance Enum (Prime Word) where
   enumFromTo = enumFromToGeneric
   enumFromThen = enumFromThenGeneric
   enumFromThenTo = enumFromThenToGeneric
+
+instance Bounded (Prime Word) where
+  minBound = Prime 2
+  maxBound = precPrime maxBound
