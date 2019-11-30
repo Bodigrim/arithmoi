@@ -14,9 +14,7 @@ import Data.Proxy
 import GHC.TypeNats.Compat
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.Moduli.Class (isMultElement)
-import Math.NumberTheory.Moduli.DiscreteLogarithm
-import Math.NumberTheory.Moduli.PrimitiveRoot
+import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.TestUtils
 

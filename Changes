@@ -13,6 +13,9 @@
         Deprecate 'Math.NumberTheory.Moduli.Jacobi', use 'Math.NumberTheory.Moduli.Sqrt'
         instead.
 
+        Deprecate 'Math.NumberTheory.Moduli.{DiscreteLogarithm,PrimitiveRoot}',
+        use 'Math.NumberTheory.Moduli.Multiplicative' instead.
+
 0.10.0.0
     This release supports GHC 8.0, 8.2, 8.4, 8.6 and 8.8.
 

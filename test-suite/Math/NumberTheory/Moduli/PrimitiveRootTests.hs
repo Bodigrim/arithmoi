@@ -23,14 +23,14 @@ import Test.Tasty.HUnit
 import Data.Euclidean
 import Data.List (genericTake, genericLength)
 import Data.Maybe (isJust, isNothing, mapMaybe)
+import Data.Mod
 import Data.Proxy
 import qualified Data.Set as S
 import GHC.TypeNats.Compat
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
-import Math.NumberTheory.Moduli.Class (getVal, multElement)
-import Math.NumberTheory.Moduli.PrimitiveRoot
+import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
@@ -72,7 +72,7 @@ isPrimitiveRoot'Property1 (AnySign n) (Positive m) = case someNatVal m of
     Nothing -> True
     Just cg -> case isPrimitiveRoot cg (fromIntegral n) of
       Nothing -> True
-      Just rt -> gcd (toInteger m) (getVal (multElement (unPrimitiveRoot rt))) == 1
+      Just rt -> gcd m (unMod (multElement (unPrimitiveRoot rt))) == 1
 
 isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
 isPrimitiveRootProperty1 (AnySign n) (Positive m) = case someNatVal m of

@@ -25,7 +25,6 @@ import Data.Maybe (fromJust)
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli hiding (invertMod)
-import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes (unPrime, isPrime, Prime)
 import Math.NumberTheory.TestUtils
 
