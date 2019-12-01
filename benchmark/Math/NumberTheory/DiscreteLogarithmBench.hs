@@ -19,8 +19,7 @@ import Data.Proxy
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli.Class (isMultElement, MultMod, multElement, getVal,Mod)
-import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithm)
-import Math.NumberTheory.Moduli.PrimitiveRoot
+import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 
 data Case = forall m. KnownNat m => Case (PrimitiveRoot m) (MultMod m) String

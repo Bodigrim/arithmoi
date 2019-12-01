@@ -10,7 +10,7 @@ import Gauge.Main
 import Data.Constraint
 import Data.Maybe
 
-import Math.NumberTheory.Moduli.PrimitiveRoot
+import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 
