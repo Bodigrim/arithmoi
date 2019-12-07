@@ -136,7 +136,7 @@ traverseLatticePoints1 !sp vec (!x0, !y0) =
     -- Step 6
     doActions (!k, !y)
       | k < spLength sp
-      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30 (spDelta sp))
+      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30Int (spDelta sp))
         >> doActions (forwardY (k, y))
       | otherwise
       = pure ()
@@ -182,7 +182,7 @@ traverseLatticePoints2 sp vec (x0, y0) =
     -- Step 6
     doActions (!k, !y)
       | k < spLength sp
-      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30 (spDelta sp))
+      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30Int (spDelta sp))
         >> doActions (forwardY (k, y))
       | otherwise
       = pure ()
@@ -212,7 +212,7 @@ traverseLatticePoints3 sp vec (x0, y0) =
     -- Step 6
     doActions (!k, !x, !y)
       | k >= 0 && y < x
-      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30 (spDelta sp))
+      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30Int (spDelta sp))
         >> (let (k', y') = forwardY (k, y) in doActions (k', x, y'))
       | otherwise
       = pure ()
