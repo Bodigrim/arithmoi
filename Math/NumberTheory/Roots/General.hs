@@ -223,7 +223,9 @@ approxKthRoot k = fromInteger . appKthRoot k . fromIntegral
 -- here, k > 4 and n > 31
 appKthRoot :: Int -> Integer -> Integer
 appKthRoot (I# k#) (S# n#) = S# (double2Int# (int2Double# n# **## (1.0## /## int2Double# k#)))
-appKthRoot k@(I# k#) n =
+appKthRoot k@(I# k#) n
+  | k >= 1024 = 1 `shiftLInteger` (integerLog2# n `quotInt#` k# +# 1#)
+  | otherwise =
     case integerLog2# n of
       l# -> case l# `quotInt#` k# of
               0# -> 1
@@ -231,11 +233,11 @@ appKthRoot k@(I# k#) n =
               2# -> 5
               3# -> 11
               h# | isTrue# (h# <# 500#) ->
-                   floor (scaleFloat (I# (h# -# 1#))
-                          (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
+                   floor (scaleFloat (I# h#)
+                          (fromInteger (n `shiftRInteger` (h# *# k#)) ** (1/fromIntegral k) :: Double))
                  | otherwise ->
-                   floor (scaleFloat 400 (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
-                          `shiftLInteger` (h# -# 401#)
+                   floor (scaleFloat 400 (fromInteger (n `shiftRInteger` (h# *# k#)) ** (1/fromIntegral k) :: Double))
+                          `shiftLInteger` (h# -# 400#)
 
 -- assumption: argument is > 1
 integerHighPower :: Integer -> (Integer, Word)
