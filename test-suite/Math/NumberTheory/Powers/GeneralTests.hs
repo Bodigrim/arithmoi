@@ -17,6 +17,8 @@ module Math.NumberTheory.Powers.GeneralTests
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC
+import Numeric.Natural
 
 import Math.NumberTheory.Roots
 import Math.NumberTheory.TestUtils
@@ -26,6 +28,13 @@ integerRootProperty :: (Integral a, Integral b) => AnySign a -> Power b -> Bool
 integerRootProperty (AnySign n) (Power pow) = (even pow && n < 0)
   || (toInteger root ^ pow <= toInteger n && toInteger n < toInteger (root + 1) ^ pow)
     where
+      root = integerRoot pow n
+
+integerRootHugeProperty :: Huge Natural -> Large Word -> Bool
+integerRootHugeProperty (Huge n) (Large pow') = pow == 0 ||
+  toInteger root ^ pow <= toInteger n && toInteger n < toInteger (root + 1) ^ pow
+    where
+      pow = pow' `mod` 2000
       root = integerRoot pow n
 
 -- | Check that the number 'isKthPower' iff its 'integerRoot' is exact.
@@ -109,6 +118,7 @@ highestPowerSpecialCases =
 testSuite :: TestTree
 testSuite = testGroup "General"
   [ testIntegral2Property "integerRoot"    integerRootProperty
+  , QC.testProperty "big integerRoot"    integerRootHugeProperty
   , testIntegral2Property "isKthPower"     isKthPowerProperty
   , testIntegral2Property "exactRoot"      exactRootProperty
   , testIntegralProperty  "isPerfectPower" isPerfectPowerProperty
