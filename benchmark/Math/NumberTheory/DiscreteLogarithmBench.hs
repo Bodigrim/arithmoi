@@ -14,20 +14,20 @@ module Math.NumberTheory.DiscreteLogarithmBench
 import Gauge.Main
 import Control.Monad
 import Data.Maybe
+import Data.Mod
 import GHC.TypeNats.Compat
 import Data.Proxy
 import Numeric.Natural
 
-import Math.NumberTheory.Moduli.Class (isMultElement, MultMod, multElement, getVal,Mod)
 import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 
 data Case = forall m. KnownNat m => Case (PrimitiveRoot m) (MultMod m) String
 
 instance Show Case where
-  show (Case a b s) = concat [show (getVal a'), "ⁿ == ", show b', " mod ", s]
+  show (Case a b s) = concat [show (unMod a'), "ⁿ == ", show b', " mod ", s]
     where a' = multElement $ unPrimitiveRoot a
-          b' = getVal $ multElement b
+          b' = unMod $ multElement b
 
 makeCase :: (Integer, Integer, Natural, String) -> Maybe Case
 makeCase (a,b,n,s) =

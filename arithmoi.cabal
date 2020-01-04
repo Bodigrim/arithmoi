@@ -200,6 +200,7 @@ benchmark criterion
     deepseq,
     gauge,
     integer-logarithms,
+    mod,
     random,
     semirings,
     vector
