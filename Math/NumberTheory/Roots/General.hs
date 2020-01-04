@@ -209,7 +209,7 @@ newtonK k n a = go (step a)
 appKthRoot :: Int -> Integer -> Integer
 appKthRoot (I# k#) (S# n#) = S# (double2Int# (int2Double# n# **## (1.0## /## int2Double# k#)))
 appKthRoot k@(I# k#) n
-  | k >= 1024 = 1 `shiftLInteger` (integerLog2# n `quotInt#` k# +# 1#)
+  | k >= 256 = 1 `shiftLInteger` (integerLog2# n `quotInt#` k# +# 1#)
   | otherwise =
     case integerLog2# n of
       l# -> case l# `quotInt#` k# of
