@@ -75,10 +75,9 @@ integerRoot k n
   | n == 0            = 0
   | n < 31            = 1
   | kTooLarge         = 1
-  | otherwise         = newtonK k' n a
+  | otherwise         = fromInteger $ newtonK (toInteger k) (toInteger n) a
     where
-      k' = fromIntegral k
-      a  = approxKthRoot (fromIntegral k) n
+      a  = appKthRoot (fromIntegral k) (toInteger n)
       kTooLarge = (toInteger k /= toInteger (fromIntegral k `asTypeOf` n))    -- k doesn't fit in n's type
                   || (toInteger k > toInteger (maxBound :: Int))  -- 2^k doesn't fit in Integer
                   || (I# (integerLog2# (toInteger n)) < fromIntegral k) -- n < 2^k
@@ -195,29 +194,15 @@ largePFPower bd n = rawPower ln n
 --                                  Auxiliary functions                                 --
 ------------------------------------------------------------------------------------------
 
-{-# SPECIALISE newtonK :: Int -> Int -> Int -> Int,
-                          Word -> Word -> Word -> Word,
-                          Integer -> Integer -> Integer -> Integer,
-                          Natural -> Natural -> Natural -> Natural
-  #-}
-newtonK :: Integral a => a -> a -> a -> a
+newtonK :: Integer -> Integer -> Integer -> Integer
 newtonK k n a = go (step a)
   where
-    -- Beware integer overflow in m^(k-1)
-    step m = ((k-1)*m + fromInteger (toInteger n `quot` (toInteger m^(k-1)))) `quot` k
+    step m = ((k - 1) * m + n `quot` m ^ (k - 1)) `quot` k
     go m
       | l < m     = go l
       | otherwise = m
         where
           l = step m
-
-{-# SPECIALISE approxKthRoot :: Int -> Int -> Int,
-                                Int -> Word -> Word,
-                                Int -> Integer -> Integer,
-                                Int -> Natural -> Natural
-  #-}
-approxKthRoot :: Integral a => Int -> a -> a
-approxKthRoot k = fromInteger . appKthRoot k . fromIntegral
 
 -- find an approximation to the k-th root
 -- here, k > 4 and n > 31
