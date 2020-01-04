@@ -231,8 +231,8 @@ appKthRoot k@(I# k#) n =
               2# -> 5
               3# -> 11
               h# | isTrue# (h# <# 500#) ->
-                   floor (scaleFloat (I# (h# -# 1#))
-                          (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
+                   floor (scaleFloat (I# h#)
+                          (fromInteger (n `shiftRInteger` (h# *# k#)) ** (1/fromIntegral k) :: Double))
                  | otherwise ->
                    floor (scaleFloat 400 (fromInteger (n `shiftRInteger` (h# *# k# -# k#)) ** (1/fromIntegral k) :: Double))
                           `shiftLInteger` (h# -# 401#)
