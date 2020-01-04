@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE TypeApplications      #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -7,10 +8,11 @@ module Math.NumberTheory.InverseBench
   ) where
 
 import Gauge.Main
+import Data.Bits (Bits)
+import Data.Euclidean
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions.Inverse
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Primes
 
 fact :: (Enum a, Num a) => a
@@ -22,7 +24,7 @@ tens = 10 ^ 18
 countInverseTotient :: (Ord a, Euclidean a, UniqueFactorisation a) => a -> Word
 countInverseTotient = inverseTotient (const 1)
 
-countInverseSigma :: (Integral a, Euclidean a, UniqueFactorisation a) => a -> Word
+countInverseSigma :: (Integral a, Euclidean a, UniqueFactorisation a, Enum (Prime a), Bits a) => a -> Word
 countInverseSigma = inverseSigma (const 1)
 
 benchSuite :: Benchmark

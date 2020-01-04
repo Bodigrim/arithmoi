@@ -11,8 +11,6 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 
-{-# OPTIONS_HADDOCK hide #-}
-
 module Math.NumberTheory.ArithmeticFunctions.Class
   ( ArithmeticFunction(..)
   , runFunction
@@ -24,7 +22,7 @@ import Control.Applicative
 import Data.Semigroup
 #endif
 
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 
 -- | A typical arithmetic function operates on the canonical factorisation of
 -- a number into prime's powers and consists of two rules. The first one
@@ -47,7 +45,7 @@ runFunction :: UniqueFactorisation n => ArithmeticFunction n a -> n -> a
 runFunction f = runFunctionOnFactors f . factorise
 
 -- | Convert to a function on prime factorisation.
-runFunctionOnFactors :: UniqueFactorisation n => ArithmeticFunction n a -> [(Prime n, Word)] -> a
+runFunctionOnFactors :: ArithmeticFunction n a -> [(Prime n, Word)] -> a
 runFunctionOnFactors (ArithmeticFunction f g)
   = g
   . mconcat

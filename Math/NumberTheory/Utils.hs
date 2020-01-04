@@ -7,7 +7,6 @@
 -- Some utilities, mostly for bit twiddling.
 --
 {-# LANGUAGE CPP, MagicHash, UnboxedTuples, BangPatterns #-}
-{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Utils
     ( shiftToOddCount
     , shiftToOdd
@@ -23,19 +22,22 @@ module Math.NumberTheory.Utils
     , mergeBy
 
     , recipMod
+
+    , toWheel30
+    , fromWheel30
     ) where
 
 #include "MachDeps.h"
 
 import Prelude hiding (mod, quotRem)
-
-import GHC.Base
-
-import GHC.Integer.GMP.Internals
-import GHC.Natural
+import qualified Prelude as P
 
 import Data.Bits
-import Math.NumberTheory.Euclidean
+import Data.Euclidean
+import Data.Semiring (Semiring(..), isZero)
+import GHC.Base
+import GHC.Integer.GMP.Internals
+import GHC.Natural
 
 uncheckedShiftR :: Word -> Int -> Word
 uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
@@ -156,12 +158,13 @@ bitCountWord = popCount
 bitCountInt :: Int -> Int
 bitCountInt = popCount
 
-splitOff :: Euclidean a => a -> a -> (Word, a)
-splitOff _ 0 = (0, 0) -- prevent infinite loop
-splitOff p n = go 0 n
+splitOff :: (Eq a, GcdDomain a) => a -> a -> (Word, a)
+splitOff p n
+  | isZero n  = (0, zero) -- prevent infinite loop
+  | otherwise = go 0 n
   where
-    go !k m = case m `quotRem` p of
-      (q, 0) -> go (k + 1) q
+    go !k m = case m `divide` p of
+      Just q -> go (k + 1) q
       _      -> (k, m)
 {-# INLINABLE splitOff #-}
 
@@ -190,7 +193,7 @@ mergeBy cmp = loop
 
 -- | Work around https://ghc.haskell.org/trac/ghc/ticket/14085
 recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger (x `mod` m) m of
+recipMod x m = case recipModInteger (x `P.mod` m) m of
   0 -> Nothing
   y -> Just y
 
@@ -198,3 +201,16 @@ bigNatToNatural :: BigNat -> Natural
 bigNatToNatural bn
   | isTrue# (sizeofBigNat# bn ==# 1#) = NatS# (bigNatToWord bn)
   | otherwise = NatJ# bn
+
+-------------------------------------------------------------------------------
+-- Helpers for mapping to rough numbers and back.
+-- Copypasted from Data.BitStream.WheelMapping
+
+toWheel30 :: (Integral a, Bits a) => a -> a
+toWheel30 i = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
+  where
+    (q, r) = i `P.quotRem` 30
+
+fromWheel30 :: (Num a, Bits a) => a -> a
+fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)
+              + ((i `shiftL` 1 - i `shiftR` 1) .&. 2)

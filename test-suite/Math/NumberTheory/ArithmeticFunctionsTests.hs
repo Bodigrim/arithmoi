@@ -9,7 +9,6 @@
 
 {-# LANGUAGE CPP       #-}
 
-{-# OPTIONS_GHC -fno-warn-deprecations  #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.ArithmeticFunctionsTests
@@ -46,7 +45,7 @@ divisorsProperty2 (NonZero n) = sum (runFunction divisorsA n) == runFunction (si
 
 -- | All divisors of n truly divides n.
 divisorsProperty3 :: NonZero Natural -> Bool
-divisorsProperty3 (NonZero n) = all (\d -> n `mod` d == 0) (runFunction divisorsA n)
+divisorsProperty3 (NonZero n) = all (\d -> n `rem` d == 0) (runFunction divisorsA n)
 
 -- | 'divisorsA' matches 'divisorsSmallA'
 divisorsProperty4 :: NonZero Int -> Bool
@@ -129,10 +128,10 @@ jordan2Oeis = oeisAssertion "A007434" (jordanA 2)
 -- | congruences 1,2,3,4 from https://en.wikipedia.org/wiki/Ramanujan_tau_function
 ramanujanCongruence1 :: NonZero Natural -> Bool
 ramanujanCongruence1 (NonZero n)
-  | k == 1 = (ramanujan n' - sigma 11 n') `mod` (2^11) == 0
-  | k == 3 = (ramanujan n' - 1217 * sigma 11 n') `mod` (2^13) == 0
-  | k == 5 = (ramanujan n' - 1537 * sigma 11 n') `mod` (2^12) == 0
-  | k == 7 = (ramanujan n' - 705 * sigma 11 n') `mod` (2^14) == 0
+  | k == 1 = (ramanujan n' - sigma 11 n') `rem` (2^11) == 0
+  | k == 3 = (ramanujan n' - 1217 * sigma 11 n') `rem` (2^13) == 0
+  | k == 5 = (ramanujan n' - 1537 * sigma 11 n') `rem` (2^12) == 0
+  | k == 7 = (ramanujan n' - 705 * sigma 11 n') `rem` (2^14) == 0
   | otherwise = True
   where k = n `mod` 8
         n' = fromIntegral n :: Integer
@@ -140,8 +139,8 @@ ramanujanCongruence1 (NonZero n)
 -- | congruences 8,9 from https://en.wikipedia.org/wiki/Ramanujan_tau_function
 ramanujanCongruence2 :: NonZero Natural -> Bool
 ramanujanCongruence2 (NonZero n)
-  | (n `mod` 7) `elem` [0,1,2,4] = m `mod` 7 == 0
-  | otherwise                    = m `mod` 49 == 0
+  | (n `mod` 7) `elem` [0,1,2,4] = m `rem` 7 == 0
+  | otherwise                    = m `rem` 49 == 0
   where m = ramanujan n' - n' * sigma 9 n'
         n' = fromIntegral n :: Integer
 
@@ -228,7 +227,7 @@ liouvilleOeis = oeisAssertion "A008836" liouvilleA
 
 -- | carmichaeil divides totient
 carmichaelProperty1 :: NonZero Natural -> Bool
-carmichaelProperty1 (NonZero n) = runFunction totientA n `mod` runFunction carmichaelA n == 0
+carmichaelProperty1 (NonZero n) = runFunction totientA n `rem` runFunction carmichaelA n == 0
 
 -- | carmichael matches baseline from OEIS.
 carmichaelOeis :: Assertion

@@ -43,9 +43,12 @@ module Math.NumberTheory.Recurrences.Bilinear
   , bernoulli
   , euler
   , eulerPolyAt1
+  , faulhaberPoly
   ) where
 
+import Data.Euclidean (GcdDomain(..))
 import Data.List
+import Data.Maybe
 import Data.Ratio
 import Numeric.Natural
 
@@ -62,10 +65,10 @@ import Math.NumberTheory.Recurrences.Linear (factorial)
 -- Use the symmetry of Pascal triangle @binomial !! n !! k == binomial !! n !! (n - k)@ to speed up computations.
 --
 -- One could also consider 'Math.Combinat.Numbers.binomial' to compute stand-alone values.
-binomial :: Integral a => [[a]]
+binomial :: (Num a, GcdDomain a) => [[a]]
 binomial = map f [0..]
   where
-    f n = scanl (\x k -> x * (n - k + 1) `div` k) 1 [1..n]
+    f n = scanl (\x k -> fromJust $ x * (fromInteger $ n - k + 1) `divide` fromInteger k) 1 [1..n]
 {-# SPECIALIZE binomial :: [[Int]]     #-}
 {-# SPECIALIZE binomial :: [[Word]]    #-}
 {-# SPECIALIZE binomial :: [[Integer]] #-}
@@ -175,6 +178,22 @@ bernoulli = helperForB_E_EP id (map recip [1..])
 {-# SPECIALIZE bernoulli :: [Ratio Int] #-}
 {-# SPECIALIZE bernoulli :: [Rational] #-}
 
+-- | <https://en.wikipedia.org/wiki/Faulhaber%27s_formula Faulhaber's formula>.
+--
+-- >>> sum (map (^ 10) [0..100])
+-- 959924142434241924250
+-- >>> sum $ zipWith (*) (faulhaberPoly 10) (iterate (* 100) 1)
+-- 959924142434241924250 % 1
+faulhaberPoly :: (GcdDomain a, Integral a) => Int -> [Ratio a]
+-- Implementation by https://github.com/CarlEdman
+faulhaberPoly p
+  = zipWith (*) ((0:)
+  $ reverse
+  $ take (p+1) $ bernoulli)
+  $ map (% (fromIntegral p+1))
+  $ zipWith (*) (iterate negate (if odd p then 1 else -1))
+  $ binomial !! (fromIntegral p+1)
+
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
 -- by Kwang-Wu Chen, second formula of the Corollary in page 7.
@@ -201,7 +220,7 @@ euler' = tail $ helperForB_E_EP tail as
 -- as the denominators in @euler'@ are always @1@.
 --
 -- >>> take 10 euler :: [Integer]
--- [1, 0, -1, 0, 5, 0, -61, 0, 1385, 0]
+-- [1,0,-1,0,5,0,-61,0,1385,0]
 euler :: forall a . Integral a => [a]
 euler = map numerator euler'
 

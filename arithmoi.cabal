@@ -1,15 +1,15 @@
 name:          arithmoi
-version:       0.8.0.0
+version:       0.10.0.0
 cabal-version: >=1.10
 build-type:    Simple
 license:       MIT
 license-file:  LICENSE
-copyright:     (c) 2011 Daniel Fischer, 2016-2018 Andrew Lelechenko, Carter Schonwald
-maintainer:    Carter Schonwald  carter at wellposed dot com,
-               Andrew Lelechenko andrew dot lelechenko at gmail dot com
+copyright:     (c) 2016-2019 Andrew Lelechenko, Carter Schonwald, 2011 Daniel Fischer
+maintainer:    Andrew Lelechenko andrew dot lelechenko at gmail dot com,
+               Carter Schonwald  carter at wellposed dot com
 stability:     Provisional
-homepage:      https://github.com/cartazio/arithmoi
-bug-reports:   https://github.com/cartazio/arithmoi/issues
+homepage:      https://github.com/Bodigrim/arithmoi
+bug-reports:   https://github.com/Bodigrim/arithmoi/issues
 synopsis:      Efficient basic number-theoretic functions.
 description:
   A library of basic functionality needed for
@@ -18,14 +18,14 @@ description:
   Primes and related things (totients, factorisation),
   powers (integer roots and tests, modular exponentiation).
 category:      Math, Algorithms, Number Theory
-author:        Daniel Fischer
-tested-with:   GHC==8.0.2, GHC==8.2.2, GHC==8.4.3, GHC==8.6.1
+author:        Andrew Lelechenko, Daniel Fischer
+tested-with:   GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.1
 extra-source-files:
   Changes
 
 source-repository head
   type: git
-  location: https://github.com/cartazio/arithmoi
+  location: https://github.com/Bodigrim/arithmoi
 
 flag check-bounds
   description:
@@ -38,14 +38,17 @@ library
     base >=4.9 && <5,
     array >=0.5 && <0.6,
     containers >=0.5 && <0.7,
+    chimera >= 0.3,
+    constraints,
     deepseq,
-    exact-pi >=0.4.1.1,
+    exact-pi >=0.5,
     ghc-prim <0.6,
     integer-gmp <1.1,
     integer-logarithms >=1.0,
+    mod,
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
-    semirings >= 0.2,
+    semirings >= 0.5.2,
     vector >= 0.12
   exposed-modules:
     GHC.TypeNats.Compat
@@ -66,10 +69,11 @@ library
     Math.NumberTheory.Moduli.DiscreteLogarithm.Internal
     Math.NumberTheory.Moduli.Equations
     Math.NumberTheory.Moduli.Jacobi
+    Math.NumberTheory.Moduli.Multiplicative
     Math.NumberTheory.Moduli.PrimitiveRoot
+    Math.NumberTheory.Moduli.Singleton
     Math.NumberTheory.Moduli.Sqrt
     Math.NumberTheory.MoebiusInversion
-    Math.NumberTheory.MoebiusInversion.Int
     Math.NumberTheory.Powers
     Math.NumberTheory.Powers.Cubes
     Math.NumberTheory.Powers.Fourth
@@ -80,46 +84,44 @@ library
     Math.NumberTheory.Prefactored
     Math.NumberTheory.Primes
     Math.NumberTheory.Primes.Counting
-    Math.NumberTheory.Primes.Factorisation
-    Math.NumberTheory.Primes.Factorisation.Certified
-    Math.NumberTheory.Primes.Sieve
     Math.NumberTheory.Primes.Testing
-    Math.NumberTheory.Primes.Testing.Certificates
     Math.NumberTheory.Quadratic.GaussianIntegers
     Math.NumberTheory.Quadratic.EisensteinIntegers
     Math.NumberTheory.Recurrences
-    Math.NumberTheory.Recurrencies
     Math.NumberTheory.Recurrences.Bilinear
-    Math.NumberTheory.Recurrencies.Bilinear
     Math.NumberTheory.Recurrences.Linear
-    Math.NumberTheory.Recurrencies.Linear
+    Math.NumberTheory.Roots
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
-    Math.NumberTheory.Zeta.Dirichlet
-    Math.NumberTheory.Zeta.Hurwitz
-    Math.NumberTheory.Zeta.Riemann
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.Class
-    Math.NumberTheory.ArithmeticFunctions.SieveBlock.Unboxed
     Math.NumberTheory.ArithmeticFunctions.Standard
-    Math.NumberTheory.Moduli.SqrtOld
+    Math.NumberTheory.Moduli.JacobiSymbol
+    Math.NumberTheory.Moduli.SomeMod
     Math.NumberTheory.Primes.Counting.Approximate
     Math.NumberTheory.Primes.Counting.Impl
     Math.NumberTheory.Primes.Factorisation.Montgomery
     Math.NumberTheory.Primes.Factorisation.TrialDivision
     Math.NumberTheory.Primes.Sieve.Eratosthenes
     Math.NumberTheory.Primes.Sieve.Indexing
-    Math.NumberTheory.Primes.Testing.Certificates.Internal
+    Math.NumberTheory.Primes.Small
     Math.NumberTheory.Primes.Testing.Certified
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
     Math.NumberTheory.Recurrences.Pentagonal
-    Math.NumberTheory.UniqueFactorisation
+    Math.NumberTheory.Roots.Cubes
+    Math.NumberTheory.Roots.Fourth
+    Math.NumberTheory.Roots.General
+    Math.NumberTheory.Roots.Squares
+    Math.NumberTheory.Roots.Squares.Internal
     Math.NumberTheory.Unsafe
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.DirichletSeries
     Math.NumberTheory.Utils.FromIntegral
     Math.NumberTheory.Utils.Hyperbola
+    Math.NumberTheory.Zeta.Dirichlet
+    Math.NumberTheory.Zeta.Hurwitz
+    Math.NumberTheory.Zeta.Riemann
     Math.NumberTheory.Zeta.Utils
   default-language: Haskell2010
   ghc-options: -O2 -Wall
@@ -133,7 +135,9 @@ test-suite spec
     containers,
     exact-pi >=0.4.1.1,
     integer-gmp <1.1,
-    QuickCheck >=2.10 && <2.13,
+    mod,
+    QuickCheck >=2.10,
+    quickcheck-classes >=0.6.3,
     semirings >= 0.2,
     smallcheck >=1.1.3 && <1.2,
     tasty >=0.10,
@@ -158,8 +162,8 @@ test-suite spec
     Math.NumberTheory.Moduli.EquationsTests
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests
+    Math.NumberTheory.Moduli.SingletonTests
     Math.NumberTheory.Moduli.SqrtTests
-    Math.NumberTheory.MoebiusInversion.IntTests
     Math.NumberTheory.MoebiusInversionTests
     Math.NumberTheory.Powers.CubesTests
     Math.NumberTheory.Powers.FourthTests
@@ -169,6 +173,7 @@ test-suite spec
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests
+    Math.NumberTheory.Primes.SequenceTests
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests
     Math.NumberTheory.PrimesTests
@@ -192,25 +197,27 @@ benchmark criterion
   build-depends:
     base,
     arithmoi,
+    array,
+    constraints,
     containers,
     deepseq,
     gauge,
     integer-logarithms,
     random,
+    semirings,
     vector
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.DiscreteLogarithmBench
     Math.NumberTheory.EisensteinIntegersBench
-    Math.NumberTheory.EuclideanBench
     Math.NumberTheory.GaussianIntegersBench
     Math.NumberTheory.InverseBench
     Math.NumberTheory.JacobiBench
     Math.NumberTheory.MertensBench
-    Math.NumberTheory.PowersBench
     Math.NumberTheory.PrimesBench
     Math.NumberTheory.PrimitiveRootsBench
     Math.NumberTheory.RecurrencesBench
+    Math.NumberTheory.SequenceBench
     Math.NumberTheory.SieveBlockBench
     Math.NumberTheory.SmoothNumbersBench
     Math.NumberTheory.ZetaBench
@@ -218,3 +225,14 @@ benchmark criterion
   main-is: Bench.hs
   default-language: Haskell2010
   hs-source-dirs: benchmark
+
+executable sequence-model
+  build-depends:
+    base,
+    arithmoi,
+    containers,
+    hmatrix-gsl
+  buildable: False
+  main-is: SequenceModel.hs
+  hs-source-dirs: app
+  default-language: Haskell2010

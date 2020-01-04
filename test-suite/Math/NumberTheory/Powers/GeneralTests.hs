@@ -18,7 +18,7 @@ module Math.NumberTheory.Powers.GeneralTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Math.NumberTheory.Powers.General
+import Math.NumberTheory.Roots
 import Math.NumberTheory.TestUtils
 
 -- | Check that 'integerRoot' @pow@ returns the largest integer @m@ with @m^pow <= n@.
@@ -51,17 +51,10 @@ isPerfectPowerProperty (AnySign n) = (k > 1 && t) || (k == 1 && not t)
 
 -- | Check that the first component of 'highestPower' is square-free.
 highestPowerProperty :: Integral a => AnySign a -> Bool
-highestPowerProperty (AnySign n) = (n `elem` [-1, 0, 1] && k == 3) || (b ^ k == n && b' == b && k' == 1)
+highestPowerProperty (AnySign n) = (n + 1 `elem` [0, 1, 2] && k == 3) || (b ^ k == n && b' == b && k' == 1)
   where
     (b, k) = highestPower n
     (b', k') = highestPower b
-
--- | Check that 'largePFPower' is consistent with documentation.
-largePFPowerProperty :: Positive Integer -> Integer -> Bool
-largePFPowerProperty (Positive bd) n = bd == 1 || b == 0 || d' /= 0 || n <= b * d * d || any (\p -> gcd n p > 1) [2..bd] || b ^ k == n
-  where
-    (b, k) = largePFPower bd n
-    (d, d') = bd `quotRem` b
 
 highestPowerSpecialCases :: [Assertion]
 highestPowerSpecialCases =
@@ -123,5 +116,4 @@ testSuite = testGroup "General"
     ( testIntegralProperty  "highestPower"   highestPowerProperty
     : zipWith (\i a -> testCase ("special case " ++ show i) a) [1..] highestPowerSpecialCases
     )
-  , testSmallAndQuick     "largePFPower"   largePFPowerProperty
   ]

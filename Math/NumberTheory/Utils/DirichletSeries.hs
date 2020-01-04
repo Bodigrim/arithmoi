@@ -25,12 +25,12 @@ module Math.NumberTheory.Utils.DirichletSeries
 
 import Prelude hiding (filter, last, rem, quot, snd, lookup)
 import Data.Coerce
+import Data.Euclidean
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Data.Semiring (Semiring(..))
 import Numeric.Natural
-
-import Math.NumberTheory.Euclidean
 
 -- Sparse Dirichlet series are represented by an ascending list of pairs.
 -- For instance, [(a, b), (c, d)] stands for 1 + b/a^s + d/c^s.
@@ -65,7 +65,7 @@ size = coerce (M.size @a @b)
 -- and all a_i and b_i are divisors of n. Return Dirichlet series cs,
 -- which contains all terms as * bs = sum_i m_i/c_i^s such that c_i divides n.
 timesAndCrop
-  :: (Euclidean a, Ord a, Semiring b)
+  :: (Num a, Euclidean a, Ord a, Semiring b)
   => a
   -> DirichletSeries a b
   -> DirichletSeries a b
@@ -78,7 +78,7 @@ timesAndCrop n (DirichletSeries as) (DirichletSeries bs)
   | (b, fb) <- M.assocs bs
   , let nb = n `quot` b
   , (a, fa) <- takeWhile ((<= nb) . fst) (M.assocs as)
-  , nb `rem` a == 0
+  , isJust (nb `divide` a)
   ]
 {-# SPECIALISE timesAndCrop :: Semiring b => Int -> DirichletSeries Int b -> DirichletSeries Int b -> DirichletSeries Int b #-}
 {-# SPECIALISE timesAndCrop :: Semiring b => Word -> DirichletSeries Word b -> DirichletSeries Word b -> DirichletSeries Word b #-}

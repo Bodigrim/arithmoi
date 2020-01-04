@@ -12,10 +12,10 @@ import qualified Math.NumberTheory.Moduli.DiscreteLogarithmTests as ModuliDiscre
 import qualified Math.NumberTheory.Moduli.EquationsTests as ModuliEquations
 import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
 import qualified Math.NumberTheory.Moduli.PrimitiveRootTests as ModuliPrimitiveRoot
+import qualified Math.NumberTheory.Moduli.SingletonTests as ModuliSingleton
 import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
-import qualified Math.NumberTheory.MoebiusInversion.IntTests as MoebiusInversionInt
 
 import qualified Math.NumberTheory.Powers.CubesTests as Cubes
 import qualified Math.NumberTheory.Powers.FourthTests as Fourth
@@ -28,6 +28,7 @@ import qualified Math.NumberTheory.PrefactoredTests as Prefactored
 import qualified Math.NumberTheory.PrimesTests as Primes
 import qualified Math.NumberTheory.Primes.CountingTests as Counting
 import qualified Math.NumberTheory.Primes.FactorisationTests as Factorisation
+import qualified Math.NumberTheory.Primes.SequenceTests as Sequence
 import qualified Math.NumberTheory.Primes.SieveTests as Sieve
 import qualified Math.NumberTheory.Primes.TestingTests as Testing
 
@@ -73,17 +74,16 @@ tests = testGroup "All"
     , ModuliEquations.testSuite
     , ModuliJacobi.testSuite
     , ModuliPrimitiveRoot.testSuite
+    , ModuliSingleton.testSuite
     , ModuliSqrt.testSuite
     ]
-  , testGroup "MoebiusInversion"
-    [ MoebiusInversion.testSuite
-    , MoebiusInversionInt.testSuite
-    ]
+  , MoebiusInversion.testSuite
   , Prefactored.testSuite
   , testGroup "Primes"
     [ Primes.testSuite
     , Counting.testSuite
     , Factorisation.testSuite
+    , Sequence.testSuite
     , Sieve.testSuite
     , Testing.testSuite
     ]

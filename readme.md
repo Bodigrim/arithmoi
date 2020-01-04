@@ -1,6 +1,1 @@
-# Arithmoi : A Number Theoretic Algorithms library in Haskell
-
-[![Join the chat at https://gitter.im/cartazio/arithmoi](https://badges.gitter.im/cartazio/arithmoi.svg)](https://gitter.im/cartazio/arithmoi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Originally written by Daniel Fischer, it is now maintained by Carter Schonwald and Andrew Lelechenko.
-
+# arithmoi [![Build Status](https://travis-ci.org/Bodigrim/arithmoi.svg)](https://travis-ci.org/Bodigrim/arithmoi) [![Hackage](http://img.shields.io/hackage/v/arithmoi.svg)](https://hackage.haskell.org/package/arithmoi) [![Hackage CI](https://matrix.hackage.haskell.org/api/v2/packages/arithmoi/badge)](https://matrix.hackage.haskell.org/package/arithmoi) [![Stackage LTS](http://stackage.org/package/arithmoi/badge/lts)](http://stackage.org/lts/package/arithmoi) [![Stackage Nightly](http://stackage.org/package/arithmoi/badge/nightly)](http://stackage.org/nightly/package/arithmoi)

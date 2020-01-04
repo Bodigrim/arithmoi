@@ -13,10 +13,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fspec-constr-count=8 #-}
-{-# OPTIONS_HADDOCK hide #-}
 module Math.NumberTheory.Primes.Sieve.Eratosthenes
     ( primes
-    , sieveFrom
     , psieveFrom
     , PrimeSieve(..)
     , psieveList
@@ -44,7 +42,7 @@ import Data.Bits
 import Data.Word
 #endif
 
-import Math.NumberTheory.Powers.Squares (integerSquareRoot)
+import Math.NumberTheory.Roots.Squares (integerSquareRoot)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
@@ -151,21 +149,21 @@ takeWhileIncreasing = \case
 -- Make it monomorphic to take advantages of memoization. Compare
 --
 -- >>> :set +s
--- >>> primes !! 1000000 :: Int
--- 15485867
+-- >>> primes !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (5.32 secs, 6,945,267,496 bytes)
--- >>> primes !! 1000000 :: Int
--- 15485867
+-- >>> primes !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (5.19 secs, 6,945,267,496 bytes)
 --
 -- against
 --
--- >>> let primes' = primes :: [Int]
--- >>> primes' !! 1000000 :: Int
--- 15485867
+-- >>> let primes' = primes :: [Prime Int]
+-- >>> primes' !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (5.29 secs, 6,945,269,856 bytes)
--- >>> primes' !! 1000000 :: Int
--- 15485867
+-- >>> primes' !! 1000000 :: Prime Int
+-- Prime 15485867
 -- (0.02 secs, 336,232 bytes)
 primes :: Integral a => [Prime a]
 primes
@@ -368,11 +366,6 @@ countFromTo start end ba = do
           w <- unsafeRead wa sb
           let !w1 = w `shiftR` si
           return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
-
--- | @'sieveFrom' n@ creates the list of primes not less than @n@.
-sieveFrom :: Integer -> [Prime Integer]
-sieveFrom n = case psieveFrom n of
-                        ps -> dropWhile ((< n) . unPrime) (ps >>= primeList)
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain

@@ -6,10 +6,11 @@ module Math.NumberTheory.RecurrencesBench
 
 import Gauge.Main
 
+import Data.Euclidean (GcdDomain)
 import Math.NumberTheory.Recurrences (binomial, eulerian1, eulerian2,
                                       stirling1, stirling2, partition)
 
-benchTriangle :: String -> (forall a. (Integral a) => [[a]]) -> Int -> Benchmark
+benchTriangle :: String -> (forall a. (GcdDomain a, Integral a) => [[a]]) -> Int -> Benchmark
 benchTriangle name triangle n = bgroup name
   [ benchAt (10 * n)  (1 * n)
   , benchAt (10 * n)  (2 * n)

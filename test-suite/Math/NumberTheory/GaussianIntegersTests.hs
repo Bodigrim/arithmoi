@@ -13,16 +13,20 @@ module Math.NumberTheory.GaussianIntegersTests
   ( testSuite
   ) where
 
+import Prelude hiding (gcd, rem)
 import Control.Monad (zipWithM_)
+import Data.Euclidean
 import Data.List (groupBy, sort)
 import Data.Maybe (fromJust, mapMaybe)
+import Data.Proxy
+import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.Moduli.Sqrt
-import Math.NumberTheory.Powers (integerSquareRoot)
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes (Prime, unPrime, UniqueFactorisation(..))
 import Math.NumberTheory.TestUtils
 
@@ -112,8 +116,8 @@ orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs
 
 numberOfPrimes :: Assertion
 numberOfPrimes = assertEqual "counting primes: OEIS A091100"
-  [16,100,668,4928,38404,313752,2658344]
-  [4 * (length $ takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..7]]
+  [16,100,668,4928,38404,313752]
+  [4 * (length $ takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..6]]
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
@@ -128,24 +132,32 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
     inFirstQuadrant = x' > 0 && y' >= 0     -- first quadrant includes the positive real axis, but not the origin or the positive imaginary axis
     isAssociate = z' `elem` map (\e -> z * (0 :+ 1) ^ e) [0 .. 3]
 
+-- | Verify that @rem@ produces a remainder smaller than the divisor with
+-- regards to the Euclidean domain's function.
+remProperty :: GaussianInteger -> GaussianInteger -> Bool
+remProperty x y = (y == 0) || (norm $ x `rem` y) < (norm y)
+
 gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
+  || z1 `rem` z == 0 && z2 `rem` z == 0
   where
-    z = ED.gcd z1 z2
+    z = gcd z1 z2
 
 gcdGProperty2 :: GaussianInteger -> GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty2 z z1 z2
   = z == 0
-  || (ED.gcd z1' z2') `ED.rem` z == 0
+  || (gcd z1' z2') `rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
 
 -- | a special case that tests rounding/truncating in GCD.
 gcdGSpecialCase1 :: Assertion
-gcdGSpecialCase1 = assertEqual "gcdG" 1 $ ED.gcd (12 :+ 23) (23 :+ 34)
+gcdGSpecialCase1 = assertEqual "gcdG" (-1) $ gcd (12 :+ 23) (23 :+ 34)
+
+gcdGSpecialCase2 :: Assertion
+gcdGSpecialCase2 = assertEqual "gcdG" (0 :+ (-1)) $ gcd (0 :+ 3) (2 :+ 2)
 
 testSuite :: TestTree
 testSuite = testGroup "GaussianIntegers" $
@@ -167,9 +179,14 @@ testSuite = testGroup "GaussianIntegers" $
   , testCase          "counting primes"          numberOfPrimes
   , testSmallAndQuick "signumAbsProperty"        signumAbsProperty
   , testSmallAndQuick "absProperty"              absProperty
+  , testSmallAndQuick "remProperty"              remProperty
   , testGroup "gcd"
     [ testSmallAndQuick "is divisor"            gcdGProperty1
-    , testSmallAndQuick "is greatest"           gcdGProperty2
+    -- smallcheck takes too long
+    , QC.testProperty   "is greatest"           gcdGProperty2
     , testCase          "(12 :+ 23) (23 :+ 34)" gcdGSpecialCase1
+    , testCase          "(0 :+ 3) (2 :+ 2)"     gcdGSpecialCase2
     ]
+  , lawsToTest $ gcdDomainLaws (Proxy :: Proxy GaussianInteger)
+  , lawsToTest $ euclideanLaws (Proxy :: Proxy GaussianInteger)
   ]

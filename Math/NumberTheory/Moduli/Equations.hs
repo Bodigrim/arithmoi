@@ -15,12 +15,16 @@ module Math.NumberTheory.Moduli.Equations
   , solveQuadratic
   ) where
 
+import Data.Constraint
+import Data.Maybe
+import Data.Mod
 import GHC.Integer.GMP.Internals
+import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Moduli.Sqrt
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils (recipMod)
 
 -------------------------------------------------------------------------------
@@ -36,7 +40,7 @@ solveLinear
   => Mod m   -- ^ a
   -> Mod m   -- ^ b
   -> [Mod m] -- ^ list of x
-solveLinear a b = map fromInteger $ solveLinear' (getMod a) (getVal a) (getVal b)
+solveLinear a b = map fromInteger $ solveLinear' (toInteger (natVal a)) (toInteger (unMod a)) (toInteger (unMod b))
 
 solveLinear' :: Integer -> Integer -> Integer -> [Integer]
 solveLinear' m a b = case solveLinearCoprime m' (a `quot` d) (b `quot` d) of
@@ -56,29 +60,29 @@ solveLinearCoprime m a b = (\a1 -> negate b * a1 `mod` m) <$> recipMod a m
 -- | Find all solutions of ax² + bx + c ≡ 0 (mod m).
 --
 -- >>> :set -XDataKinds
--- >>> solveQuadratic (1 :: Mod 32) 0 (-17) -- solving x² - 17 ≡ 0 (mod 32)
+-- >>> solveQuadratic sfactors (1 :: Mod 32) 0 (-17) -- solving x² - 17 ≡ 0 (mod 32)
 -- [(9 `modulo` 32),(25 `modulo` 32),(7 `modulo` 32),(23 `modulo` 32)]
 solveQuadratic
-  :: KnownNat m
-  => Mod m   -- ^ a
+  :: SFactors Integer m
+  -> Mod m   -- ^ a
   -> Mod m   -- ^ b
   -> Mod m   -- ^ c
   -> [Mod m] -- ^ list of x
-solveQuadratic a b c
-  = map fromInteger
-  $ fst
-  $ combine
-  $ map (\(p, n) -> (solveQuadraticPrimePower a' b' c' p n, unPrime p ^ n))
-  $ factorise
-  $ getMod a
+solveQuadratic sm a b c = case proofFromSFactors sm of
+  Sub Dict ->
+    map fromInteger
+    $ fst
+    $ combine
+    $ map (\(p, n) -> (solveQuadraticPrimePower a' b' c' p n, unPrime p ^ n))
+    $ unSFactors sm
   where
-    a' = getVal a
-    b' = getVal b
-    c' = getVal c
+    a' = toInteger $ unMod a
+    b' = toInteger $ unMod b
+    c' = toInteger $ unMod c
 
     combine :: [([Integer], Integer)] -> ([Integer], Integer)
     combine = foldl
-      (\(xs, xm) (ys, ym) -> ([ chineseRemainder2 (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
+      (\(xs, xm) (ys, ym) -> ([ fromJust $ chineseCoprime (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
       ([0], 1)
 
 solveQuadraticPrimePower
@@ -123,7 +127,7 @@ solveQuadraticPrime a b c (unPrime -> 2 :: Integer)
     (_, False)   -> [1]
     _            -> []
 solveQuadraticPrime a b c p
-  | a `mod` p' == 0
+  | a `rem` p' == 0
   = solveLinear' p' b c
   | otherwise
   = map (\n -> n * recipModInteger (2 * a) p' `mod` p')

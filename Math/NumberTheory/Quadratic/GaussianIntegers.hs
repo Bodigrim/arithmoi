@@ -21,21 +21,20 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     findPrime,
 ) where
 
+import Prelude hiding (quot, quotRem)
 import Control.DeepSeq (NFData)
 import Data.Coerce
+import Data.Euclidean
 import Data.List (mapAccumL, partition)
-import Data.Maybe (fromMaybe)
+import Data.Maybe
 import Data.Ord (comparing)
+import qualified Data.Semiring as S
 import GHC.Generics
 
-
-import qualified Math.NumberTheory.Euclidean as ED
 import Math.NumberTheory.Moduli.Sqrt
-import Math.NumberTheory.Powers (integerSquareRoot)
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes.Types
-import qualified Math.NumberTheory.Primes.Sieve as Sieve
-import qualified Math.NumberTheory.Primes.Testing as Testing
-import qualified Math.NumberTheory.UniqueFactorisation  as U
+import qualified Math.NumberTheory.Primes as U
 import Math.NumberTheory.Utils              (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -70,6 +69,16 @@ instance Num GaussianInteger where
     fromInteger n = n :+ 0
     signum = snd . absSignum
 
+instance S.Semiring GaussianInteger where
+    plus          = (+)
+    times         = (*)
+    zero          = 0 :+ 0
+    one           = 1 :+ 0
+    fromNatural n = fromIntegral n :+ 0
+
+instance S.Ring GaussianInteger where
+    negate = negate
+
 absSignum :: GaussianInteger -> (GaussianInteger, GaussianInteger)
 absSignum z@(a :+ b)
     | a == 0 && b == 0 =   (z, 0)              -- origin
@@ -78,21 +87,22 @@ absSignum z@(a :+ b)
     | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
     | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
 
-instance ED.Euclidean GaussianInteger where
-    quotRem = divHelper quot
-    divMod  = divHelper div
+instance GcdDomain GaussianInteger
+
+instance Euclidean GaussianInteger where
+    degree = fromInteger . norm
+    quotRem = divHelper
 
 divHelper
-    :: (Integer -> Integer -> Integer)
-    -> GaussianInteger
+    :: GaussianInteger
     -> GaussianInteger
     -> (GaussianInteger, GaussianInteger)
-divHelper divide g h =
-    let nr :+ ni = g * conjugate h
+divHelper g h = (q, r)
+    where
+        nr :+ ni = g * conjugate h
         denom = norm h
-        q = divide nr denom :+ divide ni denom
-        p = h * q
-    in (q, g - p)
+        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+ ((ni + signum ni * denom `quot` 2) `quot` denom)
+        r = g - h * q
 
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger
@@ -105,9 +115,9 @@ norm (x :+ y) = x * x + y * y
 -- |Compute whether a given Gaussian integer is prime.
 isPrime :: GaussianInteger -> Bool
 isPrime g@(x :+ y)
-    | x == 0 && y /= 0 = abs y `mod` 4 == 3 && Testing.isPrime y
-    | y == 0 && x /= 0 = abs x `mod` 4 == 3 && Testing.isPrime x
-    | otherwise        = Testing.isPrime $ norm g
+    | x == 0 && y /= 0 = abs y `mod` 4 == 3 && isJust (U.isPrime y)
+    | y == 0 && x /= 0 = abs x `mod` 4 == 3 && isJust (U.isPrime x)
+    | otherwise        = isJust $ U.isPrime $ norm g
 
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes (up to associates), in order of ascending
@@ -116,7 +126,7 @@ primes :: [U.Prime GaussianInteger]
 primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
   where
     leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) (tail Sieve.primes)
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) [U.nextPrime 3 ..]
     l = [unPrime p :+ 0 | p <- leftPrimes]
     r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
 

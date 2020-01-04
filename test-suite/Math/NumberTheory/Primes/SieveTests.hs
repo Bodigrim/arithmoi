@@ -8,10 +8,10 @@
 --
 
 {-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-{-# OPTIONS_GHC -fno-warn-deprecations  #-}
 
 module Math.NumberTheory.Primes.SieveTests
   ( testSuite
@@ -22,13 +22,13 @@ import Prelude hiding (words)
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Bits
 import Data.Int
 import Data.Proxy (Proxy(..))
 import Data.Word
 import Numeric.Natural (Natural)
 
-import Math.NumberTheory.Primes (Prime, unPrime)
-import Math.NumberTheory.Primes.Sieve
+import Math.NumberTheory.Primes (Prime, unPrime, primes, nextPrime, precPrime, UniqueFactorisation)
 import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.TestUtils
 
@@ -37,9 +37,6 @@ lim1 = 1000000
 
 lim2 :: Num a => a
 lim2 = 100000
-
-lim3 :: Num a => a
-lim3 = 1000
 
 -- | Check that 'primes' matches 'isPrime'.
 primesProperty1 :: forall a. (Integral a, Show a) => Proxy a -> Assertion
@@ -55,37 +52,21 @@ primesProperty2 _ = assertEqual "primes matches isPrime"
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
 primeSieveProperty1 :: AnySign Integer -> Bool
 primeSieveProperty1 (AnySign highBound')
-  =  primeList (primeSieve highBound)
-  == takeWhile ((<= (highBound `max` 7)) . unPrime) primes
+  =  [nextPrime 2 .. precPrime highBound]
+  == takeWhile (\p -> unPrime p <= highBound) primes
   where
-    highBound = highBound' `rem` lim1
+    highBound = max 2 (highBound' `rem` lim1)
 
 -- | Check that 'primeList' from 'psieveList' matches 'primes'.
-psieveListProperty1 :: forall a. (Integral a, Show a) => Proxy a -> Assertion
+psieveListProperty1 :: forall a. (Integral a, Show a, Enum (Prime a), Bits a, UniqueFactorisation a) => Proxy a -> Assertion
 psieveListProperty1 _ = assertEqual "primes == primeList . psieveList"
   (take lim2 primes :: [Prime a])
-  (take lim2 $ concatMap primeList psieveList)
+  (take lim2 [nextPrime 1..])
 
-psieveListProperty2 :: forall a. (Integral a, Show a) => Proxy a -> Assertion
+psieveListProperty2 :: forall a. (Integral a, Bounded a, Show a) => Proxy a -> Assertion
 psieveListProperty2 _ = assertEqual "primes == primeList . psieveList"
-  (primes :: [Prime a])
-  (concat $ takeWhile (not . null) $ map primeList psieveList)
-
--- | Check that 'sieveFrom' matches 'primeList' of 'psieveFrom'.
-sieveFromProperty1 :: AnySign Integer -> Bool
-sieveFromProperty1 (AnySign lowBound')
-  =  take lim3 (sieveFrom lowBound)
-  == take lim3 (filter ((>= lowBound) . unPrime) (concatMap primeList $ psieveFrom lowBound))
-  where
-    lowBound = lowBound' `rem` lim1
-
--- | Check that 'sieveFrom' matches 'isPrime' near 0.
-sieveFromProperty2 :: AnySign Integer -> Bool
-sieveFromProperty2 (AnySign lowBound')
-  =  take lim3 (map unPrime (sieveFrom lowBound))
-  == take lim3 (filter (isPrime . toInteger) [lowBound `max` 0 ..])
-  where
-    lowBound = lowBound' `rem` lim1
+  (map unPrime primes :: [a])
+  (filter (isPrime . toInteger) [0..maxBound])
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
@@ -111,9 +92,5 @@ testSuite = testGroup "Sieve"
     , testCase "Int16"   (psieveListProperty2 (Proxy :: Proxy Int16))
     , testCase "Word8"   (psieveListProperty2 (Proxy :: Proxy Word8))
     , testCase "Word16"  (psieveListProperty2 (Proxy :: Proxy Word16))
-    ]
-  , testGroup "sieveFrom"
-    [ testSmallAndQuick "psieveFrom"     sieveFromProperty1
-    , testSmallAndQuick "isPrime near 0" sieveFromProperty2
     ]
   ]

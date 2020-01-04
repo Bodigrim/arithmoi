@@ -8,7 +8,7 @@ import Gauge.Main
 import System.Random
 
 import Math.NumberTheory.Logarithms (integerLog2)
-import Math.NumberTheory.Primes.Factorisation
+import Math.NumberTheory.Primes (factorise)
 import Math.NumberTheory.Primes.Testing
 
 genInteger :: Int -> Int -> Integer

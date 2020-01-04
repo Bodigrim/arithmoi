@@ -4,15 +4,15 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Tests for Math.NumberTheory.Euclidean
+-- Tests for Math.NumberTheory.Euclidean.Coprimes
 --
 
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults  #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
-{-# OPTIONS_GHC -fno-warn-deprecations   #-}
 
 module Math.NumberTheory.EuclideanTests
   ( testSuite
@@ -21,66 +21,77 @@ module Math.NumberTheory.EuclideanTests
 import Prelude hiding (gcd)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC hiding (Positive(..))
 
 import Control.Arrow
 import Data.Bits
+import Data.Euclidean
+import Data.Maybe
 import Data.Semigroup
 import Data.List (tails, sort)
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Euclidean.Coprimes
+import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.TestUtils
 
--- | Check that 'extendedGCD' is consistent with documentation.
-extendedGCDProperty :: forall a. (Euclidean a, Ord a) => AnySign a -> AnySign a -> Bool
-extendedGCDProperty (AnySign a) (AnySign b) =
-  u * a + v * b == d
-  && d == gcd a b
-  -- (-1) >= 0 is true for unsigned types
-  && (abs u < abs b || abs b <= 1 || (-1 :: a) >= 0)
-  && (abs v < abs a || abs a <= 1 || (-1 :: a) >= 0)
-  where
-    (d, u, v) = extendedGCD a b
-
 -- | Check that numbers are coprime iff their gcd equals to 1.
-coprimeProperty :: (Euclidean a) => AnySign a -> AnySign a -> Bool
+coprimeProperty :: (Eq a, Num a, GcdDomain a, Euclidean a) => AnySign a -> AnySign a -> Bool
 coprimeProperty (AnySign a) (AnySign b) = coprime a b == (gcd a b == 1)
 
-splitIntoCoprimesProperty1 :: [(Positive Natural, Power Word)] -> Bool
+splitIntoCoprimesProperty1
+  :: (Eq a, Num a, GcdDomain a)
+  => [(a, Power Word)]
+  -> Bool
 splitIntoCoprimesProperty1 fs' = factorback fs == factorback (unCoprimes $ splitIntoCoprimes fs)
   where
-    fs = map (getPositive *** getPower) fs'
-    factorback = product . map (uncurry (^))
+    fs = map (id *** getPower) fs'
+    factorback = abs . product . map (uncurry (^))
 
-splitIntoCoprimesProperty2 :: [(Positive Natural, Power Word)] -> Bool
+splitIntoCoprimesProperty2
+  :: (Eq a, Num a, GcdDomain a)
+  => [(NonZero a, Power Word)]
+  -> Bool
 splitIntoCoprimesProperty2 fs' = multiplicities fs <= multiplicities (unCoprimes $ splitIntoCoprimes fs)
   where
-    fs = map (getPositive *** getPower) fs'
-    multiplicities = sum . map snd . filter ((/= 1) . fst)
+    fs = map (getNonZero *** getPower) fs'
+    multiplicities = sum . map snd . filter ((/= 1) . abs . fst)
 
-splitIntoCoprimesProperty3 :: [(Positive Natural, Power Word)] -> Bool
+splitIntoCoprimesProperty3
+  :: (Eq a, Num a, GcdDomain a)
+  => [(a, Power Word)]
+  -> Bool
 splitIntoCoprimesProperty3 fs' = and [ coprime x y | (x : xs) <- tails fs, y <- xs ]
   where
-    fs = map fst $ unCoprimes $ splitIntoCoprimes $ map (getPositive *** getPower) fs'
+    fs = map fst $ unCoprimes $ splitIntoCoprimes $ map (id *** getPower) fs'
 
 -- | Check that evaluation never freezes.
-splitIntoCoprimesProperty4 :: [(Integer, Word)] -> Bool
+splitIntoCoprimesProperty4
+  :: (Eq a, Num a, GcdDomain a)
+  => [(a, Word)]
+  -> Bool
 splitIntoCoprimesProperty4 fs' = fs == fs
   where
     fs = splitIntoCoprimes fs'
+
+splitIntoCoprimesProperty5
+  :: (Eq a, Num a, GcdDomain a)
+  => [(a, Word)]
+  -> Bool
+splitIntoCoprimesProperty5 =
+  all ((/= 1) . abs . fst) . unCoprimes . splitIntoCoprimes
 
 -- | This is an undefined behaviour, but at least it should not
 -- throw exceptions or loop forever.
 splitIntoCoprimesSpecialCase1 :: Assertion
 splitIntoCoprimesSpecialCase1 =
-  assertBool "should not fail" $ splitIntoCoprimesProperty4 [(0, 0), (0, 0)]
+  assertBool "should not fail" $ splitIntoCoprimesProperty4 @Integer [(0, 0), (0, 0)]
 
 -- | This is an undefined behaviour, but at least it should not
 -- throw exceptions or loop forever.
 splitIntoCoprimesSpecialCase2 :: Assertion
 splitIntoCoprimesSpecialCase2 =
-  assertBool "should not fail" $ splitIntoCoprimesProperty4 [(0, 1), (-2, 0)]
+  assertBool "should not fail" $ splitIntoCoprimesProperty4 @Integer [(0, 1), (-2, 0)]
 
 toListReturnsCorrectValues :: Assertion
 toListReturnsCorrectValues = assertEqual
@@ -111,32 +122,61 @@ insertReturnsCorrectValuesWhenNotCoprimeBase =
       expected = [(2,10), (5,2), (7,1)]
   in assertEqual "should be equal" expected actual
 
-unionProperty1 :: [(Positive Natural, Power Word)] -> [(Positive Natural, Power Word)] -> Bool
+unionProperty1
+  :: (Ord a, GcdDomain a)
+  => [(a, Power Word)]
+  -> [(a, Power Word)]
+  -> Bool
 unionProperty1 xs ys
   =  sort (unCoprimes (splitIntoCoprimes (xs' <> ys')))
   == sort (unCoprimes (splitIntoCoprimes xs' <> splitIntoCoprimes ys'))
   where
-    xs' = map (getPositive *** getPower) xs
-    ys' = map (getPositive *** getPower) ys
+    xs' = map (id *** getPower) xs
+    ys' = map (id *** getPower) ys
 
 testSuite :: TestTree
 testSuite = testGroup "Euclidean"
-  [ testSameIntegralProperty "extendedGCD" extendedGCDProperty
-  , testSameIntegralProperty "coprime"     coprimeProperty
+  [ testSameIntegralProperty "coprime"     coprimeProperty
   , testGroup "splitIntoCoprimes"
-    [ testSmallAndQuick "preserves product of factors"        splitIntoCoprimesProperty1
-    , testSmallAndQuick "number of factors is non-decreasing" splitIntoCoprimesProperty2
-    , testSmallAndQuick "output factors are coprime"          splitIntoCoprimesProperty3
-
-    , testCase          "does not freeze 1"                   splitIntoCoprimesSpecialCase1
-    , testCase          "does not freeze 2"                   splitIntoCoprimesSpecialCase2
-    , testSmallAndQuick "does not freeze random"              splitIntoCoprimesProperty4
+    [ testGroup "preserves product of factors"
+      [ testSmallAndQuick "Natural" (splitIntoCoprimesProperty1 @Natural)
+      , testSmallAndQuick "Integer" (splitIntoCoprimesProperty1 @Integer)
+      , testSmallAndQuick "Gaussian" (splitIntoCoprimesProperty1 @GaussianInteger)
+      ]
+    , testGroup "number of factors is non-decreasing"
+      [ testSmallAndQuick "Natural" (splitIntoCoprimesProperty2 @Natural)
+      , testSmallAndQuick "Integer" (splitIntoCoprimesProperty2 @Integer)
+      , testSmallAndQuick "Gaussian" (splitIntoCoprimesProperty2 @GaussianInteger)
+      ]
+    , testGroup "output factors are coprime"
+      [ testSmallAndQuick "Natural" (splitIntoCoprimesProperty3 @Natural)
+      , testSmallAndQuick "Integer" (splitIntoCoprimesProperty3 @Integer)
+      , testSmallAndQuick "Gaussian" (splitIntoCoprimesProperty3 @GaussianInteger)
+      ]
+    , testGroup "does not freeze"
+      [ testCase          "case 1"                   splitIntoCoprimesSpecialCase1
+      , testCase          "case 2"                   splitIntoCoprimesSpecialCase2
+      , testSmallAndQuick "Natural" (splitIntoCoprimesProperty4 @Natural)
+      -- smallcheck for Integer and GaussianInteger takes too long
+      , QC.testProperty "Integer" (splitIntoCoprimesProperty4 @Integer)
+      , QC.testProperty "Gaussian" (splitIntoCoprimesProperty4 @GaussianInteger)
+      ]
+    , testGroup "output factors are non-unit"
+      [ testSmallAndQuick "Natural" (splitIntoCoprimesProperty5 @Natural)
+      -- smallcheck for Integer and GaussianInteger takes too long
+      , QC.testProperty "Integer" (splitIntoCoprimesProperty5 @Integer)
+      , QC.testProperty "Gaussian" (splitIntoCoprimesProperty5 @GaussianInteger)
+      ]
     ]
   , testGroup "Coprimes"
     [  testCase         "test equality"                       toListReturnsCorrectValues
     ,  testCase         "test union"                          unionReturnsCorrectValues
     ,  testCase         "test insert with coprime base"       insertReturnsCorrectValuesWhenCoprimeBase
     ,  testCase         "test insert with non-coprime base"   insertReturnsCorrectValuesWhenNotCoprimeBase
-    ,  testSmallAndQuick "property union"                     unionProperty1
+    ,  testGroup "property union"
+      [ testSmallAndQuick "Natural" (unionProperty1 @Natural)
+      -- smallcheck for Integer takes too long
+      , QC.testProperty "Integer" (unionProperty1 @Integer)
+      ]
     ]
   ]

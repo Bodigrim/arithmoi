@@ -4,7 +4,8 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Modular square roots.
+-- Modular square roots and
+-- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.
 --
 
 {-# LANGUAGE BangPatterns #-}
@@ -12,44 +13,38 @@
 {-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Moduli.Sqrt
-  ( -- * New interface
+  ( -- * Modular square roots
     sqrtsMod
   , sqrtsModFactorisation
   , sqrtsModPrimePower
   , sqrtsModPrime
-    -- * Old interface
-  , Old.sqrtModP
-  , Old.sqrtModPList
-  , Old.sqrtModP'
-  , Old.tonelliShanks
-  , Old.sqrtModPP
-  , Old.sqrtModPPList
-  , Old.sqrtModF
-  , Old.sqrtModFList
+    -- * Jacobi symbol
+  , JacobiSymbol(..)
+  , jacobi
   ) where
 
 import Control.Monad (liftM2)
 import Data.Bits
+import Data.Constraint
+import Data.Maybe
+import Data.Mod
 
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class (Mod, getVal, getMod, KnownNat)
-import Math.NumberTheory.Moduli.Jacobi
+import Math.NumberTheory.Moduli.JacobiSymbol
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Powers.Modular (powMod)
-import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Primes.Sieve (sieveFrom)
-import Math.NumberTheory.UniqueFactorisation (Prime, factorise)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
 import Math.NumberTheory.Utils.FromIntegral
-
-import qualified Math.NumberTheory.Moduli.SqrtOld as Old
 
 -- | List all modular square roots.
 --
 -- >>> :set -XDataKinds
--- >>> sqrtsMod (1 :: Mod 60)
--- > [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
-sqrtsMod :: KnownNat m => Mod m -> [Mod m]
-sqrtsMod a = map fromInteger $ sqrtsModFactorisation (getVal a) (factorise (getMod a))
+-- >>> sqrtsMod sfactors (1 :: Mod 60)
+-- [(1 `modulo` 60),(49 `modulo` 60),(41 `modulo` 60),(29 `modulo` 60),(31 `modulo` 60),(19 `modulo` 60),(11 `modulo` 60),(59 `modulo` 60)]
+sqrtsMod :: SFactors Integer m -> Mod m -> [Mod m]
+sqrtsMod sm a = case proofFromSFactors sm of
+  Sub Dict -> map fromInteger $ sqrtsModFactorisation (toInteger (unMod a)) (unSFactors sm)
 
 -- | List all square roots modulo a number, the factorisation of which is
 -- passed as a second argument.
@@ -61,7 +56,7 @@ sqrtsModFactorisation _ []  = [0]
 sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
   where
     ms :: [Integer]
-    ms = map (\(Prime p, pow) -> p ^ pow) pps
+    ms = map (\(p, pow) -> unPrime p ^ pow) pps
 
     rs :: [[Integer]]
     rs = map (\(p, pow) -> sqrtsModPrimePower n p pow) pps
@@ -69,17 +64,22 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
     cs :: [[(Integer, Integer)]]
     cs = zipWith (\l m -> map (\x -> (x, m)) l) rs ms
 
-    comb t1@(_, m1) t2@(_, m2) = (chineseRemainder2 t1 t2, m1 * m2)
+    comb t1@(_, m1) t2@(_, m2) = (if ch < 0 then ch + m else ch, m)
+      where
+        ch = fromJust $ chineseCoprime t1 t2
+        m = m1 * m2
 
 -- | List all square roots modulo the power of a prime.
 --
+-- >>> import Data.Maybe
+-- >>> import Math.NumberTheory.Primes
 -- >>> sqrtsModPrimePower 7 (fromJust (isPrime 3)) 2
 -- [4,5]
 -- >>> sqrtsModPrimePower 9 (fromJust (isPrime 3)) 3
 -- [3,12,21,24,6,15]
 sqrtsModPrimePower :: Integer -> Prime Integer -> Word -> [Integer]
 sqrtsModPrimePower nn p 1 = sqrtsModPrime nn p
-sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
+sqrtsModPrimePower nn (unPrime -> prime) expo = let primeExpo = prime ^ expo in
   case splitOff prime (nn `mod` primeExpo) of
     (_, 0) -> [0, prime ^ ((expo + 1) `quot` 2) .. primeExpo - 1]
     (kk, n)
@@ -104,6 +104,8 @@ sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
 
 -- | List all square roots by prime modulo.
 --
+-- >>> import Data.Maybe
+-- >>> import Math.NumberTheory.Primes
 -- >>> sqrtsModPrime 1 (fromJust (isPrime 5))
 -- [1,4]
 -- >>> sqrtsModPrime 0 (fromJust (isPrime 5))
@@ -111,8 +113,8 @@ sqrtsModPrimePower nn (Prime prime) expo = let primeExpo = prime ^ expo in
 -- >>> sqrtsModPrime 2 (fromJust (isPrime 5))
 -- []
 sqrtsModPrime :: Integer -> Prime Integer -> [Integer]
-sqrtsModPrime n (Prime 2) = [n `mod` 2]
-sqrtsModPrime n (Prime prime) = case jacobi n prime of
+sqrtsModPrime n (unPrime -> 2) = [n `mod` 2]
+sqrtsModPrime n (unPrime -> prime) = case jacobi n prime of
   MinusOne -> []
   Zero     -> [0]
   One      -> let r = sqrtModP' (n `mod` prime) prime in [r, prime - r]
@@ -172,9 +174,10 @@ tonelliShanks square prime = loop rc t1 generator log2
 
 -- | prime must be odd, n must be coprime with prime
 sqrtModPP' :: Integer -> Integer -> Word -> Maybe Integer
-sqrtModPP' n prime expo = case sqrtsModPrime n (Prime prime) of
-                            []    -> Nothing
-                            r : _ -> fixup r
+sqrtModPP' n prime expo = case jacobi n prime of
+  MinusOne -> Nothing
+  Zero     -> Nothing
+  One      -> fixup $ sqrtModP' (n `mod` prime) prime
   where
     fixup r = let diff' = r*r-n
               in if diff' == 0
@@ -231,11 +234,14 @@ rem8 n = fromIntegral n .&. 7
 
 findNonSquare :: Integer -> Integer
 findNonSquare n
-    | rem8 n == 5 || rem8 n == 3  = 2
-    | otherwise = search primelist
+    | rem8 n == 5 || rem8 n == 3 = 2
+    | otherwise = search candidates
       where
-        primelist = [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67]
-                        ++ map unPrime (sieveFrom (68 + n `rem` 4)) -- prevent sharing
+        -- It is enough to consider only prime candidates, but
+        -- the probability that the smallest non-residue is > 67
+        -- is small and 'jacobi' test is fast,
+        -- so we use [71..n] instead of filter isPrime [71..n].
+        candidates = 3:5:7:11:13:17:19:23:29:31:37:41:43:47:53:59:61:67:[71..n]
         search (p:ps) = case jacobi p n of
           MinusOne -> p
           _        -> search ps

@@ -6,8 +6,6 @@
 --
 -- Primality tests.
 
-{-# OPTIONS_GHC -fno-warn-deprecations #-}
-
 module Math.NumberTheory.Primes.Testing
     ( -- * Standard tests
       isPrime

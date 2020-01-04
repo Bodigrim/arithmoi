@@ -18,9 +18,7 @@ module Math.NumberTheory.Powers.CubesTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.Maybe
-
-import Math.NumberTheory.Powers.Cubes
+import Math.NumberTheory.Roots
 import Math.NumberTheory.TestUtils
 
 #include "MachDeps.h"
@@ -36,9 +34,9 @@ integerCubeRootProperty (AnySign n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
   where
     m = integerCubeRoot n
     cond
-      | m == -1   = n == -1
-      | m < 0     = (m + 1) ^ 2 <= n `div` (m + 1)
-      | otherwise = (m + 1) ^ 2 >= n `div` (m + 1)
+      | m < 0 && m == -1 = n == -1
+      | m < 0            = (m + 1) ^ 2 <= n `div` (m + 1)
+      | otherwise        = (m + 1) ^ 2 >= n `div` (m + 1)
 
 -- | Specialized to trigger 'cubeRootInt''.
 integerCubeRootProperty_Int :: AnySign Int -> Bool
@@ -54,14 +52,14 @@ integerCubeRootProperty_Integer = integerCubeRootProperty
 
 -- | Check that 'integerCubeRoot' returns the largest integer @m@ with @m^3 <= n@, , where @n@ has form @k@^3-1.
 integerCubeRootProperty2 :: Integral a => AnySign a -> Bool
-integerCubeRootProperty2 (AnySign k) = m ^ 3 <= n && (m + 1) ^ 3 /= n && cond
+integerCubeRootProperty2 (AnySign k) = k == 0 || (m ^ 3 <= n && (m + 1) ^ 3 /= n && cond)
   where
     n = k ^ 3 - 1
     m = integerCubeRoot n
     cond
-      | m == -1   = n == -1
-      | m < 0     = (m + 1) ^ 2 <= n `div` (m + 1)
-      | otherwise = (m + 1) ^ 2 >= n `div` (m + 1)
+      | m < 0 && m == -1 = n == -1
+      | m < 0            = (m + 1) ^ 2 <= n `div` (m + 1)
+      | otherwise        = (m + 1) ^ 2 >= n `div` (m + 1)
 
 -- | Specialized to trigger 'cubeRootInt''.
 integerCubeRootProperty2_Int :: AnySign Int -> Bool
@@ -90,12 +88,6 @@ integerCubeRootSpecialCase2 =
 
 #endif
 
--- | Check that 'integerCubeRoot'' returns the largest integer @m@ with @m^3 <= n@.
-integerCubeRoot'Property :: Integral a => NonNegative a -> Bool
-integerCubeRoot'Property (NonNegative n) = m ^ 3 <= n && (m + 1) ^ 3 /= n && (m + 1) ^ 2 >= n `div` (m + 1)
-  where
-    m = integerCubeRoot' n
-
 -- | Check that the number 'isCube' iff its 'integerCubeRoot' is exact.
 isCubeProperty :: Integral a => AnySign a -> Bool
 isCubeProperty (AnySign n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
@@ -103,26 +95,12 @@ isCubeProperty (AnySign n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
     t = isCube n
     m = integerCubeRoot n
 
--- | Check that the number 'isCube'' iff its 'integerCubeRoot'' is exact.
-isCube'Property :: Integral a => NonNegative a -> Bool
-isCube'Property (NonNegative n) = (n /= m ^ 3 && not t) || (n == m ^ 3 && t)
-  where
-    t = isCube' n
-    m = integerCubeRoot' n
-
 -- | Check that 'exactCubeRoot' returns an exact integer cubic root
 -- and is consistent with 'isCube'.
 exactCubeRootProperty :: Integral a => AnySign a -> Bool
 exactCubeRootProperty (AnySign n) = case exactCubeRoot n of
   Nothing -> not (isCube n)
   Just m  -> isCube n && n == m ^ 3
-
--- | Check that 'isPossibleCube' is consistent with 'exactCubeRoot'.
-isPossibleCubeProperty :: Integral a => NonNegative a -> Bool
-isPossibleCubeProperty (NonNegative n) = t || not t && isNothing m
-  where
-    t = isPossibleCube n
-    m = exactCubeRoot n
 
 testSuite :: TestTree
 testSuite = testGroup "Cubes"
@@ -142,9 +120,6 @@ testSuite = testGroup "Cubes"
     , testCase             "maxBound :: Word"     integerCubeRootSpecialCase2
 #endif
     ]
-  , testIntegralProperty "integerCubeRoot'" integerCubeRoot'Property
   , testIntegralProperty "isCube"           isCubeProperty
-  , testIntegralProperty "isCube'"          isCube'Property
   , testIntegralProperty "exactCubeRoot"    exactCubeRootProperty
-  , testIntegralProperty "isPossibleCube"   isPossibleCubeProperty
   ]

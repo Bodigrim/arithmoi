@@ -1,6 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE TypeApplications          #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -11,14 +12,15 @@ module Math.NumberTheory.DiscreteLogarithmBench
   ) where
 
 import Gauge.Main
+import Control.Monad
 import Data.Maybe
 import GHC.TypeNats.Compat
 import Data.Proxy
 import Numeric.Natural
 
-import Math.NumberTheory.Moduli.Class (isMultElement, KnownNat, MultMod, multElement, getVal,Mod)
-import Math.NumberTheory.Moduli.DiscreteLogarithm (discreteLogarithm)
-import Math.NumberTheory.Moduli.PrimitiveRoot (PrimitiveRoot, isPrimitiveRoot, unPrimitiveRoot, cyclicGroupFromModulo)
+import Math.NumberTheory.Moduli.Class (isMultElement, MultMod, multElement, getVal,Mod)
+import Math.NumberTheory.Moduli.Multiplicative
+import Math.NumberTheory.Moduli.Singleton
 
 data Case = forall m. KnownNat m => Case (PrimitiveRoot m) (MultMod m) String
 
@@ -31,7 +33,7 @@ makeCase :: (Integer, Integer, Natural, String) -> Maybe Case
 makeCase (a,b,n,s) =
   case someNatVal n of
     SomeNat (_ :: Proxy m) ->
-      Case <$> isPrimitiveRoot a' <*> isMultElement b' <*> pure s
+      Case <$> join (isPrimitiveRoot @Integer <$> cyclicGroup <*> pure a') <*> isMultElement b' <*> pure s
         where a' = fromInteger a :: Mod m
               b' = fromInteger b
 
@@ -45,15 +47,16 @@ cases = mapMaybe makeCase [ (5,  8,  10^9 + 7,  "10^9 + 7")
 rangeCases :: Natural -> Int -> [Case]
 rangeCases start num = take num $ do
   n <- [start..]
-  _cg <- maybeToList $ cyclicGroupFromModulo n
   case someNatVal n of
-    SomeNat (_ :: Proxy m) -> do
-      a <- take 1 $ mapMaybe isPrimitiveRoot [2 :: Mod m .. maxBound]
-      b <- take 1 $ filter (/= unPrimitiveRoot a) $ mapMaybe isMultElement [2 .. maxBound]
-      return $ Case a b (show n)
+    SomeNat (_ :: Proxy m) -> case cyclicGroup :: Maybe (CyclicGroup Integer m) of
+      Nothing -> []
+      Just cg -> do
+        a <- take 1 $ mapMaybe (isPrimitiveRoot cg) [2 :: Mod m .. maxBound]
+        b <- take 1 $ filter (/= unPrimitiveRoot a) $ mapMaybe isMultElement [2 .. maxBound]
+        return $ Case a b (show n)
 
 discreteLogarithm' :: Case -> Natural
-discreteLogarithm' (Case a b _) = discreteLogarithm a b
+discreteLogarithm' (Case a b _) = discreteLogarithm (fromJust cyclicGroup) a b
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Discrete logarithm"

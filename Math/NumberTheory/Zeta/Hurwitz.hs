@@ -15,13 +15,11 @@ module Math.NumberTheory.Zeta.Hurwitz
 import Math.NumberTheory.Recurrences (bernoulli, factorial)
 import Math.NumberTheory.Zeta.Utils  (skipEvens, skipOdds)
 
--- | Values of Hurwitz zeta function evaluated at @ζ(s, a)@ with
--- @forall t1 . (Floating t1, Ord t1) => a ∈ t1@, and @s ∈ [0, 1 ..]@.
+-- | Values of Hurwitz zeta function evaluated at @ζ(s, a)@ for @s ∈ [0, 1 ..]@.
 --
 -- The algorithm used was based on the Euler-Maclaurin formula and was derived
 -- from <http://fredrikj.net/thesis/thesis.pdf Fast and Rigorous Computation of Special Functions to High Precision>
 -- by F. Johansson, chapter 4.8, formula 4.8.5.
---
 -- The error for each value in this recurrence is given in formula 4.8.9 as an
 --  indefinite integral, and in formula 4.8.12 as a closed form formula.
 --
@@ -29,8 +27,8 @@ import Math.NumberTheory.Zeta.Utils  (skipEvens, skipOdds)
 -- the type chosen.
 --
 -- For instance, when using @Double@s, it does not make sense
--- to provide a number @ε >= 1e-53@ as the desired precision. For @Float@s,
--- providing an @ε >= 1e-24@ also does not make sense.
+-- to provide a number @ε < 1e-53@ as the desired precision. For @Float@s,
+-- providing an @ε < 1e-24@ also does not make sense.
 -- Example of how to call the function:
 --
 -- >>> zetaHurwitz 1e-15 0.25 !! 5

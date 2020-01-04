@@ -1,3 +1,137 @@
+0.11.0.0
+
+    Breaking changes:
+
+        Deprecate 'Math.NumberTheory.Euclidean', use 'Data.Euclidean' instead.
+
+        Deprecate 'chineseRemainder' and 'chineseRemainder2', use 'chineseCoprime'
+        instead.
+
+        Deprecate 'Math.NumberTheory.Powers' except 'Math.NumberTheory.Powers.Modular'.
+        Use 'Math.NumberTheory.Roots' instead.
+
+        Deprecate 'Math.NumberTheory.Moduli.Jacobi', use 'Math.NumberTheory.Moduli.Sqrt'
+        instead.
+
+        Deprecate 'Math.NumberTheory.Moduli.{DiscreteLogarithm,PrimitiveRoot}',
+        use 'Math.NumberTheory.Moduli.Multiplicative' instead.
+
+0.10.0.0
+    This release supports GHC 8.0, 8.2, 8.4, 8.6 and 8.8.
+
+    Breaking changes:
+
+        Move 'Euclidean' type class to 'semirings' package (#168).
+        Embrace the new 'Semiring' -> 'GcdDomain' -> 'Euclidean' hierarchy
+        of classes, refining 'Num' and 'Integral' constraints.
+
+        Deprecate 'Math.NumberTheory.Primes.Factorisation', use
+        'Math.NumberTheory.Primes.factorise' instead. Deprecate
+        'Math.NumberTheory.Primes.Sieve', use 'Enum' instance instead.
+        Deprecate 'Math.NumberTheory.Primes.Factorisation.Certified' and
+        'Math.NumberTheory.Primes.Testing.Certificates'.
+
+        Remove deprecated earlier 'Math.NumberTheory.Recurrencies.*'
+        and 'Math.NumberTheory.UniqueFactorisation' modules.
+        Use 'Math.NumberTheory.Recurrences.*' and 'Math.NumberTheory.Primes'
+        instead.
+
+        Remove deprecated earlier an old interface of 'Math.NumberTheory.Moduli.Sqrt'.
+
+        Reshuffle exports from 'Math.NumberTheory.Zeta', do not advertise
+        its submodules as available to import.
+
+        Add a proxy argument storing vector's flavor to
+        'Math.NumberTheory.MoebiusInversion.{generalInversion,totientSum}'.
+        Deprecate 'Math.NumberTheory.MoebiusInversion.Int'.
+
+        Deprecate 'Math.NumberTheory.SmoothNumbers.{fromSet,fromSmoothUpperBound}'.
+        Use 'Math.NumberTheory.SmoothNumbers.fromList' instead.
+        Deprecate 'Math.NumberTheory.SmoothNumbers.smoothOverInRange' in favor
+        of 'smoothOver' and 'Math.NumberTheory.SmoothNumbers.smoothOverInRange'
+        in favor of 'isSmooth'.
+
+        'solveQuadratic' and 'sqrtsMod' require an additional argument: a singleton
+        linking a type-level modulo with a term-level factorisation (#169).
+
+    New features:
+
+        The machinery of cyclic groups, primitive roots and discrete logarithms
+        has been completely overhauled and rewritten using singleton types (#169).
+
+        There is also a new singleton type, linking a type-level modulo with
+        a term-level factorisation. It allows both to have a nicely-typed API
+        of `Mod m` and avoid repeating factorisations (#169).
+
+        Refer to a brand new module 'Math.NumberTheory.Moduli.Singleton' for details.
+
+        Add a new function 'factorBack'.
+
+    Improvements:
+
+        Add 'Ord SomeMod' instance (#165).
+
+        Generalize 'sieveBlock' to handle any flavor of 'Vector' (#164).
+
+        Add Semiring and Ring instances for Eisenstein and Gaussian integers.
+
+0.9.0.0
+    This release supports GHC 8.0, 8.2, 8.4 and 8.6.
+
+    Breaking changes:
+
+        Remove 'Prime' type family and introduce 'Prime' newtype. This newtype
+        is now used extensively in public API:
+
+        primes :: Integral a => [Prime a]
+        primeList :: Integral a => PrimeSieve -> [Prime a]
+        sieveFrom :: Integer -> [Prime Integer]
+        nthPrime :: Integer -> Prime Integer
+
+        'sbcFunctionOnPrimePower' now accepts 'Prime Word' instead of 'Word'.
+
+        'Math.NumberTheory.Primes.{Factorisation,Testing,Counting,Sieve}'
+        are no longer re-exported from 'Math.NumberTheory.Primes'.
+        Merge 'Math.NumberTheory.UniqueFactorisation' into
+        'Math.NumberTheory.Primes' (#135, #153).
+
+        From now on 'Math.NumberTheory.Primes.Factorisation.factorise'
+        and similar functions return [(Integer, Word)] instead of [(Integer, Int)].
+
+        Remove deprecated 'Math.NumberTheory.GCD' and 'Math.NumberTheory.GCD.LowLevel'.
+
+        Deprecate 'Math.NumberTheory.Recurrencies.*'.
+        Use 'Math.NumberTheory.Recurrences.*' instead (#146).
+
+    New features:
+
+        New functions 'nextPrime' and 'precPrime'. Implement an instance of 'Enum' for primes (#153):
+
+        > [nextPrime 101 .. precPrime 130]
+        [Prime 101,Prime 103,Prime 107,Prime 109,Prime 113,Prime 127]
+
+        Support Gaussian and Eisenstein integers in smooth numbers (#138).
+
+        Add the Hurwitz zeta function on non-negative integer arguments (#126).
+
+        Implement efficient tests of n-freeness: pointwise and in interval. See 'isNFree' and 'nFreesBlock' (#145).
+
+        Generate preimages of the totient and the sum-of-divisors functions (#142):
+
+        > inverseTotient 120 :: [Integer]
+        [155,310,183,366,225,450,175,350,231,462,143,286,244,372,396,308,248]
+
+        Generate coefficients of Faulhaber polynomials 'faulhaberPoly' (#70).
+
+    Improvements:
+
+        Better precision for exact values of Riemann zeta and Dirichlet beta
+        functions (#123).
+
+        Speed up certain cases of modular multiplication (#160).
+
+        Extend Chinese theorem to non-coprime moduli (#71).
+
 0.8.0.0
     This release supports GHC 7.10, 8.0, 8.2, 8.4 and 8.6.
 

@@ -9,6 +9,8 @@
 -- <https://www.emis.de/journals/JIS/VOL19/Alekseyev/alek5.pdf Computing the Inverses, their Power Sums, and Extrema for Euler’s Totient and Other Multiplicative Functions>
 -- by M. A. Alekseyev.
 
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -25,23 +27,25 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
   ) where
 
 import Prelude hiding (rem, quot)
+import Data.Bits (Bits)
+import Data.Euclidean
 import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Ord (Down(..))
+#if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
-import Data.Semiring (Semiring(..))
+#endif
+import Data.Semiring (Semiring(..), Mul(..))
 import Data.Set (Set)
 import qualified Data.Set as S
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
-import Math.NumberTheory.Euclidean
 import Math.NumberTheory.Logarithms
-import Math.NumberTheory.Powers
-import Math.NumberTheory.Primes (primes)
-import Math.NumberTheory.UniqueFactorisation
+import Math.NumberTheory.Roots.General (integerRoot)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS
 import Math.NumberTheory.Utils.FromIntegral
@@ -57,7 +61,7 @@ instance Show a => Show (PrimePowers a) where
 -- | Convert a list of powers of a prime into an atomic Dirichlet series
 -- (Section 4, Step 2).
 atomicSeries
-  :: (Semiring b, Num a, Ord a)
+  :: Num a
   => (a -> b)               -- ^ How to inject a number into a semiring
   -> ArithmeticFunction a c -- ^ Arithmetic function, which we aim to inverse
   -> PrimePowers a          -- ^ List of powers of a prime
@@ -67,7 +71,7 @@ atomicSeries point (ArithmeticFunction f g) (PrimePowers p ks) =
 
 -- | See section 5.1 of the paper.
 invTotient
-  :: forall a. (Num a, UniqueFactorisation a, Eq a)
+  :: forall a. (UniqueFactorisation a, Eq a)
   => [(Prime a, Word)]
   -- ^ Factorisation of a value of the totient function
   -> [PrimePowers a]
@@ -87,7 +91,7 @@ invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
 
 -- | See section 5.2 of the paper.
 invSigma
-  :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)
+  :: forall a. (Euclidean a, Integral a, UniqueFactorisation a, Enum (Prime a), Bits a)
   => [(Prime a, Word)]
   -- ^ Factorisation of a value of the sum-of-divisors function
   -> [PrimePowers a]
@@ -129,7 +133,7 @@ invSigma fs
     pksSmall :: Map (Prime a) (Set Word)
     pksSmall = M.fromDistinctAscList
       [ (p, pows)
-      | p <- takeWhile ((< lim) . unPrime) primes
+      | p <- [nextPrime 2 .. precPrime lim]
       , let pows = doPrime p
       , not (null pows)
       ]
@@ -156,7 +160,7 @@ invSigma fs
 -- This allows us to crop resulting Dirichlet series (see 'filter' calls
 -- in 'invertFunction' below) at the end of each batch, saving time and memory.
 strategy
-  :: forall a c. (Euclidean c, Ord c)
+  :: forall a c. (GcdDomain c, Ord c)
   => ArithmeticFunction a c
   -- ^ Arithmetic function, which we aim to inverse
   -> [(Prime c, Word)]
@@ -177,13 +181,13 @@ strategy (ArithmeticFunction f g) factors args = (Nothing, ret) : rets
       -> ([PrimePowers a], (Maybe (Prime c, Word), [PrimePowers a]))
     go ts (p, k) = (rs, (Just (p, k), qs))
       where
-        predicate (PrimePowers q ls) = any (\l -> g (f q l) `rem` unPrime p == 0) ls
+        predicate (PrimePowers q ls) = any (\l -> isJust $ g (f q l) `divide` unPrime p) ls
         (qs, rs) = partition predicate ts
 
 -- | Main workhorse.
 invertFunction
   :: forall a b c.
-     (Num a, Ord a, Semiring b, Euclidean c, UniqueFactorisation c, Ord c)
+     (Num a, Semiring b, Euclidean c, UniqueFactorisation c, Ord c)
   => (a -> b)
   -- ^ How to inject a number into a semiring
   -> ArithmeticFunction a c
@@ -298,7 +302,7 @@ inverseTotient point = invertFunction point totientA invTotient
 -- >>> unMaxWord (inverseSigma MaxWord 120)
 -- 95
 inverseSigma
-  :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a)
+  :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a)
   => (a -> b)
   -> a
   -> b
@@ -363,8 +367,8 @@ instance Semiring MinNatural where
 
 -- | Helper to extract a set of preimages for 'inverseTotient' or 'inverseSigma'.
 asSetOfPreimages
-  :: (Euclidean a, Integral a)
+  :: (Ord a, Semiring a)
   => (forall b. Semiring b => (a -> b) -> a -> b)
   -> a
   -> S.Set a
-asSetOfPreimages f = S.mapMonotonic getProduct . f (S.singleton . Product)
+asSetOfPreimages f = S.mapMonotonic getMul . f (S.singleton . Mul)

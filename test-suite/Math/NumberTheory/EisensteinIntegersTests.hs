@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
-
 -- |
 -- Module:      Math.NumberTheory.EisensteinIntegersTests
 -- Copyright:   (c) 2018 Alexandre Rodrigues Baldé
@@ -9,20 +7,25 @@
 -- Tests for Math.NumberTheory.EisensteinIntegers
 --
 
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.EisensteinIntegersTests
   ( testSuite
   ) where
 
+import Prelude hiding (gcd, rem, quot, quotRem)
+import Data.Euclidean
 import Data.Maybe (fromJust, isJust)
+import Data.Proxy
+import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.QuickCheck.Classes
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
                                                       testCase)
 
-import qualified Math.NumberTheory.Euclidean as ED
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.Primes
-import Math.NumberTheory.TestUtils                    (Positive (..),
-                                                       testSmallAndQuick)
+import Math.NumberTheory.TestUtils
 
 -- | Check that @signum@ and @abs@ satisfy @z == signum z * abs z@, where @z@ is
 -- an @EisensteinInteger@.
@@ -42,55 +45,43 @@ absProperty z = isOrigin || (inFirstSextant && isAssociate)
     inFirstSextant = x' > y' && y' >= 0
     isAssociate = z' `elem` map (\e -> z * (1 E.:+ 1) ^ e) [0 .. 5]
 
--- | Verify that @div@ and @mod@ are what `divMod` produces.
-divModProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-divModProperty1 x y = y == 0 || (q == q' && r == r')
-  where
-    (q, r) = ED.divMod x y
-    q'     = ED.div x y
-    r'     = ED.mod x y
-
--- | Verify that @divModE` produces the right quotient and remainder.
-divModProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-divModProperty2 x y = (y == 0) || (x `ED.div` y) * y + (x `ED.mod` y) == x
-
--- | Verify that @divModE@ produces a remainder smaller than the divisor with
+-- | Verify that @rem@ produces a remainder smaller than the divisor with
 -- regards to the Euclidean domain's function.
-modProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-modProperty1 x y = (y == 0) || (E.norm $ x `ED.mod` y) < (E.norm y)
+remProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
+remProperty1 x y = (y == 0) || (E.norm $ x `rem` y) < (E.norm y)
 
 -- | Verify that @quot@ and @rem@ are what `quotRem` produces.
 quotRemProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 quotRemProperty1 x y = (y == 0) || q == q' && r == r'
   where
-    (q, r) = ED.quotRem x y
-    q'     = ED.quot x y
-    r'     = ED.rem x y
+    (q, r) = quotRem x y
+    q'     = quot x y
+    r'     = rem x y
 
 -- | Verify that @quotRemE@ produces the right quotient and remainder.
 quotRemProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-quotRemProperty2 x y = (y == 0) || (x `ED.quot` y) * y + (x `ED.rem` y) == x
+quotRemProperty2 x y = (y == 0) || (x `quot` y) * y + (x `rem` y) == x
 
 -- | Verify that @gcd z1 z2@ always divides @z1@ and @z2@.
 gcdEProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty1 z1 z2
   = z1 == 0 && z2 == 0
-  || z1 `ED.rem` z == 0 && z2 `ED.rem` z == 0 && z == abs z
+  || z1 `rem` z == 0 && z2 `rem` z == 0
   where
-    z = ED.gcd z1 z2
+    z = gcd z1 z2
 
 -- | Verify that a common divisor of @z1, z2@ is a always divisor of @gcd z1 z2@.
 gcdEProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty2 z z1 z2
   = z == 0
-  || (ED.gcd z1' z2') `ED.rem` z == 0
+  || (gcd z1' z2') `rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
 
 -- | A special case that tests rounding/truncating in GCD.
 gcdESpecialCase1 :: Assertion
-gcdESpecialCase1 = assertEqual "gcd" 1 $ ED.gcd (12 E.:+ 23) (23 E.:+ 34)
+gcdESpecialCase1 = assertEqual "gcd" (1 E.:+ 1) $ gcd (12 E.:+ 23) (23 E.:+ 34)
 
 findPrimesProperty1 :: Positive Int -> Bool
 findPrimesProperty1 (Positive index) =
@@ -151,13 +142,10 @@ factoriseSpecialCase1 = assertEqual "should be equal"
 testSuite :: TestTree
 testSuite = testGroup "EisensteinIntegers" $
   [ testSmallAndQuick "forall z . z == signum z * abs z" signumAbsProperty
-  , testSmallAndQuick "abs z always returns an @EisensteinInteger@ in the\
-                      \ first sextant of the complex plane" absProperty
+  , testSmallAndQuick "abs z rotates to the first sextant" absProperty
   , testGroup "Division"
-    [ testSmallAndQuick "divE and modE work properly" divModProperty1
-    , testSmallAndQuick "divModE works properly" divModProperty2
-    , testSmallAndQuick "The remainder's norm is smaller than the divisor's"
-                        modProperty1
+    [ testSmallAndQuick "The remainder's norm is smaller than the divisor's"
+                        remProperty1
 
     , testSmallAndQuick "quotE and remE work properly" quotRemProperty1
     , testSmallAndQuick "quotRemE works properly" quotRemProperty2
@@ -166,24 +154,21 @@ testSuite = testGroup "EisensteinIntegers" $
   , testGroup "g.c.d."
     [ testSmallAndQuick "The g.c.d. of two Eisenstein integers divides them"
                         gcdEProperty1
-    , testSmallAndQuick "A common divisor of two Eisenstein integers always\
-                        \ divides the g.c.d. of those two integers"
+    -- smallcheck takes too long
+    , QC.testProperty "Common divisor divides gcd"
                         gcdEProperty2
     , testCase          "g.c.d. (12 :+ 23) (23 :+ 34)" gcdESpecialCase1
     ]
   , testSmallAndQuick "The Eisenstein norm function is multiplicative"
                     euclideanDomainProperty1
   , testGroup "Primality"
-    [ testSmallAndQuick "Eisenstein primes found by the norm search used in\
-                        \ findPrime are really prime"
+    [ testSmallAndQuick "findPrime returns prime"
                         findPrimesProperty1
-    , testSmallAndQuick "Eisenstein primes generated by `primes` are actually\
-                        \ primes"
+    , testSmallAndQuick "primes are actually prime"
                         primesProperty1
-    , testSmallAndQuick "The infinite list of Eisenstein primes produced by\
-                        \ `primes` is ordered. "
+    , testSmallAndQuick "primes is ordered"
                         primesProperty2
-    , testSmallAndQuick "All generated primes are in the first sextant"
+    , testSmallAndQuick "primes are in the first sextant"
                         primesProperty3
     ]
 
@@ -196,4 +181,6 @@ testSuite = testGroup "EisensteinIntegers" $
                           factoriseProperty3
       , testCase          "factorise 15:+12" factoriseSpecialCase1
       ]
+  , lawsToTest $ gcdDomainLaws (Proxy :: Proxy E.EisensteinInteger)
+  , lawsToTest $ euclideanLaws (Proxy :: Proxy E.EisensteinInteger)
   ]

@@ -26,19 +26,19 @@ module Math.NumberTheory.Quadratic.EisensteinIntegers
   , primes
   ) where
 
+import Prelude hiding (quot, quotRem, gcd)
 import Control.DeepSeq
 import Data.Coerce
+import Data.Euclidean
 import Data.List                                       (mapAccumL, partition)
-import Data.Maybe                                      (fromMaybe)
+import Data.Maybe
 import Data.Ord                                        (comparing)
+import qualified Data.Semiring as S
 import GHC.Generics                                    (Generic)
 
-import qualified Math.NumberTheory.Euclidean            as ED
 import Math.NumberTheory.Moduli.Sqrt
-import qualified Math.NumberTheory.Primes.Sieve         as Sieve
-import qualified Math.NumberTheory.Primes.Testing       as Testing
 import Math.NumberTheory.Primes.Types
-import qualified Math.NumberTheory.UniqueFactorisation  as U
+import qualified Math.NumberTheory.Primes as U
 import Math.NumberTheory.Utils                          (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -75,6 +75,16 @@ instance Num EisensteinInteger where
     fromInteger n = n :+ 0
     signum = snd . absSignum
 
+instance S.Semiring EisensteinInteger where
+    plus          = (+)
+    times         = (*)
+    zero          = 0 :+ 0
+    one           = 1 :+ 0
+    fromNatural n = fromIntegral n :+ 0
+
+instance S.Ring EisensteinInteger where
+    negate = negate
+
 -- | Returns an @EisensteinInteger@'s sign, and its associate in the first
 -- sextant.
 absSignum :: EisensteinInteger -> (EisensteinInteger, EisensteinInteger)
@@ -96,25 +106,26 @@ ids = take 6 (iterate ((1 + ω) *) 1)
 associates :: EisensteinInteger -> [EisensteinInteger]
 associates e = map (e *) ids
 
-instance ED.Euclidean EisensteinInteger where
-  quotRem = divHelper quot
-  divMod  = divHelper div
+instance GcdDomain EisensteinInteger
+
+instance Euclidean EisensteinInteger where
+    degree = fromInteger . norm
+    quotRem = divHelper
 
 -- | Function that does most of the underlying work for @divMod@ and
 -- @quotRem@, apart from choosing the specific integer division algorithm.
 -- This is instead done by the calling function (either @divMod@ which uses
 -- @div@, or @quotRem@, which uses @quot@.)
 divHelper
-    :: (Integer -> Integer -> Integer)
-    -> EisensteinInteger
+    :: EisensteinInteger
     -> EisensteinInteger
     -> (EisensteinInteger, EisensteinInteger)
-divHelper divide g h =
-    let nr :+ ni = g * conjugate h
+divHelper g h = (q, r)
+    where
+        nr :+ ni = g * conjugate h
         denom = norm h
-        q = divide nr denom :+ divide ni denom
-        p = h * q
-    in (q, g - p)
+        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+   ((ni + signum ni * denom `quot` 2) `quot` denom)
+        r = g - h * q
 
 -- | Conjugate a Eisenstein integer.
 conjugate :: EisensteinInteger -> EisensteinInteger
@@ -133,8 +144,8 @@ isPrime e | e == 0                     = False
           -- Special case, @1 - ω@ is the only Eisenstein prime with norm @3@,
           --  and @abs (1 - ω) = 2 + ω@.
           | a' == 2 && b' == 1         = True
-          | b' == 0 && a' `mod` 3 == 2 = Testing.isPrime a'
-          | nE `mod` 3 == 1            = Testing.isPrime nE
+          | b' == 0 && a' `mod` 3 == 2 = isJust $ U.isPrime a'
+          | nE `mod` 3 == 1            = isJust $ U.isPrime nE
           | otherwise = False
   where nE       = norm e
         a' :+ b' = abs e
@@ -146,7 +157,7 @@ divideByThree = go 0
   where
     go :: Word -> EisensteinInteger -> (Word, EisensteinInteger)
     go !n z@(a :+ b) | r1 == 0 && r2 == 0 = go (n + 1) (q1 :+ q2)
-                      | otherwise          = (n, abs z)
+                     | otherwise          = (n, abs z)
       where
         -- @(a + a - b) :+ (a + b)@ is @z * (2 :+ 1)@, and @z * (2 :+ 1)/3@
         -- is the same as @z / (1 :+ (-1))@.
@@ -160,7 +171,7 @@ divideByThree = go 0
 -- The maintainer <https://github.com/cartazio/arithmoi/pull/121#issuecomment-415010647 Andrew Lelechenko>
 -- derived the following:
 --
---     * Each prime of form @3n + 1@ is actually of form @6k + 1@.
+--     * Each prime of the form @3n + 1@ is actually of the form @6k + 1@.
 --     * One has @(z + 3k)^2 ≡ z^2 + 6kz + 9k^2 ≡ z^2 + (6k + 1)z - z + 9k^2 ≡ z^2 - z + 9k^2 (mod 6k + 1)@.
 --
 -- The goal is to solve @z^2 - z + 1 ≡ 0 (mod 6k + 1)@. One has:
@@ -179,7 +190,7 @@ divideByThree = go 0
 findPrime :: Prime Integer -> U.Prime EisensteinInteger
 findPrime p = case sqrtsModPrime (9*k*k - 1) p of
     []    -> error "findPrime: argument must be prime p = 6k + 1"
-    z : _ -> Prime $ ED.gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
+    z : _ -> Prime $ abs $ gcd (unPrime p :+ 0) ((z - 3 * k) :+ 1)
     where
         k :: Integer
         k = unPrime p `div` 6
@@ -194,7 +205,7 @@ primes :: [Prime EisensteinInteger]
 primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
   where
     leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) Sieve.primes
+    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) [U.nextPrime 2 ..]
     rightPrimes' = filter (\prime -> unPrime prime `mod` 3 == 1) $ tail rightPrimes
     l = [unPrime p :+ 0 | p <- leftPrimes]
     r = [g | p <- rightPrimes', let x :+ y = unPrime (findPrime p), g <- [x :+ y, x :+ (x - y)]]
@@ -215,7 +226,7 @@ primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
 --        where @a, b, c, a_i@ are nonnegative integers, @N > 1@ is an integer and
 --        @π_i@ are Eisenstein primes.
 --
--- Aplying @norm@ to both sides of Theorem 8.4:
+-- Aplying @norm@ to both sides of the equation from Theorem 8.4:
 --
 -- 1. @norm μ = norm ( (-1)^a * ω^b * (1 - ω)^c * product [ π_i^a_i | i <- [1..N]] ) ==@
 -- 2. @norm μ = norm ((-1)^a) * norm (ω^b) * norm ((1 - ω)^c) * norm (product [ π_i^a_i | i <- [1..N]]) ==@
@@ -255,7 +266,7 @@ factorise g = concat $
       | unPrime p `mod` 3 == 2
       = let e' = e `quot` 2 in (z `quotI` (unPrime p ^ e'), [(Prime (unPrime p :+ 0), e')])
 
-      -- The @`mod` 3 == 0@ case need not be verified because the
+      -- The @`rem` 3 == 0@ case need not be verified because the
       -- only Eisenstein primes whose norm are a multiple of 3
       -- are @1 - ω@ and its associates, which have already been
       -- removed by the above @go z (3, e)@ pattern match.

@@ -4,7 +4,8 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
--- Arithmetic on Montgomery elliptic curve.
+-- Arithmetic on Montgomery elliptic curves.
+-- This is an internal module, exposed only for purposes of testing.
 --
 
 {-# LANGUAGE BangPatterns        #-}
@@ -15,6 +16,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 module Math.NumberTheory.Curves.Montgomery
   ( Point
@@ -68,7 +70,7 @@ instance KnownNat n => Eq (Point a24 n) where
   Point _ 0 == Point _ 0 = True
   Point _ 0 == _         = False
   _         == Point _ 0 = False
-  p@(Point x1 z1) == Point x2 z2 = let n = pointN p in x1 * z2 `mod` n == x2 * z1 `mod` n
+  p@(Point x1 z1) == Point x2 z2 = let n = pointN p in (x1 * z2 - x2 * z1) `rem` n == 0
 
 -- | For debugging.
 instance (KnownNat a24, KnownNat n) => Show (Point a24 n) where

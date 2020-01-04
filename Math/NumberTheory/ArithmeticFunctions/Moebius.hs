@@ -36,8 +36,8 @@ import GHC.Exts
 import GHC.Integer.GMP.Internals
 import Unsafe.Coerce
 
-import Math.NumberTheory.Primes (primes, unPrime)
-import Math.NumberTheory.Powers.Squares (integerSquareRoot)
+import Math.NumberTheory.Roots.Squares (integerSquareRoot)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.FromIntegral (wordToInt)
 
 import Math.NumberTheory.Logarithms
@@ -125,7 +125,7 @@ instance Monoid Moebius where
 -- Based on the sieving algorithm from p. 3 of <https://arxiv.org/pdf/1610.08551.pdf Computations of the Mertens function and improved bounds on the Mertens conjecture> by G. Hurst. It is approximately 5x faster than 'Math.NumberTheory.ArithmeticFunctions.SieveBlock.sieveBlockUnboxed'.
 --
 -- >>> sieveBlockMoebius 1 10
--- [MoebiusP, MoebiusN, MoebiusN, MoebiusZ, MoebiusN, MoebiusP, MoebiusN, MoebiusZ, MoebiusZ, MoebiusP]
+-- [MoebiusP,MoebiusN,MoebiusN,MoebiusZ,MoebiusN,MoebiusP,MoebiusN,MoebiusZ,MoebiusZ,MoebiusP]
 sieveBlockMoebius
   :: Word
   -> Word
@@ -160,7 +160,7 @@ sieveBlockMoebius lowIndex' len'
     -- Bit fiddling in 'mapper' is correct only
     -- if all sufficiently small (<= 191) primes has been sieved out.
     ps :: [Int]
-    ps = takeWhile (<= (191 `max` integerSquareRoot highIndex)) $ map unPrime primes
+    ps = map unPrime [nextPrime 2 .. precPrime (191 `max` integerSquareRoot highIndex)]
 
     mapper :: Int -> Word8 -> Word8
     mapper ix val

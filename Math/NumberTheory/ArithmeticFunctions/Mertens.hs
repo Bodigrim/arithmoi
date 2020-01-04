@@ -16,8 +16,8 @@ module Math.NumberTheory.ArithmeticFunctions.Mertens
 
 import qualified Data.Vector.Unboxed as U
 
-import Math.NumberTheory.Powers.Cubes
-import Math.NumberTheory.Powers.Squares
+import Math.NumberTheory.Roots.Cubes
+import Math.NumberTheory.Roots.Squares
 import Math.NumberTheory.ArithmeticFunctions.Moebius
 
 -- | Compute individual values of Mertens function in O(n^(2/3)) time and space.

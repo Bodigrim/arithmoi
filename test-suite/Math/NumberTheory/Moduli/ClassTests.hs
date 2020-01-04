@@ -8,6 +8,7 @@
 --
 
 {-# LANGUAGE CPP             #-}
+{-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE ViewPatterns    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -17,6 +18,7 @@ module Math.NumberTheory.Moduli.ClassTests
   ) where
 
 import Test.Tasty
+import qualified Test.Tasty.QuickCheck as QC
 
 import Data.Maybe
 import Numeric.Natural
@@ -33,7 +35,7 @@ powerMod b e m = (b `modulo` fromInteger m) ^ e
 -- | Check that 'invertMod' inverts numbers modulo.
 invertModProperty :: AnySign Integer -> Positive Integer -> Bool
 invertModProperty (AnySign k) (Positive m) = case invertMod k m of
-  Nothing            -> k `mod` m == 0 || gcd k m > 1
+  Nothing            -> k `rem` m == 0 || gcd k m > 1
   Just InfMod{}      -> False
   Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1
 
@@ -93,6 +95,27 @@ someModMulProperty x1 (Positive m1) x2 (Positive m2) = case (x1 `modulo` m1) * (
     m3 = toInteger $ m1 `gcd` m2
     x3 = (x1 * x2) `mod` m3
 
+sameSomeModMulProperty :: Integer -> Integer -> Positive Natural -> Bool
+sameSomeModMulProperty x1 x2 (Positive m) = case (x1 `modulo` m) * (x2 `modulo` m) of
+  SomeMod z -> getMod z == toInteger m && getVal z == x3
+  InfMod{}  -> False
+  where
+    x3 = (x1 * x2) `mod` toInteger m
+
+sameSomeModMulHugeProperty :: Integer -> Integer -> Positive (Huge Natural) -> Bool
+sameSomeModMulHugeProperty x1 x2 (Positive (Huge m)) = case (x1 `modulo` m) * (x2 `modulo` m) of
+  SomeMod z -> getMod z == toInteger m && getVal z == x3
+  InfMod{}  -> False
+  where
+    x3 = (x1 * x2) `mod` toInteger m
+
+sameSomeModMulHugeAllProperty :: Huge Integer -> Huge Integer -> Positive (Huge Natural) -> Bool
+sameSomeModMulHugeAllProperty (Huge x1) (Huge x2) (Positive (Huge m)) = case (x1 `modulo` m) * (x2 `modulo` m) of
+  SomeMod z -> getMod z == toInteger m && getVal z == x3
+  InfMod{}  -> False
+  where
+    x3 = (x1 * x2) `mod` toInteger m
+
 someModNegProperty :: Integer -> Positive Natural -> Bool
 someModNegProperty x1 (Positive m1) = case negate (x1 `modulo` m1) of
   SomeMod z -> getMod z == m3 && getVal z == x3
@@ -149,6 +172,11 @@ testSuite = testGroup "Class"
       [ testSmallAndQuick "multiplicative by base"  powerModProperty2_Integer
       , testSmallAndQuick "additive by exponent"    powerModProperty3_Integer
       ]
+    ]
+  , testGroup "Same SomeMod"
+    [ testSmallAndQuick "mul" sameSomeModMulProperty
+    , QC.testProperty "mul huge" sameSomeModMulHugeProperty
+    , QC.testProperty "mul huge all" sameSomeModMulHugeAllProperty
     ]
   , testGroup "SomeMod"
     [ testSmallAndQuick "add" someModAddProperty

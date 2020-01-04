@@ -27,7 +27,9 @@ module Math.NumberTheory.TestUtils.Wrappers where
 
 import Control.Applicative
 import Data.Coerce
+import Data.Euclidean
 import Data.Functor.Classes
+import Data.Semiring (Semiring)
 
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
 import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
@@ -38,7 +40,7 @@ import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 -- AnySign
 
 newtype AnySign a = AnySign { getAnySign :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary)
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary, Semiring, GcdDomain, Euclidean)
 
 instance (Monad m, Serial m a) => Serial m (AnySign a) where
   series = AnySign <$> series
@@ -56,6 +58,9 @@ instance Show1 AnySign where
 -- Positive from smallcheck
 
 deriving instance Functor Positive
+deriving instance Semiring a => Semiring (Positive a)
+deriving instance GcdDomain a => GcdDomain (Positive a)
+deriving instance Euclidean a => Euclidean (Positive a)
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (Positive a) where
   arbitrary = Positive <$> (arbitrary `suchThat` (> 0))
@@ -78,6 +83,9 @@ instance Show1 Positive where
 -- NonNegative from smallcheck
 
 deriving instance Functor NonNegative
+deriving instance Semiring a => Semiring (NonNegative a)
+deriving instance GcdDomain a => GcdDomain (NonNegative a)
+deriving instance Euclidean a => Euclidean (NonNegative a)
 
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (NonNegative a) where
   arbitrary = NonNegative <$> (arbitrary `suchThat` (>= 0))
@@ -101,6 +109,10 @@ instance Show1 NonNegative where
 
 instance (Monad m, Num a, Eq a, Serial m a) => Serial m (NonZero a) where
   series = NonZero <$> series `suchThatSerial` (/= 0)
+
+instance (Eq a, Num a, Enum a, Bounded a) => Bounded (NonZero a) where
+  minBound = if minBound == (0 :: a) then NonZero (succ minBound) else NonZero minBound
+  maxBound = if maxBound == (0 :: a) then NonZero (pred maxBound) else NonZero maxBound
 
 -------------------------------------------------------------------------------
 -- Huge
@@ -127,13 +139,13 @@ instance Show1 Huge where
 -- Power
 
 newtype Power a = Power { getPower :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Semiring, GcdDomain, Euclidean)
 
 instance (Monad m, Num a, Ord a, Serial m a) => Serial m (Power a) where
   series = Power <$> series `suchThatSerial` (> 0)
 
 instance (Num a, Ord a, Integral a, Arbitrary a) => Arbitrary (Power a) where
-  arbitrary = Power <$> (getSmall <$> arbitrary) `suchThat` (> 0)
+  arbitrary = Power <$> arbitrarySizedNatural `suchThat` (> 0)
   shrink (Power x) = Power <$> filter (> 0) (shrink x)
 
 instance Eq1 Power where

@@ -7,6 +7,7 @@
 -- N-free number generation.
 --
 
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.ArithmeticFunctions.NFreedom
@@ -17,13 +18,13 @@ module Math.NumberTheory.ArithmeticFunctions.NFreedom
 
 import Control.Monad                         (forM_)
 import Control.Monad.ST                      (runST)
+import Data.Bits (Bits)
 import Data.List                             (scanl')
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
-import Math.NumberTheory.Powers.Squares      (integerSquareRoot)
-import Math.NumberTheory.Primes              (primes, unPrime)
-import Math.NumberTheory.UniqueFactorisation (UniqueFactorisation)
+import Math.NumberTheory.Roots.Squares      (integerSquareRoot)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 
 -- | Evaluate the `Math.NumberTheory.ArithmeticFunctions.isNFree` function over a block.
@@ -40,9 +41,9 @@ import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
 -- undefined, __if__ the function terminates.
 --
 -- >>> sieveBlockNFree 2 1 10
--- [True, True, True, False, True, True, True, False, False, True]
+-- [True,True,True,False,True,True,True,False,False,True]
 sieveBlockNFree
-  :: forall a . Integral a
+  :: forall a. (Integral a, Enum (Prime a), Bits a, UniqueFactorisation a)
   => Word
   -- ^ Power whose @n@-freedom will be checked.
   -> a
@@ -82,14 +83,14 @@ sieveBlockNFree n lowIndex len'
     highIndex = lowIndex + len - 1
 
     ps :: [a]
-    ps = takeWhile (<= integerSquareRoot highIndex) $ map unPrime primes
+    ps = if highIndex < 4 then [] else map unPrime [nextPrime 2 .. precPrime (integerSquareRoot highIndex)]
 
 -- | For a given nonnegative integer power @n@, generate all @n@-free
 -- numbers in ascending order, starting at @1@.
 --
 -- When @n@ is @0@ or @1@, the resulting list is @[1]@.
 nFrees
-    :: forall a . (Integral a, UniqueFactorisation a)
+    :: forall a. (Integral a, Bits a, UniqueFactorisation a, Enum (Prime a))
     => Word
     -- ^ Power @n@ to be used to generate @n@-free numbers.
     -> [a]
@@ -109,7 +110,7 @@ nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
     -- Infinite list of lower bounds at which @sieveBlockNFree@ will be
     -- applied. This has type @Integral a => a@ instead of @Word@ because
     -- unlike the sizes of the sieve that eventually stop increasing (see
-    -- above comment), the lower bound at which @sieveBlockNFree@ does not.
+    -- above comment), the lower bound at which @sieveBlockNFree@ is called does not.
     bounds :: [a]
     bounds = scanl' (+) 1 $ map fromIntegral strides
 
@@ -125,7 +126,7 @@ nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
 --
 -- As with @nFrees@, passing @n = 0, 1@ results in an empty list.
 nFreesBlock
-    :: forall a . Integral a
+    :: forall a . (Integral a, Bits a, UniqueFactorisation a, Enum (Prime a))
     => Word
     -- ^ Power @n@ to be used to generate @n@-free numbers.
     -> a

@@ -7,36 +7,39 @@
 -- Tests for Math.NumberTheory.SmoothNumbersTests
 --
 
+{-# LANGUAGE TypeApplications    #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.SmoothNumbersTests
   ( testSuite
   ) where
 
-import Prelude hiding (mod)
+import Prelude hiding (mod, rem)
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Coerce
-import Data.List (genericDrop, nub, sort)
-import Data.Maybe (fromJust)
-import qualified Data.Set as S
+import Data.Euclidean
+import Data.List (nub)
 import Numeric.Natural
 
-import Math.NumberTheory.Euclidean (Euclidean (..), WrappedIntegral (..))
 import Math.NumberTheory.Primes (Prime (..))
 import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
-import Math.NumberTheory.SmoothNumbers
+import Math.NumberTheory.SmoothNumbers (SmoothBasis, fromList, isSmooth, smoothOver, smoothOver')
 import Math.NumberTheory.TestUtils
 
-fromSetListProperty :: (Euclidean a, Ord a) => [a] -> Bool
-fromSetListProperty xs = fromSet (S.fromList xs) == fromList (sort xs)
-
-isSmoothPropertyHelper :: Euclidean a => (a -> Integer) -> [a] -> Int -> Int -> Bool
+isSmoothPropertyHelper
+  :: (Eq a, Num a, Euclidean a)
+  => (a -> Integer)
+  -> [a]
+  -> Int
+  -> Int
+  -> Bool
 isSmoothPropertyHelper norm primes' i1 i2 =
     let primes = take i1 primes'
-        basis  = fromJust (fromList primes)
+        basis  = fromList primes
     in all (isSmooth basis) $ take i2 $ smoothOver' norm basis
 
 isSmoothProperty1 :: Positive Int -> Positive Int -> Bool
@@ -47,24 +50,41 @@ isSmoothProperty2 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty2 (Positive i1) (Positive i2) =
     isSmoothPropertyHelper E.norm (map unPrime E.primes) i1 i2
 
-fromSmoothUpperBoundProperty :: Integral a => Positive a -> Bool
-fromSmoothUpperBoundProperty (Positive n') = case fromSmoothUpperBound n of
-    Nothing -> n < 2
-    Just sb -> head (genericDrop (n - 1) (smoothOver (coerce sb))) == n
-  where
-    n = WrappedIntegral n' `mod` 5000
+smoothOverInRange :: Integral a => SmoothBasis a -> a -> a -> [a]
+smoothOverInRange s lo hi
+  = takeWhile (<= hi)
+  $ dropWhile (< lo)
+  $ smoothOver s
 
-smoothOverInRangeProperty :: Integral a => SmoothBasis a -> Positive a -> Positive a -> Bool
-smoothOverInRangeProperty s (Positive lo') (Positive diff')
-  = xs == ys
+smoothOverInRangeBF
+  :: (Eq a, Enum a, GcdDomain a)
+  => SmoothBasis a
+  -> a
+  -> a
+  -> [a]
+smoothOverInRangeBF prs lo hi
+  = coerce
+  $ filter (isSmooth prs)
+  $ coerce [lo..hi]
+
+smoothOverInRangeProperty
+  :: (Show a, Integral a)
+  => (SmoothBasis a, Positive a, Positive a)
+  -> ([a], [a])
+smoothOverInRangeProperty (s, Positive lo', Positive diff') =
+  (map unwrapIntegral xs, map unwrapIntegral ys)
   where
-    lo   = WrappedIntegral lo'   `mod` 2^18
-    diff = WrappedIntegral diff' `mod` 2^18
+    lo   = WrapIntegral lo'   `rem` 2^18
+    diff = WrapIntegral diff' `rem` 2^18
     hi   = lo + diff
     xs   = smoothOverInRange   (coerce s) lo hi
     ys   = smoothOverInRangeBF (coerce s) lo hi
 
-smoothNumbersAreUniqueProperty :: Integral a => SmoothBasis a -> Positive Int -> Bool
+smoothNumbersAreUniqueProperty
+  :: (Show a, Integral a)
+  => SmoothBasis a
+  -> Positive Int
+  -> Bool
 smoothNumbersAreUniqueProperty s (Positive len)
   = nub l == l
   where
@@ -73,41 +93,32 @@ smoothNumbersAreUniqueProperty s (Positive len)
 isSmoothSpecialCase1 :: Assertion
 isSmoothSpecialCase1 = assertBool "should be distinct" $ nub l == l
   where
-    b = fromJust $ fromList [1+3*G.ι,6+8*G.ι]
+    b = fromList [1+3*G.ι,6+8*G.ι]
     l = take 10 $ map abs $ smoothOver' G.norm b
 
+isSmoothSpecialCase2 :: Assertion
+isSmoothSpecialCase2 = assertBool "should be smooth" $ isSmooth b 6
+  where
+    b = fromList [4, 3, 6, 10, 7::Int]
 
 testSuite :: TestTree
 testSuite = testGroup "SmoothNumbers"
-  [ testGroup "fromSet == fromList"
-    [ testSmallAndQuick "Int"     (fromSetListProperty :: [Int] -> Bool)
-    , testSmallAndQuick "Word"    (fromSetListProperty :: [Word] -> Bool)
-    , testSmallAndQuick "Integer" (fromSetListProperty :: [Integer] -> Bool)
-    , testSmallAndQuick "Natural" (fromSetListProperty :: [Natural] -> Bool)
-    ]
-  , testIntegralProperty "fromSmoothUpperBound" fromSmoothUpperBoundProperty
-  , testGroup "smoothOverInRange == smoothOverInRangeBF"
-    [ testSmallAndQuick "Int"
-      (smoothOverInRangeProperty :: SmoothBasis Int -> Positive Int -> Positive Int -> Bool)
-    , testSmallAndQuick "Word"
-      (smoothOverInRangeProperty :: SmoothBasis Word -> Positive Word -> Positive Word -> Bool)
-    , testSmallAndQuick "Integer"
-      (smoothOverInRangeProperty :: SmoothBasis Integer -> Positive Integer -> Positive Integer -> Bool)
-    , testSmallAndQuick "Natural"
-      (smoothOverInRangeProperty :: SmoothBasis Natural -> Positive Natural -> Positive Natural -> Bool)
+  [ testGroup "smoothOverInRange == smoothOverInRangeBF"
+    [ testEqualSmallAndQuick "Int"     (smoothOverInRangeProperty @Int)
+    , testEqualSmallAndQuick "Word"    (smoothOverInRangeProperty @Word)
+    , testEqualSmallAndQuick "Integer" (smoothOverInRangeProperty @Integer)
+    , testEqualSmallAndQuick "Natural" (smoothOverInRangeProperty @Natural)
     ]
   , testGroup "smoothOver generates a list without duplicates"
-    [ testSmallAndQuick "Integer"
-      (smoothNumbersAreUniqueProperty :: SmoothBasis Integer -> Positive Int -> Bool)
-    , testSmallAndQuick "Natural"
-      (smoothNumbersAreUniqueProperty :: SmoothBasis Natural -> Positive Int -> Bool)
+    [ testSmallAndQuick "Integer" (smoothNumbersAreUniqueProperty @Integer)
+    , testSmallAndQuick "Natural" (smoothNumbersAreUniqueProperty @Natural)
     ]
-  , testGroup "Quadratic rings (Gaussian/Eisenstein)"
-    [ testGroup "Check that a list of smooth numbers generated by `smoothOver` \
-                \ only contains valid smooth numbers for the generated basis."
-      [ testSmallAndQuick "Gaussian" isSmoothProperty1
+  , testGroup "Quadratic rings"
+    [ testGroup "smoothOver generates valid smooth numbers"
+      [ testSmallAndQuick "Gaussian"   isSmoothProperty1
       , testSmallAndQuick "Eisenstein" isSmoothProperty2
       ]
-    , testCase "all distinct for base [1+3*ι,6+8*ι]" isSmoothSpecialCase1
+    , testCase "all distinct for base [1+3*i,6+8*i]" isSmoothSpecialCase1
+    , testCase "6 is smooth for base [4,3,6,10,7]" isSmoothSpecialCase2
     ]
   ]
