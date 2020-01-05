@@ -69,13 +69,11 @@ import GHC.TypeNats.Compat                                 (Nat, natVal)
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
-import Math.NumberTheory.Moduli.Class hiding (powMod)
+import Math.NumberTheory.Moduli.Class                      (KnownNat, Mod, getVal)
 import Math.NumberTheory.Moduli.Singleton
-import Math.NumberTheory.Moduli.DiscreteLogarithm.Internal (discreteLogarithmPP)
 import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Powers.Modular                    (powMod)
 import Math.NumberTheory.Primes
--- import Math.NumberTheory.UniqueFactorisation               (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)

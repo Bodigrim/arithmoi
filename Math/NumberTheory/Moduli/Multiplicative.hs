@@ -21,11 +21,11 @@ module Math.NumberTheory.Moduli.Multiplicative
   , PrimitiveRoot
   , unPrimitiveRoot
   , isPrimitiveRoot
-  , isPrimitiveRoot'
+  , isPrimitiveRoot' -- TODO (BM): don't expose this
   , discreteLogarithm
+  , discreteLogarithmPP -- TODO (BM): don't expose this
   ) where
 
--- TODO: (BM) put discreteLogarithmPP into an Internal module so it could be used elsewhere
 import Control.Monad
 import Data.Constraint
 import qualified Data.Map as M
