@@ -131,8 +131,8 @@ newtype RootOfUnity =
 
 instance Show RootOfUnity where
   show (RootOfUnity q)
-    | n == 0    = "e^0"
-    | d == 1    = "e^(πi)"
+    | n == 0    = "1"
+    | d == 1    = "-1"
     | n == 1    = "e^(πi/" ++ show d ++ ")"
     | otherwise = "e^(" ++ show n ++ "πi/" ++ show d ++ ")"
     where n = numerator (2*q)

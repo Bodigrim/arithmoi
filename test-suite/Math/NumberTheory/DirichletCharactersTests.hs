@@ -125,6 +125,11 @@ jacobiCheck (Positive n) =
         Just chi -> and [toRealFunction chi (fromIntegral j) == J.symbolToIntegral (J.jacobi j (2*n+1)) | j <- [0..2*n]]
         _ -> False
 
+
+-- | Bulk evaluation agrees with pointwise evaluation
+allEvalCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+allEvalCheck chi = V.generate (fromIntegral $ natVal @n Proxy) (generalEval chi . fromIntegral) == allEval chi
+
 -- | Primitive checker is correct (in both directions)
 -- primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
 -- primitiveCheck = if n > 5
@@ -150,5 +155,6 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Real character checking is valid" (dirCharProperty realityCheck)
   , testSmallAndQuick "Jacobi character matches symbol" jacobiCheck
   , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
+  , testSmallAndQuick "Bulk evaluation matches pointwise" (dirCharProperty allEvalCheck)
   -- , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
   ]
