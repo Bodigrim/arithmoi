@@ -1,4 +1,5 @@
 import Test.Tasty
+import Test.Tasty.Ingredients.Rerun
 
 import qualified Math.NumberTheory.EuclideanTests as Euclidean
 
@@ -48,7 +49,7 @@ import qualified Math.NumberTheory.Zeta.RiemannTests as Riemann
 import qualified Math.NumberTheory.Zeta.DirichletTests as Dirichlet
 
 main :: IO ()
-main = defaultMain tests
+main = defaultMainWithRerun tests
 
 tests :: TestTree
 tests = testGroup "All"
