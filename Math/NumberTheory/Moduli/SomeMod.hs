@@ -8,6 +8,7 @@
 --
 
 {-# LANGUAGE CPP                 #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -52,25 +53,17 @@ import Numeric.Natural
 -- >   InfMod{}  -> error "impossible"
 data SomeMod where
   SomeMod :: KnownNat m => Mod m -> SomeMod
-  InfMod  :: Rational -> SomeMod
 
 instance Eq SomeMod where
   SomeMod mx == SomeMod my =
     natVal mx == natVal my && unMod mx == unMod my
-  InfMod rx  == InfMod ry  = rx == ry
-  _          == _          = False
 
 instance Ord SomeMod where
   SomeMod mx `compare` SomeMod my =
     natVal mx `compare` natVal my <> unMod mx `compare` unMod my
-  SomeMod{} `compare` InfMod{} = LT
-  InfMod{} `compare` SomeMod{} = GT
-  InfMod rx `compare` InfMod ry = rx `compare` ry
 
 instance Show SomeMod where
-  show = \case
-    SomeMod m -> show m
-    InfMod  r -> show r
+  show (SomeMod m) = show m
 
 -- | Create modular value by representative of residue class and modulo.
 -- One can use the result either directly (via functions from 'Num' and 'Fractional'),
@@ -84,11 +77,11 @@ infixl 7 `modulo`
 liftUnOp
   :: (forall k. KnownNat k => Mod k -> Mod k)
   -> (Rational -> Rational)
-  -> SomeMod
-  -> SomeMod
+  -> Either SomeMod Rational
+  -> Either SomeMod Rational
 liftUnOp fm fr = \case
-  SomeMod m -> SomeMod (fm m)
-  InfMod  r -> InfMod  (fr r)
+  Left (SomeMod m) -> Left (SomeMod (fm m))
+  Right r -> Right (fr r)
 {-# INLINEABLE liftUnOp #-}
 
 liftBinOpMod
@@ -108,18 +101,18 @@ liftBinOpMod f mx my = case someNatVal m of
 liftBinOp
   :: (forall k. KnownNat k => Mod k -> Mod k -> Mod k)
   -> (Rational -> Rational -> Rational)
-  -> SomeMod
-  -> SomeMod
-  -> SomeMod
-liftBinOp _ fr (InfMod rx)  (InfMod ry)  = InfMod  (rx `fr` ry)
-liftBinOp fm _ (InfMod rx)  (SomeMod my) = SomeMod (fromRational rx `fm` my)
-liftBinOp fm _ (SomeMod mx) (InfMod ry)  = SomeMod (mx `fm` fromRational ry)
-liftBinOp fm _ (SomeMod (mx :: Mod m)) (SomeMod (my :: Mod n))
-  = case (Proxy :: Proxy m) `sameNat` (Proxy :: Proxy n) of
+  -> Either SomeMod Rational
+  -> Either SomeMod Rational
+  -> Either SomeMod Rational
+liftBinOp _ fr (Right rx) (Right ry) = Right  (rx `fr` ry)
+liftBinOp fm _ (Right rx) (Left (SomeMod my)) = Left (SomeMod (fromRational rx `fm` my))
+liftBinOp fm _ (Left (SomeMod mx)) (Right ry) = Left (SomeMod (mx `fm` fromRational ry))
+liftBinOp fm _ (Left (SomeMod (mx :: Mod m))) (Left (SomeMod (my :: Mod n)))
+  = Left $ case (Proxy :: Proxy m) `sameNat` (Proxy :: Proxy n) of
     Nothing   -> liftBinOpMod fm mx my
     Just Refl -> SomeMod (mx `fm` my)
 
-instance Num SomeMod where
+instance Num (Either SomeMod Rational) where
   (+)    = liftBinOp (+) (+)
   (-)    = liftBinOp (-) (-)
   negate = liftUnOp Prelude.negate Prelude.negate
@@ -129,44 +122,45 @@ instance Num SomeMod where
   {-# INLINE abs #-}
   signum = const 1
   {-# INLINE signum #-}
-  fromInteger = InfMod . fromInteger
+  fromInteger = Right . fromInteger
   {-# INLINE fromInteger #-}
 
-instance Semiring SomeMod where
+instance Semiring (Either SomeMod Rational) where
   plus  = (+)
   times = (*)
-  zero  = InfMod 0
-  one   = InfMod 1
-  fromNatural = fromIntegral
+  zero  = Right 0
+  one   = Right 1
+  fromNatural = Right . fromIntegral
 
-instance Ring SomeMod where
+instance Ring (Either SomeMod Rational) where
   negate = Prelude.negate
 
 -- | Beware that division by residue, which is not coprime with the modulo,
 -- will result in runtime error. Consider using 'invertSomeMod' instead.
-instance Fractional SomeMod where
-  fromRational = InfMod
+instance Fractional (Either SomeMod Rational) where
+  fromRational = Right
   {-# INLINE fromRational #-}
-  recip x = case invertSomeMod x of
+  recip (Left x) = case invertSomeMod x of
     Nothing -> error $ "recip{SomeMod}: residue is not coprime with modulo"
-    Just y  -> y
+    Just y  -> Left y
+  recip (Right x) = Right (recip x)
 
 -- | See the warning about division above.
-instance GcdDomain SomeMod where
+instance GcdDomain (Either SomeMod Rational) where
   divide x y = Just (x / y)
   gcd        = const $ const 1
   lcm        = const $ const 1
   coprime    = const $ const True
 
 -- | See the warning about division above.
-instance Euclidean SomeMod where
+instance Euclidean (Either SomeMod Rational) where
   degree      = const 0
   quotRem x y = (x / y, 0)
   quot        = (/)
   rem         = const $ const 0
 
 -- | See the warning about division above.
-instance Field SomeMod
+instance Field (Either SomeMod Rational)
 
 -- | Computes the inverse value, if it exists.
 --
@@ -177,9 +171,7 @@ instance Field SomeMod
 -- >>> invertSomeMod (fromRational (2 % 5))
 -- Just 5 % 2
 invertSomeMod :: SomeMod -> Maybe SomeMod
-invertSomeMod = \case
-  SomeMod m -> fmap SomeMod (invertMod m)
-  InfMod  r -> Just (InfMod (recip r))
+invertSomeMod (SomeMod m) = fmap SomeMod (invertMod m)
 {-# INLINABLE [1] invertSomeMod #-}
 
 {-# SPECIALISE [1] powSomeMod ::
@@ -195,7 +187,6 @@ invertSomeMod = \case
 -- (1 `modulo` 10)
 powSomeMod :: Integral a => SomeMod -> a -> SomeMod
 powSomeMod (SomeMod m) a = SomeMod (m ^% a)
-powSomeMod (InfMod  r) a = InfMod  (r ^  a)
 {-# INLINABLE [1] powSomeMod #-}
 
 {-# RULES "^%SomeMod" forall x p. x ^ p = powSomeMod x p #-}

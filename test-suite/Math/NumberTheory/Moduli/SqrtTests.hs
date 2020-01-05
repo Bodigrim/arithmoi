@@ -186,7 +186,6 @@ sqrtsModFactorisationSpecialCase2 =
 sqrtsModProperty1 :: AnySign Integer -> Positive Natural -> Bool
 sqrtsModProperty1 (AnySign n) (Positive m) = case n `modulo` m of
   SomeMod x -> sort (sqrtsMod sfactors x) == filter (\rt -> rt * rt == x) [minBound .. maxBound]
-  InfMod{} -> True
 
 testSuite :: TestTree
 testSuite = testGroup "Sqrt"

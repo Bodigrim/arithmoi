@@ -7,9 +7,10 @@
 -- Tests for Math.NumberTheory.Moduli.Class
 --
 
-{-# LANGUAGE CPP             #-}
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE ViewPatterns    #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -30,20 +31,19 @@ invertMod :: Integer -> Integer -> Maybe SomeMod
 invertMod x m = invertSomeMod (x `modulo` fromInteger m)
 
 powerMod :: Integral a => Integer -> a -> Integer -> SomeMod
-powerMod b e m = (b `modulo` fromInteger m) ^ e
+powerMod b e m = (b `modulo` fromInteger m) `powSomeMod` e
 
 -- | Check that 'invertMod' inverts numbers modulo.
 invertModProperty :: AnySign Integer -> Positive Integer -> Bool
 invertModProperty (AnySign k) (Positive m) = case invertMod k m of
   Nothing            -> k `rem` m == 0 || gcd k m > 1
-  Just InfMod{}      -> False
   Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1
 
 -- | Check that 'powerMod' is multiplicative by first argument.
 powerModProperty2 :: (Integral a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
 powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
   =  e < 0 && (isNothing (invertMod b1 m) || isNothing (invertMod b2 m))
-  || pm1 * pm2 == pm12
+  || Left pm1 * Left pm2 == (Left pm12 :: Either SomeMod Rational)
   where
     pm1  = powerMod b1  e m
     pm2  = powerMod b2  e m
@@ -57,7 +57,7 @@ powerModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
   || e1 >= 0 && e1 + e2 < e2 -- check overflow
   || e2 <= 0 && e1 + e2 > e1 -- check overflow
   || e1 <= 0 && e1 + e2 > e2 -- check overflow
-  || pm1 * pm2 == pm12
+  || Left pm1 * Left pm2 == (Left pm12 :: Either SomeMod Rational)
   where
     pm1  = powerMod b e1 m
     pm2  = powerMod b e2 m
@@ -72,83 +72,83 @@ powerModProperty3_Integer :: NonNegative Integer -> NonNegative Integer -> AnySi
 powerModProperty3_Integer = powerModProperty3
 
 someModAddProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool
-someModAddProperty x1 (Positive m1) x2 (Positive m2) = case x1 `modulo` m1 + x2 `modulo` m2 of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+someModAddProperty x1 (Positive m1) x2 (Positive m2) = case Left (x1 `modulo` m1) + Left (x2 `modulo` m2) of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger $ m1 `gcd` m2
     x3 = (x1 + x2) `mod` m3
 
 someModSubProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool
-someModSubProperty x1 (Positive m1) x2 (Positive m2) = case x1 `modulo` m1 - x2 `modulo` m2 of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+someModSubProperty x1 (Positive m1) x2 (Positive m2) = case Left (x1 `modulo` m1) - Left (x2 `modulo` m2) of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger $ m1 `gcd` m2
     x3 = (x1 - x2) `mod` m3
 
 someModMulProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool
-someModMulProperty x1 (Positive m1) x2 (Positive m2) = case (x1 `modulo` m1) * (x2 `modulo` m2) of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+someModMulProperty x1 (Positive m1) x2 (Positive m2) = case Left (x1 `modulo` m1) * Left (x2 `modulo` m2) of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger $ m1 `gcd` m2
     x3 = (x1 * x2) `mod` m3
 
 sameSomeModMulProperty :: Integer -> Integer -> Positive Natural -> Bool
-sameSomeModMulProperty x1 x2 (Positive m) = case (x1 `modulo` m) * (x2 `modulo` m) of
-  SomeMod z -> getMod z == toInteger m && getVal z == x3
-  InfMod{}  -> False
+sameSomeModMulProperty x1 x2 (Positive m) = case Left (x1 `modulo` m) * Left (x2 `modulo` m) of
+  Left (SomeMod z) -> getMod z == toInteger m && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     x3 = (x1 * x2) `mod` toInteger m
 
 sameSomeModMulHugeProperty :: Integer -> Integer -> Positive (Huge Natural) -> Bool
-sameSomeModMulHugeProperty x1 x2 (Positive (Huge m)) = case (x1 `modulo` m) * (x2 `modulo` m) of
-  SomeMod z -> getMod z == toInteger m && getVal z == x3
-  InfMod{}  -> False
+sameSomeModMulHugeProperty x1 x2 (Positive (Huge m)) = case Left (x1 `modulo` m) * Left (x2 `modulo` m) of
+  Left (SomeMod z) -> getMod z == toInteger m && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     x3 = (x1 * x2) `mod` toInteger m
 
 sameSomeModMulHugeAllProperty :: Huge Integer -> Huge Integer -> Positive (Huge Natural) -> Bool
-sameSomeModMulHugeAllProperty (Huge x1) (Huge x2) (Positive (Huge m)) = case (x1 `modulo` m) * (x2 `modulo` m) of
-  SomeMod z -> getMod z == toInteger m && getVal z == x3
-  InfMod{}  -> False
+sameSomeModMulHugeAllProperty (Huge x1) (Huge x2) (Positive (Huge m)) = case Left (x1 `modulo` m) * Left (x2 `modulo` m) of
+  Left (SomeMod z) -> getMod z == toInteger m && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     x3 = (x1 * x2) `mod` toInteger m
 
 someModNegProperty :: Integer -> Positive Natural -> Bool
-someModNegProperty x1 (Positive m1) = case negate (x1 `modulo` m1) of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+someModNegProperty x1 (Positive m1) = case negate (Left (x1 `modulo` m1)) of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger m1
     x3 = negate x1 `mod` m3
 
 someModAbsSignumProperty :: Integer -> Positive Natural -> Bool
-someModAbsSignumProperty x (Positive m) = z == abs z * signum z
+someModAbsSignumProperty x (Positive m) = (Left z :: Either SomeMod Rational) == abs (Left z) * signum (Left z)
   where
     z = x `modulo` m
 
 infModAddProperty :: Integer -> Positive Natural -> Integer -> Bool
-infModAddProperty x1 (Positive m1) x2 = case x1 `modulo` m1 + fromInteger x2 of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+infModAddProperty x1 (Positive m1) x2 = case Left (x1 `modulo` m1) + fromInteger x2 of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger m1
     x3 = (x1 + x2) `mod` m3
 
 infModSubProperty :: Integer -> Positive Natural -> Integer -> Bool
-infModSubProperty x1 (Positive m1) x2 = case x1 `modulo` m1 - fromInteger x2 of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+infModSubProperty x1 (Positive m1) x2 = case Left (x1 `modulo` m1) - fromInteger x2 of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger m1
     x3 = (x1 - x2) `mod` m3
 
 infModMulProperty :: Integer -> Positive Natural -> Integer -> Bool
-infModMulProperty x1 (Positive m1) x2 = case x1 `modulo` m1 * fromInteger x2 of
-  SomeMod z -> getMod z == m3 && getVal z == x3
-  InfMod{}  -> False
+infModMulProperty x1 (Positive m1) x2 = case Left (x1 `modulo` m1) * fromInteger x2 of
+  Left (SomeMod z) -> getMod z == m3 && getVal z == x3
+  Right (_ :: Rational) -> False
   where
     m3 = toInteger m1
     x3 = (x1 * x2) `mod` m3
@@ -156,7 +156,6 @@ infModMulProperty x1 (Positive m1) x2 = case x1 `modulo` m1 * fromInteger x2 of
 getValModProperty :: Integer -> Positive Natural -> Bool
 getValModProperty x (Positive m) = case z of
   SomeMod t -> z == getVal t `modulo` getNatMod t && z == toInteger (getNatVal t) `modulo` fromInteger (getMod t)
-  InfMod{} -> False
   where
     z = x `modulo` m
 

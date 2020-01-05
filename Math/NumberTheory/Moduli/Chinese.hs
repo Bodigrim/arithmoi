@@ -38,7 +38,6 @@ import Control.Monad (foldM)
 import Data.Euclidean
 import Data.Foldable
 import Data.Mod
-import Data.Ratio
 import Data.Semiring (Semiring(..), (^), Ring, minus)
 import GHC.TypeNats.Compat
 
@@ -108,11 +107,6 @@ chinese (n1, m1) (n2, m2)
 {-# SPECIALISE chinese :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
 {-# SPECIALISE chinese :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
 
-isCompatible :: KnownNat m => Mod m -> Rational -> Bool
-isCompatible n r = case invertMod (fromInteger (denominator r)) of
-  Nothing -> False
-  Just r' -> r' * fromInteger (numerator r) == n
-
 chineseWrap
   :: (Integer -> Integer -> Integer)
   -> ((Integer, Integer) -> (Integer, Integer) -> Maybe Integer)
@@ -124,15 +118,6 @@ chineseWrap f g (SomeMod n1) (SomeMod n2)
   where
     m1 = toInteger $ natVal n1
     m2 = toInteger $ natVal n2
-chineseWrap _ _ (SomeMod n) (InfMod r)
-  | isCompatible n r = Just $ InfMod r
-  | otherwise        = Nothing
-chineseWrap _ _ (InfMod r) (SomeMod n)
-  | isCompatible n r = Just $ InfMod r
-  | otherwise        = Nothing
-chineseWrap _ _ (InfMod r1) (InfMod r2)
-  | r1 == r2  = Just $ InfMod r1
-  | otherwise = Nothing
 
 -- | Same as 'chineseCoprime', but operates on residues.
 --
