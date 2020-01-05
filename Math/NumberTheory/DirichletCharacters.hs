@@ -69,12 +69,13 @@ import GHC.TypeNats.Compat                                 (Nat, natVal)
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
-import Math.NumberTheory.Moduli.Class                      (KnownNat, MultMod(..), getVal, Mod, isMultElement)
+import Math.NumberTheory.Moduli.Class hiding (powMod)
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Moduli.DiscreteLogarithm.Internal (discreteLogarithmPP)
-import Math.NumberTheory.Moduli.PrimitiveRoot              (isPrimitiveRoot', CyclicGroup(..))
-import Math.NumberTheory.Powers                            (powMod)
-import Math.NumberTheory.Primes                            (primes)
-import Math.NumberTheory.UniqueFactorisation               (UniqueFactorisation, unPrime, Prime, factorise)
+import Math.NumberTheory.Moduli.Multiplicative
+import Math.NumberTheory.Powers.Modular                    (powMod)
+import Math.NumberTheory.Primes
+-- import Math.NumberTheory.UniqueFactorisation               (UniqueFactorisation, unPrime, Prime, factorise)
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
@@ -169,7 +170,9 @@ generator p k
   | k == 1 = modP
   | otherwise = if powMod modP (p'-1) (p'*p') == 1 then modP + p' else modP
   where p' = unPrime p
-        modP = head $ filter (isPrimitiveRoot' (CGOddPrimePower p 1)) [2..p'-1]
+        modP = case cyclicGroupFromFactors [(p,k)] of
+                 Just (Some cg) -> head $ filter (isPrimitiveRoot' cg) [2..p'-1]
+                 _ -> error "illegal"
 
 -- | Implement the function \(\lambda\) from page 5 of
 -- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf

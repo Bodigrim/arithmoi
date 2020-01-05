@@ -21,6 +21,7 @@ module Math.NumberTheory.Moduli.Multiplicative
   , PrimitiveRoot
   , unPrimitiveRoot
   , isPrimitiveRoot
+  , isPrimitiveRoot'
   , discreteLogarithm
   ) where
 
