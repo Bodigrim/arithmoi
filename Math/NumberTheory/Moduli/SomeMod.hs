@@ -119,7 +119,7 @@ liftBinOp fm _ (SomeMod (mx :: Mod m)) (SomeMod (my :: Mod n))
 
 instance Num SomeMod where
   (+)    = liftBinOp (+) (+)
-  (-)    = liftBinOp (-) (+)
+  (-)    = liftBinOp (-) (-)
   negate = liftUnOp negate negate
   {-# INLINE negate #-}
   (*)    = liftBinOp (*) (*)
