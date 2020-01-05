@@ -31,10 +31,9 @@ import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal)
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.DirichletCharacters
-import qualified Math.NumberTheory.Moduli.Jacobi as J
+import qualified Math.NumberTheory.Moduli.Sqrt as J
 import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
-import Math.NumberTheory.Primes
 
 rootOfUnityTest :: Integer -> Positive Integer -> Bool
 rootOfUnityTest n (Positive d) = toComplex ((d `div` gcd n d) `stimes` toRootOfUnity (n % d)) == (1 :: Complex Double)
