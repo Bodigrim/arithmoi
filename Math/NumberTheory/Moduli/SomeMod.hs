@@ -20,11 +20,13 @@ module Math.NumberTheory.Moduli.SomeMod
   , powSomeMod
   ) where
 
+import Data.Euclidean (GcdDomain(..), Euclidean(..), Field)
 import Data.Mod
 import Data.Proxy
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import Data.Semiring (Semiring(..), Ring(..))
 import Data.Type.Equality
 import GHC.TypeNats.Compat
 import Numeric.Natural
@@ -101,7 +103,7 @@ liftBinOpMod f mx my = case someNatVal m of
   where
     x = unMod mx
     y = unMod my
-    m = natVal mx `gcd` natVal my
+    m = natVal mx `Prelude.gcd` natVal my
 
 liftBinOp
   :: (forall k. KnownNat k => Mod k -> Mod k -> Mod k)
@@ -120,7 +122,7 @@ liftBinOp fm _ (SomeMod (mx :: Mod m)) (SomeMod (my :: Mod n))
 instance Num SomeMod where
   (+)    = liftBinOp (+) (+)
   (-)    = liftBinOp (-) (-)
-  negate = liftUnOp negate negate
+  negate = liftUnOp Prelude.negate Prelude.negate
   {-# INLINE negate #-}
   (*)    = liftBinOp (*) (*)
   abs    = id
@@ -130,6 +132,16 @@ instance Num SomeMod where
   fromInteger = InfMod . fromInteger
   {-# INLINE fromInteger #-}
 
+instance Semiring SomeMod where
+  plus  = (+)
+  times = (*)
+  zero  = InfMod 0
+  one   = InfMod 1
+  fromNatural = fromIntegral
+
+instance Ring SomeMod where
+  negate = Prelude.negate
+
 -- | Beware that division by residue, which is not coprime with the modulo,
 -- will result in runtime error. Consider using 'invertSomeMod' instead.
 instance Fractional SomeMod where
@@ -138,6 +150,23 @@ instance Fractional SomeMod where
   recip x = case invertSomeMod x of
     Nothing -> error $ "recip{SomeMod}: residue is not coprime with modulo"
     Just y  -> y
+
+-- | See the warning about division above.
+instance GcdDomain SomeMod where
+  divide x y = Just (x / y)
+  gcd        = const $ const 1
+  lcm        = const $ const 1
+  coprime    = const $ const True
+
+-- | See the warning about division above.
+instance Euclidean SomeMod where
+  degree      = const 0
+  quotRem x y = (x / y, 0)
+  quot        = (/)
+  rem         = const $ const 0
+
+-- | See the warning about division above.
+instance Field SomeMod
 
 -- | Computes the inverse value, if it exists.
 --
