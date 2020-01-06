@@ -41,14 +41,19 @@ module Math.NumberTheory.DirichletCharacters
   -- ** Special Dirichlet characters
   , principalChar
   , isPrincipal
-  , induced
-  , isPrimitive
+  , orderChar
   -- ** Real Dirichlet characters
   , RealCharacter
   , isRealCharacter
   , getRealChar
   , toRealFunction
   , jacobiCharacter
+  -- ** Primitive characters
+  , PrimitiveCharacter
+  , isPrimitive
+  , getPrimitiveCharacter
+  , induced
+  , makePrimitive
   -- * Debugging
   , validChar
   ) where
@@ -441,23 +446,37 @@ validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs &
         validValued (OddPrime _ k _ a) = k `stimes` a == mempty
         validValued Two = True
         n = natVal (Proxy :: Proxy n)
-        two = head primes -- lazy way to get Prime 2
+        two = toEnum 1 -- lazy way to get Prime 2
 
--- | Get the order of the character, and the maximal possible order of a character of this modulus.
--- The second term is the maximal order, and is carmichael(n) and is easily calculated from the
--- factor group breakdown we have.
--- orderChar :: DirichletCharacter n -> (Integer, Natural)
--- orderChar (Generated xs) = foldl' combine (1,1) $ map orderFactor xs
---   where orderFactor (TwoPower k (RootOfUnity a) (RootOfUnity b)) = (denominator a `lcm` denominator b, bit (k-1))
---         orderFactor (OddPrime (unPrime -> p) k _ (RootOfUnity a)) = (denominator a, p^(k-1)*(p-1))
---         combine (o1,n1) (o2,n2) = (lcm o1 o2, lcm n1 n2)
+-- | Get the order of the Dirichlet Character.
+-- TODO: test this
+orderChar :: DirichletCharacter n -> Integer
+orderChar (Generated xs) = foldl' lcm 1 $ map orderFactor xs
+  where orderFactor (TwoPower _ (RootOfUnity a) (RootOfUnity b)) = denominator a `lcm` denominator b
+        orderFactor (OddPrime _ _ _ (RootOfUnity a)) = denominator a
+        orderFactor Two = 1
 
 -- | Test if a Dirichlet character is <https://en.wikipedia.org/wiki/Dirichlet_character#Primitive_characters_and_conductor primitive>.
+-- TODO: turn this into a smart constructor for PrimitiveCharacter
 isPrimitive :: DirichletCharacter n -> Bool
-isPrimitive = undefined
--- TODO: this isn't correct. figure out a correct version and write it
--- isPrimitive chi = toInteger maxOrder == order
---   where (order, maxOrder) = orderChar chi
+isPrimitive (Generated xs) = all primitive xs
+  where primitive :: DirichletFactor -> Bool
+        primitive Two = False
+        -- for odd p, we're testing if phi(p^(k-1)) `stimes` a is 1, since this means the
+        -- character can come from some the smaller modulus p^(k-1)
+        primitive (OddPrime _ 1 _ a) = a /= mempty
+        primitive (OddPrime (unPrime -> p) k _ a) = (p^(k-2)*(p-1)) `stimes` a /= mempty
+        primitive (TwoPower 2 a _) = a /= mempty
+        primitive (TwoPower k _ b) = (bit (k-3) :: Integer) `stimes` b /= mempty
+
+-- | A Dirichlet character is primitive if TODO
+newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
+                                                    getPrimitiveCharacter :: DirichletCharacter n
+                                                    }
+
+-- TODO
+makePrimitive :: DirichletCharacter n -> Some PrimitiveCharacter
+makePrimitive (Generated _) = Some (PrimitiveCharacter undefined)
 
 -- | Similar to Maybe, but with different Semigroup and Monoid instances.
 data OrZero a = Zero | NonZero !a

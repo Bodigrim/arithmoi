@@ -29,7 +29,7 @@ import qualified Data.Vector as V
 
 import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal)
 
-import Math.NumberTheory.ArithmeticFunctions (totient)
+import Math.NumberTheory.ArithmeticFunctions (totient, divisorsList)
 import Math.NumberTheory.DirichletCharacters
 import qualified Math.NumberTheory.Moduli.Sqrt as J
 import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
@@ -102,7 +102,7 @@ realityCheck chi = isJust (isRealCharacter chi) == isReal'
   where isReal' = and [real (generalEval chi t) | t <- [minBound..maxBound]]
         real Zero = True
         real (NonZero t) = t <> t == mempty
- 
+
 -- | The jacobi character agrees with the jacobi symbol
 jacobiCheck :: Positive Natural -> Bool
 jacobiCheck (Positive n) =
@@ -133,16 +133,15 @@ inducedCheck chi (Positive k) =
 -- TODO: there should be a stronger check on what happens when you induce from 1
 
 -- | Primitive checker is correct (in both directions)
--- primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
--- primitiveCheck = if n > 5
---                     then (==) <$> isPrimitive <*> isPrimitive'
---                     else const True
---   where isPrimitive' chi = not $ any (periodic (allEval chi)) primeFactors
---         n = fromIntegral (natVal @n Proxy)
---         primeFactors = map (unPrime . fst) $ factorise n
---         periodic v k = and [allEqual [v V.! j | j <- [i,i + n `div` k .. n-1]] | i <- [0..k-1]]
---         allEqual :: Eq a => [a] -> Bool
---         allEqual = and . (zipWith (==) <*> tail)
+primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+primitiveCheck chi = if n > 5
+                        then isPrimitive chi == isPrimitive'
+                        else True
+  where isPrimitive' = all testModulus possibleModuli
+        n = fromIntegral (natVal @n Proxy) :: Int
+        possibleModuli = init (divisorsList n)
+        table = allEval chi
+        testModulus d = not $ null [a | a <- [1..n-1], gcd a n == 1, a `mod` d == 1 `mod` d, table V.! a /= mempty]
 
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
@@ -158,5 +157,5 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Jacobi character matches symbol" jacobiCheck
   , testSmallAndQuick "Bulk evaluation matches pointwise" (dirCharProperty allEvalCheck)
   , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
-  -- , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
+  , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
   ]
