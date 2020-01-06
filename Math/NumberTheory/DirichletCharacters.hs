@@ -504,7 +504,7 @@ instance Semigroup a => Semigroup (OrZero a) where
   NonZero a <> NonZero b = NonZero (a <> b)
   _ <> _ = Zero
 
-instance Monoid a => Monoid (OrZero a) where
+instance (Semigroup a, Monoid a) => Monoid (OrZero a) where
   mempty = NonZero mempty
   mappend = (<>)
 
