@@ -201,11 +201,10 @@ evalFactor m =
       discreteLogarithmPP p k a (m `rem` p^k) `stimes` b
     TwoPower k s b -> (if testBit m 1 then s else mempty)
                    <> lambda m'' k `stimes` b
-                                       where m' = m .&. kBits
+                                       where m' = m .&. (bit k - 1)
                                              m'' = if testBit m 1
                                                       then bit k - m'
                                                       else m'
-                                             kBits = bit k - 1
     Two -> mempty
 
 -- | A character can evaluate to a root of unity or zero: represented by @Nothing@.
@@ -442,8 +441,8 @@ validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs &
         getPP Two = (two,1)
         correctPrimitiveRoot (OddPrime p k g _) = g == generator p k
         correctPrimitiveRoot _ = True
-        validValued (TwoPower k a b) = a <> a == mempty && (k-2) `stimes` b == mempty
-        validValued (OddPrime _ k _ a) = k `stimes` a == mempty
+        validValued (TwoPower k a b) = a <> a == mempty && (bit (k-2) :: Integer) `stimes` b == mempty
+        validValued (OddPrime (unPrime -> p) k _ a) = (p^(k-1)*(p-1)) `stimes` a == mempty
         validValued Two = True
         n = natVal (Proxy :: Proxy n)
         two = toEnum 1 -- lazy way to get Prime 2
@@ -458,8 +457,8 @@ orderChar (Generated xs) = foldl' lcm 1 $ map orderFactor xs
 
 -- | Test if a Dirichlet character is <https://en.wikipedia.org/wiki/Dirichlet_character#Primitive_characters_and_conductor primitive>.
 -- TODO: turn this into a smart constructor for PrimitiveCharacter
-isPrimitive :: DirichletCharacter n -> Bool
-isPrimitive (Generated xs) = all primitive xs
+isPrimitive :: DirichletCharacter n -> Maybe (PrimitiveCharacter n)
+isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter t) else Nothing
   where primitive :: DirichletFactor -> Bool
         primitive Two = False
         -- for odd p, we're testing if phi(p^(k-1)) `stimes` a is 1, since this means the
@@ -469,7 +468,8 @@ isPrimitive (Generated xs) = all primitive xs
         primitive (TwoPower 2 a _) = a /= mempty
         primitive (TwoPower k _ b) = (bit (k-3) :: Integer) `stimes` b /= mempty
 
--- | A Dirichlet character is primitive if TODO
+-- | A Dirichlet character is primitive if cannot be @induced@ from any character with
+-- strictly smaller modulus.
 newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
                                                     getPrimitiveCharacter :: DirichletCharacter n
                                                     }
@@ -557,11 +557,10 @@ allEval (Generated xs) = V.generate (fromIntegral n) func
             f m
               | even m = Zero
               | otherwise = NonZero ((if testBit m 1 then a else mempty) <> lambda (toInteger m'') k `stimes` b)
-                            where m' = m .&. kBits
+                            where m' = m .&. (bit k - 1)
                                   m'' = if testBit m 1
                                            then bit k - m'
                                            else m'
-                                  kBits = bit k - 1
 
 -- somewhere between unfoldr and iterate
 iterateMaybe :: (a -> Maybe a) -> a -> [a]

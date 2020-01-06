@@ -130,12 +130,11 @@ inducedCheck chi (Positive k) =
         matchedValue i x1 x2 = if gcd (fromIntegral i) (d*k) > 1
                                   then x2 == Zero
                                   else x2 == x1
--- TODO: there should be a stronger check on what happens when you induce from 1
 
 -- | Primitive checker is correct (in both directions)
 primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
 primitiveCheck chi = if n > 5
-                        then isPrimitive chi == isPrimitive'
+                        then isJust (isPrimitive chi) == isPrimitive'
                         else True
   where isPrimitive' = all testModulus possibleModuli
         n = fromIntegral (natVal @n Proxy) :: Int
