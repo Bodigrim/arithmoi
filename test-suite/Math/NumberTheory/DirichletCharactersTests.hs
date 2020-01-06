@@ -102,19 +102,7 @@ realityCheck chi = isJust (isRealCharacter chi) == isReal'
   where isReal' = and [real (generalEval chi t) | t <- [minBound..maxBound]]
         real Zero = True
         real (NonZero t) = t <> t == mempty
-
--- | Induced characters agree with the original character.
-inducedCheck :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Natural -> Bool
-inducedCheck chi (Positive k) i =
-  case someNatVal (d*k) of
-    SomeNat (Proxy :: Proxy n) ->
-      case induced @n chi of
-        Just chi2 -> if (fromIntegral i) `gcd` (d*k) > 0
-                        then True
-                        else generalEval chi (fromIntegral i) == generalEval chi2 (fromIntegral i)
-        Nothing -> False
-  where d = natVal @d Proxy
-
+ 
 -- | The jacobi character agrees with the jacobi symbol
 jacobiCheck :: Positive Natural -> Bool
 jacobiCheck (Positive n) =
@@ -128,6 +116,21 @@ jacobiCheck (Positive n) =
 -- | Bulk evaluation agrees with pointwise evaluation
 allEvalCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
 allEvalCheck chi = V.generate (fromIntegral $ natVal @n Proxy) (generalEval chi . fromIntegral) == allEval chi
+
+-- | Induced characters agree with the original character.
+-- (Except for when d=1, where chi(0) = 1, which is true for no other d)
+inducedCheck :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Bool
+inducedCheck chi (Positive k) =
+  case someNatVal (d*k) of
+    SomeNat (Proxy :: Proxy n) ->
+      case induced @n chi of
+        Just chi2 -> and (V.izipWith matchedValue (V.concat (replicate (fromIntegral k) (allEval chi))) (allEval chi2))
+        Nothing -> False
+  where d = natVal @d Proxy
+        matchedValue i x1 x2 = if gcd (fromIntegral i) (d*k) > 1
+                                  then x2 == Zero
+                                  else x2 == x1
+-- TODO: there should be a stronger check on what happens when you induce from 1
 
 -- | Primitive checker is correct (in both directions)
 -- primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
@@ -153,7 +156,7 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Orthogonality relation 2" orthogonality2
   , testSmallAndQuick "Real character checking is valid" (dirCharProperty realityCheck)
   , testSmallAndQuick "Jacobi character matches symbol" jacobiCheck
-  , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
   , testSmallAndQuick "Bulk evaluation matches pointwise" (dirCharProperty allEvalCheck)
+  , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
   -- , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
   ]

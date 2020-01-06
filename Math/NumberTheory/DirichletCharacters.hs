@@ -58,7 +58,7 @@ import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex, cis)
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
-import Data.List                                           (mapAccumL, foldl')
+import Data.List                                           (mapAccumL, foldl', sort)
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          (Rational, Ratio, (%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..), Product(..))
@@ -147,7 +147,7 @@ toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
         -- effectively q `mod` 1
   -- This smart constructor ensures that the rational is always in the range 0 <= q < 1.
 
--- | This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
+-- | This Semigroup is in fact a group, so @'stimes'@ can be called with a negative first argument.
 instance Semigroup RootOfUnity where
   RootOfUnity q1 <> RootOfUnity q2 = toRootOfUnity (q1 + q2)
   stimes k (RootOfUnity q) = toRootOfUnity (q * fromIntegral k)
@@ -328,10 +328,10 @@ templateFromCharacter (Generated t) = traverse go t
 -- see issue #154
 
 mkTemplate :: Natural -> (Product Natural, [Template])
-mkTemplate = go . factorise
+mkTemplate = go . sort . factorise
   where go :: [(Prime Natural, Word)] -> (Product Natural, [Template])
-        go ((unPrime -> 2, 1):xs) = (Product 1, [TwoTemplate]) <> traverse odds xs
-        go ((unPrime -> 2, wordToInt -> k):xs) = (Product (2*m), [TwoPTemplate k m]) <> traverse odds xs
+        go ((unPrime -> 2, 1): xs) = (Product 1, [TwoTemplate]) <> traverse odds xs
+        go ((unPrime -> 2, wordToInt -> k): xs) = (Product (2*m), [TwoPTemplate k m]) <> traverse odds xs
           where m = bit (k-2)
         go xs = traverse odds xs
         odds :: (Prime Natural, Word) -> (Product Natural, Template)
@@ -357,15 +357,14 @@ isPrincipal :: DirichletCharacter n -> Bool
 isPrincipal chi = characterNumber chi == 0
 
 -- | Induce a Dirichlet character to a higher modulus. If \(d \mid n\), then \(a \bmod{n}\) can be
--- reduced to \(a \bmod{d}\). Thus, a multiplicative function on \(\mathbb{Z}/d\mathbb{Z}\)
+-- reduced to \(a \bmod{d}\). Thus, the multiplicative function on \(\mathbb{Z}/d\mathbb{Z}\)
 -- induces a multiplicative function on \(\mathbb{Z}/n\mathbb{Z}\).
 --
 -- >>> :set -XTypeApplications
--- >>> chi = fromIndex 5 :: DirichletCharacter 45
+-- >>> chi = indexToChar 5 :: DirichletCharacter 45
 -- >>> chi2 = induced @135 chi
 -- >>> :t chi2
 -- Maybe (DirichletCharacter 135)
---
 induced :: forall n d. (KnownNat d, KnownNat n) => DirichletCharacter d -> Maybe (DirichletCharacter n)
 induced (Generated start) = if n `rem` d == 0
                             then Just (Generated (combine (snd $ mkTemplate n) start))
@@ -375,25 +374,15 @@ induced (Generated start) = if n `rem` d == 0
         combine :: [Template] -> [DirichletFactor] -> [DirichletFactor]
         combine [] _ = []
         combine ts [] = map newFactor ts
-        combine (t:xs) (y:ys) = undefined
-          -- TODO: consider tidying
-          --  unPrime p1 == 2, TwoPower _ a b <- y = TwoPower (wordToInt k1) a b: combine xs ys
-          --  unPrime p1 == 2, k1 >= 2 = TwoPower (wordToInt k1) mempty mempty: combine xs (y:ys)
-          --  unPrime p1 == 2 = Two: combine xs (y:ys)
-          --  OddPrime p2 1 _g a <- y, p1 == p2 =
-          --                   OddPrime p2 k1 (generator p2 k1) a: combine xs ys
-          --  -- TODO: generator p2 k1 will be g or g + p2, and we already know g is a primroot mod p
-          --  -- so should be able to save work instead of running generator
-          --  OddPrime p2 _ g a <- y, p1 == p2 =
-          --                   OddPrime p2 k1 g a: combine xs ys
-          --  otherwise = OddPrime p1 k1 (generator p1 k1) mempty: combine xs (y:ys)
-        plain :: [Template] -> [DirichletFactor]
-        plain = undefined
-        -- plain [] = []
-        -- plain f@((p,k):xs) = case (unPrime p, k) of
-        --                        (2,1) -> Two: map rest xs
-        --                        (2,_) -> TwoPower (wordToInt k) mempty mempty: map rest xs
-        --                        _ -> map rest f
+        combine (t:xs) (y:ys) = case (t,y) of
+                                  (TwoTemplate, Two) -> Two: combine xs ys
+                                  (TwoTemplate, _) -> Two: combine xs (y:ys)
+                                  (TwoPTemplate k _, Two) -> TwoPower k mempty mempty: combine xs ys
+                                  (TwoPTemplate k _, TwoPower _ a b) -> TwoPower k a b: combine xs ys
+                                  (TwoPTemplate k _, _) -> TwoPower k mempty mempty: combine xs (y:ys)
+                                  (OddTemplate p k _ _, OddPrime q _ g a) | p == q -> OddPrime p k g a: combine xs ys
+                                  (OddTemplate p k g _, OddPrime q _ _ _) | p < q -> OddPrime p k g mempty: combine xs (y:ys)
+                                  _ -> error "internal error in induced: please report this as a bug"
         newFactor :: Template -> DirichletFactor
         newFactor TwoTemplate = Two
         newFactor (TwoPTemplate k _) = TwoPower k mempty mempty
@@ -442,7 +431,7 @@ toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
 -- | Test if the internal DirichletCharacter structure is valid.
 validChar :: forall n. KnownNat n => DirichletCharacter n -> Bool
 validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs && all validValued xs
-  where correctDecomposition = factorise n == map getPP xs
+  where correctDecomposition = sort (factorise n) == map getPP xs
         getPP (TwoPower k _ _) = (two, fromIntegral k)
         getPP (OddPrime p k _ _) = (p, k)
         getPP Two = (two,1)
