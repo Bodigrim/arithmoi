@@ -493,9 +493,6 @@ instance Applicative OrZero where
   NonZero f <*> m = fmap f m
   Zero      <*> _ = Zero
 
-  liftA2 f (NonZero x) (NonZero y) = NonZero (f x y)
-  liftA2 _ _ _ = Zero
-
   NonZero _ *> m = m
   Zero      *> _ = Zero
 
