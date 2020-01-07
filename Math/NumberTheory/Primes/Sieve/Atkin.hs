@@ -14,6 +14,7 @@ module Math.NumberTheory.Primes.Sieve.Atkin
   ( atkinPrimeList
   , atkinSieve
   , atkinFromTo
+  , PrimeSieve
   ) where
 
 import Control.Monad

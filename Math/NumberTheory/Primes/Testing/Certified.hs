@@ -177,20 +177,20 @@ findDecomposition n = go 1 n [] prms
 --   starting with curve s. Actually, this may loop infinitely, but the
 --   loop should not be entered before the heat death of the universe.
 findFactor :: Integer -> Int -> Integer -> Integer
-findFactor n digits s = case findLoop n lo hi count s of
+findFactor n digits s = case findLoop n lo loSieve hi count s of
                           Left t  -> findFactor n (digits+5) t
                           Right f -> f
   where
-    (lo,hi,count) = findParms digits
+    (lo, loSieve, hi, count) = findParms digits
 
 -- | Find a factor or say with which curve to continue.
-findLoop :: Integer -> Word -> Word -> Word -> Integer -> Either Integer Integer
-findLoop _ _  _  0  s = Left s
-findLoop n lo hi ct s
+findLoop :: Integer -> Word -> PrimeSieve -> Word -> Word -> Integer -> Either Integer Integer
+findLoop _ _ _ _ 0 s = Left s
+findLoop n lo loSieve hi ct s
     | n <= s+2  = Left 6
     | otherwise = case someNatVal (fromInteger n) of
-                    SomeNat (_ :: Proxy t) -> case montgomeryFactorisation lo hi (fromInteger s :: Mod t) of
-                      Nothing -> findLoop n lo hi (ct-1) (s+1)
+                    SomeNat (_ :: Proxy t) -> case montgomeryFactorisation lo loSieve hi (fromInteger s :: Mod t) of
+                      Nothing -> findLoop n lo loSieve hi (ct-1) (s+1)
                       Just fct
                         | bailliePSW fct -> Right fct
                         | otherwise -> Right (findFactor fct 8 (s+1))
