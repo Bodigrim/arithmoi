@@ -24,8 +24,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
 import Math.NumberTheory.Roots
-import qualified Math.NumberTheory.Primes.Sieve.Eratosthenes as E
-import Math.NumberTheory.Primes.Types
+import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Utils
 
 atkinPrimeList :: PrimeSieve -> [Int]
@@ -242,7 +241,9 @@ algo3steps456 low60 len60 vec =
   where
     low  = 7
     high = integerSquareRoot (60 * (low60 + len60) - 1)
-    ps   = takeWhile (<= high) $ dropWhile (< low) $ map unPrime E.primes
+    ps = case toIntegralSized high of
+      Just high' -> map fromIntegral $ smallPrimesFromTo (fromIntegral low) high'
+      Nothing    -> atkinPrimeList $ atkinSieve low (high - low + 1)
 
 -- | Cross out multiples of the first argument
 -- in a given sieve.
