@@ -8,24 +8,31 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash    #-}
 
 module Math.NumberTheory.Primes.Sieve.Atkin
   ( atkinPrimeList
   , atkinSieve
+  , atkinFromTo
   ) where
 
 import Control.Monad
 import Control.Monad.ST
 import Data.Bit
 import Data.Bits
+import Data.Coerce
 import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 
-import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes.Small
+import Math.NumberTheory.Primes.Types
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Utils
+
+atkinFromTo :: Int -> Int -> [Prime Int]
+atkinFromTo low high = coerce $ atkinPrimeList $ atkinSieve low (high - low + 1)
 
 atkinPrimeList :: PrimeSieve -> [Int]
 atkinPrimeList (PrimeSieve low len segments)

@@ -16,8 +16,8 @@ module Math.NumberTheory.Primes.Factorisation.TrialDivision
     , trialDivisionPrimeTo
     ) where
 
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve, psieveList)
 import Math.NumberTheory.Roots
+import Math.NumberTheory.Primes.Sieve.Atkin
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils
 
@@ -32,7 +32,7 @@ trialDivisionWith prs n
     | otherwise = go n (integerSquareRoot n) prs
       where
         go !m !r (p:ps)
-            | r < p     = [(m,1)]
+            | r < p = [(m,1)]
             | otherwise =
                 case splitOff p m of
                   (0,_) -> go m r ps
@@ -45,11 +45,10 @@ trialDivisionWith prs n
 --   primes @<= bound@. If @n@ has prime divisors @> bound@, the last entry
 --   in the list is the product of all these. If @n <= bound^2@, this is a
 --   full factorisation, but very slow if @n@ has large prime divisors.
-trialDivisionTo :: Integer -> Integer -> [(Integer, Word)]
+trialDivisionTo :: Int -> Integer -> [(Integer, Word)]
 trialDivisionTo bd
-    | bd < 100      = trialDivisionTo 100
-    | bd < 10000000 = trialDivisionWith (map unPrime $ primeList $ primeSieve bd)
-    | otherwise     = trialDivisionWith (takeWhile (<= bd) $ map unPrime $ psieveList >>= primeList)
+    | bd < 100  = trialDivisionTo 100
+    | otherwise = trialDivisionWith (map (toInteger . unPrime) (atkinFromTo 0 bd))
 
 -- | Check whether a number is coprime to all of the numbers in the list
 --   (assuming that list contains only numbers > 1 and is ascending).
@@ -64,8 +63,7 @@ trialDivisionPrimeWith prs n
 
 -- | @'trialDivisionPrimeTo' bound n@ tests whether @n@ is coprime to all primes @<= bound@.
 --   If @n <= bound^2@, this is a full prime test, but very slow if @n@ has no small prime divisors.
-trialDivisionPrimeTo :: Integer -> Integer -> Bool
+trialDivisionPrimeTo :: Int -> Integer -> Bool
 trialDivisionPrimeTo bd
     | bd < 100      = trialDivisionPrimeTo 100
-    | bd < 10000000 = trialDivisionPrimeWith (map unPrime $ primeList $ primeSieve bd)
-    | otherwise     = trialDivisionPrimeWith (takeWhile (<= bd) $ map unPrime $ psieveList >>= primeList)
+    | otherwise     = trialDivisionPrimeWith (map (toInteger . unPrime) (atkinFromTo 0 bd))

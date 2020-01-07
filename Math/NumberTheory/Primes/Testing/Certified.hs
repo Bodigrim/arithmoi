@@ -25,7 +25,7 @@ import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Factorisation.TrialDivision (trialDivisionPrimeTo, trialDivisionTo, trialDivisionWith)
 import Math.NumberTheory.Primes.Factorisation.Montgomery (montgomeryFactorisation, smallFactors, findParms)
 import Math.NumberTheory.Primes.Testing.Probabilistic (bailliePSW, isPrime, isStrongFermatPP, lucasTest)
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve)
+import Math.NumberTheory.Primes.Sieve.Atkin
 import Math.NumberTheory.Utils (splitOff)
 
 -- | @'isCertifiedPrime' n@ tests primality of @n@, first trial division
@@ -51,7 +51,7 @@ data PrimalityProof
                   , _knownFactors :: ![(Integer, Word, Integer, PrimalityProof)]
                   }
     | TrialDivision { cprime :: !Integer        -- ^ The number whose primality is proved.
-                    , _tdLimit :: !Integer }
+                    , tdLimit :: !Int }
     | Trivial { cprime :: !Integer              -- ^ The number whose primality is proved.
               }
       deriving Show
@@ -60,9 +60,12 @@ data PrimalityProof
 --   impossible to create invalid proofs by the public interface, this
 --   should never return 'False'.
 checkPrimalityProof :: PrimalityProof -> Bool
-checkPrimalityProof (Trivial n) = isTrivialPrime n
-checkPrimalityProof (TrialDivision p b) = p <= b*b && trialDivisionPrimeTo b p
-checkPrimalityProof (Pocklington p a b fcts) = b > 0 && a > b && a*b == pm1 && a == ppProd fcts && all verify fcts
+checkPrimalityProof (Trivial n) =
+  isTrivialPrime n
+checkPrimalityProof (TrialDivision p b) =
+  p <= toInteger b * toInteger b && trialDivisionPrimeTo b p
+checkPrimalityProof (Pocklington p a b fcts) =
+  b > 0 && a > b && a*b == pm1 && a == ppProd fcts && all verify fcts
   where
     pm1 = p-1
     ppProd pps = product [pf^e | (pf,e,_,_) <- pps]
@@ -87,7 +90,7 @@ trivialPrimes = [2,3,5,7,11,13,17,19,23,29]
 smallCert :: Integer -> PrimalityProof
 smallCert n
     | n < 30    = Trivial n
-    | otherwise = TrialDivision n (integerSquareRoot n + 1)
+    | otherwise = TrialDivision n (fromInteger (integerSquareRoot n + 1))
 
 -- | @'certify' n@ constructs, for @n > 1@, a proof of either
 --   primality or compositeness of @n@. This may take a very long
@@ -99,7 +102,7 @@ certify n
                     ((p,_):_) | p < n     -> Nothing
                               | otherwise -> Just (Trivial n)
                     _ -> error "Impossible"
-    | n < billi = let r2 = integerSquareRoot n + 2 in
+    | n < billi = let r2 = fromInteger (integerSquareRoot n + 2) in
                   case trialDivisionTo r2 n of
                     ((p,_):_) | p < n       -> Nothing
                               | otherwise   -> Just (TrialDivision n r2)
@@ -109,7 +112,7 @@ certify n
                                  | not (lucasTest n) -> Nothing
                                  | otherwise -> Just (certifyBPSW n)       -- if it isn't we error and ask for a report.
                     ((toInteger -> p,_):_, _)
-                      | p == n -> Just (TrialDivision n (min 100000 n))
+                      | p == n -> Just (TrialDivision n (fromInteger (min 100000 n)))
                       | otherwise -> Nothing
                     _ -> error ("***Error factorising " ++ show n ++ "! Please report this to maintainer of arithmoi.")
       where
@@ -154,8 +157,8 @@ findDecomposition :: Integer -> (Integer, [(Integer, Word, Bool)], Integer)
 findDecomposition n = go 1 n [] prms
   where
     sr = integerSquareRoot n
-    pbd = min 1000000 (sr+20)
-    prms = map unPrime $ primeList (primeSieve pbd)
+    pbd = fromInteger (min 1000000 (sr+20))
+    prms = map (toInteger . unPrime) (atkinFromTo 0 pbd)
     go a b afs (p:ps)
         | a > b     = (a,afs,b)
         | otherwise = case splitOff p b of
