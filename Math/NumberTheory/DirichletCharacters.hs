@@ -83,7 +83,8 @@ import Numeric.Natural                                     (Natural)
 import Math.NumberTheory.ArithmeticFunctions               (totient)
 import Math.NumberTheory.Moduli.Class                      (KnownNat, Mod, getVal)
 import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
-import Math.NumberTheory.Moduli.Multiplicative
+import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultElement)
+import Math.NumberTheory.Moduli.Internal                   (isPrimitiveRoot', discreteLogarithmPP)
 import Math.NumberTheory.Powers.Modular                    (powMod)
 import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise)
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
@@ -513,7 +514,6 @@ makePrimitive (Generated xs) =
 
 #if !MIN_VERSION_base(4,12,0)
 newtype Ap f a = Ap { getApp :: f a }
-  deriving (Functor, Applicative, Monad)
 
 instance (Applicative f, Semigroup a) => Semigroup (Ap f a) where
   (<>) = liftA2 (<>)

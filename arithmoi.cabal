@@ -67,6 +67,7 @@ library
     Math.NumberTheory.Moduli.Class
     Math.NumberTheory.Moduli.DiscreteLogarithm
     Math.NumberTheory.Moduli.Equations
+    Math.NumberTheory.Moduli.Internal
     Math.NumberTheory.Moduli.Jacobi
     Math.NumberTheory.Moduli.Multiplicative
     Math.NumberTheory.Moduli.PrimitiveRoot
