@@ -342,9 +342,6 @@ templateFromCharacter (Generated t) = traverse go t
           where m = bit (k-2)
         go Two = (Product 1, TwoTemplate)
 
--- TODO (idea): Template is effectively a CyclicFactor of a generalised CyclicGroup...
--- see issue #154
-
 mkTemplate :: Natural -> (Product Natural, [Template])
 mkTemplate = go . sort . factorise
   where go :: [(Prime Natural, Word)] -> (Product Natural, [Template])
@@ -366,7 +363,6 @@ unroll t m = snd (mapAccumL func m t)
         func a (TwoPTemplate k n) = (b1, TwoPower k (toRootOfUnity $ a2 % 2) (toRootOfUnity $ b2 % n))
           where (a1,a2) = quotRem a 2
                 (b1,b2) = quotRem a1 n
-                -- TODO: consider tidying
         func a TwoTemplate = (a, Two)
 
 -- | Test if a given Dirichlet character is prinicpal for its modulus: a principal character mod
