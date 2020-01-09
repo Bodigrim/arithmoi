@@ -15,7 +15,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
@@ -490,7 +489,7 @@ data WithNat (a :: Nat -> *) where
 makePrimitive :: DirichletCharacter n -> WithNat PrimitiveCharacter
 makePrimitive (Generated xs) =
   case someNatVal (product mods) of
-    SomeNat (Proxy :: Proxy m) -> WithNat @m (PrimitiveCharacter (Generated ys))
+    SomeNat (Proxy :: Proxy m) -> WithNat (PrimitiveCharacter (Generated ys) :: PrimitiveCharacter m)
   where (mods,ys) = unzip (mapMaybe prim xs)
         prim :: DirichletFactor -> Maybe (Natural, DirichletFactor)
         prim Two = Nothing
