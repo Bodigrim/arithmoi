@@ -14,6 +14,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
@@ -54,31 +56,33 @@ module Math.NumberTheory.DirichletCharacters
   , getPrimitiveCharacter
   , induced
   , makePrimitive
+  , WithNat(..)
   -- * Debugging
   , validChar
   ) where
 
 import Control.Applicative                                 (Applicative(..))
 import Data.Bits                                           (Bits(..))
-import Data.Complex                                        (Complex, cis)
+import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
-import Data.List                                           (mapAccumL, foldl', sort)
+import Data.List                                           (mapAccumL, foldl', sort, find)
+import Data.Maybe                                          (mapMaybe)
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          (Rational, Ratio, (%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..), Product(..))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))
-import GHC.TypeNats.Compat                                 (Nat, natVal)
+import GHC.TypeNats.Compat                                 (Nat, SomeNat(..), natVal, someNatVal)
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
 import Math.NumberTheory.Moduli.Class                      (KnownNat, Mod, getVal)
-import Math.NumberTheory.Moduli.Singleton
+import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
 import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Powers.Modular                    (powMod)
-import Math.NumberTheory.Primes
+import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise)
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
@@ -167,7 +171,11 @@ instance Monoid RootOfUnity where
 -- @[polarRat](https://hackage.haskell.org/package/cyclotomic-0.5.1/docs/Data-Complex-Cyclotomic.html#v:polarRat)
 -- 1 . @'fromRootOfUnity' to convert to a cyclotomic number.
 toComplex :: Floating a => RootOfUnity -> Complex a
-toComplex = cis . (2*pi*) . fromRational . fromRootOfUnity
+toComplex (RootOfUnity t)
+  | t == 1/2 = (-1) :+ 0
+  | t == 1/4 = 0 :+ 1
+  | t == 3/4 = 0 :+ (-1)
+  | otherwise = cis . (2*pi*) . fromRational $ t
 
 -- | For primes, define the canonical primitive root as the smallest such. For prime powers \(p^k\),
 -- either the smallest primitive root \(g\) mod \(p\) works, or \(g+p\) works.
@@ -410,6 +418,7 @@ jacobiCharacter = if odd n
 newtype RealCharacter n = RealChar { -- | Extract the character itself from a `RealCharacter`.
                                      getRealChar :: DirichletCharacter n
                                    }
+                                   deriving Eq
 
 -- | Test if a given `DirichletCharacter` is real, and if so give a `RealCharacter`.
 isRealCharacter :: DirichletCharacter n -> Maybe (RealCharacter n)
@@ -423,7 +432,7 @@ isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else No
 -- and thus avoid using discrete log calculations: consider the order of m
 -- inside each of the factor groups?
 -- | Evaluate a real Dirichlet character, which can only take values \(-1,0,1\).
-toRealFunction :: KnownNat n => RealCharacter n -> Natural -> Int
+toRealFunction :: (Integral a, KnownNat n) => RealCharacter n -> a -> Int
 toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
                                     Zero -> 0
                                     NonZero t | t == mempty -> 1
@@ -456,7 +465,6 @@ orderChar (Generated xs) = foldl' lcm 1 $ map orderFactor xs
         orderFactor Two = 1
 
 -- | Test if a Dirichlet character is <https://en.wikipedia.org/wiki/Dirichlet_character#Primitive_characters_and_conductor primitive>.
--- TODO: turn this into a smart constructor for PrimitiveCharacter
 isPrimitive :: DirichletCharacter n -> Maybe (PrimitiveCharacter n)
 isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter t) else Nothing
   where primitive :: DirichletFactor -> Bool
@@ -473,10 +481,32 @@ isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter
 newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
                                                     getPrimitiveCharacter :: DirichletCharacter n
                                                     }
+                                                    deriving Eq
 
--- TODO
-makePrimitive :: DirichletCharacter n -> Some PrimitiveCharacter
-makePrimitive (Generated _) = Some (PrimitiveCharacter undefined)
+data WithNat (a :: Nat -> *) where
+  WithNat :: KnownNat m => a m -> WithNat a
+
+-- | This function also provides access to the new modulus on type level, with a KnownNat instance
+makePrimitive :: DirichletCharacter n -> WithNat PrimitiveCharacter
+makePrimitive (Generated xs) =
+  case someNatVal (product mods) of
+    SomeNat (Proxy :: Proxy m) -> WithNat @m (PrimitiveCharacter (Generated ys))
+  where (mods,ys) = unzip (mapMaybe prim xs)
+        prim :: DirichletFactor -> Maybe (Natural, DirichletFactor)
+        prim Two = Nothing
+        prim (OddPrime p' k g a) = case find works options of
+                                     Nothing -> error "invalid character"
+                                     Just (0,_) -> Nothing
+                                     Just (i,_) -> Just (p^i, OddPrime p' i g a)
+          where options = (0,1): [(i,p^(i-1)*(p-1)) | i <- [1..k]]
+                works (_,phi) = phi `stimes` a == mempty
+                p = unPrime p'
+        prim (TwoPower k a b) = case find worksb options of
+                                  Nothing -> error "invalid character"
+                                  Just (2,_) | a == mempty -> Nothing
+                                  Just (i,_) -> Just (bit i :: Natural, TwoPower i a b)
+          where options = [(i, bit (i-2) :: Natural) | i <- [2..k]]
+                worksb (_,phi) = phi `stimes` b == mempty
 
 -- | Similar to Maybe, but with different Semigroup and Monoid instances.
 data OrZero a = Zero | NonZero !a
