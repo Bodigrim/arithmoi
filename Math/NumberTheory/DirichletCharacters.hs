@@ -63,7 +63,7 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
-import Control.Applicative                                 (Applicative(..))
+import Control.Applicative                                 (Applicative(..), liftA2)
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
@@ -516,12 +516,12 @@ makePrimitive (Generated xs) =
 
 #if !MIN_VERSION_base(4,12,0)
 newtype Ap f a = Ap { getAp :: f a }
-  deriving (Functor, Applicative, Monad)
+  deriving (Eq, Functor, Applicative, Monad)
 
 instance (Applicative f, Semigroup a) => Semigroup (Ap f a) where
   (<>) = liftA2 (<>)
 
-instance (Applicative f, Monoid a) => Monoid (Ap f a) where
+instance (Applicative f, Semigroup a, Monoid a) => Monoid (Ap f a) where
   mempty = pure mempty
   mappend = (<>)
 #endif
