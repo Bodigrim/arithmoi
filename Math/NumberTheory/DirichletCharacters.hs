@@ -10,6 +10,7 @@
 --
 
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -513,7 +514,8 @@ makePrimitive (Generated xs) =
                 worksb (_,phi) = phi `stimes` b == mempty
 
 #if !MIN_VERSION_base(4,12,0)
-newtype Ap f a = Ap { getApp :: f a }
+newtype Ap f a = Ap { getAp :: f a }
+  deriving (Functor, Applicative, Monad)
 
 instance (Applicative f, Semigroup a) => Semigroup (Ap f a) where
   (<>) = liftA2 (<>)
