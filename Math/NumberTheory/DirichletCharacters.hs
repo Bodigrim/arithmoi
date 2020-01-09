@@ -63,6 +63,7 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
+import Control.Applicative                                 (Applicative(..))
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
