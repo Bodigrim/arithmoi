@@ -15,6 +15,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE CPP #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
@@ -25,7 +27,7 @@ module Math.NumberTheory.DirichletCharacters
   , fromRootOfUnity
   , toComplex
   -- * An absorbing semigroup
-  , OrZero(..)
+  , OrZero, pattern Zero, pattern NonZero
   , asNumber
   -- * Dirichlet characters
   , DirichletCharacter
@@ -60,13 +62,15 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
-import Control.Applicative                                 (Applicative(..))
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
 import Data.List                                           (mapAccumL, foldl', sort, find)
 import Data.Maybe                                          (mapMaybe)
+#if MIN_VERSION_base(4,12,0)
+import Data.Monoid                                         (Ap(..))
+#endif
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          (Rational, Ratio, (%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..), Product(..))
@@ -507,36 +511,26 @@ makePrimitive (Generated xs) =
           where options = [(i, bit (i-2) :: Natural) | i <- [2..k]]
                 worksb (_,phi) = phi `stimes` b == mempty
 
--- | Similar to Maybe, but with different Semigroup and Monoid instances.
-data OrZero a = Zero | NonZero !a
-  deriving (Eq)
+#if !MIN_VERSION_base(4,12,0)
+newtype Ap f a = Ap { getApp :: f a }
+  deriving (Functor, Applicative, Monad)
 
--- | An equivalent `Functor` instance to `Maybe`.
-instance Functor OrZero where
-  fmap _ Zero = Zero
-  fmap f (NonZero x) = NonZero (f x)
+instance (Applicative f, Semigroup a) => Semigroup (Ap f a) where
+  (<>) = liftA2 (<>)
 
--- | An equivalent `Applicative` instance to `Maybe`.
-instance Applicative OrZero where
-  pure = NonZero
-  NonZero f <*> m = fmap f m
-  Zero      <*> _ = Zero
-
-  NonZero _ *> m = m
-  Zero      *> _ = Zero
-
--- | `Zero` is an absorbing element for this semigroup
-instance Semigroup a => Semigroup (OrZero a) where
-  NonZero a <> NonZero b = NonZero (a <> b)
-  _ <> _ = Zero
-
-instance (Semigroup a, Monoid a) => Monoid (OrZero a) where
-  mempty = NonZero mempty
+instance (Applicative f, Monoid a) => Monoid (Ap f a) where
+  mempty = pure mempty
   mappend = (<>)
+#endif
 
-instance Show a => Show (OrZero a) where
-  show Zero = "0"
-  show (NonZero x) = show x
+-- | Similar to Maybe, but with different Semigroup and Monoid instances.
+type OrZero a = Ap Maybe a
+pattern Zero :: OrZero a
+pattern Zero = Ap Nothing
+
+pattern NonZero :: a -> OrZero a
+pattern NonZero x = Ap (Just x)
+{-# COMPLETE Zero, NonZero #-}
 
 -- | Interpret an `OrZero` as a number, taking the `Zero` case to be 0.
 asNumber :: Num a => (b -> a) -> OrZero b -> a
