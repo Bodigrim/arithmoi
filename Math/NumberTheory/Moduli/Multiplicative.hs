@@ -22,9 +22,7 @@ module Math.NumberTheory.Moduli.Multiplicative
   , PrimitiveRoot
   , unPrimitiveRoot
   , isPrimitiveRoot
-  , isPrimitiveRoot' -- TODO (BM): don't expose this
   , discreteLogarithm
-  , discreteLogarithmPP -- TODO (BM): don't expose this
   ) where
 
 import Control.Monad

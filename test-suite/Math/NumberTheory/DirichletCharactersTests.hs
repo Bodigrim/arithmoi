@@ -167,6 +167,10 @@ makePrimitiveIdem chi = case makePrimitive chi of
                                   Just Refl -> chi' == chi''
                                   Nothing -> False
 
+orderCheck :: DirichletCharacter n -> Bool
+orderCheck chi = isPrincipal (n `stimes` chi) && and [not (isPrincipal (i `stimes` chi)) | i <- [1..n-1]]
+  where n = orderChar chi
+
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
   [ testSmallAndQuick "RootOfUnity contains roots of unity" rootOfUnityTest
@@ -185,4 +189,5 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
   , testSmallAndQuick "makePrimitive produces primitive character" (dirCharProperty makePrimitiveCheck)
   , testSmallAndQuick "makePrimitive is idempotent" (dirCharProperty makePrimitiveIdem)
+  , testSmallAndQuick "Calculates correct order" (dirCharProperty orderCheck)
   ]
