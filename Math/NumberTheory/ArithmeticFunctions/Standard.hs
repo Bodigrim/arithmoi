@@ -33,8 +33,10 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   ) where
 
 import Data.Coerce
+import Data.Euclidean (GcdDomain(divide))
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
+import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Semigroup
@@ -113,22 +115,22 @@ tauA :: Num a => ArithmeticFunction n a
 tauA = multiplicative $ const (fromIntegral . succ)
 
 -- | See 'sigmaA'.
-sigma :: (UniqueFactorisation n, Integral n) => Word -> n -> n
+sigma :: (UniqueFactorisation n, Integral n, Num a, GcdDomain a) => Word -> n -> a
 sigma = runFunction . sigmaA
 
 -- | The sum of the @k@-th powers of (positive) divisors of an argument.
 --
 -- > sigmaA = multiplicative (\p k -> sum $ map (p ^) [0..k])
 -- > sigmaA 0 = tauA
-sigmaA :: Integral n => Word -> ArithmeticFunction n n
+sigmaA :: (Integral n, Num a, GcdDomain a) => Word -> ArithmeticFunction n a
 sigmaA 0 = tauA
-sigmaA 1 = multiplicative $ sigmaHelper . unPrime
-sigmaA a = multiplicative $ sigmaHelper . (^ wordToInt a) . unPrime
+sigmaA 1 = multiplicative $ sigmaHelper . fromIntegral . unPrime
+sigmaA a = multiplicative $ sigmaHelper . (^ wordToInt a) . fromIntegral . unPrime
 
-sigmaHelper :: Integral n => n -> Word -> n
+sigmaHelper :: (Num a, GcdDomain a) => a -> Word -> a
 sigmaHelper pa 1 = pa + 1
 sigmaHelper pa 2 = pa * pa + pa + 1
-sigmaHelper pa k = (pa ^ wordToInt (k + 1) - 1) `quot` (pa - 1)
+sigmaHelper pa k = fromJust ((pa ^ wordToInt (k + 1) - 1) `divide` (pa - 1))
 {-# INLINE sigmaHelper #-}
 
 -- | See 'totientA'.

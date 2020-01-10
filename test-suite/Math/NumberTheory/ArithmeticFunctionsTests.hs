@@ -67,7 +67,7 @@ tauOeis = oeisAssertion "A000005" tauA
 
 -- | sigma_0 coincides with tau by definition
 sigmaProperty1 :: NonZero Natural -> Bool
-sigmaProperty1 (NonZero n) = runFunction tauA n == runFunction (sigmaA 0) n
+sigmaProperty1 (NonZero n) = runFunction tauA n == (runFunction (sigmaA 0) n :: Natural)
 
 -- | value of totient is bigger than argument
 sigmaProperty2 :: NonZero Natural -> Bool
@@ -79,7 +79,7 @@ sigma1Oeis = oeisAssertion "A000203" (sigmaA 1)
   [ 1, 3, 4, 7, 6, 12, 8, 15, 13, 18, 12, 28, 14, 24, 24, 31, 18, 39, 20
   , 42, 32, 36, 24, 60, 31, 42, 40, 56, 30, 72, 32, 63, 48, 54, 48, 91, 38
   , 60, 56, 90, 42, 96, 44, 84, 78, 72, 48, 124, 57, 93, 72, 98, 54, 120
-  , 72, 120, 80, 90, 60, 168, 62, 96, 104, 127, 84, 144, 68, 126, 96, 144
+  , 72, 120, 80, 90, 60, 168, 62, 96, 104, 127, 84, 144, 68, 126, 96, 144 :: Natural
   ]
 
 -- | sigma_2 matches baseline from OEIS.
@@ -88,7 +88,7 @@ sigma2Oeis = oeisAssertion "A001157" (sigmaA 2)
   [ 1, 5, 10, 21, 26, 50, 50, 85, 91, 130, 122, 210, 170, 250, 260, 341, 290
   , 455, 362, 546, 500, 610, 530, 850, 651, 850, 820, 1050, 842, 1300, 962
   , 1365, 1220, 1450, 1300, 1911, 1370, 1810, 1700, 2210, 1682, 2500, 1850
-  , 2562, 2366, 2650, 2210, 3410, 2451, 3255
+  , 2562, 2366, 2650, 2210, 3410, 2451, 3255 :: Natural
   ]
 
 -- | value of totient if even, except totient(1) and totient(2)
