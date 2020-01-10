@@ -7,7 +7,6 @@
 -- Multiplicative groups of integers modulo m.
 --
 
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE PatternSynonyms #-}

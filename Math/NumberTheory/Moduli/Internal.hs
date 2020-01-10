@@ -9,7 +9,6 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.Moduli.Internal
   ( isPrimitiveRoot'
@@ -84,7 +83,7 @@ isPrimitiveRoot' cg r =
     oddPrimeTest p g              = let phi  = totient p
                                         pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
                                         exps = map (\x -> powMod g x p) pows
-                                     in g /= 0 && gcd g p == 1 && all (/= 1) exps
+                                     in g /= 0 && gcd g p == 1 && notElem 1 exps
     oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
     oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
     doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
