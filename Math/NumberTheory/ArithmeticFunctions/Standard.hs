@@ -58,7 +58,7 @@ divisors = runFunction divisorsA
 {-# SPECIALIZE divisors :: Integer -> Set Integer #-}
 
 -- | The set of all (positive) divisors of an argument.
-divisorsA :: (UniqueFactorisation n, Ord n) => ArithmeticFunction n (Set n)
+divisorsA :: (Ord n, Num n) => ArithmeticFunction n (Set n)
 divisorsA = ArithmeticFunction (\p -> SetProduct . divisorsHelper (unPrime p)) (S.insert 1 . getSetProduct)
 
 divisorsHelper :: Num n => n -> Word -> Set n
@@ -72,7 +72,7 @@ divisorsList :: UniqueFactorisation n => n -> [n]
 divisorsList = runFunction divisorsListA
 
 -- | The unsorted list of all (positive) divisors of an argument, produced in lazy fashion.
-divisorsListA :: UniqueFactorisation n => ArithmeticFunction n [n]
+divisorsListA :: Num n => ArithmeticFunction n [n]
 divisorsListA = ArithmeticFunction (\p -> ListProduct . divisorsListHelper (unPrime p)) ((1 :) . getListProduct)
 
 divisorsListHelper :: Num n => n -> Word -> [n]
@@ -120,7 +120,7 @@ sigma = runFunction . sigmaA
 --
 -- > sigmaA = multiplicative (\p k -> sum $ map (p ^) [0..k])
 -- > sigmaA 0 = tauA
-sigmaA :: (UniqueFactorisation n, Integral n) => Word -> ArithmeticFunction n n
+sigmaA :: Integral n => Word -> ArithmeticFunction n n
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ sigmaHelper . unPrime
 sigmaA a = multiplicative $ sigmaHelper . (^ wordToInt a) . unPrime
@@ -138,7 +138,7 @@ totient = runFunction totientA
 -- | Calculates the totient of a positive number @n@, i.e.
 --   the number of @k@ with @1 <= k <= n@ and @'gcd' n k == 1@,
 --   in other words, the order of the group of units in @&#8484;/(n)@.
-totientA :: UniqueFactorisation n => ArithmeticFunction n n
+totientA :: Num n => ArithmeticFunction n n
 totientA = multiplicative $ jordanHelper . unPrime
 
 -- | See 'jordanA'.
@@ -148,7 +148,7 @@ jordan = runFunction . jordanA
 -- | Calculates the k-th Jordan function of an argument.
 --
 -- > jordanA 1 = totientA
-jordanA :: UniqueFactorisation n => Word -> ArithmeticFunction n n
+jordanA :: Num n => Word -> ArithmeticFunction n n
 jordanA 0 = multiplicative $ \_ _ -> 0
 jordanA 1 = totientA
 jordanA a = multiplicative $ jordanHelper . (^ wordToInt a) . unPrime
@@ -211,7 +211,7 @@ carmichael = runFunction carmichaelA
 
 -- | Calculates the Carmichael function for a positive integer, that is,
 --   the (smallest) exponent of the group of units in @&#8484;/(n)@.
-carmichaelA :: (UniqueFactorisation n, Integral n) => ArithmeticFunction n n
+carmichaelA :: Integral n => ArithmeticFunction n n
 carmichaelA = ArithmeticFunction (\p -> LCM . f (unPrime p)) getLCM
   where
     f 2 1 = 1
@@ -250,7 +250,7 @@ expMangoldt :: UniqueFactorisation n => n -> n
 expMangoldt = runFunction expMangoldtA
 
 -- | The exponent of von Mangoldt function. Use @log expMangoldtA@ to recover von Mangoldt function itself.
-expMangoldtA :: UniqueFactorisation n => ArithmeticFunction n n
+expMangoldtA :: Num n => ArithmeticFunction n n
 expMangoldtA = ArithmeticFunction (const . MangoldtOne . unPrime) runMangoldt
 
 data Mangoldt a
