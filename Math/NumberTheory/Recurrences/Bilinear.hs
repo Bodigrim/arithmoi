@@ -192,7 +192,7 @@ faulhaberPoly p
   $ take (p+1) $ bernoulli)
   $ map (% (fromIntegral p+1))
   $ zipWith (*) (iterate negate (if odd p then 1 else -1))
-  $ binomial !! (fromIntegral p+1)
+  $ binomial !! (p+1)
 
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>

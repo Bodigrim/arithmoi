@@ -31,24 +31,22 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 #include "MachDeps.h"
 
+import Control.Monad (when)
 import Control.Monad.ST
 import Data.Array.ST
 import Data.Array.Unboxed
+import Data.Bits
 import Data.Coerce
 import Data.Proxy
-import Control.Monad (when)
-import Data.Bits
-#if WORD_SIZE_IN_BITS == 32
 import Data.Word
-#endif
 
+import Math.NumberTheory.Primes.Counting.Approximate
+import Math.NumberTheory.Primes.Sieve.Indexing
+import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots.Squares (integerSquareRoot)
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
-import Math.NumberTheory.Primes.Counting.Approximate
-import Math.NumberTheory.Primes.Sieve.Indexing
-import Math.NumberTheory.Primes.Types
 
 #define IX_MASK     0xFFFFF
 #define IX_BITS     20
@@ -79,14 +77,14 @@ sieveRange = 30*sieveBytes
 sieveWords :: Int
 sieveWords = sieveBytes `quot` SIZEOF_HSWORD
 
+type CacheWord = Word64
+
 #if SIZEOF_HSWORD == 8
-type CacheWord = Word
 #define RMASK 63
 #define WSHFT 6
 #define TOPB 32
 #define TOPM 0xFFFFFFFF
 #else
-type CacheWord = Word64
 #define RMASK 31
 #define WSHFT 5
 #define TOPB 16
@@ -189,7 +187,7 @@ psieveList = makeSieves plim sqlim 0 0 cache
                   then do
                     let !i = indx .&. J_MASK
                         k = indx `shiftR` J_BITS
-                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` J_BITS + fromIntegral (idx i)
+                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` J_BITS + idx i
                         !strt = fromIntegral (strt1 .&. IX_MASK)
                         !skip = fromIntegral (strt1 `shiftR` IX_BITS)
                         !ixes = fromIntegral indx `shiftL` IX_J_BITS + strt `shiftL` J_BITS + fromIntegral i

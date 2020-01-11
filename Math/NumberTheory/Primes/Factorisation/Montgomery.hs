@@ -249,7 +249,7 @@ montgomeryFactorisation b1 b2 s = case newPoint (toInteger (unMod s)) n of
     let q = foldl (flip multiply) p0 smallPowers
         z = pointZ q
 
-    fromIntegral <$> case gcd n z of
+    case gcd n z of
       -- If small step did not succeed, perform a big step.
       1 -> case gcd n (bigStep q b1 b2) of
         1 -> Nothing

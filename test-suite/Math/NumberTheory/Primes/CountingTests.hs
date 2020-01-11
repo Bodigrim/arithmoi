@@ -120,7 +120,7 @@ nthPrimeApproxProperty1 (AnySign a) = nthPrimeApprox a > 0
 -- | Check that 'nthPrimeApprox' is consistent with 'nthPrimeApproxUnderestimateLimit'.
 nthPrimeApproxProperty2 :: Positive Integer -> Bool
 nthPrimeApproxProperty2 (Positive a) = a >= nthPrimeApproxUnderestimateLimit
-  || toInteger (nthPrimeApprox a) <= unPrime (nthPrime (toInteger a))
+  || nthPrimeApprox a <= unPrime (nthPrime a)
 
 
 testSuite :: TestTree
