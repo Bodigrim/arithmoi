@@ -9,6 +9,7 @@
 {-# LANGUAGE CPP #-}
 module Math.NumberTheory.Recurrences.Linear
   ( factorial
+  , factorialFactors
   , fibonacci
   , fibonacciPair
   , lucas
@@ -20,6 +21,7 @@ module Math.NumberTheory.Recurrences.Linear
 
 import Data.Bits
 import Numeric.Natural
+import Math.NumberTheory.Primes
 
 -- | Infinite zero-based table of factorials.
 --
@@ -34,6 +36,12 @@ factorial = scanl (*) 1 [1..]
 {-# SPECIALIZE factorial :: [Word]    #-}
 {-# SPECIALIZE factorial :: [Integer] #-}
 {-# SPECIALIZE factorial :: [Natural] #-}
+
+factorialFactors :: Word -> [(Prime Word, Word)]
+factorialFactors n = map (\p -> (p, mult p)) $ takeWhile ((<= n) . unPrime) primes
+  where
+    mult :: Prime Word -> Word
+    mult p = sum $ takeWhile (> 0) $ tail $ iterate (`quot` unPrime p) n
 
 -- | @'fibonacci' k@ calculates the @k@-th Fibonacci number in
 --   /O/(@log (abs k)@) steps. The index may be negative. This
