@@ -1,6 +1,6 @@
 -- |
--- Module:      Math.NumberTheory.Moduli.Multiplicative
--- Copyright:   (c) 2017 Andrew Lelechenko
+-- Module:      Math.NumberTheory.Moduli.Internal
+-- Copyright:   (c) 2020 Andrew Lelechenko
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
@@ -19,7 +19,6 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Mod
 import Data.Proxy
-import Data.Semigroup
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 import Numeric.Natural
@@ -31,41 +30,6 @@ import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Roots
-
--- | This type represents elements of the multiplicative group mod m, i.e.
--- those elements which are coprime to m. Use @toMultElement@ to construct.
-newtype MultMod m = MultMod {
-  multElement :: Mod m -- ^ Unwrap a residue.
-  } deriving (Eq, Ord, Show)
-
-instance KnownNat m => Semigroup (MultMod m) where
-  MultMod a <> MultMod b = MultMod (a * b)
-  stimes k a@(MultMod a')
-    | k >= 0 = MultMod (a' ^% k)
-    | otherwise = invertGroup $ stimes (-k) a
-  -- ^ This Semigroup is in fact a group, so @stimes@ can be called with a negative first argument.
-
-instance KnownNat m => Monoid (MultMod m) where
-  mempty = MultMod 1
-  mappend = (<>)
-
-instance KnownNat m => Bounded (MultMod m) where
-  minBound = MultMod 1
-  maxBound = MultMod (-1)
-
--- | For elements of the multiplicative group, we can safely perform the inverse
--- without needing to worry about failure.
-invertGroup :: KnownNat m => MultMod m -> MultMod m
-invertGroup (MultMod a) = case invertMod a of
-                            Just b -> MultMod b
-                            Nothing -> error "Math.NumberTheory.Moduli.invertGroup: failed to invert element"
-
--- | 'PrimitiveRoot' m is a type which is only inhabited
--- by <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive roots> of m.
-newtype PrimitiveRoot m = PrimitiveRoot
-  { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
-  }
-  deriving (Eq, Show)
 
 -- https://en.wikipedia.org/wiki/Primitive_root_modulo_n#Finding_primitive_roots
 isPrimitiveRoot'
