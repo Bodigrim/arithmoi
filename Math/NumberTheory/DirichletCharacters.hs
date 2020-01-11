@@ -61,6 +61,7 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
+import Control.Applicative                                 (liftA2)
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
