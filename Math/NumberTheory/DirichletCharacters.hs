@@ -27,7 +27,7 @@ module Math.NumberTheory.DirichletCharacters
   , toComplex
   -- * An absorbing semigroup
   , OrZero, pattern Zero, pattern NonZero
-  , asNumber
+  , orZeroToNum
   -- * Dirichlet characters
   , DirichletCharacter
   -- ** Construction
@@ -527,9 +527,9 @@ pattern NonZero x = Ap (Just x)
 {-# COMPLETE Zero, NonZero #-}
 
 -- | Interpret an `OrZero` as a number, taking the `Zero` case to be 0.
-asNumber :: Num a => (b -> a) -> OrZero b -> a
-asNumber _ Zero = 0
-asNumber f (NonZero x) = f x
+orZeroToNum :: Num a => (b -> a) -> OrZero b -> a
+orZeroToNum _ Zero = 0
+orZeroToNum f (NonZero x) = f x
 
 -- | In general, evaluating a DirichletCharacter at a point involves solving the discrete logarithm
 -- problem, which can be hard: the implementations here are around O(sqrt n).

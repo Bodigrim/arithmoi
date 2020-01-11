@@ -1,8 +1,8 @@
 -- |
 -- Module:      Math.NumberTheory.Moduli.Internal
--- Copyright:   (c) 2020 Andrew Lelechenko
+-- Copyright:   (c) 2020 Bhavik Mehta
 -- Licence:     MIT
--- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
+-- Maintainer:  Bhavik Mehta <bhavikmehta8@gmail.com>
 --
 -- Multiplicative groups of integers modulo m.
 --
