@@ -73,7 +73,7 @@ import Data.Maybe                                          (mapMaybe)
 import Data.Monoid                                         (Ap(..))
 #endif
 import Data.Proxy                                          (Proxy(..))
-import Data.Ratio                                          (Rational, (%), numerator, denominator)
+import Data.Ratio                                          ((%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..), Product(..))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
@@ -294,7 +294,7 @@ indexToChar = runIdentity . indicesToChars . Identity
 -- | Give a collection of dirichlet characters from their numbers. This may be more efficient than
 -- `indexToChar` for multiple characters, as it prevents some internal recalculations.
 indicesToChars :: forall n f. (KnownNat n, Functor f) => f Natural -> f (DirichletCharacter n)
-indicesToChars = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
+indicesToChars = fmap (Generated . unroll t . (`mod` m))
   where n = natVal (Proxy :: Proxy n)
         (Product m, t) = mkTemplate n
 
