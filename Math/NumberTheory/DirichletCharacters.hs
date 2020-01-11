@@ -53,7 +53,7 @@ module Math.NumberTheory.DirichletCharacters
   -- ** Primitive characters
   , PrimitiveCharacter
   , isPrimitive
-  , getPrimitiveCharacter
+  , getPrimitiveChar
   , induced
   , makePrimitive
   , WithNat(..)
@@ -237,6 +237,7 @@ principalChar = minBound
 mulChars :: DirichletCharacter n -> DirichletCharacter n -> DirichletCharacter n
 mulChars (Generated x) (Generated y) = Generated (zipWith combine x y)
   where combine :: DirichletFactor -> DirichletFactor -> DirichletFactor
+        combine Two Two = Two
         combine (OddPrime p k g n) (OddPrime _ _ _ m) =
           OddPrime p k g (n <> m)
         combine (TwoPower k a n) (TwoPower _ b m) =
@@ -301,14 +302,15 @@ indicesToChars = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
         (Product m, t) = mkTemplate n
 
 -- | List all characters for the modulus. This is preferred to using @[minBound..maxBound]@.
-allChars :: forall n. (KnownNat n) => [DirichletCharacter n]
+allChars :: forall n. KnownNat n => [DirichletCharacter n]
 allChars = indicesToChars [0..m-1]
   where m = totient $ natVal (Proxy :: Proxy n)
 
-makeChar :: (Integral a) => DirichletCharacter n -> a -> DirichletCharacter n
+-- | The same as `indexToChar`, but if we're given a character we can create others more efficiently.
+makeChar :: Integral a => DirichletCharacter n -> a -> DirichletCharacter n
 makeChar x = runIdentity . bulkMakeChars x . Identity
 
--- use one character to make many more: better than indicestochars since it avoids recalculating
+-- | Use one character to make many more: better than indicesToChars since it avoids recalculating
 -- some primitive roots
 bulkMakeChars :: (Integral a, Functor f) => DirichletCharacter n -> f a -> f (DirichletCharacter n)
 bulkMakeChars x = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
@@ -477,7 +479,7 @@ isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter
 -- | A Dirichlet character is primitive if cannot be 'induced' from any character with
 -- strictly smaller modulus.
 newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
-                                                    getPrimitiveCharacter :: DirichletCharacter n
+                                                    getPrimitiveChar :: DirichletCharacter n
                                                     }
                                                     deriving Eq
 

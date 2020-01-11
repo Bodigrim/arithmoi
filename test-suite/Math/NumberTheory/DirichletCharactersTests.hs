@@ -151,15 +151,16 @@ primitiveCheck chi = isJust (isPrimitive chi) == isPrimitive'
         table = evalAll chi
         testModulus d = not $ null [a | a <- [1..n-1], gcd a n == 1, a `mod` d == 1 `mod` d, table V.! a /= mempty]
 
+-- | Ensure that makePrimitive gives primitive characters
 makePrimitiveCheck :: DirichletCharacter n -> Bool
 makePrimitiveCheck chi = case makePrimitive chi of
-                            WithNat chi' -> isJust (isPrimitive (getPrimitiveCharacter chi'))
+                            WithNat chi' -> isJust (isPrimitive (getPrimitiveChar chi'))
 
 -- | sameNat also ensures the two new moduli are the same
 makePrimitiveIdem :: DirichletCharacter n -> Bool
 makePrimitiveIdem chi = case makePrimitive chi of
                           WithNat (chi' :: PrimitiveCharacter n') ->
-                            case makePrimitive (getPrimitiveCharacter chi') of
+                            case makePrimitive (getPrimitiveChar chi') of
                               WithNat (chi'' :: PrimitiveCharacter n'') ->
                                 case sameNat (Proxy :: Proxy n') (Proxy :: Proxy n'') of
                                   Just Refl -> chi' == chi''
@@ -168,6 +169,52 @@ makePrimitiveIdem chi = case makePrimitive chi of
 orderCheck :: DirichletCharacter n -> Bool
 orderCheck chi = isPrincipal (n `stimes` chi) && and [not (isPrincipal (i `stimes` chi)) | i <- [1..n-1]]
   where n = orderChar chi
+
+-- A bunch of functions making sure that every function which can produce a character (in
+-- particular by fiddling internal representation) produces a valid character
+indexToCharValid :: KnownNat n => DirichletCharacter n -> Bool
+indexToCharValid = validChar
+
+principalCharValid :: Positive Natural -> Bool
+principalCharValid (Positive n) =
+  case someNatVal n of
+    SomeNat (Proxy :: Proxy n) -> validChar (principalChar @n)
+
+mulCharsValid :: KnownNat n => DirichletCharacter n -> DirichletCharacter n -> Bool
+mulCharsValid chi1 chi2 = validChar (chi1 <> chi2)
+
+mulCharsValid' :: Positive Natural -> Natural -> Natural -> Bool
+mulCharsValid' (Positive n) i j =
+  case someNatVal n of
+    SomeNat (Proxy :: Proxy n) ->
+      mulCharsValid (indexToChar @n (i `mod` totient n)) (indexToChar @n (j `mod` totient n))
+
+stimesCharValid :: KnownNat n => DirichletCharacter n -> Int -> Bool
+stimesCharValid chi n = validChar (n `stimes` chi)
+
+succValid :: KnownNat n => DirichletCharacter n -> Bool
+succValid = validChar . succ
+
+inducedValid :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Bool
+inducedValid chi (Positive k) =
+  case someNatVal (d*k) of
+    SomeNat (Proxy :: Proxy n) ->
+      case induced @n chi of
+        Just chi2 -> validChar chi2
+        Nothing -> False
+  where d = natVal @d Proxy
+
+jacobiValid :: Positive Natural -> Bool
+jacobiValid (Positive n) =
+  case someNatVal (2*n+1) of
+    SomeNat (Proxy :: Proxy n) ->
+      case jacobiCharacter @n of
+        Just chi -> validChar (getRealChar chi)
+        _ -> False
+
+makePrimitiveValid :: DirichletCharacter n -> Bool
+makePrimitiveValid chi = case makePrimitive chi of
+                            WithNat chi' -> validChar (getPrimitiveChar chi')
 
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
@@ -188,4 +235,14 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "makePrimitive produces primitive character" (dirCharProperty makePrimitiveCheck)
   , testSmallAndQuick "makePrimitive is idempotent" (dirCharProperty makePrimitiveIdem)
   , testSmallAndQuick "Calculates correct order" (dirCharProperty orderCheck)
+  , testGroup "Creates valid characters"
+    [ testSmallAndQuick "indexToChar" (dirCharProperty indexToCharValid)
+    , testSmallAndQuick "principalChar" principalCharValid
+    , testSmallAndQuick "mulChars" mulCharsValid'
+    , testSmallAndQuick "stimesChar" (dirCharProperty stimesCharValid)
+    , testSmallAndQuick "succ" (dirCharProperty succValid)
+    , testSmallAndQuick "induced" (dirCharProperty inducedValid)
+    , testSmallAndQuick "jacobi" jacobiValid
+    , testSmallAndQuick "makePrimitive" (dirCharProperty makePrimitiveValid)
+    ]
   ]
