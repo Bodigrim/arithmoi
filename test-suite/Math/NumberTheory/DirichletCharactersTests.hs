@@ -89,7 +89,7 @@ principalCase (Positive n) (Positive k) =
 orthogonality1 :: forall n. KnownNat n => DirichletCharacter n -> Bool
 orthogonality1 chi = magnitude (total - correct) < (1e-13 :: Double)
   where n = natVal @n Proxy
-        total = sum [toFunction chi a | a <- [0..n-1]]
+        total = sum [asNumber toComplex (evalGeneral chi a) | a <- [0 .. maxBound]]
         correct = if isPrincipal chi
                      then fromIntegral $ totient n
                      else 0
@@ -113,7 +113,8 @@ realityCheck chi = isJust (isRealCharacter chi) == isReal'
 
 -- | Check real character evaluation matches normal evaluation
 realEvalCheck :: KnownNat n => RealCharacter n -> Int -> Bool
-realEvalCheck chi i = fromIntegral (toRealFunction chi i) == toFunction (getRealChar chi) i
+realEvalCheck chi i' = fromIntegral (toRealFunction chi i) == asNumber toComplex (evalGeneral (getRealChar chi) i)
+  where i = fromIntegral i'
 
 -- | The jacobi character agrees with the jacobi symbol
 jacobiCheck :: Positive Natural -> Bool

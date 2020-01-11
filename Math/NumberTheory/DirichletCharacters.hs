@@ -38,7 +38,6 @@ module Math.NumberTheory.DirichletCharacters
   -- ** Evaluation
   , eval
   , evalGeneral
-  , toFunction
   , evalAll
   -- ** Special Dirichlet characters
   , principalChar
@@ -61,7 +60,9 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
+#if !MIN_VERSION_base(4,12,0)
 import Control.Applicative                                 (liftA2)
+#endif
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
@@ -155,8 +156,8 @@ instance Show RootOfUnity where
 -- | Given a rational \(q\), produce the root of unity \(e^{2 \pi i q}\).
 toRootOfUnity :: Rational -> RootOfUnity
 toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
-  where n = toInteger $ numerator q
-        d = toInteger $ denominator q
+  where n = numerator q
+        d = denominator q
         -- effectively q `mod` 1
   -- This smart constructor ensures that the rational is always in the range 0 <= q < 1.
 
@@ -225,11 +226,6 @@ evalGeneral chi t = case isMultElement t of
                       Nothing -> Zero
                       Just x -> NonZero $ eval chi x
 
--- | Convert a Dirichlet character to a complex-valued function. As in `toComplex`, the result is
--- inexact due to floating-point inaccuracies. See `toComplex`.
-toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
-toFunction chi = asNumber toComplex . evalGeneral chi . fromIntegral
-
 -- | Give the principal character for this modulus: a principal character mod \(n\) is 1 for
 -- \(a\) coprime to \(n\), and 0 otherwise.
 principalChar :: KnownNat n => DirichletCharacter n
@@ -264,7 +260,7 @@ stimesChar s (Generated xs) = Generated (map mult xs)
 -- | We define `succ` and `pred` with more efficient implementations than
 -- @`toEnum` . (+1) . `fromEnum`@.
 instance KnownNat n => Enum (DirichletCharacter n) where
-  toEnum = indexToChar
+  toEnum = indexToChar . fromIntegral
   fromEnum = fromIntegral . characterNumber
   succ x = makeChar x (characterNumber x + 1)
   pred x = makeChar x (characterNumber x - 1)
@@ -275,29 +271,29 @@ instance KnownNat n => Enum (DirichletCharacter n) where
   enumFromThen x y     = bulkMakeChars x [fromEnum x, fromEnum y..]
 
 instance KnownNat n => Bounded (DirichletCharacter n) where
-  minBound = indexToChar (0 :: Int)
+  minBound = indexToChar 0
   maxBound = indexToChar (totient n - 1)
     where n = natVal (Proxy :: Proxy n)
 
 -- | We have a (non-canonical) enumeration of dirichlet characters.
 characterNumber :: DirichletCharacter n -> Integer
 characterNumber (Generated y) = foldl' go 0 y
-  where go x (OddPrime p k _ a) = x * m + numerator (fromRootOfUnity a * (m % 1))
+  where go x (OddPrime p k _ a) = x * m + numerator (fromRootOfUnity a * fromIntegral m)
           where p' = fromIntegral (unPrime p)
                 m = p'^(k-1)*(p'-1)
-        go x (TwoPower k a b)   = x' * 2 + numerator (fromRootOfUnity a * (2 % 1))
+        go x (TwoPower k a b)   = x' * 2 + numerator (fromRootOfUnity a * 2)
           where m = bit (k-2) :: Integer
                 x' = x `shiftL` (k-2) + numerator (fromRootOfUnity b * fromIntegral m)
         go x Two = x
 
 -- | Give the dirichlet character from its number.
 -- Inverse of `characterNumber`.
-indexToChar :: forall n a. (KnownNat n, Integral a) => a -> DirichletCharacter n
+indexToChar :: forall n. KnownNat n => Natural -> DirichletCharacter n
 indexToChar = runIdentity . indicesToChars . Identity
 
 -- | Give a collection of dirichlet characters from their numbers. This may be more efficient than
 -- `indexToChar` for multiple characters, as it prevents some internal recalculations.
-indicesToChars :: forall n a f. (KnownNat n, Integral a, Functor f) => f a -> f (DirichletCharacter n)
+indicesToChars :: forall n f. (KnownNat n, Functor f) => f Natural -> f (DirichletCharacter n)
 indicesToChars = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
   where n = natVal (Proxy :: Proxy n)
         (Product m, t) = mkTemplate n
@@ -434,8 +430,8 @@ isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else No
 -- and thus avoid using discrete log calculations: consider the order of m
 -- inside each of the factor groups?
 -- | Evaluate a real Dirichlet character, which can only take values \(-1,0,1\).
-toRealFunction :: (Integral a, KnownNat n) => RealCharacter n -> a -> Int
-toRealFunction (RealChar chi) m = case evalGeneral chi (fromIntegral m) of
+toRealFunction :: KnownNat n => RealCharacter n -> Mod n -> Int
+toRealFunction (RealChar chi) m = case evalGeneral chi m of
                                     Zero -> 0
                                     NonZero t | t == mempty -> 1
                                     NonZero t | t == RootOfUnity (1 % 2) -> -1
