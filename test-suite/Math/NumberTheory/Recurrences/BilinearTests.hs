@@ -18,8 +18,11 @@ module Math.NumberTheory.Recurrences.BilinearTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Arrow
+import Data.List (sort)
 import Data.Ratio
 
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences.Bilinear
 import Math.NumberTheory.TestUtils
 
@@ -38,6 +41,20 @@ binomialProperty4 (Positive i) (Positive j)
   || binomial @Integer !! i !! j
   == binomial !! (i - 1) !! (j - 1)
   +  binomial !! (i - 1) !! j
+
+binomialProperty5 :: Word -> Word -> Bool
+binomialProperty5 n m' = n > 100000 ||
+  sort (map (first unPrime) (factorise (binomial !! fromIntegral n !! fromIntegral m))) ==
+    sort (map (first (toInteger . unPrime)) (binomialFactors n m))
+  where
+    m = m' `mod` (n + 1)
+
+binomialProperty6 :: Word -> Word -> Bool
+binomialProperty6 n m' = n > 100000 ||
+  binomial !! fromIntegral n !! fromIntegral m ==
+    product (map (\(p, k) -> toInteger (unPrime p) ^ k) (binomialFactors n m))
+  where
+    m = m' `mod` (n + 1)
 
 binomialRotatedProperty2 :: NonNegative Int -> Bool
 binomialRotatedProperty2 (NonNegative i) = binomialRotated @Integer !! i !! 0 == 1
@@ -212,6 +229,8 @@ testSuite = testGroup "Bilinear"
     , testSmallAndQuick "left side"  binomialProperty2
     , testSmallAndQuick "right side" binomialProperty3
     , testSmallAndQuick "recurrency" binomialProperty4
+    , testSmallAndQuick "factorise . binomial = binomialFactors"  binomialProperty5
+    , testSmallAndQuick "binomial = factorBack . binomialFactors" binomialProperty6
     , testSmallAndQuick "line"       binomialLineProperty1
     , testSmallAndQuick "diagonal"   binomialDiagonalProperty2
     ]

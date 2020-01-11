@@ -39,6 +39,7 @@ module Math.NumberTheory.Recurrences.Bilinear
   , binomialRotated
   , binomialLine
   , binomialDiagonal
+  , binomialFactors
     -- * Other recurrences
   , stirling1
   , stirling2
@@ -59,6 +60,7 @@ import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.Recurrences.Linear (factorial)
+import Math.NumberTheory.Primes
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle).
 --
@@ -123,6 +125,16 @@ binomialDiagonal n = scanl'
 {-# SPECIALIZE binomialDiagonal :: Word    -> [Word]    #-}
 {-# SPECIALIZE binomialDiagonal :: Integer -> [Integer] #-}
 {-# SPECIALIZE binomialDiagonal :: Natural -> [Natural] #-}
+
+binomialFactors :: Word -> Word -> [(Prime Word, Word)]
+binomialFactors n k
+  = filter ((/= 0) . snd)
+  $ map (\p -> (p, mult n p - mult (n - k) p - mult k p))
+  $ takeWhile ((<= n) . unPrime)
+  $ primes
+  where
+    mult :: Word -> Prime Word -> Word
+    mult x p = sum $ takeWhile (> 0) $ tail $ iterate (`quot` unPrime p) x
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --
