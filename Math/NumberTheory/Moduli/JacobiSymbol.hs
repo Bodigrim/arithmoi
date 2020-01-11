@@ -17,7 +17,7 @@
 module Math.NumberTheory.Moduli.JacobiSymbol
   ( JacobiSymbol(..)
   , jacobi
-  , symbolToIntegral
+  , symbolToNum
   ) where
 
 import Data.Bits
@@ -49,14 +49,14 @@ negJS = \case
   Zero     -> Zero
   One      -> MinusOne
 
-{-# SPECIALISE symbolToIntegral :: JacobiSymbol -> Integer,
-                                   JacobiSymbol -> Int,
-                                   JacobiSymbol -> Word,
-                                   JacobiSymbol -> Natural
+{-# SPECIALISE symbolToNum :: JacobiSymbol -> Integer,
+                              JacobiSymbol -> Int,
+                              JacobiSymbol -> Word,
+                              JacobiSymbol -> Natural
   #-}
 -- | Convenience function to convert out of a Jacobi symbol
-symbolToIntegral :: Integral a => JacobiSymbol -> a
-symbolToIntegral = \case
+symbolToNum :: Num a => JacobiSymbol -> a
+symbolToNum = \case
   Zero -> 0
   One -> 1
   MinusOne -> -1

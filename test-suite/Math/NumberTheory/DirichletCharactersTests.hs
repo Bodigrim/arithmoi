@@ -3,18 +3,16 @@
 -- Copyright:    (c) 2018 Bhavik Mehta
 -- License:      MIT
 -- Maintainer:   Andrew Lelechenko <andrew.lelechenko@gmail.com>
--- Stability:    Provisional
--- Portability:  Non-portable
 --
 -- Tests for Math.NumberTheory.DirichletCharacters
 --
 
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.DirichletCharactersTests where
 
@@ -26,8 +24,8 @@ import Data.Maybe (isJust, mapMaybe)
 import Data.Proxy
 import Data.Ratio
 import Data.Semigroup
-import Numeric.Natural
 import qualified Data.Vector as V
+import Numeric.Natural
 
 import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal, sameNat)
 import Data.Type.Equality
@@ -49,13 +47,13 @@ dirCharOrder chi = isPrincipal (totient n `stimes` chi)
 -- | Tests wikipedia's property 3 (note 1,2,5 are essentially enforced by the type system).
 testMultiplicative :: KnownNat n => DirichletCharacter n -> Natural -> Natural -> Bool
 testMultiplicative chi (fromIntegral -> a) (fromIntegral -> b) = chiAB == chiAchiB
-  where chi' = generalEval chi
+  where chi' = evalGeneral chi
         chiAB = chi' (a*b)
         chiAchiB = (<>) <$> chi' a <*> chi' b
 
 -- | Test property 4 from wikipedia
 testAtOne :: KnownNat n => DirichletCharacter n -> Bool
-testAtOne chi = evaluate chi mempty == mempty
+testAtOne chi = eval chi mempty == mempty
 
 dirCharProperty :: (forall n. KnownNat n => DirichletCharacter n -> a) -> Positive Natural -> Natural -> a
 dirCharProperty test (Positive n) i =
@@ -81,7 +79,7 @@ countCharacters (Positive n) =
 principalCase :: Positive Natural -> Positive Integer -> Bool
 principalCase (Positive n) (Positive k) =
   case k `modulo` n of
-    SomeMod a -> generalEval chi a == if gcd k (fromIntegral n) > 1
+    SomeMod a -> evalGeneral chi a == if gcd k (fromIntegral n) > 1
                                          then Zero
                                          else mempty
       where chi = principalChar
@@ -100,7 +98,7 @@ orthogonality2 :: Positive Natural -> Integer -> Bool
 orthogonality2 (Positive n) a =
   case a `modulo` n of
     SomeMod a' -> magnitude (total - correct) < (1e-13 :: Double)
-      where total = sum [asNumber toComplex (generalEval chi a') | chi <- allChars]
+      where total = sum [asNumber toComplex (evalGeneral chi a') | chi <- allChars]
             correct = if a' == 1
                          then fromIntegral $ totient n
                          else 0
@@ -109,7 +107,7 @@ orthogonality2 (Positive n) a =
 -- | Manually confirm isRealCharacter is correct (in both directions)
 realityCheck :: KnownNat n => DirichletCharacter n -> Bool
 realityCheck chi = isJust (isRealCharacter chi) == isReal'
-  where isReal' = and [real (generalEval chi t) | t <- [minBound..maxBound]]
+  where isReal' = and [real (evalGeneral chi t) | t <- [minBound..maxBound]]
         real Zero = True
         real (NonZero t) = t <> t == mempty
 
@@ -123,12 +121,12 @@ jacobiCheck (Positive n) =
   case someNatVal (2*n+1) of
     SomeNat (Proxy :: Proxy n) ->
       case jacobiCharacter @n of
-        Just chi -> and [toRealFunction chi (fromIntegral j) == J.symbolToIntegral (J.jacobi j (2*n+1)) | j <- [0..2*n]]
+        Just chi -> and [toRealFunction chi (fromIntegral j) == J.symbolToNum (J.jacobi j (2*n+1)) | j <- [0..2*n]]
         _ -> False
 
 -- | Bulk evaluation agrees with pointwise evaluation
-allEvalCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
-allEvalCheck chi = V.generate (fromIntegral $ natVal @n Proxy) (generalEval chi . fromIntegral) == allEval chi
+evalAllCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+evalAllCheck chi = V.generate (fromIntegral $ natVal @n Proxy) (evalGeneral chi . fromIntegral) == evalAll chi
 
 -- | Induced characters agree with the original character.
 -- (Except for when d=1, where chi(0) = 1, which is true for no other d)
@@ -137,7 +135,7 @@ inducedCheck chi (Positive k) =
   case someNatVal (d*k) of
     SomeNat (Proxy :: Proxy n) ->
       case induced @n chi of
-        Just chi2 -> and (V.izipWith matchedValue (V.concat (replicate (fromIntegral k) (allEval chi))) (allEval chi2))
+        Just chi2 -> and (V.izipWith matchedValue (V.concat (replicate (fromIntegral k) (evalAll chi))) (evalAll chi2))
         Nothing -> False
   where d = natVal @d Proxy
         matchedValue i x1 x2 = if gcd (fromIntegral i) (d*k) > 1
@@ -150,7 +148,7 @@ primitiveCheck chi = isJust (isPrimitive chi) == isPrimitive'
   where isPrimitive' = all testModulus possibleModuli
         n = fromIntegral (natVal @n Proxy) :: Int
         possibleModuli = init (divisorsList n)
-        table = allEval chi
+        table = evalAll chi
         testModulus d = not $ null [a | a <- [1..n-1], gcd a n == 1, a `mod` d == 1 `mod` d, table V.! a /= mempty]
 
 makePrimitiveCheck :: DirichletCharacter n -> Bool
@@ -181,12 +179,12 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "Principal character behaves as expected" principalCase
   , testSmallAndQuick "Orthogonality relation 1" (dirCharProperty orthogonality1)
   , testSmallAndQuick "Orthogonality relation 2" orthogonality2
-  , testSmallAndQuick "Real character checking is valid" (dirCharProperty realityCheck)
+  , testSmallAndQuick "Real character checking is correct" (dirCharProperty realityCheck)
   , testSmallAndQuick "Real character evaluation is accurate" (realCharProperty realEvalCheck)
   , testSmallAndQuick "Jacobi character matches symbol" jacobiCheck
-  , testSmallAndQuick "Bulk evaluation matches pointwise" (dirCharProperty allEvalCheck)
+  , testSmallAndQuick "Bulk evaluation matches pointwise" (dirCharProperty evalAllCheck)
   , testSmallAndQuick "Induced character is correct" (dirCharProperty inducedCheck)
-  , testSmallAndQuick "Primitive character checking is valid" (dirCharProperty primitiveCheck)
+  , testSmallAndQuick "Primitive character checking is correct" (dirCharProperty primitiveCheck)
   , testSmallAndQuick "makePrimitive produces primitive character" (dirCharProperty makePrimitiveCheck)
   , testSmallAndQuick "makePrimitive is idempotent" (dirCharProperty makePrimitiveIdem)
   , testSmallAndQuick "Calculates correct order" (dirCharProperty orderCheck)

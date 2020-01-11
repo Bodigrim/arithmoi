@@ -3,21 +3,19 @@
 -- Copyright:   (c) 2018 Bhavik Mehta
 -- Licence:     MIT
 -- Maintainer:  Bhavik Mehta <bhavikmehta8@gmail.com>
--- Stability:   Provisional
--- Portability: Non-portable (GHC extensions)
 --
 -- Implementation and enumeration of Dirichlet characters.
 --
 
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE PatternSynonyms            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE ViewPatterns               #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
@@ -38,10 +36,10 @@ module Math.NumberTheory.DirichletCharacters
   , characterNumber
   , allChars
   -- ** Evaluation
-  , evaluate
-  , generalEval
+  , eval
+  , evalGeneral
   , toFunction
-  , allEval
+  , evalAll
   -- ** Special Dirichlet characters
   , principalChar
   , isPrincipal
@@ -63,7 +61,6 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
-import Control.Applicative                                 (Applicative(..), liftA2)
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
@@ -74,7 +71,7 @@ import Data.Maybe                                          (mapMaybe)
 import Data.Monoid                                         (Ap(..))
 #endif
 import Data.Proxy                                          (Proxy(..))
-import Data.Ratio                                          (Rational, Ratio, (%), numerator, denominator)
+import Data.Ratio                                          (Rational, (%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..), Product(..))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
@@ -84,18 +81,18 @@ import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
 import Math.NumberTheory.Moduli.Class                      (KnownNat, Mod, getVal)
-import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
-import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultElement)
 import Math.NumberTheory.Moduli.Internal                   (isPrimitiveRoot', discreteLogarithmPP)
+import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultElement)
+import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
 import Math.NumberTheory.Powers.Modular                    (powMod)
-import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise)
+import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise, nextPrime)
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
 -- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
--- values at roots of unity and can be evaluated using `evaluate`.
+-- values at roots of unity and can be evaluated using `eval`.
 -- A Dirichlet character can be extended to a completely multiplicative function on \(\mathbb{Z}\)
--- by assigning the value 0 for \(a\) sharing a common factor with \(n\), using `generalEval`.
+-- by assigning the value 0 for \(a\) sharing a common factor with \(n\), using `evalGeneral`.
 --
 -- There are finitely many possible Dirichlet characters for a given modulus, in particular there
 -- are \(\phi(n)\) characters modulo \(n\), where \(\phi\) refers to Euler's `totient` function.
@@ -155,7 +152,7 @@ instance Show RootOfUnity where
           d = denominator (2*q)
 
 -- | Given a rational \(q\), produce the root of unity \(e^{2 \pi i q}\).
-toRootOfUnity :: Integral a => Ratio a -> RootOfUnity
+toRootOfUnity :: Rational -> RootOfUnity
 toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
   where n = toInteger $ numerator q
         d = toInteger $ denominator q
@@ -203,8 +200,8 @@ lambda x e = ((powMod x (2*modulus) largeMod - 1) `shiftR` (e+1)) .&. (modulus -
 
 -- | For elements of the multiplicative group \((\mathbb{Z}/n\mathbb{Z})^*\), a Dirichlet
 -- character evaluates to a root of unity.
-evaluate :: DirichletCharacter n -> MultMod n -> RootOfUnity
-evaluate (Generated ds) m = foldMap (evalFactor m') ds
+eval :: DirichletCharacter n -> MultMod n -> RootOfUnity
+eval (Generated ds) m = foldMap (evalFactor m') ds
   where m' = getVal $ multElement m
 
 -- | Evaluate each factor of the Dirichlet character.
@@ -222,15 +219,15 @@ evalFactor m =
     Two -> mempty
 
 -- | A character can evaluate to a root of unity or zero: represented by @Nothing@.
-generalEval :: KnownNat n => DirichletCharacter n -> Mod n -> OrZero RootOfUnity
-generalEval chi t = case isMultElement t of
+evalGeneral :: KnownNat n => DirichletCharacter n -> Mod n -> OrZero RootOfUnity
+evalGeneral chi t = case isMultElement t of
                       Nothing -> Zero
-                      Just x -> NonZero $ evaluate chi x
+                      Just x -> NonZero $ eval chi x
 
 -- | Convert a Dirichlet character to a complex-valued function. As in `toComplex`, the result is
 -- inexact due to floating-point inaccuracies. See `toComplex`.
 toFunction :: (Integral a, RealFloat b, KnownNat n) => DirichletCharacter n -> a -> Complex b
-toFunction chi = asNumber toComplex . generalEval chi . fromIntegral
+toFunction chi = asNumber toComplex . evalGeneral chi . fromIntegral
 
 -- | Give the principal character for this modulus: a principal character mod \(n\) is 1 for
 -- \(a\) coprime to \(n\), and 0 otherwise.
@@ -358,9 +355,9 @@ mkTemplate = go . sort . factorise
 unroll :: [Template] -> Natural -> [DirichletFactor]
 unroll t m = snd (mapAccumL func m t)
   where func :: Natural -> Template -> (Natural, DirichletFactor)
-        func a (OddTemplate p k g n) = (a1, OddPrime p k g (toRootOfUnity $ a2 % n))
+        func a (OddTemplate p k g n) = (a1, OddPrime p k g (toRootOfUnity $ (toInteger a2) % (toInteger n)))
           where (a1,a2) = quotRem a n
-        func a (TwoPTemplate k n) = (b1, TwoPower k (toRootOfUnity $ a2 % 2) (toRootOfUnity $ b2 % n))
+        func a (TwoPTemplate k n) = (b1, TwoPower k (toRootOfUnity $ (toInteger a2) % 2) (toRootOfUnity $ (toInteger b2) % (toInteger n)))
           where (a1,a2) = quotRem a 2
                 (b1,b2) = quotRem a1 n
         func a TwoTemplate = (a, Two)
@@ -411,7 +408,7 @@ jacobiCharacter = if odd n
                      else Nothing
   where n = natVal (Proxy :: Proxy n)
         go :: Template -> DirichletFactor
-        go (OddTemplate p k g _) = OddPrime p k g $ toRootOfUnity (k % 2)
+        go (OddTemplate p k g _) = OddPrime p k g $ toRootOfUnity ((toInteger k) % 2)
           -- jacobi symbol of a primitive root mod p over p is always -1
         go _ = error "internal error in jacobiCharacter: please report this as a bug"
           -- every factor of n should be odd
@@ -430,12 +427,12 @@ isRealCharacter t@(Generated xs) = if all real xs then Just (RealChar t) else No
         real (TwoPower _ _ b) = b <> b == mempty
         real Two = True
 
--- TODO: it should be possible to calculate this without evaluate/generalEval
+-- TODO: it should be possible to calculate this without eval/evalGeneral
 -- and thus avoid using discrete log calculations: consider the order of m
 -- inside each of the factor groups?
 -- | Evaluate a real Dirichlet character, which can only take values \(-1,0,1\).
 toRealFunction :: (Integral a, KnownNat n) => RealCharacter n -> a -> Int
-toRealFunction (RealChar chi) m = case generalEval chi (fromIntegral m) of
+toRealFunction (RealChar chi) m = case evalGeneral chi (fromIntegral m) of
                                     Zero -> 0
                                     NonZero t | t == mempty -> 1
                                     NonZero t | t == RootOfUnity (1 % 2) -> -1
@@ -456,10 +453,9 @@ validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs &
         validValued (OddPrime (unPrime -> p) k _ a) = (p^(k-1)*(p-1)) `stimes` a == mempty
         validValued Two = True
         n = natVal (Proxy :: Proxy n)
-        two = toEnum 1 -- lazy way to get Prime 2
+        two = nextPrime 2
 
 -- | Get the order of the Dirichlet Character.
--- TODO: test this
 orderChar :: DirichletCharacter n -> Integer
 orderChar (Generated xs) = foldl' lcm 1 $ map orderFactor xs
   where orderFactor (TwoPower _ (RootOfUnity a) (RootOfUnity b)) = denominator a `lcm` denominator b
@@ -478,7 +474,7 @@ isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter
         primitive (TwoPower 2 a _) = a /= mempty
         primitive (TwoPower k _ b) = (bit (k-3) :: Integer) `stimes` b /= mempty
 
--- | A Dirichlet character is primitive if cannot be @induced@ from any character with
+-- | A Dirichlet character is primitive if cannot be 'induced' from any character with
 -- strictly smaller modulus.
 newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
                                                     getPrimitiveCharacter :: DirichletCharacter n
@@ -541,10 +537,10 @@ asNumber f (NonZero x) = f x
 -- However, evaluating a dirichlet character at every point amounts to solving the discrete
 -- logarithm problem at every point also, which can be done together in O(n) time, better than
 -- using a complex algorithm at each point separately. Thus, if a large number of evaluations
--- of a dirichlet character are required, `allEval` will be better than `generalEval`, since
+-- of a dirichlet character are required, `evalAll` will be better than `evalGeneral`, since
 -- computations can be shared.
-allEval :: forall n. KnownNat n => DirichletCharacter n -> Vector (OrZero RootOfUnity)
-allEval (Generated xs) = V.generate (fromIntegral n) func
+evalAll :: forall n. KnownNat n => DirichletCharacter n -> Vector (OrZero RootOfUnity)
+evalAll (Generated xs) = V.generate (fromIntegral n) func
   where n = natVal (Proxy :: Proxy n)
         vectors = map mkVector xs
         func :: Int -> OrZero RootOfUnity
