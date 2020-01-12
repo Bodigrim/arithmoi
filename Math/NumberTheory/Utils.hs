@@ -12,6 +12,7 @@ module Math.NumberTheory.Utils
     , shiftToOdd
     , shiftToOdd#
     , shiftToOddCount#
+    , shiftToOddCountBigNat
     , bitCountWord
     , bitCountInt
     , bitCountWord#
@@ -92,6 +93,11 @@ shiftOCNatural n@(NatS# i#) =
 shiftOCNatural n@(NatJ# bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
                                  z#  -> (W# z#, bigNatToNatural (bn# `shiftRBigNat` (word2Int# z#)))
+
+shiftToOddCountBigNat :: BigNat -> (Word, BigNat)
+shiftToOddCountBigNat bn# = case bigNatZeroCount bn# of
+  0## -> (0, bn#)
+  z#  -> (W# z#, bn# `shiftRBigNat` (word2Int# z#))
 
 -- | Count trailing zeros in a @'BigNat'@.
 --   Precondition: argument nonzero (not checked, Integer invariant).

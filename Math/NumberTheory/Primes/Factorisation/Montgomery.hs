@@ -58,6 +58,7 @@ import Data.Traversable
 import qualified Data.Vector.Unboxed as V
 
 import GHC.Exts
+import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 import GHC.Natural
 
@@ -321,27 +322,35 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
 smallFactors :: Natural -> ([(Natural, Word)], Maybe Natural)
-smallFactors 0 = error "0 has no prime factorisation"
-smallFactors n = case shiftToOddCount n of
-                      (0, m) -> go m 1
-                      (k, m) -> (2, k) <: go m 1
+smallFactors = \case
+  NatS# 0## -> error "0 has no prime factorisation"
+  NatS# n#  -> case shiftToOddCount# n# of
+    (# 0##, m# #) -> goWord m# 1
+    (# k#,  m# #) -> (2, W# k#) <: goWord m# 1
+  NatJ# n -> case shiftToOddCountBigNat n of
+    (0, m) -> goBigNat m 1
+    (k, m) -> (2, k) <: goBigNat m 1
   where
     x <: ~(l,b) = (x:l,b)
     smallPrimesLen = V.length smallPrimes
 
-    go :: Natural -> Int -> ([(Natural, Word)], Maybe Natural)
-    go (NatS# m#) !i = goWord m# i
-    go !m !i
+    goBigNat :: BigNat -> Int -> ([(Natural, Word)], Maybe Natural)
+    goBigNat !m !i
+      | isTrue# (sizeofBigNat# m ==# 1#)
+      = goWord (bigNatToWord m) i
       | i >= smallPrimesLen
-      = ([], Just m)
-    go !m !i = let p = fromIntegral (V.unsafeIndex smallPrimes i) in
-      case m `quotRem` p of
-        (mp, 0) -> let (k, r) = splitOff 1 mp in (p, k) <: go r (i + 1)
+      = ([], Just (NatJ# m))
+      | otherwise
+      = let !(W# p#) = fromIntegral (V.unsafeIndex smallPrimes i) in
+      case m `quotRemBigNatWord` p# of
+        (# mp, 0## #) ->
+          let (# k, r #) = splitOff 1 mp in
+            (NatS# p#, k) <: goBigNat r (i + 1)
           where
-            splitOff !k x = case x `quotRem` p of
-              (xp, 0) -> splitOff (k + 1) xp
-              _       -> (k, x)
-        _ -> go m (i + 1)
+            splitOff !k x = case x `quotRemBigNatWord` p# of
+              (# xp, 0## #) -> splitOff (k + 1) xp
+              _             -> (# k, x #)
+        _ -> goBigNat m (i + 1)
 
     goWord :: Word# -> Int -> ([(Natural, Word)], Maybe Natural)
     goWord 1## !_ = ([], Nothing)
