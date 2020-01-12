@@ -16,7 +16,6 @@
 {-# LANGUAGE PatternSynonyms            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE ViewPatterns               #-}
-{-# LANGUAGE MagicHash                  #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
