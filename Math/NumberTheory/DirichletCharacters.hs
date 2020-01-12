@@ -65,7 +65,6 @@ module Math.NumberTheory.DirichletCharacters
 #if !MIN_VERSION_base(4,12,0)
 import Control.Applicative                                 (liftA2)
 #endif
-import Control.Monad                                       (zipWithM)
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
@@ -590,25 +589,19 @@ iterateMaybe f = go where go x = x: maybe [] go (f x)
 
 fromTable :: forall n. KnownNat n => Vector (OrZero RootOfUnity) -> Maybe (DirichletCharacter n)
 fromTable v = if length v == fromIntegral n
-                 then Generated <$> (zipWithM makeFactor tmpl vals) >>= check
+                 then Generated <$> traverse makeFactor tmpl >>= check
                  else Nothing
   where n = natVal' (proxy# :: Proxy# n)
         n' = fromIntegral n :: Integer
         tmpl = snd (mkTemplate n)
-        vals = map ((`mod` n') . fromJust . chineseCoprimeList) $ thing $ map makePairs tmpl
-        makePairs :: Template -> (Integer, Integer)
-        makePairs TwoTemplate = (1,2)
-        makePairs (OddTemplate p k g _) = (toInteger g, (toInteger $ unPrime p)^k)
-        makePairs (TwoPTemplate k _) = (exp4 k, bit k)
         check :: DirichletCharacter n -> Maybe (DirichletCharacter n)
         check chi = if evalAll chi == v then Just chi else Nothing
-        makeFactor :: Template -> Integer -> Maybe DirichletFactor
-        makeFactor TwoTemplate _ = Just Two
-        makeFactor (TwoPTemplate k _) z = TwoPower k <$> getAp (v ! fromInteger ((fromJust (chineseCoprime (1,n' `quot` bit k) (-1, bit k))) `mod` n')) <*> getAp (v ! (fromInteger z))
-        makeFactor (OddTemplate p k g _) z = OddPrime p k g <$> getAp (v ! (fromInteger z))
-
-thing :: (Eq a, Eq b, Num a) => [(a,b)] -> [[(a,b)]]
-thing xs = fmap (\t -> fmap (\(x,y) -> if (x,y) == t then t else (1,y)) xs) xs
+        makeFactor :: Template -> Maybe DirichletFactor
+        makeFactor TwoTemplate = Just Two
+        makeFactor (TwoPTemplate k _) = TwoPower k <$> getValue (-1,bit k) <*> getValue (exp4 k, bit k)
+        makeFactor (OddTemplate p k g _) = OddPrime p k g <$> getValue (toInteger g, toInteger (unPrime p)^k)
+        getValue :: (Integer,Integer) -> Maybe RootOfUnity
+        getValue (g,m) = getAp (v ! fromInteger (fromJust (chineseCoprime (g,m) (1,n' `quot` m)) `mod` n'))
 
 exp4terms :: [Rational]
 exp4terms = [4^k % product [1..k] | k <- [0..]]
@@ -616,5 +609,6 @@ exp4terms = [4^k % product [1..k] | k <- [0..]]
 -- For reasons that aren't clear to me, `exp4` gives the inverse of 1 under lambda, so it gives the generator
 -- This is the same as https://oeis.org/A320814
 -- In particular, lambda (exp4 n) n == 1 (for n >= 3)
+-- I've verified this for 3 <= n <= 2000, so the reasoning in fromTable should be accurate for moduli below 2^2000
 exp4 :: Int -> Integer
 exp4 n = (`mod` bit n) $ sum $ map (`mod` bit n) $ map (\q -> numerator q * fromMaybe (error "error in exp4") (recipMod (denominator q) (bit n))) $ take n $ exp4terms
