@@ -69,7 +69,7 @@ import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
-import Data.List                                           (mapAccumL, foldl', sort, find)
+import Data.List                                           (mapAccumL, foldl', sort, find, unfoldr)
 import Data.Maybe                                          (mapMaybe, fromJust, fromMaybe)
 #if MIN_VERSION_base(4,12,0)
 import Data.Monoid                                         (Ap(..))
@@ -584,8 +584,10 @@ evalAll (Generated xs) = V.generate (fromIntegral n) func
 
 -- somewhere between unfoldr and iterate
 iterateMaybe :: (a -> Maybe a) -> a -> [a]
-iterateMaybe f = go where go x = x: maybe [] go (f x)
+iterateMaybe f x = unfoldr (fmap (\t -> (t, f t))) (Just x)
 
+-- | Attempt to construct a character from its table of values.
+-- An inverse to `evalAll`, defined only on its image.
 fromTable :: forall n. KnownNat n => Vector (OrZero RootOfUnity) -> Maybe (DirichletCharacter n)
 fromTable v = if length v == fromIntegral n
                  then Generated <$> traverse makeFactor tmpl >>= check
