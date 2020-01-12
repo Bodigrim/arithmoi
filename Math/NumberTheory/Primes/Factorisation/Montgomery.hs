@@ -24,7 +24,9 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples       #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -55,8 +57,9 @@ import Data.Semigroup
 import Data.Traversable
 import qualified Data.Vector.Unboxed as V
 
+import GHC.Exts
 import GHC.TypeNats.Compat
-import Numeric.Natural
+import GHC.Natural
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
@@ -320,29 +323,45 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 smallFactors :: Natural -> ([(Natural, Word)], Maybe Natural)
 smallFactors 0 = error "0 has no prime factorisation"
 smallFactors n = case shiftToOddCount n of
-                      (0,m) -> go m 1
-                      (k,m) -> (2,k) <: go m 1
+                      (0, m) -> go m 1
+                      (k, m) -> (2, k) <: go m 1
   where
     x <: ~(l,b) = (x:l,b)
     smallPrimesLen = V.length smallPrimes
 
     go :: Natural -> Int -> ([(Natural, Word)], Maybe Natural)
-    go 1 _ = ([], Nothing)
+    go (NatS# m#) !i = goWord m# i
     go !m !i
       | i >= smallPrimesLen
-      = if m < 65536 * 65536
-        then ([(m, 1)], Nothing)
-        else ([], Just m)
+      = ([], Just m)
     go !m !i = let p = fromIntegral (V.unsafeIndex smallPrimes i) in
-      if m < p * p
-        then ([(m, 1)], Nothing)
-        else case m `quotRem` p of
-          (mp, 0) -> let (k, r) = splitOff 1 mp in (p, k) <: go r (i + 1)
+      case m `quotRem` p of
+        (mp, 0) -> let (k, r) = splitOff 1 mp in (p, k) <: go r (i + 1)
+          where
+            splitOff !k x = case x `quotRem` p of
+              (xp, 0) -> splitOff (k + 1) xp
+              _       -> (k, x)
+        _ -> go m (i + 1)
+
+    goWord :: Word# -> Int -> ([(Natural, Word)], Maybe Natural)
+    goWord 1## !_ = ([], Nothing)
+    goWord m#  !i
+      | i >= smallPrimesLen
+      = if isTrue# (m# `leWord#` 4294967295##) -- 65536 * 65536 - 1
+        then ([(NatS# m#, 1)], Nothing)
+        else ([], Just (NatS# m#))
+    goWord m# !i = let !(W# p#) = fromIntegral (V.unsafeIndex smallPrimes i) in
+      if isTrue# (m# `ltWord#` (p# `timesWord#` p#))
+        then ([(NatS# m#, 1)], Nothing)
+        else case m# `quotRemWord#` p# of
+          (# mp#, 0## #) ->
+            let !(# k#, r# #) = splitOff 1## mp# in
+              (NatS# p#, W# k#) <: goWord r# (i + 1)
             where
-              splitOff !k x = case x `quotRem` p of
-                (xp, 0) -> splitOff (k + 1) xp
-                _       -> (k, x)
-          _ -> go m (i + 1)
+              splitOff k# x# = case x# `quotRemWord#` p# of
+                (# xp#, 0## #) -> splitOff (k# `plusWord#` 1##) xp#
+                _              -> (# k#, x# #)
+          _ -> goWord m# (i + 1)
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try
