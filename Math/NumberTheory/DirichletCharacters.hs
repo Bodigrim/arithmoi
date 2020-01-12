@@ -80,8 +80,7 @@ import Data.Semigroup                                      (Semigroup(..), Produ
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))
-import GHC.Exts (proxy#, Proxy#)
-import GHC.TypeNats.Compat                                 (Nat, SomeNat(..), natVal, someNatVal, natVal')
+import GHC.TypeNats.Compat                                 (Nat, SomeNat(..), natVal, someNatVal)
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
@@ -591,7 +590,7 @@ fromTable :: forall n. KnownNat n => Vector (OrZero RootOfUnity) -> Maybe (Diric
 fromTable v = if length v == fromIntegral n
                  then Generated <$> traverse makeFactor tmpl >>= check
                  else Nothing
-  where n = natVal' (proxy# :: Proxy# n)
+  where n = natVal (Proxy :: Proxy n)
         n' = fromIntegral n :: Integer
         tmpl = snd (mkTemplate n)
         check :: DirichletCharacter n -> Maybe (DirichletCharacter n)
