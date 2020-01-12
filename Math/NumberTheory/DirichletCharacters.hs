@@ -16,6 +16,7 @@
 {-# LANGUAGE PatternSynonyms            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE ViewPatterns               #-}
+{-# LANGUAGE MagicHash                  #-}
 
 module Math.NumberTheory.DirichletCharacters
   (
@@ -35,6 +36,7 @@ module Math.NumberTheory.DirichletCharacters
   , indicesToChars
   , characterNumber
   , allChars
+  , fromTable
   -- ** Evaluation
   , eval
   , evalGeneral
@@ -63,12 +65,13 @@ module Math.NumberTheory.DirichletCharacters
 #if !MIN_VERSION_base(4,12,0)
 import Control.Applicative                                 (liftA2)
 #endif
+import Control.Monad                                       (zipWithM)
 import Data.Bits                                           (Bits(..))
 import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
 import Data.List                                           (mapAccumL, foldl', sort, find)
-import Data.Maybe                                          (mapMaybe)
+import Data.Maybe                                          (mapMaybe, fromJust, fromMaybe)
 #if MIN_VERSION_base(4,12,0)
 import Data.Monoid                                         (Ap(..))
 #endif
@@ -78,10 +81,12 @@ import Data.Semigroup                                      (Semigroup(..), Produ
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))
-import GHC.TypeNats.Compat                                 (Nat, SomeNat(..), natVal, someNatVal)
+import GHC.Exts (proxy#, Proxy#)
+import GHC.TypeNats.Compat                                 (Nat, SomeNat(..), natVal, someNatVal, natVal')
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
+import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Class                      (KnownNat, Mod, getVal)
 import Math.NumberTheory.Moduli.Internal                   (isPrimitiveRoot', discreteLogarithmPP)
 import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultElement)
@@ -89,6 +94,7 @@ import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGrou
 import Math.NumberTheory.Powers.Modular                    (powMod)
 import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise, nextPrime)
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
+import Math.NumberTheory.Utils
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
 -- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
@@ -213,12 +219,14 @@ evalFactor m =
     OddPrime (toInteger . unPrime -> p) k (toInteger -> a) b ->
       discreteLogarithmPP p k a (m `rem` p^k) `stimes` b
     TwoPower k s b -> (if testBit m 1 then s else mempty)
-                   <> lambda m'' k `stimes` b
-                                       where m' = m .&. (bit k - 1)
-                                             m'' = if testBit m 1
-                                                      then bit k - m'
-                                                      else m'
+                   <> lambda (thingy k m) k `stimes` b
     Two -> mempty
+
+thingy :: (Bits p, Num p) => Int -> p -> p
+thingy k m = if testBit m 1
+                then bit k - m'
+                else m'
+  where m' = m .&. (bit k - 1)
 
 -- | A character can evaluate to a root of unity or zero: represented by @Nothing@.
 evalGeneral :: KnownNat n => DirichletCharacter n -> Mod n -> OrZero RootOfUnity
@@ -574,11 +582,39 @@ evalAll (Generated xs) = V.generate (fromIntegral n) func
             f m
               | even m = Zero
               | otherwise = NonZero ((if testBit m 1 then a else mempty) <> lambda (toInteger m'') k `stimes` b)
-                            where m' = m .&. (bit k - 1)
-                                  m'' = if testBit m 1
-                                           then bit k - m'
-                                           else m'
+              where m'' = thingy k m
 
 -- somewhere between unfoldr and iterate
 iterateMaybe :: (a -> Maybe a) -> a -> [a]
 iterateMaybe f = go where go x = x: maybe [] go (f x)
+
+fromTable :: forall n. KnownNat n => Vector (OrZero RootOfUnity) -> Maybe (DirichletCharacter n)
+fromTable v = if length v == fromIntegral n
+                 then Generated <$> (zipWithM makeFactor tmpl vals) >>= check
+                 else Nothing
+  where n = natVal' (proxy# :: Proxy# n)
+        n' = fromIntegral n :: Integer
+        tmpl = snd (mkTemplate n)
+        vals = map ((`mod` n') . fromJust . chineseCoprimeList) $ thing $ map makePairs tmpl
+        makePairs :: Template -> (Integer, Integer)
+        makePairs TwoTemplate = (1,2)
+        makePairs (OddTemplate p k g _) = (toInteger g, (toInteger $ unPrime p)^k)
+        makePairs (TwoPTemplate k _) = (exp4 k, bit k)
+        check :: DirichletCharacter n -> Maybe (DirichletCharacter n)
+        check chi = if evalAll chi == v then Just chi else Nothing
+        makeFactor :: Template -> Integer -> Maybe DirichletFactor
+        makeFactor TwoTemplate _ = Just Two
+        makeFactor (TwoPTemplate k _) z = TwoPower k <$> getAp (v ! fromInteger ((fromJust (chineseCoprime (1,n' `quot` bit k) (-1, bit k))) `mod` n')) <*> getAp (v ! (fromInteger z))
+        makeFactor (OddTemplate p k g _) z = OddPrime p k g <$> getAp (v ! (fromInteger z))
+
+thing :: (Eq a, Eq b, Num a) => [(a,b)] -> [[(a,b)]]
+thing xs = fmap (\t -> fmap (\(x,y) -> if (x,y) == t then t else (1,y)) xs) xs
+
+exp4terms :: [Rational]
+exp4terms = [4^k % product [1..k] | k <- [0..]]
+
+-- For reasons that aren't clear to me, `exp4` gives the inverse of 1 under lambda, so it gives the generator
+-- This is the same as https://oeis.org/A320814
+-- In particular, lambda (exp4 n) n == 1 (for n >= 3)
+exp4 :: Int -> Integer
+exp4 n = (`mod` bit n) $ sum $ map (`mod` bit n) $ map (\q -> numerator q * fromMaybe (error "error in exp4") (recipMod (denominator q) (bit n))) $ take n $ exp4terms

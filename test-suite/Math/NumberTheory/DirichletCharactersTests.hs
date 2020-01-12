@@ -171,6 +171,9 @@ orderCheck :: DirichletCharacter n -> Bool
 orderCheck chi = isPrincipal (n `stimes` chi) && and [not (isPrincipal (i `stimes` chi)) | i <- [1..n-1]]
   where n = orderChar chi
 
+fromTableCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
+fromTableCheck chi = isJust (fromTable @n (evalAll chi))
+
 -- A bunch of functions making sure that every function which can produce a character (in
 -- particular by fiddling internal representation) produces a valid character
 indexToCharValid :: KnownNat n => DirichletCharacter n -> Bool
@@ -236,6 +239,7 @@ testSuite = testGroup "DirichletCharacters"
   , testSmallAndQuick "makePrimitive produces primitive character" (dirCharProperty makePrimitiveCheck)
   , testSmallAndQuick "makePrimitive is idempotent" (dirCharProperty makePrimitiveIdem)
   , testSmallAndQuick "Calculates correct order" (dirCharProperty orderCheck)
+  , testSmallAndQuick "Can construct from table" (dirCharProperty fromTableCheck)
   , testGroup "Creates valid characters"
     [ testSmallAndQuick "indexToChar" (dirCharProperty indexToCharValid)
     , testSmallAndQuick "principalChar" principalCharValid

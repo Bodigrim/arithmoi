@@ -68,6 +68,9 @@ chineseCoprime (n1, m1) (n2, m2)
 {-# SPECIALISE chineseCoprime :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
 {-# SPECIALISE chineseCoprime :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
 
+chineseCoprimeList :: (Eq a, Ring a, Euclidean a) => [(a, a)] -> Maybe a
+chineseCoprimeList xs = fmap fst $ foldM (\x y -> fmap (,snd x `times` snd y) (chineseCoprime x y)) (zero, one) xs
+
 -- | 'chinese' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
 -- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@, if exists.
 -- Moduli @m1@ and @m2@ are allowed to have common factors.
