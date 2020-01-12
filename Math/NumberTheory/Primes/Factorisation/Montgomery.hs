@@ -56,6 +56,7 @@ import Data.Traversable
 import qualified Data.Vector.Unboxed as V
 
 import GHC.TypeNats.Compat
+import Numeric.Natural
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
@@ -78,24 +79,22 @@ import Math.NumberTheory.Utils hiding (splitOff)
 -- >>> factorise 10251562501
 -- [(101701,1),(100801,1)]
 factorise :: Integer -> [(Integer, Word)]
-factorise n
-    | abs n == 1 = []
-    | n < 0      = factorise (-n)
-    | n == 0     = error "0 has no prime factorisation"
-    | otherwise  = factorise' n
+factorise = map (first toInteger) . factorise' . fromInteger . abs
 
--- | Like 'factorise', but without input checking, hence @n > 1@ is required.
-factorise' :: Integer -> [(Integer, Word)]
-factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdeadbeef) n
+factorise' :: Natural -> [(Natural, Word)]
+factorise' 0 = error "0 has no prime factorisation"
+factorise' 1 = []
+factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromIntegral n `xor` 0xdeadbeef) n
 
 -- | Like 'defaultStdGenFactorisation', but without input checking, so
 --   @n@ must be larger than @1@.
-defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer, Word)]
-defaultStdGenFactorisation' sg n
-    = let (sfs,mb) = smallFactors n
-      in sfs ++ case mb of
-                  Nothing -> []
-                  Just m  -> stdGenFactorisation (Just $ 65536 * 65536) sg Nothing m
+defaultStdGenFactorisation' :: StdGen -> Natural -> [(Natural, Word)]
+defaultStdGenFactorisation' sg n = sfs <> map (first fromInteger) rest
+  where
+    (sfs, mb) = smallFactors n
+    rest = case mb of
+      Nothing -> []
+      Just m  -> stdGenFactorisation (Just $ 65536 * 65536) sg Nothing (toInteger m)
 
 ----------------------------------------------------------------------------------------------------
 --                                    Factorisation wrappers                                      --
@@ -318,7 +317,7 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
-smallFactors :: Integer -> ([(Integer, Word)], Maybe Integer)
+smallFactors :: Natural -> ([(Natural, Word)], Maybe Natural)
 smallFactors 0 = error "0 has no prime factorisation"
 smallFactors n = case shiftToOddCount n of
                       (0,m) -> go m 1
@@ -327,14 +326,14 @@ smallFactors n = case shiftToOddCount n of
     x <: ~(l,b) = (x:l,b)
     smallPrimesLen = V.length smallPrimes
 
-    go :: Integer -> Int -> ([(Integer, Word)], Maybe Integer)
+    go :: Natural -> Int -> ([(Natural, Word)], Maybe Natural)
     go 1 _ = ([], Nothing)
     go !m !i
       | i >= smallPrimesLen
       = if m < 65536 * 65536
         then ([(m, 1)], Nothing)
         else ([], Just m)
-    go !m !i = let p = toInteger (V.unsafeIndex smallPrimes i) in
+    go !m !i = let p = fromIntegral (V.unsafeIndex smallPrimes i) in
       if m < p * p
         then ([(m, 1)], Nothing)
         else case m `quotRem` p of
