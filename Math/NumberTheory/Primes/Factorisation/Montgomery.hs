@@ -53,7 +53,7 @@ import Data.Proxy
 import Data.Semigroup
 #endif
 import Data.Traversable
-import Data.Vector.Unboxed (toList)
+import qualified Data.Vector.Unboxed as V
 
 import GHC.TypeNats.Compat
 
@@ -66,7 +66,7 @@ import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Unsafe
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils hiding (splitOff)
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
 --   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
@@ -319,21 +319,31 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
 smallFactors :: Integer -> ([(Integer, Word)], Maybe Integer)
+smallFactors 0 = error "0 has no prime factorisation"
 smallFactors n = case shiftToOddCount n of
-                      (0,m) -> go m prms
-                      (k,m) -> (2,k) <: if m == 1 then ([],Nothing) else go m prms
+                      (0,m) -> go m 1
+                      (k,m) -> (2,k) <: go m 1
   where
-    prms = map fromIntegral $ toList smallPrimes
     x <: ~(l,b) = (x:l,b)
-    go m []
-      | m < 65536 * 65536 = ([(m, 1)], Nothing)
-      | otherwise         = ([], Just m)
-    go m (p:ps)
-      | m < p*p   = ([(m,1)], Nothing)
-      | otherwise = case splitOff p m of
-                      (0,_) -> go m ps
-                      (k,r) | r == 1 -> ([(p,k)], Nothing)
-                            | otherwise -> (p,k) <: go r ps
+    smallPrimesLen = V.length smallPrimes
+
+    go :: Integer -> Int -> ([(Integer, Word)], Maybe Integer)
+    go 1 _ = ([], Nothing)
+    go !m !i
+      | i >= smallPrimesLen
+      = if m < 65536 * 65536
+        then ([(m, 1)], Nothing)
+        else ([], Just m)
+    go !m !i = let p = toInteger (V.unsafeIndex smallPrimes i) in
+      if m < p * p
+        then ([(m, 1)], Nothing)
+        else case m `quotRem` p of
+          (mp, 0) -> let (k, r) = splitOff 1 mp in (p, k) <: go r (i + 1)
+            where
+              splitOff !k x = case x `quotRem` p of
+                (xp, 0) -> splitOff (k + 1) xp
+                _       -> (k, x)
+          _ -> go m (i + 1)
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try
