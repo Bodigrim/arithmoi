@@ -55,7 +55,6 @@ import Data.Proxy
 import Data.Semigroup
 #endif
 import Data.Traversable
-import qualified Data.Vector.Unboxed as V
 
 import GHC.Exts
 import GHC.Integer.GMP.Internals
@@ -332,16 +331,17 @@ smallFactors = \case
     (k, m) -> (2, k) <: goBigNat m 1
   where
     x <: ~(l,b) = (x:l,b)
-    smallPrimesLen = V.length smallPrimes
+
+    !(Ptr smallPrimesAddr#) = smallPrimesPtr
 
     goBigNat :: BigNat -> Int -> ([(Natural, Word)], Maybe Natural)
-    goBigNat !m !i
+    goBigNat !m !i@(I# i#)
       | isTrue# (sizeofBigNat# m ==# 1#)
       = goWord (bigNatToWord m) i
-      | i >= smallPrimesLen
+      | i >= smallPrimesLength
       = ([], Just (NatJ# m))
       | otherwise
-      = let !(W# p#) = fromIntegral (V.unsafeIndex smallPrimes i) in
+      = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
       case m `quotRemBigNatWord` p# of
         (# mp, 0## #) ->
           let (# k, r #) = splitOff 1 mp in
@@ -355,11 +355,11 @@ smallFactors = \case
     goWord :: Word# -> Int -> ([(Natural, Word)], Maybe Natural)
     goWord 1## !_ = ([], Nothing)
     goWord m#  !i
-      | i >= smallPrimesLen
+      | i >= smallPrimesLength
       = if isTrue# (m# `leWord#` 4294967295##) -- 65536 * 65536 - 1
         then ([(NatS# m#, 1)], Nothing)
         else ([], Just (NatS# m#))
-    goWord m# !i = let !(W# p#) = fromIntegral (V.unsafeIndex smallPrimes i) in
+    goWord m# !i@(I# i#) = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
       if isTrue# (m# `ltWord#` (p# `timesWord#` p#))
         then ([(NatS# m#, 1)], Nothing)
         else case m# `quotRemWord#` p# of
