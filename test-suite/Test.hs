@@ -48,6 +48,8 @@ import qualified Math.NumberTheory.SmoothNumbersTests as SmoothNumbers
 import qualified Math.NumberTheory.Zeta.RiemannTests as Riemann
 import qualified Math.NumberTheory.Zeta.DirichletTests as Dirichlet
 
+import qualified Math.NumberTheory.DirichletCharactersTests as DirichletChar
+
 main :: IO ()
 main = defaultMainWithRerun tests
 
@@ -102,4 +104,5 @@ tests = testGroup "All"
     [ Riemann.testSuite
     , Dirichlet.testSuite
     ]
+  , DirichletChar.testSuite
   ]

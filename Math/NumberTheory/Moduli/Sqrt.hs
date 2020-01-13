@@ -21,6 +21,7 @@ module Math.NumberTheory.Moduli.Sqrt
     -- * Jacobi symbol
   , JacobiSymbol(..)
   , jacobi
+  , symbolToNum
   ) where
 
 import Control.Monad (liftM2)

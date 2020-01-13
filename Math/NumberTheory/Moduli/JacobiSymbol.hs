@@ -17,6 +17,7 @@
 module Math.NumberTheory.Moduli.JacobiSymbol
   ( JacobiSymbol(..)
   , jacobi
+  , symbolToNum
   ) where
 
 import Data.Bits
@@ -47,6 +48,18 @@ negJS = \case
   MinusOne -> One
   Zero     -> Zero
   One      -> MinusOne
+
+{-# SPECIALISE symbolToNum :: JacobiSymbol -> Integer,
+                              JacobiSymbol -> Int,
+                              JacobiSymbol -> Word,
+                              JacobiSymbol -> Natural
+  #-}
+-- | Convenience function to convert out of a Jacobi symbol
+symbolToNum :: Num a => JacobiSymbol -> a
+symbolToNum = \case
+  Zero -> 0
+  One -> 1
+  MinusOne -> -1
 
 -- | <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol> of two arguments.
 -- The lower argument (\"denominator\") must be odd and positive,
