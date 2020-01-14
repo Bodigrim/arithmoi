@@ -18,6 +18,7 @@ module Math.NumberTheory.Moduli.ChineseTests
 
 import Test.Tasty
 
+import Data.List (tails)
 import Math.NumberTheory.Moduli hiding (invertMod)
 import Math.NumberTheory.TestUtils
 
@@ -29,6 +30,17 @@ chineseCoprimeProperty n1 (Positive m1) n2 (Positive m2) = case gcd m1 m2 of
   _ -> case chineseCoprime (n1, m1) (n2, m2) of
     Nothing -> True
     Just{}  -> False
+
+chineseCoprimeListProperty :: [(Integer, Positive Integer)] -> Bool
+chineseCoprimeListProperty xs =
+  if and [gcd r1 r2 == 1 | ((_, r1) :ys) <- tails xs', (_, r2) <- ys]
+     then case chineseCoprimeList xs' of
+            Nothing -> False
+            Just n -> and [(n - r) `rem` m == 0 | (r, m) <- xs']
+     else case chineseCoprimeList xs' of
+            Nothing -> True
+            Just _  -> False
+  where xs' = [(r, m) | (r, Positive m) <- xs]
 
 chineseProperty :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
 chineseProperty n1 (Positive m1) n2 (Positive m2) = if compatible
@@ -42,9 +54,13 @@ chineseProperty n1 (Positive m1) n2 (Positive m2) = if compatible
     g = gcd m1 m2
     compatible = (n1 - n2) `rem` g == 0
 
+chineseListProperty :: [(Integer, Positive Integer)] -> Bool
+chineseListProperty _ = True
 
 testSuite :: TestTree
 testSuite = testGroup "Chinese"
-  [ testSmallAndQuick "chineseCoprime"    chineseCoprimeProperty
-  , testSmallAndQuick "chinese"           chineseProperty
+  [ testSmallAndQuick "chineseCoprime"     chineseCoprimeProperty
+  , testSmallAndQuick "chineseCoprimeList" chineseCoprimeListProperty
+  , testSmallAndQuick "chinese"            chineseProperty
+  , testSmallAndQuick "chineseList"        chineseListProperty
   ]

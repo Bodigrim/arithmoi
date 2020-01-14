@@ -22,7 +22,9 @@
 module Math.NumberTheory.Moduli.Chinese
   ( -- * Safe interface
     chinese
+  , chineseList
   , chineseCoprime
+  , chineseCoprimeList
   , chineseSomeMod
   , chineseCoprimeSomeMod
 
@@ -68,6 +70,23 @@ chineseCoprime (n1, m1) (n2, m2)
 {-# SPECIALISE chineseCoprime :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
 {-# SPECIALISE chineseCoprime :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
 
+-- | Given a list @[(r_1,m_1), ..., (r_n,m_n)]@ of @(residue,modulus)@
+--   pairs, @chineseCoprimeList@ calculates the solution to the simultaneous
+--   congruences
+--
+-- >
+-- > r ≡ r_k (mod m_k)
+-- >
+--
+--   if all moduli are positive and pairwise coprime. Otherwise
+--   the result is @Nothing@.
+chineseCoprimeList :: (Eq a, Ring a, Euclidean a) => [(a, a)] -> Maybe a
+chineseCoprimeList = fmap fst . foldM (\x y -> fmap (,snd x `times` snd y) (chineseCoprime x y)) (zero, one)
+
+{-# SPECIALISE chineseCoprimeList :: [(Int, Int)] -> Maybe Int #-}
+{-# SPECIALISE chineseCoprimeList :: [(Word, Word)] -> Maybe Word #-}
+{-# SPECIALISE chineseCoprimeList :: [(Integer, Integer)] -> Maybe Integer #-}
+
 -- | 'chinese' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
 -- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@, if exists.
 -- Moduli @m1@ and @m2@ are allowed to have common factors.
@@ -107,6 +126,13 @@ chinese (n1, m1) (n2, m2)
 {-# SPECIALISE chinese :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
 {-# SPECIALISE chinese :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
 {-# SPECIALISE chinese :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
+
+chineseList :: forall a. (Eq a, Ring a, Euclidean a) => [(a, a)] -> Maybe a
+chineseList = fmap fst . foldM (\x y -> fmap (,snd x `lcm` snd y) (chinese x y)) (zero, one)
+
+{-# SPECIALISE chineseList :: [(Int, Int)] -> Maybe Int #-}
+{-# SPECIALISE chineseList :: [(Word, Word)] -> Maybe Word #-}
+{-# SPECIALISE chineseList :: [(Integer, Integer)] -> Maybe Integer #-}
 
 isCompatible :: KnownNat m => Mod m -> Rational -> Bool
 isCompatible n r = case invertMod (fromInteger (denominator r)) of
