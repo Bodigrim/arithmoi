@@ -21,6 +21,7 @@ module Math.NumberTheory.Roots.General
 #include "MachDeps.h"
 
 import GHC.Base
+import GHC.Exts
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
@@ -28,7 +29,6 @@ import GHC.Integer.Logarithms (integerLog2#)
 import Data.Bits
 import Data.List (foldl')
 import qualified Data.Set as Set
-import Data.Vector.Unboxed (toList)
 
 import Numeric.Natural
 
@@ -248,9 +248,10 @@ findHighPower e pws m _ [] = finishPower e pws m
 smallOddPrimes :: [Integer]
 smallOddPrimes
   = takeWhile (< spBound)
-  $ map fromIntegral
-  $ tail
-  $ toList smallPrimes
+  $ map (\(I# k#) -> S# (word2Int# (indexWord16OffAddr# smallPrimesAddr# k#)))
+    [1 .. smallPrimesLength - 1]
+  where
+    !(Ptr smallPrimesAddr#) = smallPrimesPtr
 
 spBEx :: Word
 spBEx = 14
