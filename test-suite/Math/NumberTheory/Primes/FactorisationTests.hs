@@ -26,7 +26,16 @@ import Math.NumberTheory.TestUtils
 
 specialCases :: [(Integer, [(Integer, Word)])]
 specialCases =
-  [ (4181339589500970917,[(15034813,1),(278110515209,1)])
+  [ (35,[(5,1),(7,1)])
+  , (75,[(3,1),(5,2)])
+  , (65521^2,[(65521,2)])
+  , (65537^2,[(65537,2)])
+  , (2147483647, [(2147483647, 1)])
+  , (4294967291, [(4294967291, 1)])
+  , (3 * 5^2 * 7^21, [(3,1), (5,2), (7, 21)])
+  , (9223372036854775783, [(9223372036854775783, 1)])
+  , (18446744073709551557, [(18446744073709551557, 1)])
+  , (4181339589500970917,[(15034813,1),(278110515209,1)])
   , (4181339589500970918,[(2,1),(3,2),(7,1),(2595773,1),(12784336241,1)])
   , (2227144715990344929,[(3,1),(317,1),(17381911,1),(134731889,1)])
   , (10489674846272137811130167281,[(1312601,1),(9555017,1),(836368815445393,1)])
@@ -68,7 +77,7 @@ factoriseProperty3 :: Positive Integer -> Bool
 factoriseProperty3 (Positive n) = all (isJust . isPrime . unPrime . fst) (factorise n)
 
 factoriseProperty4 :: Positive Integer -> Bool
-factoriseProperty4 (Positive n) = bases == nub (sort bases)
+factoriseProperty4 (Positive n) = sort bases == nub (sort bases)
   where
     bases = map fst $ factorise n
 
@@ -87,7 +96,7 @@ testSuite = testGroup "Factorisation"
     [ testCase          "0"                              factoriseProperty1
     , testSmallAndQuick "negate"                         factoriseProperty2
     , testSmallAndQuick "bases are prime"                factoriseProperty3
-    , testSmallAndQuick "bases are ordered and distinct" factoriseProperty4
+    , testSmallAndQuick "bases are distinct"             factoriseProperty4
     , testSmallAndQuick "factorback"                     factoriseProperty5
     ] ++
     map (\x -> testCase ("special case " ++ show (fst x)) (factoriseProperty6 x)) specialCases

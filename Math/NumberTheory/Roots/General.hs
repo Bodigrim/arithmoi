@@ -7,8 +7,12 @@
 -- Calculating integer roots and determining perfect powers.
 -- The algorithms are moderately efficient.
 --
-{-# LANGUAGE MagicHash, BangPatterns, CPP #-}
-{-# OPTIONS_GHC -O2 -fspec-constr-count=8 #-}
+
+{-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE CPP           #-}
+{-# LANGUAGE MagicHash     #-}
+{-# LANGUAGE UnboxedTuples #-}
+
 module Math.NumberTheory.Roots.General
     ( integerRoot
     , exactRoot
@@ -21,6 +25,7 @@ module Math.NumberTheory.Roots.General
 #include "MachDeps.h"
 
 import GHC.Base
+import GHC.Exts
 import GHC.Integer
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms (integerLog2#)
@@ -28,14 +33,10 @@ import GHC.Integer.Logarithms (integerLog2#)
 import Data.Bits
 import Data.List (foldl')
 import qualified Data.Set as Set
-import Data.Vector.Unboxed (toList)
 
 import Numeric.Natural
 
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Utils  (shiftToOddCount
-                                , splitOff
-                                )
 import qualified Math.NumberTheory.Roots.Squares as P2
 import qualified Math.NumberTheory.Roots.Cubes as P3
 import qualified Math.NumberTheory.Roots.Fourth as P4
@@ -164,7 +165,7 @@ highestPower :: Integral a => a -> (a, Word)
 highestPower n'
   | abs n <= 1  = (n', 3)
   | n < 0       = case integerHighPower (negate n) of
-                    (r,e) -> case shiftToOddCount e of
+                    (r,e) -> case shiftToOddCountWord e of
                                (k, o) -> (negate $ fromInteger (sqr k r), o)
   | otherwise   = case integerHighPower n of
                     (r,e) -> (fromInteger r, e)
@@ -228,7 +229,7 @@ appKthRoot k@(I# k#) n
 integerHighPower :: Integer -> (Integer, Word)
 integerHighPower n
   | n < 4       = (n,1)
-  | otherwise   = case shiftToOddCount n of
+  | otherwise   = case shiftToOddCountInteger n of
                     (e2,m) | m == 1     -> (2,e2)
                            | otherwise  -> findHighPower e2 (if e2 == 0 then [] else [(2,e2)]) m r smallOddPrimes
                              where
@@ -245,12 +246,22 @@ findHighPower e pws m s (p:ps)
       (k,r) -> findHighPower (gcd k e) ((p,k):pws) r (P2.integerSquareRoot r) ps
 findHighPower e pws m _ [] = finishPower e pws m
 
+splitOff :: Integer -> Integer -> (Word, Integer)
+splitOff !_ 0 = (0, 0) -- prevent infinite loop
+splitOff p n = go 0 n
+  where
+    go !k m = case m `quotRem` p of
+      (q, 0) -> go (k + 1) q
+      _      -> (k, m)
+{-# INLINABLE splitOff #-}
+
 smallOddPrimes :: [Integer]
 smallOddPrimes
   = takeWhile (< spBound)
-  $ map fromIntegral
-  $ tail
-  $ toList smallPrimes
+  $ map (\(I# k#) -> S# (word2Int# (indexWord16OffAddr# smallPrimesAddr# k#)))
+    [1 .. smallPrimesLength - 1]
+  where
+    !(Ptr smallPrimesAddr#) = smallPrimesPtr
 
 spBEx :: Word
 spBEx = 14
@@ -307,7 +318,7 @@ badPower mx n
       go e _ m []   = (m,e)
 
 divisorsTo :: Word -> Word -> [Word]
-divisorsTo mx n = case shiftToOddCount n of
+divisorsTo mx n = case shiftToOddCountWord n of
                     (k,o) | k == 0 -> go (Set.singleton 1) n iops
                           | otherwise -> go (Set.fromDistinctAscList $ takeWhile (<= mx) $ take (wordToInt k + 1) (iterate (*2) 1)) o iops
   where
@@ -338,3 +349,46 @@ divisorsTo mx n = case shiftToOddCount n of
           -- iterate f x = [x, f x, f (f x)...]
           (k,r) -> go (Set.unions (take (wordToInt k + 1) (iterate (mset p) st))) r ps
     go st m [] = go st m [m+1]
+
+-------------------------------------------------------------------------------
+-- shiftToOddCount helpers
+
+-- | Remove factors of @2@ and count them. If
+--   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
+--   Precondition: argument not @0@ (not checked).
+shiftToOddCountInteger :: Integer -> (Word, Integer)
+shiftToOddCountInteger n@(S# i#) =
+  case shiftToOddCount# (int2Word# i#) of
+    (# 0##, _ #) -> (0, n)
+    (# z#, w# #) -> (W# z#, wordToInteger w#)
+shiftToOddCountInteger n@(Jp# bn#) =
+  case bigNatZeroCount bn# of
+    0## -> (0, n)
+    z#  -> (W# z#, bigNatToInteger (bn# `shiftRBigNat` (word2Int# z#)))
+shiftToOddCountInteger n@(Jn# bn#) =
+  case bigNatZeroCount bn# of
+    0## -> (0, n)
+    z#  -> (W# z#, bigNatToNegInteger (bn# `shiftRBigNat` (word2Int# z#)))
+
+-- | Remove factors of @2@ and count them. If
+--   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
+--   Precondition: argument not @0@ (not checked).
+shiftToOddCountWord :: Word -> (Word, Word)
+shiftToOddCountWord (W# w#) =
+  case shiftToOddCount# w# of
+    (# z# , u# #) -> (W# z#, W# u#)
+
+-- | Count trailing zeros in a @'BigNat'@.
+--   Precondition: argument nonzero (not checked, Integer invariant).
+bigNatZeroCount :: BigNat -> Word#
+bigNatZeroCount bn# = count 0## 0#
+  where
+    count a# i# =
+      case indexBigNat# bn# i# of
+        0## -> count (a# `plusWord#` WORD_SIZE_IN_BITS##) (i# +# 1#)
+        w#  -> a# `plusWord#` ctz# w#
+
+shiftToOddCount# :: Word# -> (# Word#, Word# #)
+shiftToOddCount# w# =
+  case ctz# w# of
+    k# -> (# k#, uncheckedShiftRL# w# (word2Int# k#) #)

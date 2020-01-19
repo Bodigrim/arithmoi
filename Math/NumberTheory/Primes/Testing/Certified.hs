@@ -7,6 +7,7 @@
 -- Deterministic primality testing.
 
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Math.NumberTheory.Primes.Testing.Certified
   ( isCertifiedPrime
@@ -154,12 +155,13 @@ certify n
                     ((p,_):_) | p < n       -> Composite (Factors n p (n `quot` p))
                               | otherwise   -> Prime (TrialDivision n r2)
                     _ -> error "Impossible"
-    | otherwise = case smallFactors n of
+    | otherwise = case smallFactors (fromInteger (abs n)) of
                     ([], Just _) | not (isStrongFermatPP n 2) -> Composite (StrongFermat n 2)
                                  | not (lucasTest n) -> Composite (LucasSelfridge n)
                                  | otherwise -> Prime (certifyBPSW n)       -- if it isn't we error and ask for a report.
-                    ((p,_):_, _) | p == n -> Prime (TrialDivision n (min 100000 n))
-                                 | otherwise -> Composite (Factors n p (n `quot` p))
+                    ((toInteger -> p,_):_, _)
+                      | p == n -> Prime (TrialDivision n (min 100000 n))
+                      | otherwise -> Composite (Factors n p (n `quot` p))
                     _ -> error ("***Error factorising " ++ show n ++ "! Please report this to maintainer of arithmoi.")
       where
         billi = 1000000000000

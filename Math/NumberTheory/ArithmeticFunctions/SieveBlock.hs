@@ -40,7 +40,6 @@ import Math.NumberTheory.Logarithms (wordLog2, integerLogBase')
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots.Squares (integerSquareRoot)
-import Math.NumberTheory.Utils (splitOff)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 
 -- | A record, which specifies a function to evaluate over a block.
@@ -172,7 +171,7 @@ sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
               MU.unsafeModify as (\x -> x * p')        (I# ix#)
               MG.unsafeModify bs (\y -> y `append` f0) (I# ix#)
             else do
-              let (pow, _) = splitOff p q
+              let pow = highestPowerDividing p q
               MU.unsafeModify as (\x -> x * p' ^ (pow + 2))                          (I# ix#)
               MG.unsafeModify bs (\y -> y `append` V.unsafeIndex fs (wordToInt pow)) (I# ix#)
 
@@ -185,6 +184,16 @@ sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
         MG.unsafeModify bs (\b -> b `append` f (Prime $ a' `quot` a) 1) k
 
     G.unsafeFreeze bs
+
+-- This is a variant of 'Math.NumberTheory.Utils.splitOff',
+-- specialized for better performance.
+highestPowerDividing :: Int -> Int -> Word
+highestPowerDividing !_ 0 = 0
+highestPowerDividing p n = go 0 n
+  where
+    go !k m = case m `quotRem` p of
+      (q, 0) -> go (k + 1) q
+      _      -> k
 
 -- | This is 'sieveBlock' specialized to unboxed vectors.
 --

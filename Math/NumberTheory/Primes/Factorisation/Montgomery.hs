@@ -24,7 +24,9 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples       #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -53,9 +55,11 @@ import Data.Proxy
 import Data.Semigroup
 #endif
 import Data.Traversable
-import Data.Vector.Unboxed (toList)
 
+import GHC.Exts
+import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
+import GHC.Natural
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
@@ -66,7 +70,7 @@ import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Unsafe
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils hiding (splitOff)
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
 --   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
@@ -78,24 +82,22 @@ import Math.NumberTheory.Utils
 -- >>> factorise 10251562501
 -- [(101701,1),(100801,1)]
 factorise :: Integer -> [(Integer, Word)]
-factorise n
-    | abs n == 1 = []
-    | n < 0      = factorise (-n)
-    | n == 0     = error "0 has no prime factorisation"
-    | otherwise  = factorise' n
+factorise = map (first toInteger) . factorise' . fromInteger . abs
 
--- | Like 'factorise', but without input checking, hence @n > 1@ is required.
-factorise' :: Integer -> [(Integer, Word)]
-factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromInteger n `xor` 0xdeadbeef) n
+factorise' :: Natural -> [(Natural, Word)]
+factorise' 0 = error "0 has no prime factorisation"
+factorise' 1 = []
+factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromIntegral n `xor` 0xdeadbeef) n
 
 -- | Like 'defaultStdGenFactorisation', but without input checking, so
 --   @n@ must be larger than @1@.
-defaultStdGenFactorisation' :: StdGen -> Integer -> [(Integer, Word)]
-defaultStdGenFactorisation' sg n
-    = let (sfs,mb) = smallFactors n
-      in sfs ++ case mb of
-                  Nothing -> []
-                  Just m  -> stdGenFactorisation (Just $ 65536 * 65536) sg Nothing m
+defaultStdGenFactorisation' :: StdGen -> Natural -> [(Natural, Word)]
+defaultStdGenFactorisation' sg n = sfs <> map (first fromInteger) rest
+  where
+    (sfs, mb) = smallFactors n
+    rest = case mb of
+      Nothing -> []
+      Just m  -> stdGenFactorisation (Just $ 65536 * 65536) sg Nothing (toInteger m)
 
 ----------------------------------------------------------------------------------------------------
 --                                    Factorisation wrappers                                      --
@@ -318,22 +320,57 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
 
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
-smallFactors :: Integer -> ([(Integer, Word)], Maybe Integer)
-smallFactors n = case shiftToOddCount n of
-                      (0,m) -> go m prms
-                      (k,m) -> (2,k) <: if m == 1 then ([],Nothing) else go m prms
+smallFactors :: Natural -> ([(Natural, Word)], Maybe Natural)
+smallFactors = \case
+  NatS# 0## -> error "0 has no prime factorisation"
+  NatS# n#  -> case shiftToOddCount# n# of
+    (# 0##, m# #) -> goWord m# 1
+    (# k#,  m# #) -> (2, W# k#) <: goWord m# 1
+  NatJ# n -> case shiftToOddCountBigNat n of
+    (0, m) -> goBigNat m 1
+    (k, m) -> (2, k) <: goBigNat m 1
   where
-    prms = map fromIntegral $ toList smallPrimes
     x <: ~(l,b) = (x:l,b)
-    go m []
-      | m < 65536 * 65536 = ([(m, 1)], Nothing)
-      | otherwise         = ([], Just m)
-    go m (p:ps)
-      | m < p*p   = ([(m,1)], Nothing)
-      | otherwise = case splitOff p m of
-                      (0,_) -> go m ps
-                      (k,r) | r == 1 -> ([(p,k)], Nothing)
-                            | otherwise -> (p,k) <: go r ps
+
+    !(Ptr smallPrimesAddr#) = smallPrimesPtr
+
+    goBigNat :: BigNat -> Int -> ([(Natural, Word)], Maybe Natural)
+    goBigNat !m !i@(I# i#)
+      | isTrue# (sizeofBigNat# m ==# 1#)
+      = goWord (bigNatToWord m) i
+      | i >= smallPrimesLength
+      = ([], Just (NatJ# m))
+      | otherwise
+      = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
+      case m `quotRemBigNatWord` p# of
+        (# mp, 0## #) ->
+          let (# k, r #) = splitOff 1 mp in
+            (NatS# p#, k) <: goBigNat r (i + 1)
+          where
+            splitOff !k x = case x `quotRemBigNatWord` p# of
+              (# xp, 0## #) -> splitOff (k + 1) xp
+              _             -> (# k, x #)
+        _ -> goBigNat m (i + 1)
+
+    goWord :: Word# -> Int -> ([(Natural, Word)], Maybe Natural)
+    goWord 1## !_ = ([], Nothing)
+    goWord m#  !i
+      | i >= smallPrimesLength
+      = if isTrue# (m# `leWord#` 4294967295##) -- 65536 * 65536 - 1
+        then ([(NatS# m#, 1)], Nothing)
+        else ([], Just (NatS# m#))
+    goWord m# !i@(I# i#) = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
+      if isTrue# (m# `ltWord#` (p# `timesWord#` p#))
+        then ([(NatS# m#, 1)], Nothing)
+        else case m# `quotRemWord#` p# of
+          (# mp#, 0## #) ->
+            let !(# k#, r# #) = splitOff 1## mp# in
+              (NatS# p#, W# k#) <: goWord r# (i + 1)
+            where
+              splitOff k# x# = case x# `quotRemWord#` p# of
+                (# xp#, 0## #) -> splitOff (k# `plusWord#` 1##) xp#
+                _              -> (# k#, x# #)
+          _ -> goWord m# (i + 1)
 
 -- | For a given estimated decimal length of the smallest prime factor
 -- ("tier") return parameters B1, B2 and the number of curves to try
