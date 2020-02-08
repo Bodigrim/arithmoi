@@ -38,18 +38,7 @@ import Numeric.Natural
 
 import Math.NumberTheory.Powers.Squares.Internal
 
--- | Calculate the integer square root of a nonnegative number @n@,
---   that is, the largest integer @r@ with @r*r <= n@.
---   Throws an error on negative input.
-{-# SPECIALISE integerSquareRoot :: Int -> Int,
-                                    Word -> Word,
-                                    Integer -> Integer,
-                                    Natural -> Natural
-  #-}
-integerSquareRoot :: Integral a => a -> a
-integerSquareRoot n
-  | n < 0       = error "integerSquareRoot: negative argument"
-  | otherwise   = integerSquareRoot' n
+import Math.NumberTheory.Roots
 
 -- | Calculate the integer square root of a nonnegative number @n@,
 --   that is, the largest integer @r@ with @r*r <= n@.
@@ -89,35 +78,6 @@ integerSquareRootRem' :: Integral a => a -> (a, a)
 integerSquareRootRem' n = (s, n - s * s)
   where
     s = integerSquareRoot' n
-
--- | Returns 'Nothing' if the argument is not a square,
---   @'Just' r@ if @r*r == n@ and @r >= 0@. Avoids the expensive calculation
---   of the square root if @n@ is recognized as a non-square
---   before, prevents repeated calculation of the square root
---   if only the roots of perfect squares are needed.
---   Checks for negativity and 'isPossibleSquare'.
-{-# SPECIALISE exactSquareRoot :: Int -> Maybe Int,
-                                  Word -> Maybe Word,
-                                  Integer -> Maybe Integer,
-                                  Natural -> Maybe Natural
-  #-}
-exactSquareRoot :: Integral a => a -> Maybe a
-exactSquareRoot n
-  | n >= 0
-  , isPossibleSquare n
-  , (r, 0) <- integerSquareRootRem' n = Just r
-  | otherwise                         = Nothing
-
--- | Test whether the argument is a square.
---   After a number is found to be positive, first 'isPossibleSquare'
---   is checked, if it is, the integer square root is calculated.
-{-# SPECIALISE isSquare :: Int -> Bool,
-                           Word -> Bool,
-                           Integer -> Bool,
-                           Natural -> Bool
-  #-}
-isSquare :: Integral a => a -> Bool
-isSquare n = n >= 0 && isSquare' n
 
 -- | Test whether the input (a nonnegative number) @n@ is a square.
 --   The same as 'isSquare', but without the negativity test.

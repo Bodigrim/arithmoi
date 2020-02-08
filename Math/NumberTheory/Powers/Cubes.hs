@@ -34,25 +34,7 @@ import GHC.Integer.Logarithms (integerLog2#)
 
 import Numeric.Natural
 
--- | Calculate the integer cube root of an integer @n@,
---   that is the largest integer @r@ such that @r^3 <= n@.
---   Note that this is not symmetric about @0@, for example
---   @integerCubeRoot (-2) = (-2)@ while @integerCubeRoot 2 = 1@.
-{-# SPECIALISE integerCubeRoot :: Int -> Int,
-                                  Word -> Word,
-                                  Integer -> Integer,
-                                  Natural -> Natural
-  #-}
-integerCubeRoot :: Integral a => a -> a
-integerCubeRoot 0 = 0
-integerCubeRoot n
-    | n > 0     = integerCubeRoot' n
-    | otherwise =
-      let m = negate n
-          r = if m < 0
-                then negate . fromInteger $ integerCubeRoot' (negate $ fromIntegral n)
-                else negate (integerCubeRoot' m)
-      in if r*r*r == n then r else (r-1)
+import Math.NumberTheory.Roots
 
 -- | Calculate the integer cube root of a nonnegative integer @n@,
 --   that is, the largest integer @r@ such that @r^3 <= n@.
@@ -66,41 +48,6 @@ integerCubeRoot n
 integerCubeRoot' :: Integral a => a -> a
 integerCubeRoot' 0 = 0
 integerCubeRoot' n = newton3 n (approxCuRt n)
-
--- | Returns @Nothing@ if the argument is not a cube,
---   @Just r@ if @n == r^3@.
-{-# SPECIALISE exactCubeRoot :: Int -> Maybe Int,
-                                Word -> Maybe Word,
-                                Integer -> Maybe Integer,
-                                Natural -> Maybe Natural
-  #-}
-exactCubeRoot :: Integral a => a -> Maybe a
-exactCubeRoot 0 = Just 0
-exactCubeRoot n
-    | n < 0     =
-      if m < 0
-        then fmap (negate . fromInteger) $ exactCubeRoot (negate $ fromIntegral n)
-        else fmap negate (exactCubeRoot m)
-    | isPossibleCube n && r*r*r == n    = Just r
-    | otherwise = Nothing
-      where
-        m = negate n
-        r = integerCubeRoot' n
-
--- | Test whether an integer is a cube.
-{-# SPECIALISE isCube :: Int -> Bool,
-                         Word -> Bool,
-                         Integer -> Bool,
-                         Natural -> Bool
-  #-}
-isCube :: Integral a => a -> Bool
-isCube 0 = True
-isCube n
-    | n > 0     = isCube' n
-    | m > 0     = isCube' m
-    | otherwise = isCube' (negate (fromIntegral n) :: Integer)
-      where
-        m = negate n
 
 -- | Test whether a nonnegative integer is a cube.
 --   Before 'integerCubeRoot' is calculated, a few tests

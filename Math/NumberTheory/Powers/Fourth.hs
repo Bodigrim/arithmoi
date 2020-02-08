@@ -34,6 +34,8 @@ import GHC.Integer.Logarithms (integerLog2#)
 
 import Numeric.Natural
 
+import Math.NumberTheory.Roots
+
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
 --   Throws an error on negaitve input.
@@ -43,9 +45,7 @@ import Numeric.Natural
                                     Natural -> Natural
   #-}
 integerFourthRoot :: Integral a => a -> a
-integerFourthRoot n
-    | n < 0     = error "integerFourthRoot: negative argument"
-    | otherwise = integerFourthRoot' n
+integerFourthRoot = integerRoot (4 :: Word)
 
 -- | Calculate the integer fourth root of a nonnegative number,
 --   that is, the largest integer @r@ with @r^4 <= n@.
@@ -68,14 +68,7 @@ integerFourthRoot' n = newton4 n (approxBiSqrt n)
                                   Natural -> Maybe Natural
   #-}
 exactFourthRoot :: Integral a => a -> Maybe a
-exactFourthRoot 0 = Just 0
-exactFourthRoot n
-    | n < 0     = Nothing
-    | isPossibleFourthPower n && r2*r2 == n = Just r
-    | otherwise = Nothing
-      where
-        r = integerFourthRoot' n
-        r2 = r*r
+exactFourthRoot = exactRoot (4 :: Word)
 
 -- | Test whether an integer is a fourth power.
 --   First nonnegativity is checked, then the unchecked
@@ -86,8 +79,7 @@ exactFourthRoot n
                                 Natural -> Bool
   #-}
 isFourthPower :: Integral a => a -> Bool
-isFourthPower 0 = True
-isFourthPower n = n > 0 && isFourthPower' n
+isFourthPower = isKthPower (4 :: Word)
 
 -- | Test whether a nonnegative number is a fourth power.
 --   The condition is /not/ checked. If a number passes the
