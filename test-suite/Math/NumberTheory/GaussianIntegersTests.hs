@@ -168,7 +168,7 @@ testSuite = testGroup "GaussianIntegers" $
     , testCase          "factorise 63:+36"  factoriseSpecialCase1
     ]
     ++
-    map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseSpecialCase2 x))
+    map (\x -> testCase "laziness" (factoriseSpecialCase2 x))
       lazyCases)
 
   , testSmallAndQuick "findPrime'"               findPrimeProperty1

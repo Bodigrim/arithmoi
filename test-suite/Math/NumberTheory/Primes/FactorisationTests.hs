@@ -67,6 +67,14 @@ lazyCases =
     )
   ]
 
+shortenNumber :: Integer -> String
+shortenNumber n
+  | l <= 10 = xs
+  | otherwise = take 5 xs ++ "..." ++ drop (l - 5) xs
+  where
+    xs = show n
+    l = length xs
+
 factoriseProperty1 :: Assertion
 factoriseProperty1 = assertEqual "0" [] (factorise (1 :: Int))
 
@@ -99,7 +107,7 @@ testSuite = testGroup "Factorisation"
     , testSmallAndQuick "bases are distinct"             factoriseProperty4
     , testSmallAndQuick "factorback"                     factoriseProperty5
     ] ++
-    map (\x -> testCase ("special case " ++ show (fst x)) (factoriseProperty6 x)) specialCases
+    map (\x -> testCase ("special case " ++ shortenNumber (fst x)) (factoriseProperty6 x)) specialCases
     ++
-    map (\x -> testCase ("laziness " ++ show (fst x)) (factoriseProperty7 x)) lazyCases
+    map (\x -> testCase ("laziness " ++ shortenNumber (fst x)) (factoriseProperty7 x)) lazyCases
   ]

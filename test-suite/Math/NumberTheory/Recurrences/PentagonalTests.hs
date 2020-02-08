@@ -92,8 +92,7 @@ testSuite :: TestTree
 testSuite = testGroup "Pentagonal"
   [ testGroup "partition"
     [ testSmallAndQuick "matches definition"  partitionProperty1
-    , testSmallAndQuick "mapping residue modulus 'n' is the same as giving\
-                        \'partition' type '[Mod n]'" partitionProperty2
+    , testSmallAndQuick "mod n" partitionProperty2
     , testCase          "first 20 elements of partition are correct"
                         partitionSpecialCase20
     ]
