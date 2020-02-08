@@ -39,7 +39,7 @@ import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius, sieveBlockMoebius
 import Math.NumberTheory.Logarithms (wordLog2, integerLogBase')
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Roots.Squares (integerSquareRoot)
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 
 -- | A record, which specifies a function to evaluate over a block.

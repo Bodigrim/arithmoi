@@ -45,6 +45,7 @@ library
     ghc-prim <0.6,
     integer-gmp <1.1,
     integer-logarithms >=1.0,
+    integer-roots >=1.0,
     mod,
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
@@ -89,7 +90,6 @@ library
     Math.NumberTheory.Recurrences
     Math.NumberTheory.Recurrences.Bilinear
     Math.NumberTheory.Recurrences.Linear
-    Math.NumberTheory.Roots
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
   other-modules:
@@ -109,11 +109,6 @@ library
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
     Math.NumberTheory.Recurrences.Pentagonal
-    Math.NumberTheory.Roots.Cubes
-    Math.NumberTheory.Roots.Fourth
-    Math.NumberTheory.Roots.General
-    Math.NumberTheory.Roots.Squares
-    Math.NumberTheory.Roots.Squares.Internal
     Math.NumberTheory.Unsafe
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.DirichletSeries
@@ -135,6 +130,7 @@ test-suite spec
     containers,
     exact-pi >=0.4.1.1,
     integer-gmp <1.1,
+    integer-roots >=1.0,
     mod,
     QuickCheck >=2.10,
     quickcheck-classes >=0.6.3,
@@ -166,11 +162,7 @@ test-suite spec
     Math.NumberTheory.Moduli.SingletonTests
     Math.NumberTheory.Moduli.SqrtTests
     Math.NumberTheory.MoebiusInversionTests
-    Math.NumberTheory.Powers.CubesTests
-    Math.NumberTheory.Powers.FourthTests
-    Math.NumberTheory.Powers.GeneralTests
     Math.NumberTheory.Powers.ModularTests
-    Math.NumberTheory.Powers.SquaresTests
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests

@@ -18,11 +18,7 @@ import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
 
-import qualified Math.NumberTheory.Powers.CubesTests as Cubes
-import qualified Math.NumberTheory.Powers.FourthTests as Fourth
-import qualified Math.NumberTheory.Powers.GeneralTests as General
 import qualified Math.NumberTheory.Powers.ModularTests as Modular
-import qualified Math.NumberTheory.Powers.SquaresTests as Squares
 
 import qualified Math.NumberTheory.PrefactoredTests as Prefactored
 
@@ -55,13 +51,7 @@ main = defaultMainWithRerun tests
 
 tests :: TestTree
 tests = testGroup "All"
-  [ testGroup "Powers"
-    [ Cubes.testSuite
-    , Fourth.testSuite
-    , General.testSuite
-    , Modular.testSuite
-    , Squares.testSuite
-    ]
+  [ Modular.testSuite
   , Euclidean.testSuite
   , testGroup "Recurrences"
     [ RecurrencesPentagonal.testSuite

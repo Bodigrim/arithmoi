@@ -44,7 +44,7 @@ import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Logarithms
-import Math.NumberTheory.Roots.General (integerRoot)
+import Math.NumberTheory.Roots (integerRoot)
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS

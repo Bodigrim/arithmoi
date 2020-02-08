@@ -43,7 +43,7 @@ import Data.Word
 import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Roots.Squares (integerSquareRoot)
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral

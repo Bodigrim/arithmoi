@@ -31,7 +31,7 @@ import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Utils
-import Math.NumberTheory.Roots.Squares
+import Math.NumberTheory.Roots
 
 -- | @isPrime n@ tests whether @n@ is a prime (negative or positive).
 --   It is a combination of trial division and Baillie-PSW test.
@@ -150,12 +150,10 @@ bailliePSW n = isStrongFermatPP n 2 && lucasTest n
 --   the Fermat test. For package-internal use only.
 lucasTest :: Integer -> Bool
 lucasTest n
-  | square || d == 0    = False
-  | d == 1              = True
-  | otherwise           = uo == 0 || go t vo qo
+  | isSquare n || d == 0 = False
+  | d == 1               = True
+  | otherwise            = uo == 0 || go t vo qo
     where
-      square = isPossibleSquare2 n && r*r == n
-      r = integerSquareRoot n
       d = find True 5
       find !pos cd = case jacobi (n `rem` cd) cd of
                        MinusOne -> if pos then cd else (-cd)

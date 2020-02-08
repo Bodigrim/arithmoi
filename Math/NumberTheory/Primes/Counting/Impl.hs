@@ -26,8 +26,7 @@ import Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Roots.Squares
-import Math.NumberTheory.Roots.Cubes
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Unsafe
 
@@ -62,8 +61,8 @@ primeCount n
         return (fromIntegral $ ct+3)
     | otherwise =
         let !ub = cop $ fromInteger n
-            !sr = integerSquareRoot' ub
-            !cr = nxtEnd $ integerCubeRoot' ub + 15
+            !sr = integerSquareRoot ub
+            !cr = nxtEnd $ integerCubeRoot ub + 15
             nxtEnd k = k - (k `rem` 30) + 31
             !phn1 = calc ub cr
             !cs = cr+6

@@ -113,7 +113,7 @@ realityCheck chi = isJust (isRealCharacter chi) == isReal'
 
 -- | Check real character evaluation matches normal evaluation
 realEvalCheck :: KnownNat n => RealCharacter n -> Int -> Bool
-realEvalCheck chi i' = fromIntegral (toRealFunction chi i) == orZeroToNum toComplex (evalGeneral (getRealChar chi) i)
+realEvalCheck chi i' = fromIntegral (toRealFunction chi i) == (orZeroToNum toComplex (evalGeneral (getRealChar chi) i) :: Complex Double)
   where i = fromIntegral i'
 
 -- | The jacobi character agrees with the jacobi symbol

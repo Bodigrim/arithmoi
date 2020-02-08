@@ -63,14 +63,15 @@ import GHC.Natural
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
-import Math.NumberTheory.Roots.General     (highestPower, largePFPower)
-import Math.NumberTheory.Roots.Squares     (integerSquareRoot')
+import Math.NumberTheory.Logarithms (integerLogBase')
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils hiding (splitOff)
+import Math.NumberTheory.Utils.FromIntegral (intToWord)
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
 --   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
@@ -157,7 +158,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         rndR k = state (prng k)
 
         perfPw :: Integer -> (Integer, Word)
-        perfPw = maybe highestPower (largePFPower . integerSquareRoot') primeBound
+        perfPw = maybe highestPower (largePFPower . integerSquareRoot) primeBound
 
         fact :: Integer -> Int -> State g [(Integer, Word)]
         fact 1 _ = return mempty
@@ -224,6 +225,52 @@ instance Monoid Factors where
 modifyPowers :: (Word -> Word) -> Factors -> Factors
 modifyPowers f (Factors pfs cfs)
   = Factors (map (second f) pfs) (map (second f) cfs)
+
+-------------------------------------------------------------------------------
+-- largePFPower
+
+-- | @'largePFPower' bd n@ produces the pair @(b,k)@ with the largest
+--   exponent @k@ such that @n == b^k@, where @bd > 1@ (it is expected
+--   that @bd@ is much larger, at least @1000@ or so), @n > bd^2@ and @n@
+--   has no prime factors @p <= bd@, skipping the trial division phase
+--   of @'highestPower'@ when that is a priori known to be superfluous.
+--   It is only present to avoid duplication of work in factorisation
+--   and primality testing, it is not expected to be generally useful.
+--   The assumptions are not checked, if they are not satisfied, wrong
+--   results and wasted work may be the consequence.
+largePFPower :: Integer -> Integer -> (Integer, Word)
+largePFPower bd n = rawPower ln n
+  where
+    ln = intToWord (integerLogBase' (bd+1) n)
+
+rawPower :: Word -> Integer -> (Integer, Word)
+rawPower mx n = case exactRoot 4 n of
+                  Just r -> case rawPower (mx `quot` 4) r of
+                              (m,e) -> (m, 4*e)
+                  Nothing -> case exactSquareRoot n of
+                               Just r -> case rawOddPower (mx `quot` 2) r of
+                                           (m,e) -> (m, 2*e)
+                               Nothing -> rawOddPower mx n
+
+rawOddPower :: Word -> Integer -> (Integer, Word)
+rawOddPower mx n
+  | mx < 3       = (n,1)
+rawOddPower mx n = case exactCubeRoot n of
+                     Just r -> case rawOddPower (mx `quot` 3) r of
+                                 (m,e) -> (m, 3*e)
+                     Nothing -> badPower mx n
+
+badPower :: Word -> Integer -> (Integer, Word)
+badPower mx n
+  | mx < 5      = (n,1)
+  | otherwise   = go 1 mx n (takeWhile (<= mx) $ scanl (+) 5 $ cycle [2,4])
+    where
+      go !e b m (k:ks)
+        | b < k     = (m,e)
+        | otherwise = case exactRoot k m of
+                        Just r -> go (e*k) (b `quot` k) r (k:ks)
+                        Nothing -> go e b m ks
+      go e _ m []   = (m,e)
 
 ----------------------------------------------------------------------------------------------------
 --                                         The workhorse                                          --

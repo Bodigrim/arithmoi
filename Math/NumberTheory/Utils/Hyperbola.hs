@@ -16,7 +16,7 @@ module Math.NumberTheory.Utils.Hyperbola
 
 import Data.Bits
 
-import Math.NumberTheory.Roots.Cubes
+import Math.NumberTheory.Roots
 
 -- | Straightforward computation of
 -- [ n `quot` x | x <- [hi, hi - 1 .. lo] ].

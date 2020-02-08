@@ -17,7 +17,7 @@ module Math.NumberTheory.Primes.Factorisation.TrialDivision
     ) where
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve, psieveList)
-import Math.NumberTheory.Roots.Squares
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils
 
@@ -29,7 +29,7 @@ trialDivisionWith prs n
     | n < 0     = trialDivisionWith prs (-n)
     | n == 0    = error "trialDivision of 0"
     | n == 1    = []
-    | otherwise = go n (integerSquareRoot' n) prs
+    | otherwise = go n (integerSquareRoot n) prs
       where
         go !m !r (p:ps)
             | r < p     = [(m,1)]
@@ -38,7 +38,7 @@ trialDivisionWith prs n
                   (0,_) -> go m r ps
                   (k,q) -> (p,k) : if q == 1
                                      then []
-                                     else go q (integerSquareRoot' q) ps
+                                     else go q (integerSquareRoot q) ps
         go m _ _    = [(m,1)]
 
 -- | @'trialDivisionTo' bound n@ produces a factorisation of @n@ using the
@@ -57,7 +57,7 @@ trialDivisionPrimeWith :: [Integer] -> Integer -> Bool
 trialDivisionPrimeWith prs n
     | n < 0     = trialDivisionPrimeWith prs (-n)
     | n < 2     = False
-    | otherwise = go n (integerSquareRoot' n) prs
+    | otherwise = go n (integerSquareRoot n) prs
       where
         go !m !r (p:ps) = r < p || m `rem` p /= 0 && go m r ps
         go _ _ _ = True

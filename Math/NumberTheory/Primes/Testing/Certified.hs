@@ -20,7 +20,7 @@ import Data.Proxy
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Roots.Squares
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Factorisation.Montgomery
@@ -138,7 +138,7 @@ trivialPrimes = [2,3,5,7,11,13,17,19,23,29]
 smallCert :: Integer -> PrimalityProof
 smallCert n
     | n < 30    = Trivial n
-    | otherwise = TrialDivision n (integerSquareRoot' n + 1)
+    | otherwise = TrialDivision n (integerSquareRoot n + 1)
 
 -- | @'certify' n@ constructs, for @n > 1@, a proof of either
 --   primality or compositeness of @n@. This may take a very long
@@ -150,7 +150,7 @@ certify n
                     ((p,_):_) | p < n     -> Composite (Factors n p (n `quot` p))
                               | otherwise -> Prime (Trivial n)
                     _ -> error "Impossible"
-    | n < billi = let r2 = integerSquareRoot' n + 2 in
+    | n < billi = let r2 = integerSquareRoot n + 2 in
                   case trialDivisionTo r2 n of
                     ((p,_):_) | p < n       -> Composite (Factors n p (n `quot` p))
                               | otherwise   -> Prime (TrialDivision n r2)
@@ -205,7 +205,7 @@ certifyBPSW n = Pocklington n a b kfcts
 findDecomposition :: Integer -> (Integer, [(Integer, Word, Bool)], Integer)
 findDecomposition n = go 1 n [] prms
   where
-    sr = integerSquareRoot' n
+    sr = integerSquareRoot n
     pbd = min 1000000 (sr+20)
     prms = map unPrime $ primeList (primeSieve $ pbd)
     go a b afs (p:ps)
