@@ -57,7 +57,7 @@ import Data.Semigroup
 import Data.Traversable
 
 import GHC.Exts
-import GHC.Integer.GMP.Internals
+import GHC.Integer.GMP.Internals hiding (integerToInt, wordToInteger)
 import GHC.TypeNats.Compat
 import GHC.Natural
 
@@ -71,7 +71,7 @@ import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils hiding (splitOff)
-import Math.NumberTheory.Utils.FromIntegral (intToWord)
+import Math.NumberTheory.Utils.FromIntegral
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
 --   an error and the factorisation of @1@ is empty. Uses a 'StdGen' produced in
@@ -82,20 +82,13 @@ import Math.NumberTheory.Utils.FromIntegral (intToWord)
 --
 -- >>> factorise 10251562501
 -- [(101701,1),(100801,1)]
-factorise :: Integer -> [(Integer, Word)]
-factorise = map (first toInteger) . factorise' . fromInteger . abs
-
-factorise' :: Natural -> [(Natural, Word)]
-factorise' 0 = error "0 has no prime factorisation"
-factorise' 1 = []
-factorise' n = defaultStdGenFactorisation' (mkStdGen $ fromIntegral n `xor` 0xdeadbeef) n
-
--- | Like 'defaultStdGenFactorisation', but without input checking, so
---   @n@ must be larger than @1@.
-defaultStdGenFactorisation' :: StdGen -> Natural -> [(Natural, Word)]
-defaultStdGenFactorisation' sg n = sfs <> map (first fromInteger) rest
+factorise :: Integral a => a -> [(a, Word)]
+factorise 0 = error "0 has no prime factorisation"
+factorise n' = map (first fromIntegral) sfs <> map (first fromInteger) rest
   where
-    (sfs, mb) = smallFactors n
+    n = abs n'
+    (sfs, mb) = smallFactors (fromIntegral n)
+    sg = mkStdGen (fromIntegral n `xor` 0xdeadbeef)
     rest = case mb of
       Nothing -> []
       Just m  -> stdGenFactorisation (Just $ 65536 * 65536) sg Nothing (toInteger m)

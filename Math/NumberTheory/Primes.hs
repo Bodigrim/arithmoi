@@ -22,7 +22,6 @@ module Math.NumberTheory.Primes
       primes
     ) where
 
-import Control.Arrow
 import Data.Bits
 import Data.Coerce
 import Data.Maybe
@@ -83,11 +82,11 @@ class Num a => UniqueFactorisation a where
   isPrime   :: a -> Maybe (Prime a)
 
 instance UniqueFactorisation Int where
-  factorise = map (Prime . integerToInt *** id) . F.factorise . intToInteger
+  factorise = coerce . F.factorise
   isPrime n = if T.isPrime (toInteger n) then Just (Prime $ abs n) else Nothing
 
 instance UniqueFactorisation Word where
-  factorise = map (coerce integerToWord *** id) . F.factorise . wordToInteger
+  factorise = coerce . F.factorise
   isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing
 
 instance UniqueFactorisation Integer where
@@ -95,7 +94,7 @@ instance UniqueFactorisation Integer where
   isPrime n = if T.isPrime n then Just (Prime $ abs n) else Nothing
 
 instance UniqueFactorisation Natural where
-  factorise = map (coerce integerToNatural *** id) . F.factorise . naturalToInteger
+  factorise = coerce . F.factorise
   isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing
 
 factorBack :: Num a => [(Prime a, Word)] -> a
