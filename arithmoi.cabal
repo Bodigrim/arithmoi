@@ -91,6 +91,7 @@ library
     Math.NumberTheory.Recurrences.Bilinear
     Math.NumberTheory.Recurrences.Linear
     Math.NumberTheory.SmoothNumbers
+    Math.NumberTheory.Utils.RootsOfUnity
     Math.NumberTheory.Zeta
   other-modules:
     Math.NumberTheory.ArithmeticFunctions.Class

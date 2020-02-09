@@ -5,3 +5,4 @@ dist
 dist-newstyle
 .ghc.environment*
 .tasty-rerun-log
+.swp
