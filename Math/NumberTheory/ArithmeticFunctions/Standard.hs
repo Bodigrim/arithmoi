@@ -117,6 +117,7 @@ tauA = multiplicative $ const (fromIntegral . succ)
 -- | See 'sigmaA'.
 sigma :: (UniqueFactorisation n, Integral n, Num a, GcdDomain a) => Word -> n -> a
 sigma = runFunction . sigmaA
+{-# INLINABLE sigma #-}
 
 -- | The sum of the @k@-th powers of (positive) divisors of an argument.
 --
@@ -126,6 +127,7 @@ sigmaA :: (Integral n, Num a, GcdDomain a) => Word -> ArithmeticFunction n a
 sigmaA 0 = tauA
 sigmaA 1 = multiplicative $ sigmaHelper . fromIntegral . unPrime
 sigmaA a = multiplicative $ sigmaHelper . (^ wordToInt a) . fromIntegral . unPrime
+{-# INLINABLE sigmaA #-}
 
 sigmaHelper :: (Num a, GcdDomain a) => a -> Word -> a
 sigmaHelper pa 1 = pa + 1
@@ -136,12 +138,14 @@ sigmaHelper pa k = fromJust ((pa ^ wordToInt (k + 1) - 1) `divide` (pa - 1))
 -- | See 'totientA'.
 totient :: UniqueFactorisation n => n -> n
 totient = runFunction totientA
+{-# INLINABLE totient #-}
 
 -- | Calculates the totient of a positive number @n@, i.e.
 --   the number of @k@ with @1 <= k <= n@ and @'gcd' n k == 1@,
 --   in other words, the order of the group of units in @&#8484;/(n)@.
 totientA :: Num n => ArithmeticFunction n n
 totientA = multiplicative $ jordanHelper . unPrime
+{-# INLINABLE totientA #-}
 
 -- | See 'jordanA'.
 jordan :: UniqueFactorisation n => Word -> n -> n
@@ -235,7 +239,7 @@ smallOmega = runFunction smallOmegaA
 --
 -- > smallOmegaA = additive (\_ _ -> 1)
 smallOmegaA :: Num a => ArithmeticFunction n a
-smallOmegaA = additive (\_ _ -> 1)
+smallOmegaA = additive $ const $ const 1
 
 -- | See 'bigOmegaA'.
 bigOmega :: UniqueFactorisation n => n -> Word
