@@ -1,4 +1,11 @@
-module Math.NumberTheory.Utils.RootsOfUnity
+-- |
+-- Module:      Math.NumberTheory.RootsOfUnity
+-- Licence:     MIT
+--
+-- Implementation of roots of unity
+--
+
+module Math.NumberTheory.RootsOfUnity
 (  
 -- * Roots of unity
    RootOfUnity (..)

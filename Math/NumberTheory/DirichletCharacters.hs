@@ -83,8 +83,8 @@ import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultE
 import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
 import Math.NumberTheory.Powers.Modular                    (powMod)
 import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise, nextPrime)
+import Math.NumberTheory.RootsOfUnity
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
-import Math.NumberTheory.Utils.RootsOfUnity
 import Math.NumberTheory.Utils
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
