@@ -46,6 +46,8 @@ import qualified Math.NumberTheory.Zeta.DirichletTests as Dirichlet
 
 import qualified Math.NumberTheory.DirichletCharactersTests as DirichletChar
 
+import qualified Math.NumberTheory.RootsOfUnityTests as RootsOfUnity
+
 main :: IO ()
 main = defaultMainWithRerun tests
 
@@ -95,4 +97,5 @@ tests = testGroup "All"
     , Dirichlet.testSuite
     ]
   , DirichletChar.testSuite
+  , RootsOfUnity.testSuite
   ]

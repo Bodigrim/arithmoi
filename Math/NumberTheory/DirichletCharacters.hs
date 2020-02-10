@@ -19,14 +19,8 @@
 
 module Math.NumberTheory.DirichletCharacters
   (
-  -- * Roots of unity
-    RootOfUnity
-  -- ** Conversions
-  , toRootOfUnity
-  , fromRootOfUnity
-  , toComplex
   -- * An absorbing semigroup
-  , OrZero, pattern Zero, pattern NonZero
+  OrZero, pattern Zero, pattern NonZero
   , orZeroToNum
   -- * Dirichlet characters
   , DirichletCharacter
@@ -65,7 +59,6 @@ module Math.NumberTheory.DirichletCharacters
 import Control.Applicative                                 (liftA2)
 #endif
 import Data.Bits                                           (Bits(..))
-import Data.Complex                                        (Complex(..), cis)
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
 import Data.List                                           (mapAccumL, foldl', sort, find, unfoldr)
@@ -75,7 +68,7 @@ import Data.Monoid                                         (Ap(..))
 #endif
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          ((%), numerator, denominator)
-import Data.Semigroup                                      (Semigroup(..), Product(..))
+import Data.Semigroup                                      (Semigroup(..),Product(..))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))
@@ -90,6 +83,7 @@ import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultE
 import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
 import Math.NumberTheory.Powers.Modular                    (powMod)
 import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise, nextPrime)
+import Math.NumberTheory.RootsOfUnity
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 import Math.NumberTheory.Utils
 
@@ -138,52 +132,6 @@ instance Eq DirichletFactor where
   OddPrime _ _ _ x == OddPrime _ _ _ y = x == y
   Two              == Two              = True
   _ == _ = False
-
--- | A representation of <https://en.wikipedia.org/wiki/Root_of_unity roots of unity>: complex
--- numbers \(z\) for which there is \(n\) such that \(z^n=1\).
-newtype RootOfUnity =
-  RootOfUnity { -- | Every root of unity can be expressed as \(e^{2 \pi i q}\) for some
-                -- rational \(q\) satisfying \(0 \leq q < 1\), this function extracts it.
-                fromRootOfUnity :: Rational }
-  deriving (Eq)
-
-instance Show RootOfUnity where
-  show (RootOfUnity q)
-    | n == 0    = "1"
-    | d == 1    = "-1"
-    | n == 1    = "e^(πi/" ++ show d ++ ")"
-    | otherwise = "e^(" ++ show n ++ "πi/" ++ show d ++ ")"
-    where n = numerator (2*q)
-          d = denominator (2*q)
-
--- | Given a rational \(q\), produce the root of unity \(e^{2 \pi i q}\).
-toRootOfUnity :: Rational -> RootOfUnity
-toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
-  where n = numerator q
-        d = denominator q
-        -- effectively q `mod` 1
-  -- This smart constructor ensures that the rational is always in the range 0 <= q < 1.
-
--- | This Semigroup is in fact a group, so @'stimes'@ can be called with a negative first argument.
-instance Semigroup RootOfUnity where
-  RootOfUnity q1 <> RootOfUnity q2 = toRootOfUnity (q1 + q2)
-  stimes k (RootOfUnity q) = toRootOfUnity (q * fromIntegral k)
-
-instance Monoid RootOfUnity where
-  mappend = (<>)
-  mempty = RootOfUnity 0
-
--- | Convert a root of unity into an inexact complex number. Due to floating point inaccuracies,
--- it is recommended to avoid use of this until the end of a calculation. Alternatively, with
--- the [cyclotomic](http://hackage.haskell.org/package/cyclotomic-0.5.1) package, one can use
--- @[polarRat](https://hackage.haskell.org/package/cyclotomic-0.5.1/docs/Data-Complex-Cyclotomic.html#v:polarRat)
--- 1 . @'fromRootOfUnity' to convert to a cyclotomic number.
-toComplex :: Floating a => RootOfUnity -> Complex a
-toComplex (RootOfUnity t)
-  | t == 1/2 = (-1) :+ 0
-  | t == 1/4 = 0 :+ 1
-  | t == 3/4 = 0 :+ (-1)
-  | otherwise = cis . (2*pi*) . fromRational $ t
 
 -- | For primes, define the canonical primitive root as the smallest such. For prime powers \(p^k\),
 -- either the smallest primitive root \(g\) mod \(p\) works, or \(g+p\) works.

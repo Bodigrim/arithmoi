@@ -1,5 +1,5 @@
 -- |
--- Module:       Math.NumberTheory.Moduli.DiscreteLogarithm
+-- Module:       Math.NumberTheory.DirichletCharactersTests
 -- Copyright:    (c) 2018 Bhavik Mehta
 -- License:      MIT
 -- Maintainer:   Andrew Lelechenko <andrew.lelechenko@gmail.com>
@@ -22,7 +22,6 @@ import Data.Complex
 import Data.List (genericLength)
 import Data.Maybe (isJust, mapMaybe)
 import Data.Proxy
-import Data.Ratio
 import Data.Semigroup
 import qualified Data.Vector as V
 import Numeric.Natural
@@ -35,9 +34,7 @@ import Math.NumberTheory.DirichletCharacters
 import qualified Math.NumberTheory.Moduli.Sqrt as J
 import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
-
-rootOfUnityTest :: Integer -> Positive Integer -> Bool
-rootOfUnityTest n (Positive d) = toComplex ((d `div` gcd n d) `stimes` toRootOfUnity (n % d)) == (1 :: Complex Double)
+import Math.NumberTheory.RootsOfUnity
 
 -- | This tests property 6 from https://en.wikipedia.org/wiki/Dirichlet_character#Axiomatic_definition
 dirCharOrder :: forall n. KnownNat n => DirichletCharacter n -> Bool
@@ -222,8 +219,7 @@ makePrimitiveValid chi = case makePrimitive chi of
 
 testSuite :: TestTree
 testSuite = testGroup "DirichletCharacters"
-  [ testSmallAndQuick "RootOfUnity contains roots of unity" rootOfUnityTest
-  , testSmallAndQuick "Dirichlet characters divide the right order" (dirCharProperty dirCharOrder)
+  [ testSmallAndQuick "Dirichlet characters divide the right order" (dirCharProperty dirCharOrder)
   , testSmallAndQuick "Dirichlet characters are multiplicative" (dirCharProperty testMultiplicative)
   , testSmallAndQuick "Dirichlet characters are 1 at 1" (dirCharProperty testAtOne)
   , testSmallAndQuick "Right number of Dirichlet characters" countCharacters

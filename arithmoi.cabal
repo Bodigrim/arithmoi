@@ -90,6 +90,7 @@ library
     Math.NumberTheory.Recurrences
     Math.NumberTheory.Recurrences.Bilinear
     Math.NumberTheory.Recurrences.Linear
+    Math.NumberTheory.RootsOfUnity
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
   other-modules:
@@ -173,6 +174,7 @@ test-suite spec
     Math.NumberTheory.Recurrences.PentagonalTests
     Math.NumberTheory.Recurrences.BilinearTests
     Math.NumberTheory.Recurrences.LinearTests
+    Math.NumberTheory.RootsOfUnityTests
     Math.NumberTheory.SmoothNumbersTests
     Math.NumberTheory.TestUtils
     Math.NumberTheory.TestUtils.MyCompose
