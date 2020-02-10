@@ -1,5 +1,5 @@
 -- |
--- Module:       Math.NumberTheory.Moduli.DiscreteLogarithm
+-- Module:       Math.NumberTheory.DirichletCharactersTests
 -- Copyright:    (c) 2018 Bhavik Mehta
 -- License:      MIT
 -- Maintainer:   Andrew Lelechenko <andrew.lelechenko@gmail.com>

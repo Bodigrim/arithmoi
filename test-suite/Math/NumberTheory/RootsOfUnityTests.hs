@@ -1,6 +1,8 @@
 -- |
 -- Module:       Math.NumberTheory.RootsOfUnityTests
--- Licence:      MIT
+-- Copyright:    (c) 2018 Bhavik Mehta
+-- License:      MIT
+-- Maintainer:   Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 -- Tests for Math.NumberTheory.RootsOfUnity
 --

@@ -1,9 +1,12 @@
 -- |
 -- Module:      Math.NumberTheory.RootsOfUnity
+-- Copyright:   (c) 2018 Bhavik Mehta
 -- Licence:     MIT
+-- Maintainer:  Bhavik Mehta <bhavikmehta8@gmail.com>
 --
 -- Implementation of roots of unity
 --
+
 
 module Math.NumberTheory.RootsOfUnity
 (  
