@@ -22,7 +22,7 @@ module Math.NumberTheory.Primes.Counting.Impl
 #include "MachDeps.h"
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo, countToNth, countAll, nthPrimeCt)
+    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo, countToNth, countAll)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
@@ -79,11 +79,17 @@ nthPrimeMaxArg = 150000000000000000
 --   Requires @/O/((n*log n)^0.5)@ space, the time complexity is roughly @/O/((n*log n)^0.7@.
 --   The argument must be strictly positive, and must not exceed 'nthPrimeMaxArg'.
 nthPrime :: Integer -> Prime Integer
+nthPrime 1 = Prime 2
+nthPrime 2 = Prime 3
+nthPrime 3 = Prime 5
+nthPrime 4 = Prime 7
+nthPrime 5 = Prime 11
+nthPrime 6 = Prime 13
 nthPrime n
     | n < 1         = error "Prime indexing starts at 1"
+    | n < 200000    = Prime $ countToNth (n-3) [primeSieve (p0 + p0 `quot` 32 + 37)]
     | n > nthPrimeMaxArg = error $ "nthPrime: can't handle index " ++ show n
-    | n < 200000    = Prime $ nthPrimeCt n
-    | ct0 < n       = Prime $ tooLow n p0 (n-ct0) approxGap
+    | ct0 < n       = Prime $ tooLow  n p0 (n-ct0) approxGap
     | otherwise     = Prime $ tooHigh n p0 (ct0-n) approxGap
       where
         p0 = nthPrimeApprox n

@@ -20,7 +20,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , psieveList
     , primeList
     , primeSieve
-    , nthPrimeCt
     , countFromTo
     , countAll
     , countToNth
@@ -40,13 +39,11 @@ import Data.Coerce
 import Data.Proxy
 import Data.Word
 
-import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils
-import Math.NumberTheory.Utils.FromIntegral
 
 #define IX_MASK     0xFFFFF
 #define IX_BITS     20
@@ -427,21 +424,6 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
           fill 0 0
 
 -- prime counting
-
-nthPrimeCt :: Integer -> Integer
-nthPrimeCt 1      = 2
-nthPrimeCt 2      = 3
-nthPrimeCt 3      = 5
-nthPrimeCt 4      = 7
-nthPrimeCt 5      = 11
-nthPrimeCt 6      = 13
-nthPrimeCt n
-  | n < 1       = error "nthPrimeCt: negative argument"
-  | n < 200000  = let bd0 = nthPrimeApprox n
-                      bnd = bd0 + bd0 `quot` 32 + 37
-                      !sv = primeSieve bnd
-                  in countToNth (n-3) [sv]
-  | otherwise   = countToNth (n-3) (psieveFrom (intToInteger $ fromInteger n .&. (7 :: Int)))
 
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
