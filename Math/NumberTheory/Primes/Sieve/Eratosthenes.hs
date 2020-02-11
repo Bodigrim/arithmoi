@@ -38,6 +38,7 @@ import Data.Bits
 import Data.Coerce
 import Data.Proxy
 import Data.Word
+import Unsafe.Coerce
 
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
@@ -428,40 +429,33 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
 countToNth :: Int -> [PrimeSieve] -> Integer
-countToNth !n ps = runST (countDown n ps)
+countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
+countToNth !n (PS v0 bs : more) = go n 0
+  where
+    wa :: UArray Int Word
+    wa = unsafeCoerce bs
 
-countDown :: Int -> [PrimeSieve] -> ST s Integer
-countDown !n (ps@(PS v0 bs) : more)
-  | n > 278734 || (v0 /= 0 && n > 253000) = do
-    ct <- countAll ps
-    countDown (n - ct) more
-  | otherwise = do
-    stu <- unsafeThaw bs
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
-    let go !k i
-          | i == sieveWords  = countDown k more
-          | otherwise   = do
-            w <- unsafeRead wa i
-            let !bc = bitCountWord w
-            if bc < k
-                then go (k-bc) (i+1)
-                else let !j = bc - k
-                         !px = top w j bc
-                     in return (v0 + toPrim (px+(i `shiftL` WSHFT)))
-    go n 0
-countDown _ [] = error "Prime stream ended prematurely"
+    go !k i
+      | i == sieveWords = countToNth k more
+      | otherwise
+      = let w = unsafeAt wa i
+            bc = bitCountWord w
+        in if bc < k
+          then go (k-bc) (i+1)
+          else let j = bc - k
+                   px = top w j bc
+               in v0 + toPrim (px + (i `shiftL` WSHFT))
 
 -- count all set bits in a chunk, do it wordwise for speed.
-countAll :: PrimeSieve -> ST s Int
-countAll (PS _ bs) = do
-    stu <- unsafeThaw bs
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
-    let go !ct i
-            | i == sieveWords = return ct
-            | otherwise = do
-                w <- unsafeRead wa i
-                go (ct + bitCountWord w) (i+1)
-    go 0 0
+countAll :: PrimeSieve -> Int
+countAll (PS _ bs) = go 0 0
+  where
+    wa :: UArray Int Word
+    wa = unsafeCoerce bs
+
+    go !ct i
+      | i == sieveWords = ct
+      | otherwise = go (ct + bitCountWord (unsafeAt wa i)) (i+1)
 
 -- Find the j-th highest of bc set bits in the Word w.
 top :: Word -> Int -> Int -> Int

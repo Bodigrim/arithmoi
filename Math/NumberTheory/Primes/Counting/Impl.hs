@@ -200,7 +200,7 @@ sieveCountST ub cr sr = do
                               let nbtw = btw + lac + 1 + fromIntegral new
                               eat (acc+nbtw) nbtw (fromIntegral vO) (wi-1) (li+1) nstu more
                           ctLoop lac s (ps : more) = do
-                              !new <- countAll ps
+                              let !new = countAll ps
                               ctLoop (lac + fromIntegral new) (s-1) more
                           ctLoop _ _ [] = error "Primes ended"
                       new <- countFromTo si (sieveBits-1) stu
