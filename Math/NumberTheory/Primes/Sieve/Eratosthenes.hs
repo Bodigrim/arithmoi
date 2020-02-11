@@ -20,7 +20,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , psieveList
     , primeList
     , primeSieve
-    , countFromTo
     , sieveBits
     , sieveRange
     , sieveTo
@@ -330,31 +329,6 @@ countFromToWd start end ba = do
             w <- unsafeRead wa i
             count (acc + popCount w) (i+1)
     count 0 sb
-
--- count set bits between two indices (inclusive)
--- start and end must both be valid indices and start <= end
-countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
-countFromTo start end ba = do
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
-    let !sb = start `shiftR` WSHFT
-        !si = start .&. RMASK
-        !eb = end `shiftR` WSHFT
-        !ei = end .&. RMASK
-        count !acc i
-            | i == eb = do
-                w <- unsafeRead wa i
-                return (acc + popCount (w `shiftL` (RMASK - ei)))
-            | otherwise = do
-                w <- unsafeRead wa i
-                count (acc + popCount w) (i+1)
-    if sb < eb
-      then do
-          w <- unsafeRead wa sb
-          count (popCount (w `shiftR` si)) (sb+1)
-      else do
-          w <- unsafeRead wa sb
-          let !w1 = w `shiftR` si
-          return (popCount (w1 `shiftL` (RMASK - ei + si)))
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain

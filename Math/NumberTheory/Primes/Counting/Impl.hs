@@ -21,7 +21,7 @@ module Math.NumberTheory.Primes.Counting.Impl
 #include "MachDeps.h"
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo)
+    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
@@ -415,11 +415,14 @@ cpGpAr = runSTUArray $ do
 
 #if SIZEOF_HSWORD == 8
 
+#define RMASK 63
 #define WSHFT 6
 #define TOPB 32
 #define TOPM 0xFFFFFFFF
 
 #else
+
+#define RMASK 31
 #define WSHFT 5
 #define TOPB 16
 #define TOPM 0xFFFF
@@ -473,3 +476,28 @@ top w j bc = go 0 TOPB TOPM bn w
              | otherwise ->
                let !na = a `shiftR` 1
                in go bs na (msk `unsafeShiftR` na) ix wd
+
+-- count set bits between two indices (inclusive)
+-- start and end must both be valid indices and start <= end
+countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
+countFromTo start end ba = do
+    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
+    let !sb = start `shiftR` WSHFT
+        !si = start .&. RMASK
+        !eb = end `shiftR` WSHFT
+        !ei = end .&. RMASK
+        count !acc i
+            | i == eb = do
+                w <- unsafeRead wa i
+                return (acc + popCount (w `shiftL` (RMASK - ei)))
+            | otherwise = do
+                w <- unsafeRead wa i
+                count (acc + popCount w) (i+1)
+    if sb < eb
+      then do
+          w <- unsafeRead wa sb
+          count (popCount (w `shiftR` si)) (sb+1)
+      else do
+          w <- unsafeRead wa sb
+          let !w1 = w `shiftR` si
+          return (popCount (w1 `shiftL` (RMASK - ei + si)))
