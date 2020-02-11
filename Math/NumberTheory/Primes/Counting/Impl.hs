@@ -26,7 +26,6 @@ import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
-import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Unsafe
 
 import Data.Array.ST
@@ -88,12 +87,11 @@ nthPrime n
     | p0 > toInteger (maxBound :: Int)
     = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
     | miss > 0
-    = Prime $ tooLow  n (fromInteger p0) miss approxGap
+    = Prime $ tooLow  n (fromInteger p0) miss
     | otherwise
-    = Prime $ tooHigh n (fromInteger p0) (negate miss) approxGap
+    = Prime $ tooHigh n (fromInteger p0) (negate miss)
       where
         p0 = nthPrimeApprox (toInteger n)
-        approxGap = (7 * integerLog2' p0) `quot` 10
         miss = n - fromInteger (primeCount p0)
 
 --------------------------------------------------------------------------------
@@ -104,26 +102,33 @@ nthPrime n
 -- Not too pressing, since I think a) nthPrimeApprox always underestimates
 -- in the range we can handle, and b) it's always "goodEnough"
 
-tooLow :: Int -> Int -> Int -> Int -> Integer
-tooLow n a miss gap
-    | p1 > toInteger (maxBound :: Int)
-    = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
-    | goodEnough    = lowSieve a miss
-    | c1 < n        = lowSieve (fromInteger p1) (n-c1)
-    | otherwise     = lowSieve a miss   -- a third count wouldn't make it faster, I think
-      where
-        est = toInteger miss * toInteger gap
-        p1  = toInteger a + est
-        goodEnough = 3*est*est*est < 2*p1*p1    -- a second counting would be more work than sieving
-        c1  = fromInteger (primeCount p1)
+tooLow :: Int -> Int -> Int -> Integer
+tooLow n p0 shortage
+  | p1 > toInteger (maxBound :: Int)
+  = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
+  | goodEnough
+  = lowSieve p0 shortage
+  | c1 < n
+  = lowSieve (fromInteger p1) (n-c1)
+  | otherwise
+  = lowSieve p0 shortage   -- a third count wouldn't make it faster, I think
+  where
+    gap = truncate (log (fromIntegral p0 :: Double))
+    est = toInteger shortage * gap
+    p1  = toInteger p0 + est
+    goodEnough = 3*est*est*est < 2*p1*p1    -- a second counting would be more work than sieving
+    c1  = fromInteger (primeCount p1)
 
-tooHigh :: Int -> Int -> Int -> Int -> Integer
-tooHigh n a surp gap
-    | c < n     = lowSieve b (n-c)
-    | otherwise = tooHigh n b (c-n) gap
-      where
-        b = a - (surp * gap * 11) `quot` 10
-        c = fromInteger (primeCount (toInteger b))
+tooHigh :: Int -> Int -> Int -> Integer
+tooHigh n p0 surplus
+  | c < n
+  = lowSieve b (n-c)
+  | otherwise
+  = tooHigh n b (c-n)
+  where
+    gap = truncate (log (fromIntegral p0 :: Double))
+    b = p0 - (surplus * gap * 11) `quot` 10
+    c = fromInteger (primeCount (toInteger b))
 
 lowSieve :: Int -> Int -> Integer
 lowSieve a miss = countToNth (miss+rep) psieves
