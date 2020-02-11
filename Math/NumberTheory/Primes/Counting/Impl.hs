@@ -27,7 +27,6 @@ import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrim
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Unsafe
-import Math.NumberTheory.Utils
 
 import Control.Monad.ST
 import Data.Array.ST
@@ -470,7 +469,7 @@ top w j bc = go 0 TOPB TOPM bn w
       go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
       go bs a msk ix wd =
         case popCount (wd .&. msk) of
-          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `uncheckedShiftR` a)
+          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `unsafeShiftR` a)
              | otherwise ->
                let !na = a `shiftR` 1
-               in go bs na (msk `uncheckedShiftR` na) ix wd
+               in go bs na (msk `unsafeShiftR` na) ix wd

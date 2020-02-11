@@ -13,7 +13,6 @@ module Math.NumberTheory.Utils
     , shiftToOdd#
     , shiftToOddCount#
     , shiftToOddCountBigNat
-    , uncheckedShiftR
     , splitOff
     , splitOff#
 
@@ -36,9 +35,6 @@ import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
 import GHC.Integer.GMP.Internals
 import GHC.Natural
-
-uncheckedShiftR :: Word -> Int -> Word
-uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 
 -- | Remove factors of @2@ and count them. If
 --   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
