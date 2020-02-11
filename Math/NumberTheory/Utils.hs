@@ -13,9 +13,6 @@ module Math.NumberTheory.Utils
     , shiftToOdd#
     , shiftToOddCount#
     , shiftToOddCountBigNat
-    , bitCountWord
-    , bitCountInt
-    , bitCountWord#
     , uncheckedShiftR
     , splitOff
     , splitOff#
@@ -150,19 +147,6 @@ shiftToOdd# w# = uncheckedShiftRL# w# (word2Int# (ctz# w#))
 shiftToOddCount# :: Word# -> (# Word#, Word# #)
 shiftToOddCount# w# = case ctz# w# of
                         k# -> (# k#, uncheckedShiftRL# w# (word2Int# k#) #)
-
--- | Number of 1-bits in a @'Word#'@.
-bitCountWord# :: Word# -> Int#
-bitCountWord# w# = case bitCountWord (W# w#) of
-                     I# i# -> i#
-
--- | Number of 1-bits in a @'Word'@.
-bitCountWord :: Word -> Int
-bitCountWord = popCount
-
--- | Number of 1-bits in an @'Int'@.
-bitCountInt :: Int -> Int
-bitCountInt = popCount
 
 splitOff :: (Eq a, GcdDomain a) => a -> a -> (Word, a)
 splitOff p n

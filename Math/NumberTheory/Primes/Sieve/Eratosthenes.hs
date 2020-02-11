@@ -335,7 +335,7 @@ countFromToWd start end ba = do
           | eb < i    = return acc
           | otherwise = do
             w <- unsafeRead wa i
-            count (acc + bitCountWord w) (i+1)
+            count (acc + popCount w) (i+1)
     count 0 sb
 
 -- count set bits between two indices (inclusive)
@@ -350,18 +350,18 @@ countFromTo start end ba = do
         count !acc i
             | i == eb = do
                 w <- unsafeRead wa i
-                return (acc + bitCountWord (w `shiftL` (RMASK - ei)))
+                return (acc + popCount (w `shiftL` (RMASK - ei)))
             | otherwise = do
                 w <- unsafeRead wa i
-                count (acc + bitCountWord w) (i+1)
+                count (acc + popCount w) (i+1)
     if sb < eb
       then do
           w <- unsafeRead wa sb
-          count (bitCountWord (w `shiftR` si)) (sb+1)
+          count (popCount (w `shiftR` si)) (sb+1)
       else do
           w <- unsafeRead wa sb
           let !w1 = w `shiftR` si
-          return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
+          return (popCount (w1 `shiftL` (RMASK - ei + si)))
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain
@@ -439,7 +439,7 @@ countToNth !n (PS v0 bs : more) = go n 0
       | i == sieveWords = countToNth k more
       | otherwise
       = let w = unsafeAt wa i
-            bc = bitCountWord w
+            bc = popCount w
         in if bc < k
           then go (k-bc) (i+1)
           else let j = bc - k
@@ -455,7 +455,7 @@ countAll (PS _ bs) = go 0 0
 
     go !ct i
       | i == sieveWords = ct
-      | otherwise = go (ct + bitCountWord (unsafeAt wa i)) (i+1)
+      | otherwise = go (ct + popCount (unsafeAt wa i)) (i+1)
 
 -- Find the j-th highest of bc set bits in the Word w.
 top :: Word -> Int -> Int -> Int
@@ -465,7 +465,7 @@ top w j bc = go 0 TOPB TOPM bn w
       go !_ _ !_ !_ 0 = error "Too few bits set"
       go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
       go bs a msk ix wd =
-        case bitCountWord (wd .&. msk) of
+        case popCount (wd .&. msk) of
           lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `uncheckedShiftR` a)
              | otherwise ->
                let !na = a `shiftR` 1
