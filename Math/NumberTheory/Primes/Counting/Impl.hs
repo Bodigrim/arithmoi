@@ -16,7 +16,6 @@ module Math.NumberTheory.Primes.Counting.Impl
     ( primeCount
     , primeCountMaxArg
     , nthPrime
-    , nthPrimeMaxArg
     ) where
 
 #include "MachDeps.h"
@@ -69,16 +68,12 @@ primeCount n
             !pdf = sieveCount ub cs sr
         in phn1 - pdf
 
--- | Maximal allowed argument of 'nthPrime'. Currently 1.5e17.
-nthPrimeMaxArg :: Integer
-nthPrimeMaxArg = 150000000000000000
-
 -- | @'nthPrime' n@ calculates the @n@-th prime. Numbering of primes is
 --   @1@-based, so @'nthPrime' 1 == 2@.
 --
 --   Requires @/O/((n*log n)^0.5)@ space, the time complexity is roughly @/O/((n*log n)^0.7@.
---   The argument must be strictly positive, and must not exceed 'nthPrimeMaxArg'.
-nthPrime :: Integer -> Prime Integer
+--   The argument must be strictly positive.
+nthPrime :: Int -> Prime Integer
 nthPrime 1 = Prime 2
 nthPrime 2 = Prime 3
 nthPrime 3 = Prime 5
@@ -86,15 +81,20 @@ nthPrime 4 = Prime 7
 nthPrime 5 = Prime 11
 nthPrime 6 = Prime 13
 nthPrime n
-    | n < 1         = error "Prime indexing starts at 1"
-    | n < 200000    = Prime $ countToNth (n-3) [primeSieve (p0 + p0 `quot` 32 + 37)]
-    | n > nthPrimeMaxArg = error $ "nthPrime: can't handle index " ++ show n
-    | ct0 < n       = Prime $ tooLow  n p0 (n-ct0) approxGap
-    | otherwise     = Prime $ tooHigh n p0 (ct0-n) approxGap
+    | n < 1
+    = error "Prime indexing starts at 1"
+    | n < 200000
+    = Prime $ countToNth (n - 3) [primeSieve (p0 + p0 `quot` 32 + 37)]
+    | p0 > toInteger (maxBound :: Int)
+    = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
+    | miss > 0
+    = Prime $ tooLow  n (fromInteger p0) miss approxGap
+    | otherwise
+    = Prime $ tooHigh n (fromInteger p0) (negate miss) approxGap
       where
-        p0 = nthPrimeApprox n
-        approxGap = (7 * fromIntegral (integerLog2' p0)) `quot` 10
-        ct0 = primeCount p0
+        p0 = nthPrimeApprox (toInteger n)
+        approxGap = (7 * integerLog2' p0) `quot` 10
+        miss = n - fromInteger (primeCount p0)
 
 --------------------------------------------------------------------------------
 --                                The Works                                   --
@@ -104,36 +104,36 @@ nthPrime n
 -- Not too pressing, since I think a) nthPrimeApprox always underestimates
 -- in the range we can handle, and b) it's always "goodEnough"
 
-tooLow :: Integer -> Integer -> Integer -> Integer -> Integer
+tooLow :: Int -> Int -> Int -> Int -> Integer
 tooLow n a miss gap
+    | p1 > toInteger (maxBound :: Int)
+    = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
     | goodEnough    = lowSieve a miss
-    | c1 < n        = lowSieve p1 (n-c1)
+    | c1 < n        = lowSieve (fromInteger p1) (n-c1)
     | otherwise     = lowSieve a miss   -- a third count wouldn't make it faster, I think
       where
-        est = miss*gap
-        p1  = a + (est * 19) `quot` 20
+        est = toInteger miss * toInteger gap
+        p1  = toInteger a + est
         goodEnough = 3*est*est*est < 2*p1*p1    -- a second counting would be more work than sieving
-        c1  = primeCount p1
+        c1  = fromInteger (primeCount p1)
 
-tooHigh :: Integer -> Integer -> Integer -> Integer -> Integer
+tooHigh :: Int -> Int -> Int -> Int -> Integer
 tooHigh n a surp gap
     | c < n     = lowSieve b (n-c)
     | otherwise = tooHigh n b (c-n) gap
       where
         b = a - (surp * gap * 11) `quot` 10
-        c = primeCount b
+        c = fromInteger (primeCount (toInteger b))
 
-lowSieve :: Integer -> Integer -> Integer
+lowSieve :: Int -> Int -> Integer
 lowSieve a miss = countToNth (miss+rep) psieves
       where
-        strt = if (fromInteger a .&. (1 :: Int)) == 1
-                 then a+2
-                 else a+1
-        psieves@(PS vO ba:_) = psieveFrom strt
+        strt = a + 1 + (a .&. 1)
+        psieves@(PS vO ba:_) = psieveFrom (toInteger strt)
         rep | o0 < 0    = 0
             | otherwise = sum [1 | i <- [0 .. r2], ba `unsafeAt` i]
               where
-                o0 = strt - vO - 9   -- (strt - 2) - v0 - 7
+                o0 = toInteger strt - vO - 9   -- (strt - 2) - v0 - 7
                 r0 = fromInteger o0 `rem` 30
                 r1 = r0 `quot` 3
                 r2 = min 7 (if r1 > 5 then r1-1 else r1)

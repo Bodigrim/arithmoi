@@ -427,14 +427,14 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
 
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
-countToNth :: Integer -> [PrimeSieve] -> Integer
+countToNth :: Int -> [PrimeSieve] -> Integer
 countToNth !n ps = runST (countDown n ps)
 
-countDown :: Integer -> [PrimeSieve] -> ST s Integer
+countDown :: Int -> [PrimeSieve] -> ST s Integer
 countDown !n (ps@(PS v0 bs) : more)
   | n > 278734 || (v0 /= 0 && n > 253000) = do
     ct <- countAll ps
-    countDown (n - fromIntegral ct) more
+    countDown (n - ct) more
   | otherwise = do
     stu <- unsafeThaw bs
     wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
@@ -442,11 +442,11 @@ countDown !n (ps@(PS v0 bs) : more)
           | i == sieveWords  = countDown k more
           | otherwise   = do
             w <- unsafeRead wa i
-            let !bc = fromIntegral $ bitCountWord w
+            let !bc = bitCountWord w
             if bc < k
                 then go (k-bc) (i+1)
-                else let !j = fromIntegral (bc - k)
-                         !px = top w j (fromIntegral bc)
+                else let !j = bc - k
+                         !px = top w j bc
                      in return (v0 + toPrim (px+(i `shiftL` WSHFT)))
     go n 0
 countDown _ [] = error "Prime stream ended prematurely"

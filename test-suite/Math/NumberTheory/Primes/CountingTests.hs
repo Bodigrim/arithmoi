@@ -77,30 +77,27 @@ primeCountSpecialCases = map a table
 
 
 -- | Check that values of 'nthPrime' are positive.
-nthPrimeProperty1 :: Positive Integer -> Bool
-nthPrimeProperty1 (Positive n) = n > nthPrimeMaxArg
-  || unPrime (nthPrime n) > 0
+nthPrimeProperty1 :: Positive Int -> Bool
+nthPrimeProperty1 (Positive n) = unPrime (nthPrime n) > 0
 
 -- | Check that 'nthPrime' is monotonically increasing function.
-nthPrimeProperty2 :: Positive Integer -> Positive Integer -> Bool
+nthPrimeProperty2 :: Positive Int -> Positive Int -> Bool
 nthPrimeProperty2 (Positive n1) (Positive n2)
-  =  n1 > nthPrimeMaxArg
-  || n2 > nthPrimeMaxArg
-  || n1 <= n2 && p1 <= p2
+  =  n1 <= n2 && p1 <= p2
   || n1 >  n2 && p1 >= p2
   where
     p1 = nthPrime n1
     p2 = nthPrime n2
 
 -- | Check that values of 'nthPrime' are prime.
-nthPrimeProperty3 :: Positive Integer -> Bool
+nthPrimeProperty3 :: Positive Int -> Bool
 nthPrimeProperty3 (Positive n) = isPrime $ unPrime $ nthPrime n
 
 -- | Check tabulated values.
 nthPrimeSpecialCases :: [Assertion]
 nthPrimeSpecialCases = map a table
   where
-  a (n, m) = assertBool "nthPrime" $ n > unPrime (nthPrime m)
+    a (n, m) = assertBool "nthPrime" $ n > unPrime (nthPrime (fromInteger m))
 
 
 -- | Check that values of 'approxPrimeCount' are non-negative.
@@ -120,7 +117,7 @@ nthPrimeApproxProperty1 (AnySign a) = nthPrimeApprox a > 0
 -- | Check that 'nthPrimeApprox' is consistent with 'nthPrimeApproxUnderestimateLimit'.
 nthPrimeApproxProperty2 :: Positive Integer -> Bool
 nthPrimeApproxProperty2 (Positive a) = a >= nthPrimeApproxUnderestimateLimit
-  || nthPrimeApprox a <= unPrime (nthPrime a)
+  || nthPrimeApprox a <= unPrime (nthPrime (fromInteger a))
 
 
 testSuite :: TestTree
