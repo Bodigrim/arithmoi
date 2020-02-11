@@ -21,17 +21,19 @@ module Math.NumberTheory.Primes.Counting.Impl
 #include "MachDeps.h"
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo, countToNth, countAll)
+    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Unsafe
+import Math.NumberTheory.Utils
 
-import Data.Array.ST
 import Control.Monad.ST
+import Data.Array.ST
 import Data.Bits
 import Data.Int
+import Unsafe.Coerce
 
 -- | Maximal allowed argument of 'primeCount'. Currently 8e18.
 primeCountMaxArg :: Integer
@@ -409,3 +411,66 @@ cpGpAr = runSTUArray $ do
     note 26 13
     accumulate 2 30027
 
+-------------------------------------------------------------------------------
+-- Prime counting
+
+#if SIZEOF_HSWORD == 8
+
+#define WSHFT 6
+#define TOPB 32
+#define TOPM 0xFFFFFFFF
+
+#else
+#define WSHFT 5
+#define TOPB 16
+#define TOPM 0xFFFF
+
+#endif
+
+-- find the n-th set bit in a list of PrimeSieves,
+-- aka find the (n+3)-rd prime
+countToNth :: Int -> [PrimeSieve] -> Integer
+countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
+countToNth !n (PS v0 bs : more) = go n 0
+  where
+    wa :: UArray Int Word
+    wa = unsafeCoerce bs
+
+    go !k i
+      | i == snd (bounds wa)
+      = countToNth k more
+      | otherwise
+      = let w = unsafeAt wa i
+            bc = popCount w
+        in if bc < k
+          then go (k-bc) (i+1)
+          else let j = bc - k
+                   px = top w j bc
+               in v0 + toPrim (px + (i `shiftL` WSHFT))
+
+-- count all set bits in a chunk, do it wordwise for speed.
+countAll :: PrimeSieve -> Int
+countAll (PS _ bs) = go 0 0
+  where
+    wa :: UArray Int Word
+    wa = unsafeCoerce bs
+
+    go !ct i
+      | i == snd (bounds wa)
+      = ct
+      | otherwise
+      = go (ct + popCount (unsafeAt wa i)) (i+1)
+
+-- Find the j-th highest of bc set bits in the Word w.
+top :: Word -> Int -> Int -> Int
+top w j bc = go 0 TOPB TOPM bn w
+    where
+      !bn = bc-j
+      go !_ _ !_ !_ 0 = error "Too few bits set"
+      go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
+      go bs a msk ix wd =
+        case popCount (wd .&. msk) of
+          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `uncheckedShiftR` a)
+             | otherwise ->
+               let !na = a `shiftR` 1
+               in go bs na (msk `uncheckedShiftR` na) ix wd

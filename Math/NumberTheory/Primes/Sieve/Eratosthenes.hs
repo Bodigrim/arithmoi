@@ -21,8 +21,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , primeList
     , primeSieve
     , countFromTo
-    , countAll
-    , countToNth
     , sieveBits
     , sieveRange
     , sieveTo
@@ -38,13 +36,11 @@ import Data.Bits
 import Data.Coerce
 import Data.Proxy
 import Data.Word
-import Unsafe.Coerce
 
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Unsafe
-import Math.NumberTheory.Utils
 
 #define IX_MASK     0xFFFFF
 #define IX_BITS     20
@@ -71,9 +67,6 @@ lastIndex = sieveBits - 1
 -- Range of a chunk.
 sieveRange :: Int
 sieveRange = 30*sieveBytes
-
-sieveWords :: Int
-sieveWords = sieveBytes `quot` SIZEOF_HSWORD
 
 type CacheWord = Word64
 
@@ -424,52 +417,6 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                     else fill j (indx+1)
           fill 0 0
 
--- prime counting
-
--- find the n-th set bit in a list of PrimeSieves,
--- aka find the (n+3)-rd prime
-countToNth :: Int -> [PrimeSieve] -> Integer
-countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
-countToNth !n (PS v0 bs : more) = go n 0
-  where
-    wa :: UArray Int Word
-    wa = unsafeCoerce bs
-
-    go !k i
-      | i == sieveWords = countToNth k more
-      | otherwise
-      = let w = unsafeAt wa i
-            bc = popCount w
-        in if bc < k
-          then go (k-bc) (i+1)
-          else let j = bc - k
-                   px = top w j bc
-               in v0 + toPrim (px + (i `shiftL` WSHFT))
-
--- count all set bits in a chunk, do it wordwise for speed.
-countAll :: PrimeSieve -> Int
-countAll (PS _ bs) = go 0 0
-  where
-    wa :: UArray Int Word
-    wa = unsafeCoerce bs
-
-    go !ct i
-      | i == sieveWords = ct
-      | otherwise = go (ct + popCount (unsafeAt wa i)) (i+1)
-
--- Find the j-th highest of bc set bits in the Word w.
-top :: Word -> Int -> Int -> Int
-top w j bc = go 0 TOPB TOPM bn w
-    where
-      !bn = bc-j
-      go !_ _ !_ !_ 0 = error "Too few bits set"
-      go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
-      go bs a msk ix wd =
-        case popCount (wd .&. msk) of
-          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `uncheckedShiftR` a)
-             | otherwise ->
-               let !na = a `shiftR` 1
-               in go bs na (msk `uncheckedShiftR` na) ix wd
 
 {-# INLINE delta #-}
 delta :: Int -> Int
