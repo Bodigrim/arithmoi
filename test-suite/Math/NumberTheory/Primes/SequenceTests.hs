@@ -35,7 +35,7 @@ toEnumProperty
   => Proxy a
   -> Int
   -> Bool
-toEnumProperty _ n = n <= 0 || unPrime (toEnum n :: Prime a) == fromInteger (unPrime (nthPrime (toInteger n)))
+toEnumProperty _ n = n <= 0 || unPrime (toEnum n :: Prime a) == fromInteger (unPrime (nthPrime n))
 
 fromEnumProperty
   :: (Enum (Prime a), Integral a)

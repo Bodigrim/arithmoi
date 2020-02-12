@@ -214,7 +214,7 @@ enumFromThenToGeneric p@(Prime p') (Prime q') r@(Prime r') = case p' `compare` q
       delta = p' - q'
 
 instance Enum (Prime Integer) where
-  toEnum = nthPrime . intToInteger
+  toEnum = nthPrime
   fromEnum = integerToInt . primeCount . unPrime
   succ = succGeneric
   pred = predGeneric
@@ -224,7 +224,7 @@ instance Enum (Prime Integer) where
   enumFromThenTo = enumFromThenToGeneric
 
 instance Enum (Prime Natural) where
-  toEnum = Prime . integerToNatural . unPrime . nthPrime . intToInteger
+  toEnum = Prime . integerToNatural . unPrime . nthPrime
   fromEnum = integerToInt . primeCount . naturalToInteger . unPrime
   succ = succGeneric
   pred = predGeneric
@@ -238,7 +238,7 @@ instance Enum (Prime Int) where
     then error $ "Enum.toEnum{Prime}: " ++ show n ++ "th prime = " ++ show p ++ " is out of bounds of Int"
     else Prime (integerToInt p)
     where
-      Prime p = nthPrime (intToInteger n)
+      Prime p = nthPrime n
   fromEnum = integerToInt . primeCount . intToInteger . unPrime
   succ = succGenericBounded
   pred = predGeneric
@@ -256,7 +256,7 @@ instance Enum (Prime Word) where
     then error $ "Enum.toEnum{Prime}: " ++ show n ++ "th prime = " ++ show p ++ " is out of bounds of Word"
     else Prime (integerToWord p)
     where
-      Prime p = nthPrime (intToInteger n)
+      Prime p = nthPrime n
   fromEnum = integerToInt . primeCount . wordToInteger . unPrime
   succ = succGenericBounded
   pred = predGeneric

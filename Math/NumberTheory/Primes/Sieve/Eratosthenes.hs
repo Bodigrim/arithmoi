@@ -20,10 +20,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , psieveList
     , primeList
     , primeSieve
-    , nthPrimeCt
-    , countFromTo
-    , countAll
-    , countToNth
     , sieveBits
     , sieveRange
     , sieveTo
@@ -40,13 +36,10 @@ import Data.Coerce
 import Data.Proxy
 import Data.Word
 
-import Math.NumberTheory.Primes.Counting.Approximate
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Unsafe
-import Math.NumberTheory.Utils
-import Math.NumberTheory.Utils.FromIntegral
 
 #define IX_MASK     0xFFFFF
 #define IX_BITS     20
@@ -73,9 +66,6 @@ lastIndex = sieveBits - 1
 -- Range of a chunk.
 sieveRange :: Int
 sieveRange = 30*sieveBytes
-
-sieveWords :: Int
-sieveWords = sieveBytes `quot` SIZEOF_HSWORD
 
 type CacheWord = Word64
 
@@ -337,33 +327,8 @@ countFromToWd start end ba = do
           | eb < i    = return acc
           | otherwise = do
             w <- unsafeRead wa i
-            count (acc + bitCountWord w) (i+1)
+            count (acc + popCount w) (i+1)
     count 0 sb
-
--- count set bits between two indices (inclusive)
--- start and end must both be valid indices and start <= end
-countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
-countFromTo start end ba = do
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
-    let !sb = start `shiftR` WSHFT
-        !si = start .&. RMASK
-        !eb = end `shiftR` WSHFT
-        !ei = end .&. RMASK
-        count !acc i
-            | i == eb = do
-                w <- unsafeRead wa i
-                return (acc + bitCountWord (w `shiftL` (RMASK - ei)))
-            | otherwise = do
-                w <- unsafeRead wa i
-                count (acc + bitCountWord w) (i+1)
-    if sb < eb
-      then do
-          w <- unsafeRead wa sb
-          count (bitCountWord (w `shiftR` si)) (sb+1)
-      else do
-          w <- unsafeRead wa sb
-          let !w1 = w `shiftR` si
-          return (bitCountWord (w1 `shiftL` (RMASK - ei + si)))
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain
@@ -426,74 +391,6 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                     else fill j (indx+1)
           fill 0 0
 
--- prime counting
-
-nthPrimeCt :: Integer -> Integer
-nthPrimeCt 1      = 2
-nthPrimeCt 2      = 3
-nthPrimeCt 3      = 5
-nthPrimeCt 4      = 7
-nthPrimeCt 5      = 11
-nthPrimeCt 6      = 13
-nthPrimeCt n
-  | n < 1       = error "nthPrimeCt: negative argument"
-  | n < 200000  = let bd0 = nthPrimeApprox n
-                      bnd = bd0 + bd0 `quot` 32 + 37
-                      !sv = primeSieve bnd
-                  in countToNth (n-3) [sv]
-  | otherwise   = countToNth (n-3) (psieveFrom (intToInteger $ fromInteger n .&. (7 :: Int)))
-
--- find the n-th set bit in a list of PrimeSieves,
--- aka find the (n+3)-rd prime
-countToNth :: Integer -> [PrimeSieve] -> Integer
-countToNth !n ps = runST (countDown n ps)
-
-countDown :: Integer -> [PrimeSieve] -> ST s Integer
-countDown !n (ps@(PS v0 bs) : more)
-  | n > 278734 || (v0 /= 0 && n > 253000) = do
-    ct <- countAll ps
-    countDown (n - fromIntegral ct) more
-  | otherwise = do
-    stu <- unsafeThaw bs
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
-    let go !k i
-          | i == sieveWords  = countDown k more
-          | otherwise   = do
-            w <- unsafeRead wa i
-            let !bc = fromIntegral $ bitCountWord w
-            if bc < k
-                then go (k-bc) (i+1)
-                else let !j = fromIntegral (bc - k)
-                         !px = top w j (fromIntegral bc)
-                     in return (v0 + toPrim (px+(i `shiftL` WSHFT)))
-    go n 0
-countDown _ [] = error "Prime stream ended prematurely"
-
--- count all set bits in a chunk, do it wordwise for speed.
-countAll :: PrimeSieve -> ST s Int
-countAll (PS _ bs) = do
-    stu <- unsafeThaw bs
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) stu
-    let go !ct i
-            | i == sieveWords = return ct
-            | otherwise = do
-                w <- unsafeRead wa i
-                go (ct + bitCountWord w) (i+1)
-    go 0 0
-
--- Find the j-th highest of bc set bits in the Word w.
-top :: Word -> Int -> Int -> Int
-top w j bc = go 0 TOPB TOPM bn w
-    where
-      !bn = bc-j
-      go !_ _ !_ !_ 0 = error "Too few bits set"
-      go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
-      go bs a msk ix wd =
-        case bitCountWord (wd .&. msk) of
-          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `uncheckedShiftR` a)
-             | otherwise ->
-               let !na = a `shiftR` 1
-               in go bs na (msk `uncheckedShiftR` na) ix wd
 
 {-# INLINE delta #-}
 delta :: Int -> Int

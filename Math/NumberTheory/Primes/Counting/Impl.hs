@@ -16,24 +16,23 @@ module Math.NumberTheory.Primes.Counting.Impl
     ( primeCount
     , primeCountMaxArg
     , nthPrime
-    , nthPrimeMaxArg
     ) where
 
 #include "MachDeps.h"
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange, countFromTo, countToNth, countAll, nthPrimeCt)
+    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
-import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Unsafe
 
-import Data.Array.ST
 import Control.Monad.ST
+import Data.Array.ST
 import Data.Bits
 import Data.Int
+import Unsafe.Coerce
 
 -- | Maximal allowed argument of 'primeCount'. Currently 8e18.
 primeCountMaxArg :: Integer
@@ -69,26 +68,32 @@ primeCount n
             !pdf = sieveCount ub cs sr
         in phn1 - pdf
 
--- | Maximal allowed argument of 'nthPrime'. Currently 1.5e17.
-nthPrimeMaxArg :: Integer
-nthPrimeMaxArg = 150000000000000000
-
 -- | @'nthPrime' n@ calculates the @n@-th prime. Numbering of primes is
 --   @1@-based, so @'nthPrime' 1 == 2@.
 --
 --   Requires @/O/((n*log n)^0.5)@ space, the time complexity is roughly @/O/((n*log n)^0.7@.
---   The argument must be strictly positive, and must not exceed 'nthPrimeMaxArg'.
-nthPrime :: Integer -> Prime Integer
+--   The argument must be strictly positive.
+nthPrime :: Int -> Prime Integer
+nthPrime 1 = Prime 2
+nthPrime 2 = Prime 3
+nthPrime 3 = Prime 5
+nthPrime 4 = Prime 7
+nthPrime 5 = Prime 11
+nthPrime 6 = Prime 13
 nthPrime n
-    | n < 1         = error "Prime indexing starts at 1"
-    | n > nthPrimeMaxArg = error $ "nthPrime: can't handle index " ++ show n
-    | n < 200000    = Prime $ nthPrimeCt n
-    | ct0 < n       = Prime $ tooLow n p0 (n-ct0) approxGap
-    | otherwise     = Prime $ tooHigh n p0 (ct0-n) approxGap
+    | n < 1
+    = error "Prime indexing starts at 1"
+    | n < 200000
+    = Prime $ countToNth (n - 3) [primeSieve (p0 + p0 `quot` 32 + 37)]
+    | p0 > toInteger (maxBound :: Int)
+    = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
+    | miss > 0
+    = Prime $ tooLow  n (fromInteger p0) miss
+    | otherwise
+    = Prime $ tooHigh n (fromInteger p0) (negate miss)
       where
-        p0 = nthPrimeApprox n
-        approxGap = (7 * fromIntegral (integerLog2' p0)) `quot` 10
-        ct0 = primeCount p0
+        p0 = nthPrimeApprox (toInteger n)
+        miss = n - fromInteger (primeCount p0)
 
 --------------------------------------------------------------------------------
 --                                The Works                                   --
@@ -98,36 +103,43 @@ nthPrime n
 -- Not too pressing, since I think a) nthPrimeApprox always underestimates
 -- in the range we can handle, and b) it's always "goodEnough"
 
-tooLow :: Integer -> Integer -> Integer -> Integer -> Integer
-tooLow n a miss gap
-    | goodEnough    = lowSieve a miss
-    | c1 < n        = lowSieve p1 (n-c1)
-    | otherwise     = lowSieve a miss   -- a third count wouldn't make it faster, I think
-      where
-        est = miss*gap
-        p1  = a + (est * 19) `quot` 20
-        goodEnough = 3*est*est*est < 2*p1*p1    -- a second counting would be more work than sieving
-        c1  = primeCount p1
+tooLow :: Int -> Int -> Int -> Integer
+tooLow n p0 shortage
+  | p1 > toInteger (maxBound :: Int)
+  = error $ "nthPrime: index " ++ show n ++ " is too large to handle"
+  | goodEnough
+  = lowSieve p0 shortage
+  | c1 < n
+  = lowSieve (fromInteger p1) (n-c1)
+  | otherwise
+  = lowSieve p0 shortage   -- a third count wouldn't make it faster, I think
+  where
+    gap = truncate (log (fromIntegral p0 :: Double))
+    est = toInteger shortage * gap
+    p1  = toInteger p0 + est
+    goodEnough = 3*est*est*est < 2*p1*p1    -- a second counting would be more work than sieving
+    c1  = fromInteger (primeCount p1)
 
-tooHigh :: Integer -> Integer -> Integer -> Integer -> Integer
-tooHigh n a surp gap
-    | c < n     = lowSieve b (n-c)
-    | otherwise = tooHigh n b (c-n) gap
-      where
-        b = a - (surp * gap * 11) `quot` 10
-        c = primeCount b
+tooHigh :: Int -> Int -> Int -> Integer
+tooHigh n p0 surplus
+  | c < n
+  = lowSieve b (n-c)
+  | otherwise
+  = tooHigh n b (c-n)
+  where
+    gap = truncate (log (fromIntegral p0 :: Double))
+    b = p0 - (surplus * gap * 11) `quot` 10
+    c = fromInteger (primeCount (toInteger b))
 
-lowSieve :: Integer -> Integer -> Integer
+lowSieve :: Int -> Int -> Integer
 lowSieve a miss = countToNth (miss+rep) psieves
       where
-        strt = if (fromInteger a .&. (1 :: Int)) == 1
-                 then a+2
-                 else a+1
-        psieves@(PS vO ba:_) = psieveFrom strt
+        strt = a + 1 + (a .&. 1)
+        psieves@(PS vO ba:_) = psieveFrom (toInteger strt)
         rep | o0 < 0    = 0
             | otherwise = sum [1 | i <- [0 .. r2], ba `unsafeAt` i]
               where
-                o0 = strt - vO - 9   -- (strt - 2) - v0 - 7
+                o0 = toInteger strt - vO - 9   -- (strt - 2) - v0 - 7
                 r0 = fromInteger o0 `rem` 30
                 r1 = r0 `quot` 3
                 r2 = min 7 (if r1 > 5 then r1-1 else r1)
@@ -189,7 +201,7 @@ sieveCountST ub cr sr = do
                               let nbtw = btw + lac + 1 + fromIntegral new
                               eat (acc+nbtw) nbtw (fromIntegral vO) (wi-1) (li+1) nstu more
                           ctLoop lac s (ps : more) = do
-                              !new <- countAll ps
+                              let !new = countAll ps
                               ctLoop (lac + fromIntegral new) (s-1) more
                           ctLoop _ _ [] = error "Primes ended"
                       new <- countFromTo si (sieveBits-1) stu
@@ -398,3 +410,94 @@ cpGpAr = runSTUArray $ do
     note 26 13
     accumulate 2 30027
 
+-------------------------------------------------------------------------------
+-- Prime counting
+
+#if SIZEOF_HSWORD == 8
+
+#define RMASK 63
+#define WSHFT 6
+#define TOPB 32
+#define TOPM 0xFFFFFFFF
+
+#else
+
+#define RMASK 31
+#define WSHFT 5
+#define TOPB 16
+#define TOPM 0xFFFF
+
+#endif
+
+-- find the n-th set bit in a list of PrimeSieves,
+-- aka find the (n+3)-rd prime
+countToNth :: Int -> [PrimeSieve] -> Integer
+countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
+countToNth !n (PS v0 bs : more) = go n 0
+  where
+    wa :: UArray Int Word
+    wa = unsafeCoerce bs
+
+    go !k i
+      | i == snd (bounds wa)
+      = countToNth k more
+      | otherwise
+      = let w = unsafeAt wa i
+            bc = popCount w
+        in if bc < k
+          then go (k-bc) (i+1)
+          else let j = bc - k
+                   px = top w j bc
+               in v0 + toPrim (px + (i `shiftL` WSHFT))
+
+-- count all set bits in a chunk, do it wordwise for speed.
+countAll :: PrimeSieve -> Int
+countAll (PS _ bs) = go 0 0
+  where
+    wa :: UArray Int Word
+    wa = unsafeCoerce bs
+
+    go !ct i
+      | i == snd (bounds wa)
+      = ct
+      | otherwise
+      = go (ct + popCount (unsafeAt wa i)) (i+1)
+
+-- Find the j-th highest of bc set bits in the Word w.
+top :: Word -> Int -> Int -> Int
+top w j bc = go 0 TOPB TOPM bn w
+    where
+      !bn = bc-j
+      go !_ _ !_ !_ 0 = error "Too few bits set"
+      go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
+      go bs a msk ix wd =
+        case popCount (wd .&. msk) of
+          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `unsafeShiftR` a)
+             | otherwise ->
+               let !na = a `shiftR` 1
+               in go bs na (msk `unsafeShiftR` na) ix wd
+
+-- count set bits between two indices (inclusive)
+-- start and end must both be valid indices and start <= end
+countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
+countFromTo start end ba = do
+    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
+    let !sb = start `shiftR` WSHFT
+        !si = start .&. RMASK
+        !eb = end `shiftR` WSHFT
+        !ei = end .&. RMASK
+        count !acc i
+            | i == eb = do
+                w <- unsafeRead wa i
+                return (acc + popCount (w `shiftL` (RMASK - ei)))
+            | otherwise = do
+                w <- unsafeRead wa i
+                count (acc + popCount w) (i+1)
+    if sb < eb
+      then do
+          w <- unsafeRead wa sb
+          count (popCount (w `shiftR` si)) (sb+1)
+      else do
+          w <- unsafeRead wa sb
+          let !w1 = w `shiftR` si
+          return (popCount (w1 `shiftL` (RMASK - ei + si)))

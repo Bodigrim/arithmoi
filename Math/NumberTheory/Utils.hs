@@ -13,10 +13,6 @@ module Math.NumberTheory.Utils
     , shiftToOdd#
     , shiftToOddCount#
     , shiftToOddCountBigNat
-    , bitCountWord
-    , bitCountInt
-    , bitCountWord#
-    , uncheckedShiftR
     , splitOff
     , splitOff#
 
@@ -39,9 +35,6 @@ import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
 import GHC.Integer.GMP.Internals
 import GHC.Natural
-
-uncheckedShiftR :: Word -> Int -> Word
-uncheckedShiftR (W# w#) (I# i#) = W# (uncheckedShiftRL# w# i#)
 
 -- | Remove factors of @2@ and count them. If
 --   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
@@ -150,19 +143,6 @@ shiftToOdd# w# = uncheckedShiftRL# w# (word2Int# (ctz# w#))
 shiftToOddCount# :: Word# -> (# Word#, Word# #)
 shiftToOddCount# w# = case ctz# w# of
                         k# -> (# k#, uncheckedShiftRL# w# (word2Int# k#) #)
-
--- | Number of 1-bits in a @'Word#'@.
-bitCountWord# :: Word# -> Int#
-bitCountWord# w# = case bitCountWord (W# w#) of
-                     I# i# -> i#
-
--- | Number of 1-bits in a @'Word'@.
-bitCountWord :: Word -> Int
-bitCountWord = popCount
-
--- | Number of 1-bits in an @'Int'@.
-bitCountInt :: Int -> Int
-bitCountInt = popCount
 
 splitOff :: (Eq a, GcdDomain a) => a -> a -> (Word, a)
 splitOff p n

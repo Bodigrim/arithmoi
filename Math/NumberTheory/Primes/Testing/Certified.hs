@@ -13,20 +13,20 @@ module Math.NumberTheory.Primes.Testing.Certified
   ( isCertifiedPrime
   ) where
 
-import Data.List
-import Data.Bits
+import Data.List (foldl')
+import Data.Bits ((.&.))
 import Data.Mod
 import Data.Proxy
-import GHC.Integer.GMP.Internals
+import GHC.Integer.GMP.Internals (powModInteger)
 import GHC.TypeNats.Compat
 
-import Math.NumberTheory.Roots
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes (unPrime)
-import Math.NumberTheory.Primes.Factorisation.TrialDivision
-import Math.NumberTheory.Primes.Factorisation.Montgomery
-import Math.NumberTheory.Primes.Testing.Probabilistic (isPrime, isStrongFermatPP, lucasTest, bailliePSW)
+import Math.NumberTheory.Primes.Factorisation.TrialDivision (trialDivisionPrimeTo, trialDivisionTo, trialDivisionWith)
+import Math.NumberTheory.Primes.Factorisation.Montgomery (montgomeryFactorisation, smallFactors, findParms)
+import Math.NumberTheory.Primes.Testing.Probabilistic (bailliePSW, isPrime, isStrongFermatPP, lucasTest)
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve)
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils (splitOff)
 
 -- | @'isCertifiedPrime' n@ tests primality of @n@, first trial division
 --   by small primes is performed, then a Baillie PSW test and finally a
@@ -43,41 +43,6 @@ isCertifiedPrime n
 -- use the verified bound 10^17, I don't know whether Gilchrist's result has been
 -- verified yet.
 
-
--- | A certificate of either compositeness or primality of an
---   'Integer'. Only numbers @> 1@ can be certified, trying to
---   create a certificate for other numbers raises an error.
-data Certificate
-    = Composite !CompositenessProof
-    | Prime !PrimalityProof
-      deriving Show
-
--- | A proof of compositeness of a positive number. The type is
---   abstract to ensure the validity of proofs.
-data CompositenessProof
-    = Factors { composite :: !Integer           -- ^ The number whose compositeness is proved.
-              , firstFactor
-              , secondFactor :: !Integer }
-    | StrongFermat { composite :: !Integer      -- ^ The number whose compositeness is proved.
-                   , witness :: !Integer }
-    | LucasSelfridge { composite :: !Integer    -- ^ The number whose compositeness is proved.
-                     }
-      deriving Show
-
--- | An argument for compositeness of a number (which must be @> 1@).
---   'CompositenessProof's translate directly to 'CompositenessArgument's,
---   correct arguments can be transformed into proofs. This type allows the
---   manipulation of proofs while maintaining their correctness.
---   The only way to access components of a 'CompositenessProof' except
---   the composite is through this type.
-data CompositenessArgument
-    = Divisors { compo, firstDivisor, secondDivisor :: Integer }
-                                                -- ^ @compo == firstDiv*secondDiv@, where all are @> 1@
-    | Fermat { compo, fermatBase :: Integer }   -- ^ @compo@ fails the strong Fermat test for @fermatBase@
-    | Lucas { compo :: Integer }                -- ^ @compo@ fails the Lucas-Selfridge test
-    | Belief { compo :: Integer }               -- ^ No particular reason given
-      deriving (Show, Read, Eq, Ord)
-
 -- | A proof of primality of a positive number. The type is
 --   abstract to ensure the validity of proofs.
 data PrimalityProof
@@ -90,22 +55,6 @@ data PrimalityProof
     | Trivial { cprime :: !Integer              -- ^ The number whose primality is proved.
               }
       deriving Show
-
--- | An argument for primality of a number (which must be @> 1@).
---   'PrimalityProof's translate directly to 'PrimalityArgument's,
---   correct arguments can be transformed into proofs. This type allows the
---   manipulation of proofs while maintaining their correctness.
---   The only way to access components of a 'PrimalityProof' except
---   the prime is through this type.
-data PrimalityArgument
-    = Pock { aprime :: Integer
-           , largeFactor, smallFactor :: Integer
-           , factorList :: [(Integer, Word, Integer, PrimalityArgument)]
-           }                                 -- ^ A suggested Pocklington certificate
-    | Division { aprime, alimit :: Integer } -- ^ Primality should be provable by trial division to @alimit@
-    | Obvious { aprime :: Integer }          -- ^ @aprime@ is said to be obviously prime, that holds for primes @< 30@
-    | Assumption { aprime :: Integer }       -- ^ Primality assumed
-      deriving (Show, Read, Eq, Ord)
 
 -- | Check the validity of a 'PrimalityProof'. Since it should be
 --   impossible to create invalid proofs by the public interface, this
@@ -143,25 +92,25 @@ smallCert n
 -- | @'certify' n@ constructs, for @n > 1@, a proof of either
 --   primality or compositeness of @n@. This may take a very long
 --   time if the number has no small(ish) prime divisors
-certify :: Integer -> Certificate
+certify :: Integer -> Maybe PrimalityProof
 certify n
     | n < 2     = error "Only numbers larger than 1 can be certified"
     | n < 31    = case trialDivisionWith trivialPrimes n of
-                    ((p,_):_) | p < n     -> Composite (Factors n p (n `quot` p))
-                              | otherwise -> Prime (Trivial n)
+                    ((p,_):_) | p < n     -> Nothing
+                              | otherwise -> Just (Trivial n)
                     _ -> error "Impossible"
     | n < billi = let r2 = integerSquareRoot n + 2 in
                   case trialDivisionTo r2 n of
-                    ((p,_):_) | p < n       -> Composite (Factors n p (n `quot` p))
-                              | otherwise   -> Prime (TrialDivision n r2)
+                    ((p,_):_) | p < n       -> Nothing
+                              | otherwise   -> Just (TrialDivision n r2)
                     _ -> error "Impossible"
     | otherwise = case smallFactors (fromInteger (abs n)) of
-                    ([], Just _) | not (isStrongFermatPP n 2) -> Composite (StrongFermat n 2)
-                                 | not (lucasTest n) -> Composite (LucasSelfridge n)
-                                 | otherwise -> Prime (certifyBPSW n)       -- if it isn't we error and ask for a report.
+                    ([], Just _) | not (isStrongFermatPP n 2) -> Nothing
+                                 | not (lucasTest n) -> Nothing
+                                 | otherwise -> Just (certifyBPSW n)       -- if it isn't we error and ask for a report.
                     ((toInteger -> p,_):_, _)
-                      | p == n -> Prime (TrialDivision n (min 100000 n))
-                      | otherwise -> Composite (Factors n p (n `quot` p))
+                      | p == n -> Just (TrialDivision n (min 100000 n))
+                      | otherwise -> Nothing
                     _ -> error ("***Error factorising " ++ show n ++ "! Please report this to maintainer of arithmoi.")
       where
         billi = 1000000000000
@@ -189,11 +138,10 @@ certifyBPSW n = Pocklington n a b kfcts
             | y /= 1    = error (bpswMessage n ++ fermat bs)
             | byTD      = (p,e,bs, smallCert p)
             | otherwise = case certify p of
-                            Composite cpr -> error ("***Error in factorisation code: " ++ show p
+                            Nothing -> error ("***Error in factorisation code: " ++ show p
                                                         ++ " was supposed to be prime but isn't.\n"
-                                                        ++ "Please report this to the maintainer.\n\n"
-                                                        ++ show cpr)
-                            Prime ppr ->(p,e,bs,ppr)
+                                                        ++ "Please report this to the maintainer.\n\n")
+                            Just ppr ->(p,e,bs,ppr)
               where
                 q = nm1 `quot` p
                 x = powModInteger bs q n
@@ -248,12 +196,13 @@ findLoop n lo hi ct s
 bpswMessage :: Integer -> String
 bpswMessage n = unlines
                     [ "\n***Congratulations! You found a Baillie PSW pseudoprime!"
-                    , "Please report this finding to the package maintainer,"
-                    , "<daniel.is.fischer@googlemail.com>"
+                    , "Please report this finding to the maintainers:"
+                    , "<daniel.is.fischer@googlemail.com>,"
+                    , "<andrew.lelechenko@gmail.com>"
                     , "The number in question is:\n"
                     , show n
                     , "\nOther parties like wikipedia might also be interested."
-                    , "\nSorry for aborting your programme, but this is a major discovery."
+                    , "\nSorry for aborting your programm, but this is a major discovery."
                     ]
 
 -- | Found a factor
