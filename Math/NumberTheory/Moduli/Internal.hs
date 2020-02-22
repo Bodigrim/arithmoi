@@ -7,17 +7,24 @@
 -- Multiplicative groups of integers modulo m.
 --
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeOperators       #-}
 
 module Math.NumberTheory.Moduli.Internal
   ( isPrimitiveRoot'
   , discreteLogarithmPP
   ) where
 
+import Data.Constraint
+import Data.Constraint.Nat hiding (Mod)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Mod
+import qualified Data.Mod.Word as Word
 import Data.Proxy
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats.Compat
@@ -83,44 +90,63 @@ theta p pkMinusOne a = (numerator `quot` pk) `rem` pkMinusOne
 -- made redundant, since n would be prime.
 discreteLogarithmPrime :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrime p a b
-  | p < 100000000 = fromIntegral $ discreteLogarithmPrimeBSGS (fromInteger p) (fromInteger a) (fromInteger b)
-  | otherwise     = discreteLogarithmPrimePollard p a b
+  | p < 100000000 = case someNatVal (fromInteger p) of
+    SomeNat (_ :: Proxy p) -> fromIntegral $ discreteLogarithmPrimeBSGS @p (fromInteger a) (fromInteger b)
+  | otherwise     = case someNatVal (fromInteger p - 1) of
+    SomeNat (_ :: Proxy p_1) -> case plusNat @p_1 @1 of
+      Sub Dict -> unMod $ discreteLogarithmPrimePollard @p_1 (fromInteger a) (fromInteger b)
 
-discreteLogarithmPrimeBSGS :: Int -> Int -> Int -> Int
-discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
+discreteLogarithmPrimeBSGS
+  :: KnownNat p
+  => Word.Mod p
+  -> Word.Mod p
+  -> Word
+discreteLogarithmPrimeBSGS a b = head [i * m + j | (v, i) <- zip giants [0 .. m - 1], j <- maybeToList (M.lookup v table)]
   where
+    p        = fromIntegral (natVal a)
     m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
-    babies   = iterate (.* a) 1
-    table    = M.fromList (zip babies [0..m-1])
-    aInv     = recipModInteger (toInteger a) (toInteger p)
-    bigGiant = fromInteger $ powModInteger aInv (toInteger m) (toInteger p)
-    giants   = iterate (.* bigGiant) b
-    x .* y   = x * y `rem` p
+    babies   = iterate (* a) 1
+    table    = M.fromList (zip babies [0 .. m - 1])
+    bigGiant = recip a Word.^% m
+    giants   = iterate (* bigGiant) b
+
+type Triple p_1 = (Mod (p_1 + 1), Mod p_1, Mod p_1)
 
 -- TODO: Use more advanced walks, in order to reduce divisions, cf
 -- https://maths-people.anu.edu.au/~brent/pd/rpb231.pdf
 -- This will slightly improve the expected time to collision, and can reduce the
 -- number of divisions performed.
-discreteLogarithmPrimePollard :: Integer -> Integer -> Integer -> Natural
-discreteLogarithmPrimePollard p a b =
-  case concatMap runPollard [(x,y) | x <- [0..n], y <- [0..n]] of
-    (t:_)  -> fromInteger t
-    []     -> error ("discreteLogarithm: pollard's rho failed, please report this as a bug. inputs " ++ show [p,a,b])
+discreteLogarithmPrimePollard
+  :: forall p_1.
+     (KnownNat p_1, KnownNat (p_1 + 1))
+  => Mod (p_1 + 1)
+  -> Mod (p_1 + 1)
+  -> Mod p_1
+discreteLogarithmPrimePollard a b =
+  case concatMap runPollard [(x,y) | x <- [minBound..maxBound], y <- [minBound..maxBound]] of
+    (t:_)  -> t
+    []     -> error ("discreteLogarithm: pollard's rho failed, please report this as a bug. inputs " ++ show (n, a, b))
   where
-    n                 = p-1 -- order of the cyclic group
-    halfN             = n `quot` 2
-    mul2 m            = if m < halfN then m * 2 else m * 2 - n
-    sqrtN             = integerSquareRoot n
-    step (xi,!ai,!bi) = case xi `rem` 3 of
-                          0 -> (xi*xi `rem` p, mul2 ai, mul2 bi)
-                          1 -> ( a*xi `rem` p,    ai+1,      bi)
-                          _ -> ( b*xi `rem` p,      ai,    bi+1)
-    initialise (x,y)  = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
-    begin t           = go (step t) (step (step t))
-    check t           = powModInteger a t p == b
-    go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
-      | xi == x2i, gcd (bi - b2i) n < sqrtN = case someNatVal (fromInteger n) of
-        SomeNat (Proxy :: Proxy n) -> map (toInteger . unMod) $ solveLinear (fromInteger (bi - b2i) :: Mod n) (fromInteger (ai - a2i))
-      | xi == x2i                           = []
-      | otherwise                           = go (step tort) (step (step hare))
-    runPollard        = filter check . begin . initialise
+    n     = natVal (Proxy :: Proxy p_1) -- order of the cyclic group
+    sqrtN = integerSquareRoot n
+
+    step :: Triple p_1 -> Triple p_1
+    step (xi, !ai, !bi) = case unMod xi `rem` 3 of
+      0 -> (xi * xi, ai + ai, bi + bi)
+      1 -> ( a * xi,  1 + ai,      bi)
+      _ -> ( b * xi,      ai,  1 + bi)
+
+    initialise (x, y) = (a ^% unMod x * b ^% unMod y, x, y)
+
+    begin t = go (step t) (step (step t))
+
+    go :: Triple p_1 -> Triple p_1 -> [Mod p_1]
+    go tort@(xi, ai, bi) hare@(x2i, a2i, b2i)
+      | xi == x2i, gcd (unMod (bi - b2i)) n < sqrtN
+      = solveLinear (bi - b2i) (ai - a2i)
+      | xi == x2i
+      = []
+      | otherwise
+      = go (step tort) (step (step hare))
+
+    runPollard = filter (\t -> a ^% unMod t == b) . begin . initialise
