@@ -51,12 +51,15 @@ isPrimitiveRoot' cg r =
     CGOddPrimePower p k       -> oddPrimePowerTest (unPrime p) k r
     CGDoubleOddPrimePower p k -> doubleOddPrimePowerTest (unPrime p) k r
   where
-    oddPrimeTest p g              = let phi  = totient p
-                                        pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
-                                        exps = map (\x -> powMod g x p) pows
-                                     in g /= 0 && gcd g p == 1 && notElem 1 exps
-    oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
-    oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
+    oddPrimeTest p g = g /= 0 && gcd g p == 1 && notElem 1 exps
+      where
+        phi  = totient p
+        pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
+        exps = map (\x -> powMod g x p) pows
+
+    oddPrimePowerTest p 1 g = oddPrimeTest p (g `mod` p)
+    oddPrimePowerTest p _ g = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
+
     doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
 
 -- Implementation of Bach reduction (https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf)
@@ -65,7 +68,7 @@ discreteLogarithmPP :: Integer -> Word -> Integer -> Integer -> Natural
 discreteLogarithmPP p 1 a b = discreteLogarithmPrime p a b
 discreteLogarithmPP p k a b = fromInteger $ if result < 0 then result + pkMinusPk1 else result
   where
-    baseSol    = toInteger $ discreteLogarithmPrime p (a `rem` p) (b `rem` p)
+    baseSol    = toInteger $ discreteLogarithmPrime p a b
     thetaA     = theta p pkMinusOne a
     thetaB     = theta p pkMinusOne b
     pkMinusOne = p^(k-1)
@@ -76,11 +79,13 @@ discreteLogarithmPP p k a b = fromInteger $ if result < 0 then result + pkMinusP
 -- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
 {-# INLINE theta #-}
 theta :: Integer -> Integer -> Integer -> Integer
-theta p pkMinusOne a = (numerator `quot` pk) `rem` pkMinusOne
+theta p pkMinusOne a = toInteger numerator `quot` pk
   where
-    pk           = pkMinusOne * p
-    p2kMinusOne  = pkMinusOne * pk
-    numerator    = (powModInteger a (pk - pkMinusOne) p2kMinusOne - 1) `rem` p2kMinusOne
+    pk    = pkMinusOne * p
+    p2k_1 = pkMinusOne * pk
+    numerator    = case someNatVal (fromInteger p2k_1) of
+      SomeNat (_ :: Proxy p2k_1) ->
+        unMod (fromInteger a ^% (pk - pkMinusOne) - 1 :: Mod p2k_1)
 
 -- TODO: Use Pollig-Hellman to reduce the problem further into groups of prime order.
 -- While Bach reduction simplifies the problem into groups of the form (Z/pZ)*, these
