@@ -44,8 +44,9 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 import Control.Arrow
 import Control.Monad.Trans.State.Lazy
 import System.Random
+import Data.Bit (Bit(..))
 import Data.Bits
-import Data.BitStream
+import Data.Chimera (UChimera, tabulate, index)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
 import Data.List (foldl')
@@ -353,10 +354,10 @@ enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
     progression = pFrom : pThen : zipWith (\x0 x1 -> add x0 pStep x1) progression (tail progression)
 
 isPrime2 :: Word -> Word -> Bool
-isPrime2 hi lo = index primeBS (hi `div` 210 * 24 + lo)
+isPrime2 hi lo = unBit $ index primeBS (hi `div` 210 * 24 + lo)
 
-primeBS :: BitStream
-primeBS = tabulate f
+primeBS :: UChimera Bit
+primeBS = tabulate (Bit . f)
   where
     f :: Word -> Bool
     f n = millerRabinV 0 (fromIntegral $ hi + lo) || millerRabinV 0 (fromIntegral $ hi - lo)
