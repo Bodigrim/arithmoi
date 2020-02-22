@@ -34,7 +34,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Recurrences.Bilinear
-  ( binomial
+  ( -- * Pascal triangle
+    binomial
+  , binomialRotated
+  , binomialLine
+  , binomialDiagonal
+    -- * Other recurrences
   , stirling1
   , stirling2
   , lah
@@ -50,29 +55,74 @@ import Data.Euclidean (GcdDomain(..))
 import Data.List
 import Data.Maybe
 import Data.Ratio
+import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.Recurrences.Linear (factorial)
 
--- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle):
--- @binomial !! n !! k == n! \/ k! \/ (n - k)!@.
+-- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle).
 --
--- >>> take 5 (map (take 5) binomial)
--- [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1]]
+-- prop> binomial !! n !! k == n! / k! / (n - k)!
 --
--- Complexity: @binomial !! n !! k@ is O(n) bits long, its computation
--- takes O(k n) time and forces thunks @binomial !! n !! i@ for @0 <= i <= k@.
--- Use the symmetry of Pascal triangle @binomial !! n !! k == binomial !! n !! (n - k)@ to speed up computations.
+-- Note that 'binomial' !! n !! k is asymptotically slower
+-- than 'binomialLine' n !! k,
+-- but imposes only 'Semiring' constraint.
 --
--- One could also consider 'Math.Combinat.Numbers.binomial' to compute stand-alone values.
-binomial :: (Num a, GcdDomain a) => [[a]]
-binomial = map f [0..]
-  where
-    f n = scanl (\x k -> fromJust $ x * (fromInteger $ n - k + 1) `divide` fromInteger k) 1 [1..n]
+-- >>> take 6 binomial :: [[Int]]
+-- [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1],[1,5,10,10,5,1]]
+binomial :: Semiring a => [[a]]
+binomial = iterate (\l -> zipWith plus (l ++ [zero]) (zero : l)) [one]
 {-# SPECIALIZE binomial :: [[Int]]     #-}
 {-# SPECIALIZE binomial :: [[Word]]    #-}
 {-# SPECIALIZE binomial :: [[Integer]] #-}
 {-# SPECIALIZE binomial :: [[Natural]] #-}
+
+-- | Pascal triangle, rotated by 45 degrees.
+--
+-- prop> binomialRotated !! n !! k == (n + k)! / n! / k! == binomial !! (n + k) !! k
+--
+-- Note that 'binomialRotated' !! n !! k is asymptotically slower
+-- than 'binomialDiagonal' n !! k,
+-- but imposes only 'Semiring' constraint.
+--
+-- >>> take 6 (map (take 6) binomialRotated) :: [[Int]]
+-- [[1,1,1,1,1,1],[1,2,3,4,5,6],[1,3,6,10,15,21],[1,4,10,20,35,56],[1,5,15,35,70,126],[1,6,21,56,126,252]]
+binomialRotated :: Semiring a => [[a]]
+binomialRotated = iterate (tail . scanl' plus zero) (repeat one)
+{-# SPECIALIZE binomialRotated :: [[Int]]     #-}
+{-# SPECIALIZE binomialRotated :: [[Word]]    #-}
+{-# SPECIALIZE binomialRotated :: [[Integer]] #-}
+{-# SPECIALIZE binomialRotated :: [[Natural]] #-}
+
+-- | The n-th (zero-based) line of 'binomial'
+-- (and the n-th diagonal of 'binomialRotated').
+--
+-- >>> binomialLine 5
+-- [1,5,10,10,5,1]
+binomialLine :: (Enum a, GcdDomain a) => a -> [a]
+binomialLine n = scanl'
+  (\x (k, nk1) -> fromJust $ (x `times` nk1) `divide` k)
+  one
+  (zip [one..n] [n, pred n..one])
+{-# SPECIALIZE binomialLine :: Int     -> [Int]     #-}
+{-# SPECIALIZE binomialLine :: Word    -> [Word]    #-}
+{-# SPECIALIZE binomialLine :: Integer -> [Integer] #-}
+{-# SPECIALIZE binomialLine :: Natural -> [Natural] #-}
+
+-- | The n-th (zero-based) diagonal of 'binomial'
+-- (and the n-th line of 'binomialRotated').
+--
+-- >>> take 6 (binomialDiagonal 5)
+-- [1,6,21,56,126,252]
+binomialDiagonal :: (Enum a, GcdDomain a) => a -> [a]
+binomialDiagonal n = scanl'
+  (\x k -> fromJust $ (x `times` (n `plus` k) `divide` k))
+  one
+  [one..]
+{-# SPECIALIZE binomialDiagonal :: Int     -> [Int]     #-}
+{-# SPECIALIZE binomialDiagonal :: Word    -> [Word]    #-}
+{-# SPECIALIZE binomialDiagonal :: Integer -> [Integer] #-}
+{-# SPECIALIZE binomialDiagonal :: Natural -> [Natural] #-}
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --

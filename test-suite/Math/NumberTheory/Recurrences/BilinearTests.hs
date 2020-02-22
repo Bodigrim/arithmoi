@@ -20,10 +20,7 @@ import Test.Tasty.HUnit
 
 import Data.Ratio
 
-import Math.NumberTheory.Recurrences.Bilinear (bernoulli, binomial, euler,
-                                               eulerian1, eulerian2,
-                                               eulerPolyAt1, lah, stirling1,
-                                               stirling2)
+import Math.NumberTheory.Recurrences.Bilinear
 import Math.NumberTheory.TestUtils
 
 binomialProperty1 :: NonNegative Int -> Bool
@@ -41,6 +38,35 @@ binomialProperty4 (Positive i) (Positive j)
   || binomial @Integer !! i !! j
   == binomial !! (i - 1) !! (j - 1)
   +  binomial !! (i - 1) !! j
+
+binomialRotatedProperty2 :: NonNegative Int -> Bool
+binomialRotatedProperty2 (NonNegative i) = binomialRotated @Integer !! i !! 0 == 1
+
+binomialRotatedProperty3 :: NonNegative Int -> Bool
+binomialRotatedProperty3 (NonNegative i) = binomialRotated @Integer !! 0 !! i == 1
+
+binomialRotatedProperty4 :: Positive Int -> Positive Int -> Bool
+binomialRotatedProperty4 (Positive i) (Positive j)
+  =  binomialRotated @Integer !! i !! j
+  == binomialRotated !! i !! (j - 1)
+  +  binomialRotated !! (i - 1) !! j
+
+binomialLineProperty1 :: NonNegative Int -> NonNegative Int -> Bool
+binomialLineProperty1 (NonNegative i) (NonNegative j)
+  =  j >= i
+  || binomial @Integer !! i !! j == binomialLine (toInteger i) !! j
+
+binomialLineProperty2 :: NonNegative Int -> NonNegative Int -> Bool
+binomialLineProperty2 (NonNegative i) (NonNegative j)
+  = binomialRotated @Integer !! i !! j == binomialLine (toInteger (i + j)) !! j
+
+binomialDiagonalProperty1 :: NonNegative Int -> NonNegative Int -> Bool
+binomialDiagonalProperty1 (NonNegative i) (NonNegative j)
+  = binomialRotated @Integer !! i !! j == binomialDiagonal (toInteger i) !! j
+
+binomialDiagonalProperty2 :: NonNegative Int -> NonNegative Int -> Bool
+binomialDiagonalProperty2 (NonNegative i) (NonNegative j)
+  = binomial @Integer !! (i + j) !! j == binomialDiagonal (toInteger i) !! j
 
 stirling1Property1 :: NonNegative Int -> Bool
 stirling1Property1 (NonNegative i) = length (stirling1 !! i) == i + 1
@@ -186,6 +212,15 @@ testSuite = testGroup "Bilinear"
     , testSmallAndQuick "left side"  binomialProperty2
     , testSmallAndQuick "right side" binomialProperty3
     , testSmallAndQuick "recurrency" binomialProperty4
+    , testSmallAndQuick "line"       binomialLineProperty1
+    , testSmallAndQuick "diagonal"   binomialDiagonalProperty2
+    ]
+  , testGroup "binomialRotated"
+    [ testSmallAndQuick "left side"  binomialRotatedProperty2
+    , testSmallAndQuick "right side" binomialRotatedProperty3
+    , testSmallAndQuick "recurrency" binomialRotatedProperty4
+    , testSmallAndQuick "line"       binomialLineProperty2
+    , testSmallAndQuick "diagonal"   binomialDiagonalProperty1
     ]
   , testGroup "stirling1"
     [ testSmallAndQuick "shape"      stirling1Property1
