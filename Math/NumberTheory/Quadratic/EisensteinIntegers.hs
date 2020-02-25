@@ -303,8 +303,7 @@ divideByPrime p p' np k = go k 0
             where
                 (d1, z') = go1 c 0 z
                 d2 = c - d1
-                z'' = head $ drop (wordToInt d2)
-                    $ iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z'
+                z'' = iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z' !! max 0 (wordToInt d2)
 
         go1 :: Word -> Word -> EisensteinInteger -> (Word, EisensteinInteger)
         go1 0 d z = (d, z)

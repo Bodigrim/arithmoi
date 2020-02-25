@@ -21,7 +21,7 @@ fact = product [1..13]
 tens :: Num a => a
 tens = 10 ^ 18
 
-countInverseTotient :: (Ord a, Euclidean a, UniqueFactorisation a) => a -> Word
+countInverseTotient :: (Ord a, Integral a, Euclidean a, UniqueFactorisation a) => a -> Word
 countInverseTotient = inverseTotient (const 1)
 
 countInverseSigma :: (Integral a, Euclidean a, UniqueFactorisation a, Enum (Prime a), Bits a) => a -> Word

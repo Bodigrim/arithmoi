@@ -9,7 +9,10 @@
 --
 
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+
+{-# OPTIONS_GHC -fconstraint-solver-iterations=0 #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -19,16 +22,21 @@ module Math.NumberTheory.ArithmeticFunctions.InverseTests
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.SmallCheck as SC hiding (test)
+import Test.Tasty.QuickCheck as QC hiding (Positive)
 
 import Data.Bits (Bits)
 import Data.Euclidean
+import Data.Semiring (Semiring)
 import qualified Data.Set as S
+import Numeric.Natural (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.Inverse
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences
 import Math.NumberTheory.TestUtils
+import Math.NumberTheory.TestUtils.Wrappers (Power (..))
 
 -------------------------------------------------------------------------------
 -- Totient
@@ -36,8 +44,27 @@ import Math.NumberTheory.TestUtils
 totientProperty1 :: forall a. (Euclidean a, Integral a, UniqueFactorisation a) => Positive a -> Bool
 totientProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseTotient (totient x)
 
+jordanProperty1
+  :: (Euclidean a, Integral a, UniqueFactorisation a)
+  => Power Word
+  -> Positive a
+  -> Bool
+jordanProperty1 (Power k') (Positive x) =
+  -- 'k' shouldn't be large to avoid slow tests.
+  let k = 2 + k' `Prelude.mod` 20
+  in x `S.member` asSetOfPreimages (inverseJordan k) (jordan k x)
+
 totientProperty2 :: (Euclidean a, Integral a, UniqueFactorisation a) => Positive a -> Bool
 totientProperty2 (Positive x) = all (== x) (S.map totient (asSetOfPreimages inverseTotient x))
+
+jordanProperty2
+  :: (Euclidean a, Integral a, UniqueFactorisation a, Ord a)
+  => Power Word
+  -> Positive a
+  -> Bool
+jordanProperty2 (Power k') (Positive x) =
+  let k = 2 + k' `Prelude.mod` 20
+  in all (== x) (S.map (jordan k) (asSetOfPreimages (inverseJordan k) x))
 
 -- | http://oeis.org/A055506
 totientCountFactorial :: [Word]
@@ -132,14 +159,73 @@ totientSpecialCases3 = zipWith mkAssert (tail factorial) totientMaxFactorial
     totientMax :: Word -> Word
     totientMax = unMaxWord . inverseTotient MaxWord
 
+jordans5 :: [Word]
+jordans5 =
+  [ 1
+  , 31
+  , 242
+  , 992
+  , 3124
+  , 7502
+  , 16806
+  , 31744
+  , 58806
+  , 96844
+  , 161050
+  , 240064
+  , 371292
+  , 520986
+  , 756008
+  , 1015808
+  , 1419856
+  , 1822986
+  , 2476098
+  , 3099008
+  , 4067052
+  , 4992550
+  , 6436342
+  , 7682048
+  , 9762500
+  , 11510052
+  , 14289858
+  , 16671552
+  , 20511148
+  ]
+
+jordanSpecialCase1 :: [Assertion]
+jordanSpecialCase1 = zipWith mkAssert ixs jordans5
+  where
+    mkAssert a b = assertEqual "should be equal" (S.singleton a) (asSetOfPreimages (inverseJordan 5) b)
+    ixs = [1 .. 29]
+
 -------------------------------------------------------------------------------
 -- Sigma
 
 sigmaProperty1 :: forall a. (Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a) => Positive a -> Bool
 sigmaProperty1 (Positive x) = x `S.member` asSetOfPreimages inverseSigma (sigma 1 x)
 
+sigmaKProperty1
+  :: forall a
+   . (Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a)
+  => Power Word
+  -> Positive a
+  -> Bool
+sigmaKProperty1 (Power k') (Positive x) =
+  -- 'k' shouldn't be large to avoid slow tests.
+  let k = 2 + k' `Prelude.mod` 20
+  in x `S.member` asSetOfPreimages (inverseSigmaK k) (sigma k x)
+
 sigmaProperty2 :: (Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a) => Positive a -> Bool
 sigmaProperty2 (Positive x) = all (== x) (S.map (sigma 1) (asSetOfPreimages inverseSigma x))
+
+sigmaKProperty2
+  :: (Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a)
+  => Power Word
+  -> Positive a
+  -> Bool
+sigmaKProperty2 (Power k') (Positive x) =
+  let k = 2 + k' `Prelude.mod` 20
+  in all (== x) (S.map (sigma k) (asSetOfPreimages (inverseSigmaK k) x))
 
 -- | http://oeis.org/A055486
 sigmaCountFactorial :: [Word]
@@ -234,8 +320,59 @@ sigmaSpecialCase4 :: Assertion
 sigmaSpecialCase4 = assertBool "200 should be in inverseSigma(sigma(200))" $
   sigmaProperty1 $ Positive (200 :: Word)
 
+sigmas5 :: [Word]
+sigmas5 =
+  [ 1
+  , 33
+  , 244
+  , 1057
+  , 3126
+  , 8052
+  , 16808
+  , 33825
+  , 59293
+  , 103158
+  , 161052
+  , 257908
+  , 371294
+  , 554664
+  , 762744
+  , 1082401
+  , 1419858
+  , 1956669
+  , 2476100
+  , 3304182
+  , 4101152
+  , 5314716
+  , 6436344
+  , 8253300
+  , 9768751
+  , 12252702
+  , 14408200
+  , 17766056
+  , 20511150
+  ]
+
+sigmaSpecialCase5 :: [Assertion]
+sigmaSpecialCase5 = zipWith mkAssert ixs sigmas5
+ where
+  mkAssert a b = assertEqual "should be equal" (S.singleton a) (asSetOfPreimages (inverseSigmaK 5) b)
+  ixs = [1 .. 29]
+
 -------------------------------------------------------------------------------
 -- TestTree
+
+-- Tests for 'Int', 'Word' are omitted because 'inverseSigmaK/inverseJordan'
+-- tests would quickly oveflow in these types.
+testIntegralPropertyNoLargeInverse
+  :: forall bool. (SC.Testable IO bool, QC.Testable bool)
+  => String -> (forall a. (Euclidean a, Semiring a, Integral a, Bits a, UniqueFactorisation a, Show a, Enum (Prime a)) => Power Word -> Positive a -> bool) -> TestTree
+testIntegralPropertyNoLargeInverse name f = testGroup name
+  [ SC.testProperty "smallcheck Integer" (f :: Power Word -> Positive Integer -> bool)
+  , SC.testProperty "smallcheck Natural" (f :: Power Word -> Positive Natural -> bool)
+  , QC.testProperty "quickcheck Integer" (f :: Power Word -> Positive Integer -> bool)
+  , QC.testProperty "quickcheck Natural" (f :: Power Word -> Positive Natural -> bool)
+  ]
 
 testSuite :: TestTree
 testSuite = testGroup "Inverse"
@@ -259,5 +396,19 @@ testSuite = testGroup "Inverse"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] sigmaSpecialCases2)
     , testGroup "max"
       (zipWith (\i a -> testCase ("factorial " ++ show i) a) [1..] sigmaSpecialCases3)
+    ]
+
+  , testGroup "Jordan"
+    [ testIntegralPropertyNoLargeInverse "forward"  jordanProperty1
+    , testIntegralPropertyNoLargeInverse "backward" jordanProperty2
+    , testGroup "inverseJordan"
+      (zipWith (\i test -> testCase ("inverseJordan 5" ++ show i) test) jordans5 jordanSpecialCase1)
+    ]
+
+  , testGroup  "SigmaK"
+    [ testIntegralPropertyNoLargeInverse "forward"  sigmaKProperty1
+    , testIntegralPropertyNoLargeInverse "backward" sigmaKProperty2
+    , testGroup "inverseSigma"
+      (zipWith (\i test -> testCase ("inverseSigma 5" ++ show i) test) sigmas5 sigmaSpecialCase5)
     ]
   ]

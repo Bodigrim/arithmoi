@@ -16,7 +16,9 @@
 
 module Math.NumberTheory.ArithmeticFunctions.Inverse
   ( inverseTotient
+  , inverseJordan
   , inverseSigma
+  , inverseSigmaK
   , -- * Wrappers
     MinWord(..)
   , MaxWord(..)
@@ -44,7 +46,7 @@ import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Logarithms
-import Math.NumberTheory.Roots (integerRoot)
+import Math.NumberTheory.Roots (exactRoot, integerRoot)
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Utils.DirichletSeries (DirichletSeries)
 import qualified Math.NumberTheory.Utils.DirichletSeries as DS
@@ -70,33 +72,37 @@ atomicSeries point (ArithmeticFunction f g) (PrimePowers p ks) =
   DS.fromDistinctAscList (map (\k -> (g (f p k), point (unPrime p ^ k))) ks)
 
 -- | See section 5.1 of the paper.
-invTotient
-  :: forall a. (UniqueFactorisation a, Eq a)
-  => [(Prime a, Word)]
+invJordan
+  :: forall a. (Integral a, UniqueFactorisation a, Eq a)
+  => Word
+  -- ^ Value of 'k' in 'jordan_k'
+  -> [(Prime a, Word)]
   -- ^ Factorisation of a value of the totient function
   -> [PrimePowers a]
   -- ^ Possible prime factors of an argument of the totient function
-invTotient fs = map (\p -> PrimePowers p (doPrime p)) ps
+invJordan k fs = map (\p -> PrimePowers p (doPrime p)) ps
   where
     divs :: [a]
     divs = runFunctionOnFactors divisorsListA fs
 
     ps :: [Prime a]
-    ps = mapMaybe (isPrime . (+ 1)) divs
+    ps = mapMaybe (\d -> exactRoot k (d + 1) >>= isPrime) divs
 
     doPrime :: Prime a -> [Word]
     doPrime p = case lookup p fs of
       Nothing -> [1]
-      Just k  -> [1 .. k+1]
+      Just w  -> [1 .. w+1]
 
 -- | See section 5.2 of the paper.
 invSigma
   :: forall a. (Euclidean a, Integral a, UniqueFactorisation a, Enum (Prime a), Bits a)
-  => [(Prime a, Word)]
+  => Word
+  -- ^ Value of 'k' in 'sigma_k'
+  -> [(Prime a, Word)]
   -- ^ Factorisation of a value of the sum-of-divisors function
   -> [PrimePowers a]
   -- ^ Possible prime factors of an argument of the sum-of-divisors function
-invSigma fs
+invSigma k fs
   = map (\(x, ys) -> PrimePowers x (S.toList ys))
   $ M.assocs
   $ M.unionWith (<>) pksSmall pksLarge
@@ -108,7 +114,7 @@ invSigma fs
     divs = runFunctionOnFactors divisorsListA fs
 
     n :: a
-    n = product $ map (\(p, k) -> unPrime p ^ k) fs
+    n = factorBack fs
 
     -- There are two possible strategies to find possible prime factors
     -- of an argument of the sum-of-divisors function.
@@ -141,17 +147,17 @@ invSigma fs
     doPrime :: Prime a -> Set Word
     doPrime p' = let p = unPrime p' in S.fromDistinctAscList
       [ e
-      | e <- [1 .. intToWord (integerLogBase (toInteger p) (toInteger n))]
-      , n `rem` ((p ^ (e + 1) - 1) `quot` (p - 1)) == 0
+      | e <- [1 .. intToWord (integerLogBase (toInteger (p ^ k)) (toInteger n))]
+      , n `rem` ((p ^ (k * (e + 1)) - 1) `quot` (p ^ k - 1)) == 0
       ]
 
     pksLarge :: Map (Prime a) (Set Word)
     pksLarge = M.unionsWith (<>)
       [ maybe mempty (flip M.singleton (S.singleton e)) (isPrime p)
       | d <- divs
-      , e <- [1 .. intToWord (integerLogBase (toInteger lim) (toInteger d))]
-      , let p = integerRoot e (d - 1)
-      , p ^ (e + 1) - 1 == d * (p - 1)
+      , e <- [1 .. intToWord (quot (integerLogBase (toInteger lim) (toInteger d)) (wordToInt k)) ]
+      , let p = integerRoot (e * k) (d - 1)
+      , p ^ (k * (e + 1)) - 1 == d * (p ^ k - 1)
       ]
 
 -- | Instead of multiplying all atomic series and filtering out everything,
@@ -264,15 +270,54 @@ invertFunction point f invF n
 -- >>> unMaxWord (inverseTotient MaxWord 120)
 -- 462
 inverseTotient
-  :: (Semiring b, Euclidean a, UniqueFactorisation a, Ord a)
+  :: (Semiring b, Integral a, Euclidean a, UniqueFactorisation a)
   => (a -> b)
   -> a
   -> b
-inverseTotient point = invertFunction point totientA invTotient
+inverseTotient = inverseJordan 1
 {-# SPECIALISE inverseTotient :: Semiring b => (Int -> b) -> Int -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Word -> b) -> Word -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Natural -> b) -> Natural -> b #-}
+
+-- | The inverse for 'jordan_k' function, where 'k' is a nonnegative integer.
+--
+-- Generalizes the 'inverseTotient' function, which is 'inverseJordan' when 'k'
+-- is '1'.
+--
+-- The return value is parameterized by a 'Semiring', which allows
+-- various applications by providing different (multiplicative) embeddings.
+-- E. g., list all preimages (see a helper 'asSetOfPreimages'):
+--
+-- >>> import qualified Data.Set as S
+-- >>> import Data.Semigroup
+-- >>> S.mapMonotonic getProduct (inverseJordan 2 (S.singleton . Product) 192)
+-- fromList [15,16]
+--
+-- Similarly to 'inverseTotient', it is possible to count and sum preimages, or
+-- get the maximum/minimum preimage.
+--
+-- Note: it is the __user's responsibility__ to use an appropriate type for
+-- 'inverseSigmaK'. Even low values of 'k' with 'Int' or 'Word' will return
+-- invalid results due to over/underflow, or throw exceptions (i.e. division by
+-- zero).
+--
+-- >>> asSetOfPreimages (inverseJordan 15) (jordan 15 19) :: S.Set Int
+-- fromList []
+--
+-- >>> asSetOfPreimages (inverseJordan 15) (jordan 15 19) :: S.Set Integer
+-- fromList [19]
+inverseJordan
+  :: (Semiring b, Integral a, Euclidean a, UniqueFactorisation a)
+  => Word
+  -> (a -> b)
+  -> a
+  -> b
+inverseJordan k point = invertFunction point (jordanA k) (invJordan k)
+{-# SPECIALISE inverseJordan :: Semiring b => Word -> (Int -> b) -> Int -> b #-}
+{-# SPECIALISE inverseJordan :: Semiring b => Word -> (Word -> b) -> Word -> b #-}
+{-# SPECIALISE inverseJordan :: Semiring b => Word -> (Integer -> b) -> Integer -> b #-}
+{-# SPECIALISE inverseJordan :: Semiring b => Word -> (Natural -> b) -> Natural -> b #-}
 
 -- | The inverse for 'sigma' 1 function.
 --
@@ -306,11 +351,47 @@ inverseSigma
   => (a -> b)
   -> a
   -> b
-inverseSigma point = invertFunction point (sigmaA 1) invSigma
+inverseSigma = inverseSigmaK 1
 {-# SPECIALISE inverseSigma :: Semiring b => (Int -> b) -> Int -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Word -> b) -> Word -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Integer -> b) -> Integer -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Natural -> b) -> Natural -> b #-}
+
+-- | The inverse for 'sigma_k' function, where 'k' is a nonnegative integer.
+--
+-- Generalizes the 'inverseSigma' function, which is 'inverseSigmaK' when 'k'
+-- is '1'.
+--
+-- The return value is parameterized by a 'Semiring', which allows
+-- various applications by providing different (multiplicative) embeddings.
+-- E. g., list all preimages (see a helper 'asSetOfPreimages'):
+--
+-- >>> import qualified Data.Set as S
+-- >>> import Data.Semigroup
+-- >>> S.mapMonotonic getProduct (inverseSigmaK 2 (S.singleton . Product) 850)
+-- fromList [24, 26]
+--
+-- Similarly to 'inverseSigma', it is possible to count and sum preimages, or
+-- get the maximum/minimum preimage.
+--
+-- Note: it is the __user's responsibility__ to use an appropriate type for
+-- 'inverseSigmaK'. Even low values of 'k' with 'Int' or 'Word' will return
+-- invalid results due to over/underflow, or throw exceptions (i.e. division by
+-- zero).
+--
+-- >>> asSetOfPreimages (inverseSigmaK 17) (sigma 17 13) :: S.Set Int
+-- fromList *** Exception: divide by zero
+inverseSigmaK
+  :: (Semiring b, Euclidean a, UniqueFactorisation a, Integral a, Enum (Prime a), Bits a)
+  => Word
+  -> (a -> b)
+  -> a
+  -> b
+inverseSigmaK k point = invertFunction point (sigmaA k) (invSigma k)
+{-# SPECIALISE inverseSigmaK :: Semiring b => Word -> (Int -> b) -> Int -> b #-}
+{-# SPECIALISE inverseSigmaK :: Semiring b => Word -> (Word -> b) -> Word -> b #-}
+{-# SPECIALISE inverseSigmaK :: Semiring b => Word -> (Integer -> b) -> Integer -> b #-}
+{-# SPECIALISE inverseSigmaK :: Semiring b => Word -> (Natural -> b) -> Natural -> b #-}
 
 --------------------------------------------------------------------------------
 -- Wrappers
