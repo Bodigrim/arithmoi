@@ -12,7 +12,6 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -42,6 +41,9 @@ module Math.NumberTheory.TestUtils
 
   -- * Export for @Zeta@ tests
   , assertEqualUpToEps
+
+  -- * Export for Inverse tests
+  , TestableIntegral
 
   , lawsToTest
   ) where
