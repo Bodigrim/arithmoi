@@ -211,6 +211,8 @@ cyclicGroup = fromModuloInternal m
   where
     m = fromIntegral (natVal (Proxy :: Proxy m))
 
+-- | Create a singleton from factors.
+-- Factors must be distinct, as in output of 'factorise'.
 cyclicGroupFromFactors
   :: (Eq a, Num a)
   => [(Prime a, Word)]

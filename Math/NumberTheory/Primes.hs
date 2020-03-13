@@ -97,6 +97,7 @@ instance UniqueFactorisation Natural where
   factorise = coerce . F.factorise
   isPrime n = if T.isPrime (toInteger n) then Just (Prime n) else Nothing
 
+-- | Restore a number from its factorisation.
 factorBack :: Num a => [(Prime a, Word)] -> a
 factorBack = product . map (\(p, k) -> unPrime p ^ k)
 

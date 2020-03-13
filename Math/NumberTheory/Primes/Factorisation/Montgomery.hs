@@ -122,8 +122,7 @@ stdGenFactorisation primeBound sg digits n
 --   chances for a quick result by running several instances in parallel.
 --
 --   'curveFactorisation' @n@ requires that small (< 65536) prime factors of @n@
---   have been stripped before. Otherwise it is likely to cycle forever. When in doubt,
---   use 'defaultStdGenFactorisation'.
+--   have been stripped before. Otherwise it is likely to cycle forever.
 --
 --   'curveFactorisation' is unlikely to succeed if @n@ has more than one (really) large prime factor.
 --

@@ -75,7 +75,7 @@ atomicSeries point (ArithmeticFunction f g) (PrimePowers p ks) =
 invJordan
   :: forall a. (Integral a, UniqueFactorisation a, Eq a)
   => Word
-  -- ^ Value of 'k' in 'jordan_k'
+  -- ^ Value of k in 'jordan' k
   -> [(Prime a, Word)]
   -- ^ Factorisation of a value of the totient function
   -> [PrimePowers a]
@@ -97,7 +97,7 @@ invJordan k fs = map (\p -> PrimePowers p (doPrime p)) ps
 invSigma
   :: forall a. (Euclidean a, Integral a, UniqueFactorisation a, Enum (Prime a), Bits a)
   => Word
-  -- ^ Value of 'k' in 'sigma_k'
+  -- ^ Value of k in 'sigma' k
   -> [(Prime a, Word)]
   -- ^ Factorisation of a value of the sum-of-divisors function
   -> [PrimePowers a]
@@ -164,7 +164,7 @@ invSigma k fs
 -- which is not divisible by @n@, we'd rather split all atomic series into
 -- a couple of batches, each of which corresponds to a prime factor of @n@.
 -- This allows us to crop resulting Dirichlet series (see 'filter' calls
--- in 'invertFunction' below) at the end of each batch, saving time and memory.
+-- in @invertFunction@ below) at the end of each batch, saving time and memory.
 strategy
   :: forall a c. (GcdDomain c, Ord c)
   => ArithmeticFunction a c
@@ -280,10 +280,9 @@ inverseTotient = inverseJordan 1
 {-# SPECIALISE inverseTotient :: Semiring b => (Integer -> b) -> Integer -> b #-}
 {-# SPECIALISE inverseTotient :: Semiring b => (Natural -> b) -> Natural -> b #-}
 
--- | The inverse for 'jordan_k' function, where 'k' is a nonnegative integer.
+-- | The inverse for 'jordan' function.
 --
--- Generalizes the 'inverseTotient' function, which is 'inverseJordan' when 'k'
--- is '1'.
+-- Generalizes the 'inverseTotient' function, which is 'inverseJordan' 1.
 --
 -- The return value is parameterized by a 'Semiring', which allows
 -- various applications by providing different (multiplicative) embeddings.
@@ -298,7 +297,7 @@ inverseTotient = inverseJordan 1
 -- get the maximum/minimum preimage.
 --
 -- Note: it is the __user's responsibility__ to use an appropriate type for
--- 'inverseSigmaK'. Even low values of 'k' with 'Int' or 'Word' will return
+-- 'inverseSigmaK'. Even low values of k with 'Int' or 'Word' will return
 -- invalid results due to over/underflow, or throw exceptions (i.e. division by
 -- zero).
 --
@@ -357,10 +356,9 @@ inverseSigma = inverseSigmaK 1
 {-# SPECIALISE inverseSigma :: Semiring b => (Integer -> b) -> Integer -> b #-}
 {-# SPECIALISE inverseSigma :: Semiring b => (Natural -> b) -> Natural -> b #-}
 
--- | The inverse for 'sigma_k' function, where 'k' is a nonnegative integer.
+-- | The inverse for 'sigma' function.
 --
--- Generalizes the 'inverseSigma' function, which is 'inverseSigmaK' when 'k'
--- is '1'.
+-- Generalizes the 'inverseSigma' function, which is 'inverseSigmaK' 1.
 --
 -- The return value is parameterized by a 'Semiring', which allows
 -- various applications by providing different (multiplicative) embeddings.
@@ -375,7 +373,7 @@ inverseSigma = inverseSigmaK 1
 -- get the maximum/minimum preimage.
 --
 -- Note: it is the __user's responsibility__ to use an appropriate type for
--- 'inverseSigmaK'. Even low values of 'k' with 'Int' or 'Word' will return
+-- 'inverseSigmaK'. Even low values of k with 'Int' or 'Word' will return
 -- invalid results due to over/underflow, or throw exceptions (i.e. division by
 -- zero).
 --

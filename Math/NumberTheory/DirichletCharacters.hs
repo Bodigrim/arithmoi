@@ -104,12 +104,12 @@ newtype DirichletCharacter (n :: Nat) = Generated [DirichletFactor]
 -- groups. Furthermore, for odd p, we have (Z/p^k Z)^* isomorphic to Z / p^(k-1)*(p-1) Z, an
 -- additive group, where an isomorphism is specified by a choice of primitive root.
 -- Similarly, for k >= 2, (Z/2^k Z)^* is isomorphic to Z/2Z * (Z / 2^(k-2) Z) (and for k < 2
--- it is trivial).  (See `lambda` for this isomorphism).
+-- it is trivial).  (See @lambda@ for this isomorphism).
 -- Thus, to specify a Dirichlet character, it suffices to specify the value of generators
 -- of each of these cyclic groups, when primitive roots are given. This data is given by a
 -- DirichletFactor.
 -- We have the invariant that the factors must be given in strictly increasing order, and the
--- generator is as given by `generator`, and are each non-trivial. These conditions are verified
+-- generator is as given by @generator@, and are each non-trivial. These conditions are verified
 -- using `validChar`.
 data DirichletFactor = OddPrime { _getPrime :: Prime Natural
                                 , _getPower :: Word
@@ -433,6 +433,7 @@ newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character i
                                                     }
                                                     deriving Eq
 
+-- | Wrapper to hide an unknown type-level natural.
 data WithNat (a :: Nat -> *) where
   WithNat :: KnownNat m => a m -> WithNat a
 
@@ -472,11 +473,15 @@ instance (Applicative f, Semigroup a, Monoid a) => Monoid (Ap f a) where
 
 -- | Similar to Maybe, but with different Semigroup and Monoid instances.
 type OrZero a = Ap Maybe a
+
+-- | 'Ap' 'Nothing'
 pattern Zero :: OrZero a
 pattern Zero = Ap Nothing
 
+-- | 'Ap' ('Just' x)
 pattern NonZero :: a -> OrZero a
 pattern NonZero x = Ap (Just x)
+
 {-# COMPLETE Zero, NonZero #-}
 
 -- | Interpret an `OrZero` as a number, taking the `Zero` case to be 0.
