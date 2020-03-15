@@ -82,7 +82,7 @@ solveQuadratic sm a b c = case proofFromSFactors sm of
 
     combine :: [([Integer], Integer)] -> ([Integer], Integer)
     combine = foldl
-      (\(xs, xm) (ys, ym) -> ([ fromJust $ chineseCoprime (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
+      (\(xs, xm) (ys, ym) -> ([ fromJust $ chinese (x, xm) (y, ym) | x <- xs, y <- ys ], xm * ym))
       ([0], 1)
 
 solveQuadraticPrimePower

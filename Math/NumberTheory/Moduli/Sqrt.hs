@@ -67,7 +67,7 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
 
     comb t1@(_, m1) t2@(_, m2) = (if ch < 0 then ch + m else ch, m)
       where
-        ch = fromJust $ chineseCoprime t1 t2
+        ch = fromJust $ chinese t1 t2
         m = m1 * m2
 
 -- | List all square roots modulo the power of a prime.

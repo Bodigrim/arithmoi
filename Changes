@@ -4,8 +4,8 @@
 
         Deprecate 'Math.NumberTheory.Euclidean', use 'Data.Euclidean' instead.
 
-        Deprecate 'chineseRemainder' and 'chineseRemainder2', use 'chineseCoprime'
-        instead.
+        Deprecate 'chineseRemainder', 'chineseRemainder2', 'chineseCoprime',
+        use 'chinese' instead. Deprecate 'chineseCoprimeSomeMod', use 'chineseSomeMod'.
 
         Deprecate 'Math.NumberTheory.Powers' except 'Math.NumberTheory.Powers.Modular'.
         Use 'Math.NumberTheory.Roots' instead.

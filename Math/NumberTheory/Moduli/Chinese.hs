@@ -61,10 +61,7 @@ chineseCoprime (n1, m1) (n2, m2)
   | otherwise = Nothing
   where
     (d, u, v) = extendedGCD m1 m2
-
-{-# SPECIALISE chineseCoprime :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
-{-# SPECIALISE chineseCoprime :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
-{-# SPECIALISE chineseCoprime :: (Integer, Integer) -> (Integer, Integer) -> Maybe Integer #-}
+{-# DEPRECATED chineseCoprime "Use 'chinese' instead" #-}
 
 -- | 'chinese' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
 -- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@, if exists.
@@ -127,6 +124,7 @@ chineseWrap _ _ (InfMod r1) (InfMod r2)
 -- Nothing
 chineseCoprimeSomeMod :: SomeMod -> SomeMod -> Maybe SomeMod
 chineseCoprimeSomeMod = chineseWrap (*) chineseCoprime
+{-# DEPRECATED chineseCoprimeSomeMod "Use 'chineseSomeMod' instead" #-}
 
 -- | Same as 'chinese', but operates on residues.
 --
@@ -164,7 +162,7 @@ chineseRemainder remainders = foldM addRem 0 remainders
         let cf = modulus `quot` m
         inv <- recipMod cf m
         Just $! (acc + inv*cf*r) `rem` modulus
-{-# DEPRECATED chineseRemainder "Use 'chineseCoprime' instead" #-}
+{-# DEPRECATED chineseRemainder "Use 'chinese' instead" #-}
 
 -- | @chineseRemainder2 (r_1,m_1) (r_2,m_2)@ calculates the solution of
 --
@@ -176,7 +174,7 @@ chineseRemainder2 :: (Integer, Integer) -> (Integer, Integer) -> Integer
 chineseRemainder2 (n1, m1) (n2, m2) = ((1 - u * m1) * n1 + (1 - v * m2) * n2) `Prelude.mod` (m1 * m2)
   where
     (_, u, v) = extendedGCD m1 m2
-{-# DEPRECATED chineseRemainder2 "Use 'chineseCoprime' instead" #-}
+{-# DEPRECATED chineseRemainder2 "Use 'chinese' instead" #-}
 
 -------------------------------------------------------------------------------
 -- Utils

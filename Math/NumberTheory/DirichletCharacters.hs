@@ -554,7 +554,7 @@ fromTable v = if length v == fromIntegral n
         makeFactor (TwoPTemplate k _) = TwoPower k <$> getValue (-1,bit k) <*> getValue (exp4 k, bit k)
         makeFactor (OddTemplate p k g _) = OddPrime p k g <$> getValue (toInteger g, toInteger (unPrime p)^k)
         getValue :: (Integer,Integer) -> Maybe RootOfUnity
-        getValue (g,m) = getAp (v ! fromInteger (fromJust (chineseCoprime (g,m) (1,n' `quot` m)) `mod` n'))
+        getValue (g,m) = getAp (v ! fromInteger (fromJust (chinese (g,m) (1,n' `quot` m)) `mod` n'))
 
 exp4terms :: [Rational]
 exp4terms = [4^k % product [1..k] | k <- [0..]]

@@ -64,7 +64,7 @@ discreteLogarithmPP p k a b = fromInteger $ if result < 0 then result + pkMinusP
     pkMinusOne = p^(k-1)
     pkMinusPk1 = pkMinusOne * (p - 1)
     c          = (recipModInteger thetaA pkMinusOne * thetaB) `rem` pkMinusOne
-    result     = fromJust $ chineseCoprime (baseSol, p-1) (c, pkMinusOne)
+    result     = fromJust $ chinese (baseSol, p-1) (c, pkMinusOne)
 
 -- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
 {-# INLINE theta #-}
