@@ -31,20 +31,18 @@ module Math.NumberTheory.Moduli.Chinese
   , chineseRemainder2
   ) where
 
-import Prelude hiding ((^), rem, mod, quot, gcd, lcm)
+import Prelude hiding ((^), (+), (-), (*), rem, mod, quot, gcd, lcm)
 import qualified Prelude
 
 import Control.Monad (foldM)
 import Data.Euclidean
-import Data.Foldable
 import Data.Mod
 import Data.Ratio
-import Data.Semiring (Semiring(..), (^), Ring, minus)
+import Data.Semiring (Semiring(..), (+), (-), (*), Ring)
 import GHC.TypeNats.Compat
 
 import Math.NumberTheory.Moduli.SomeMod
-import Math.NumberTheory.Euclidean.Coprimes
-import Math.NumberTheory.Utils (recipMod, splitOff)
+import Math.NumberTheory.Utils (recipMod)
 
 -- | 'chineseCoprime' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
 -- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@.
@@ -59,7 +57,7 @@ import Math.NumberTheory.Utils (recipMod, splitOff)
 chineseCoprime :: (Eq a, Ring a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
 chineseCoprime (n1, m1) (n2, m2)
   | d == one
-  = Just $ ((one `minus` u `times` m1) `times` n1 `plus` (one `minus` v `times` m2) `times` n2) `rem` (m1 `times` m2)
+  = Just $ (v * m2 * n1 + u * m1 * n2) `rem` (m1 * m2)
   | otherwise = Nothing
   where
     (d, u, v) = extendedGCD m1 m2
@@ -80,29 +78,14 @@ chineseCoprime (n1, m1) (n2, m2)
 -- Nothing
 chinese :: forall a. (Eq a, Ring a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
 chinese (n1, m1) (n2, m2)
-  | (n1 `minus` n2) `rem` g == zero
-  = chineseCoprime (n1 `rem` m1', m1') (n2 `rem` m2', m2')
+  | d == one
+  = Just $ (v * m2 * n1 + u * m1 * n2) `rem` (m1 * m2)
+  | (n1 - n2) `rem` d == zero
+  = Just $ (v * (m2 `quot` d) * n1 + u * (m1 `quot` d) * n2) `rem` ((m1 `quot` d) * m2)
   | otherwise
   = Nothing
   where
-    g :: a
-    g = gcd m1 m2
-
-    ms :: [(a, Word)]
-    ms = unCoprimes $ splitIntoCoprimes [(m1, 1), (m2 `quot` g, 1)]
-
-    m1', m2' :: a
-    (m1', m2') = foldl' go (one, one) $ map fst ms
-
-    go :: (a, a) -> a -> (a, a)
-    go (t1, t2) p
-      | k1 <= k2
-      = (t1, t2 `times` p ^ k2)
-      | otherwise
-      = (t1 `times` p ^ k1, t2)
-      where
-        (k1, _) = splitOff p m1
-        (k2, _) = splitOff p m2
+    (d, u, v) = extendedGCD m1 m2
 
 {-# SPECIALISE chinese :: (Int, Int) -> (Int, Int) -> Maybe Int #-}
 {-# SPECIALISE chinese :: (Word, Word) -> (Word, Word) -> Maybe Word #-}
@@ -202,4 +185,4 @@ extendedGCD :: (Eq a, Ring a, Euclidean a) => a -> a -> (a, a, a)
 extendedGCD a b = (g, s, t)
   where
     (g, s) = gcdExt a b
-    t = (g `minus` a `times` s) `quot` b
+    t = (g - a * s) `quot` b
