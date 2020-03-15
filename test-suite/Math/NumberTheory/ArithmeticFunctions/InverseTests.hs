@@ -36,7 +36,6 @@ import Math.NumberTheory.ArithmeticFunctions.Inverse
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences
 import Math.NumberTheory.TestUtils
-import Math.NumberTheory.TestUtils.Wrappers (Power (..))
 
 -------------------------------------------------------------------------------
 -- Totient
