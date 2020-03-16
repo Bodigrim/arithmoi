@@ -16,6 +16,17 @@
         Deprecate 'Math.NumberTheory.Moduli.{DiscreteLogarithm,PrimitiveRoot}',
         use 'Math.NumberTheory.Moduli.Multiplicative' instead.
 
+    New features:
+
+        Brand new machinery to deal with Dirichlet characters (#180).
+
+        Generate preimages of the Jordan and the sum-of-powers-of-divisors
+        functions (#148).
+
+        More flexible interface for Pascal triangle: in addition to 'binomial'
+        we now provide also 'binomialRotated', 'binomialLine' and 'binomialDiagonal'
+        (#151).
+
     Improvements:
 
         Fix subtraction of 'SomeMod', add 'Semiring' instance (#174).
@@ -23,7 +34,6 @@
         Speed up 'partition', using better container for memoization (#176).
 
         Speed up 'integerRoot', using better starting approximation (#177).
-
 
 0.10.0.0
     This release supports GHC 8.0, 8.2, 8.4, 8.6 and 8.8.
