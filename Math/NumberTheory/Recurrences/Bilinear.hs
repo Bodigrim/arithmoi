@@ -127,6 +127,12 @@ binomialDiagonal n = scanl'
 {-# SPECIALIZE binomialDiagonal :: Integer -> [Integer] #-}
 {-# SPECIALIZE binomialDiagonal :: Natural -> [Natural] #-}
 
+-- | Prime factors of a binomial coefficient.
+--
+-- prop> binomialFactors n k == factorise (binomial !! n !! k)
+--
+-- >>> binomialFactors 10 4
+-- [(Prime 2,1),(Prime 3,1),(Prime 5,1),(Prime 7,1)]
 binomialFactors :: Word -> Word -> [(Prime Word, Word)]
 binomialFactors n k
   | n < 2

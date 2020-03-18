@@ -39,6 +39,12 @@ factorial = scanl (*) 1 [1..]
 {-# SPECIALIZE factorial :: [Integer] #-}
 {-# SPECIALIZE factorial :: [Natural] #-}
 
+-- | Prime factors of a factorial.
+--
+-- prop> factorialFactors n == factorise (factorial !! n)
+--
+-- >>> factorialFactors 10
+-- [(Prime 2,8),(Prime 3,4),(Prime 5,2),(Prime 7,1)]
 factorialFactors :: Word -> [(Prime Word, Word)]
 factorialFactors n
   | n < 2
