@@ -30,6 +30,7 @@
 -- 1
 -- (0.01 secs, 391,152 bytes)
 
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -128,13 +129,20 @@ binomialDiagonal n = scanl'
 
 binomialFactors :: Word -> Word -> [(Prime Word, Word)]
 binomialFactors n k
+  | n < 2
+  = []
+  | otherwise
   = filter ((/= 0) . snd)
-  $ map (\p -> (p, mult n p - mult (n - k) p - mult k p))
-  $ takeWhile ((<= n) . unPrime)
-  $ primes
+  $ map (\p -> (p, mult (unPrime p) n - mult (unPrime p) (n - k) - mult (unPrime p) k))
+  $ [minBound .. precPrime n]
   where
-    mult :: Word -> Prime Word -> Word
-    mult x p = sum $ takeWhile (> 0) $ tail $ iterate (`quot` unPrime p) x
+    mult :: Word -> Word -> Word
+    mult p m = go mp mp
+      where
+        mp = m `quot` p
+        go !acc !x
+          | x >= p = let xp = x `quot` p in go (acc + xp) xp
+          | otherwise = acc
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --
