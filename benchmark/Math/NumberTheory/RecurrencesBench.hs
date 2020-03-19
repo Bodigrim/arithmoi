@@ -7,8 +7,7 @@ module Math.NumberTheory.RecurrencesBench
 import Gauge.Main
 
 import Data.Euclidean (GcdDomain)
-import Math.NumberTheory.Recurrences (binomial, eulerian1, eulerian2,
-                                      stirling1, stirling2, partition)
+import Math.NumberTheory.Recurrences
 
 benchTriangle :: String -> (forall a. (GcdDomain a, Integral a) => [[a]]) -> Int -> Benchmark
 benchTriangle name triangle n = bgroup name
@@ -32,18 +31,17 @@ benchPartition n = bgroup "partition"
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Recurrences"
-  [
-    bgroup "Bilinear"
+  [ bgroup "Bilinear"
     [ benchTriangle "binomial"  binomial 1000
     , benchTriangle "stirling1" stirling1 100
     , benchTriangle "stirling2" stirling2 100
     , benchTriangle "eulerian1" eulerian1 100
     , benchTriangle "eulerian2" eulerian2 100
     ]
-    ,
-    bgroup "Pentagonal"
-    [ bgroup "Partition function"
-      [ benchPartition 1000
-      ]
+  , benchPartition 1000
+  , bgroup "factorialFactors"
+    [ bench "10000" $ nf factorialFactors 10000
+    , bench "20000" $ nf factorialFactors 20000
+    , bench "40000" $ nf factorialFactors 40000
     ]
   ]

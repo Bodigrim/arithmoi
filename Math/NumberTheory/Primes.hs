@@ -25,16 +25,17 @@ module Math.NumberTheory.Primes
 import Data.Bits
 import Data.Coerce
 import Data.Maybe
+import Data.Word
+import Numeric.Natural
 
 import Math.NumberTheory.Primes.Counting (nthPrime, primeCount)
 import qualified Math.NumberTheory.Primes.Factorisation.Montgomery as F (factorise)
 import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, psieveFrom, primeSieve)
+import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 import Math.NumberTheory.Utils.FromIntegral
-
-import Numeric.Natural
 
 -- | A class for unique factorisation domains.
 class Num a => UniqueFactorisation a where
@@ -185,8 +186,25 @@ enumFromGeneric p@(Prime p')
   $ psieveFrom
   $ toInteger p'
 
+smallPrimesLimit :: Integral a => a
+smallPrimesLimit = fromIntegral (maxBound :: Word16)
+
 enumFromToGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> [Prime a]
-enumFromToGeneric p@(Prime p') q@(Prime q') = takeWhile (<= q) $ dropWhile (< p) $
+enumFromToGeneric p@(Prime p') q@(Prime q')
+  | p' <= smallPrimesLimit, q' <= smallPrimesLimit
+  = map (Prime . fromIntegral) $ smallPrimesFromTo (fromIntegral p') (fromIntegral q')
+  | p' <= smallPrimesLimit
+  = map (Prime . fromIntegral) (smallPrimesFromTo (fromIntegral p') smallPrimesLimit)
+  ++ enumFromToGeneric' (nextPrime smallPrimesLimit) q
+  | otherwise
+  = enumFromToGeneric' p q
+
+enumFromToGeneric'
+  :: (Bits a, Integral a, UniqueFactorisation a)
+  => Prime a
+  -> Prime a
+  -> [Prime a]
+enumFromToGeneric' p@(Prime p') q@(Prime q') = takeWhile (<= q) $ dropWhile (< p) $
   case chooseAlgorithm p' q' of
     IsPrime -> Prime 2 : Prime 3 : Prime 5 : mapMaybe isPrime (map fromWheel30 [toWheel30 p' .. toWheel30 q'])
     Sieve   ->

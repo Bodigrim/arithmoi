@@ -7,6 +7,7 @@ module Math.NumberTheory.Primes.SequenceTests
   ) where
 
 import Test.Tasty
+import Test.Tasty.HUnit
 
 import Data.Bits
 import Data.Maybe
@@ -54,6 +55,29 @@ predProperty
   => Prime a
   -> Bool
 predProperty p = unPrime p <= 2 || all (isNothing . isPrime) [unPrime (pred p) + 1 .. unPrime p - 1]
+
+enumFrom2To2 :: Assertion
+enumFrom2To2 = assertEqual "should be equal"
+  [two]
+  [two..two]
+  where
+    two = minBound :: Prime Word
+
+enumFrom65500To65600 :: Assertion
+enumFrom65500To65600 = assertEqual "should be equal"
+  [65519, 65521, 65537, 65539, 65543, 65551, 65557, 65563, 65579, 65581, 65587, 65599]
+  (map unPrime [low..high])
+  where
+    low  = nextPrime (65500 :: Word)
+    high = precPrime (65600 :: Word)
+
+enumFrom2To100000 :: Assertion
+enumFrom2To100000 = assertEqual "should be equal"
+  (takeWhile (<= high) [low..])
+  [low..high]
+  where
+    low  = minBound :: Prime Word
+    high = precPrime (100000 :: Word)
 
 enumFromProperty
   :: (Ord a, Enum (Prime a))
@@ -119,6 +143,9 @@ testSuite = testGroup "Sequence"
     , testSmallAndQuick "Integer" (predProperty @Integer)
     , testSmallAndQuick "Natural" (predProperty @Natural)
     ]
+  , testCase "[2..2] == [2]"  enumFrom2To2
+  , testCase "[65500..65600]" enumFrom65500To65600
+  , testCase "[2..100000]"    enumFrom2To100000
   , testGroup "enumFrom"
     [ testSmallAndQuick "Int" (enumFromProperty @Int)
     , testSmallAndQuick "Word" (enumFromProperty @Word)

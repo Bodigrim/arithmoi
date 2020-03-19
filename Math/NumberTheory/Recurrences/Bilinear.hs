@@ -30,6 +30,7 @@
 -- 1
 -- (0.01 secs, 391,152 bytes)
 
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -39,6 +40,7 @@ module Math.NumberTheory.Recurrences.Bilinear
   , binomialRotated
   , binomialLine
   , binomialDiagonal
+  , binomialFactors
     -- * Other recurrences
   , stirling1
   , stirling2
@@ -59,6 +61,7 @@ import Data.Semiring (Semiring(..))
 import Numeric.Natural
 
 import Math.NumberTheory.Recurrences.Linear (factorial)
+import Math.NumberTheory.Primes
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle).
 --
@@ -123,6 +126,29 @@ binomialDiagonal n = scanl'
 {-# SPECIALIZE binomialDiagonal :: Word    -> [Word]    #-}
 {-# SPECIALIZE binomialDiagonal :: Integer -> [Integer] #-}
 {-# SPECIALIZE binomialDiagonal :: Natural -> [Natural] #-}
+
+-- | Prime factors of a binomial coefficient.
+--
+-- prop> binomialFactors n k == factorise (binomial !! n !! k)
+--
+-- >>> binomialFactors 10 4
+-- [(Prime 2,1),(Prime 3,1),(Prime 5,1),(Prime 7,1)]
+binomialFactors :: Word -> Word -> [(Prime Word, Word)]
+binomialFactors n k
+  | n < 2
+  = []
+  | otherwise
+  = filter ((/= 0) . snd)
+  $ map (\p -> (p, mult (unPrime p) n - mult (unPrime p) (n - k) - mult (unPrime p) k))
+  $ [minBound .. precPrime n]
+  where
+    mult :: Word -> Word -> Word
+    mult p m = go mp mp
+      where
+        mp = m `quot` p
+        go !acc !x
+          | x >= p = let xp = x `quot` p in go (acc + xp) xp
+          | otherwise = acc
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_first_kind Stirling numbers of the first kind>.
 --

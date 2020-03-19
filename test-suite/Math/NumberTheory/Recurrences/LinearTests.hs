@@ -18,6 +18,10 @@ module Math.NumberTheory.Recurrences.LinearTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Control.Arrow
+import Data.List (sort)
+
+import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences.Linear
 import Math.NumberTheory.TestUtils
 
@@ -79,6 +83,16 @@ generalLucasProperty2 (NonNegative n) = (un, un1) == fibonacciPair n && (vn, vn1
 generalLucasProperty3 :: AnySign Integer -> AnySign Integer -> Bool
 generalLucasProperty3 (AnySign p) (AnySign q) = generalLucas p q 0 == (0, 1, 2, p)
 
+factorialProperty1 :: Word -> Bool
+factorialProperty1 n = n > 100000 ||
+  sort (map (first unPrime) (factorise (factorial !! fromIntegral n))) ==
+    sort (map (first (toInteger . unPrime)) (factorialFactors n))
+
+factorialProperty2 :: Word -> Bool
+factorialProperty2 n = n > 100000 ||
+  factorial !! fromIntegral n ==
+    product (map (\(p, k) -> toInteger (unPrime p) ^ k) (factorialFactors n))
+
 testSuite :: TestTree
 testSuite = testGroup "Linear"
   [ testGroup "fibonacci"
@@ -99,5 +113,9 @@ testSuite = testGroup "Linear"
     [ testSmallAndQuick "matches definition"  generalLucasProperty1
     , testSmallAndQuick "generalLucas 1 (-1)" generalLucasProperty2
     , testSmallAndQuick "generalLucas _ _ 0"  generalLucasProperty3
+    ]
+  , testGroup "factorial"
+    [ testSmallAndQuick "factorise . factorial = factorialFactors"  factorialProperty1
+    , testSmallAndQuick "factorial = factorBack . factorialFactors" factorialProperty2
     ]
   ]

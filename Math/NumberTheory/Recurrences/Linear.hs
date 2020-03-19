@@ -6,9 +6,12 @@
 --
 -- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
 
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP          #-}
+
 module Math.NumberTheory.Recurrences.Linear
   ( factorial
+  , factorialFactors
   , fibonacci
   , fibonacciPair
   , lucas
@@ -20,6 +23,7 @@ module Math.NumberTheory.Recurrences.Linear
 
 import Data.Bits
 import Numeric.Natural
+import Math.NumberTheory.Primes
 
 -- | Infinite zero-based table of factorials.
 --
@@ -34,6 +38,27 @@ factorial = scanl (*) 1 [1..]
 {-# SPECIALIZE factorial :: [Word]    #-}
 {-# SPECIALIZE factorial :: [Integer] #-}
 {-# SPECIALIZE factorial :: [Natural] #-}
+
+-- | Prime factors of a factorial.
+--
+-- prop> factorialFactors n == factorise (factorial !! n)
+--
+-- >>> factorialFactors 10
+-- [(Prime 2,8),(Prime 3,4),(Prime 5,2),(Prime 7,1)]
+factorialFactors :: Word -> [(Prime Word, Word)]
+factorialFactors n
+  | n < 2
+  = []
+  | otherwise
+  = map (\p -> (p, mult (unPrime p))) [minBound .. precPrime n]
+  where
+    mult :: Word -> Word
+    mult p = go np np
+      where
+        np = n `quot` p
+        go !acc !x
+          | x >= p = let xp = x `quot` p in go (acc + xp) xp
+          | otherwise = acc
 
 -- | @'fibonacci' k@ calculates the @k@-th Fibonacci number in
 --   /O/(@log (abs k)@) steps. The index may be negative. This

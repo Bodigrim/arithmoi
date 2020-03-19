@@ -8,15 +8,40 @@
 -- defining an array of precalculated primes < 2^16.
 --
 
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash    #-}
 
 module Math.NumberTheory.Primes.Small
   ( smallPrimesPtr
   , smallPrimesLength
+  , smallPrimesFromTo
   ) where
 
 import GHC.Exts hiding (fromList)
-import Data.Word
+import GHC.Word
+
+smallPrimesFromTo :: Word16 -> Word16 -> [Word16]
+smallPrimesFromTo !(W16# from#) !(W16# to#) = go k0#
+  where
+    !(Ptr smallPrimesAddr#) = smallPrimesPtr
+    fromD# = word2Double# from#
+    k0#
+      | isTrue# (from# `leWord#` 5##)
+      = 0#
+      | otherwise
+      = double2Int# (fromD# /## logDouble# fromD#)
+
+    go k#
+      | I# k# >= smallPrimesLength
+      = []
+      | isTrue# (p# `gtWord#` to#)
+      = []
+      | isTrue# (p# `ltWord#` from#)
+      = go (k# +# 1#)
+      | otherwise
+      = W16# p# : go (k# +# 1#)
+      where
+        p# = indexWord16OffAddr# smallPrimesAddr# k#
 
 -- length smallPrimes
 smallPrimesLength :: Int
