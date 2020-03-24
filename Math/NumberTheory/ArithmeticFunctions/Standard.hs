@@ -100,12 +100,12 @@ divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. w
 {-# INLINE divisorsHelperSmall #-}
 
 -- | See `divisorsInRangeA`
-divisorsInRange :: (UniqueFactorisation n, Ord n) => n -> n -> n -> [n]
-divisorsInRange from to = runFunction (divisorsInRangeA from to)
+divisorsInRange :: (UniqueFactorisation n, Ord n) => n -> n -> Set n
+divisorsInRange to = runFunction (divisorsInRangeA to)
 
 -- | The sorted list of all (positive) divisors within the range (inclusive of endpoints) of an argument, produced in lazy fashion.
-divisorsInRangeA :: (UniqueFactorisation n, Ord n) => n -> n -> ArithmeticFunction n [n]
-divisorsInRangeA from to = ArithmeticFunction (\p -> BoundedListProduct (Closed to) . divisorsListHelper (unPrime p)) (filter (>=from) . (1:) . getBoundedListProduct)
+divisorsInRangeA :: (UniqueFactorisation n, Ord n) => n -> ArithmeticFunction n (Set n)
+divisorsInRangeA to = ArithmeticFunction (\p k -> BoundedSetProduct (\bound -> S.takeWhileAntitone (<=bound) $ divisorsHelper (unPrime p) k)) (S.insert 1 . ($ to) . getBoundedSetProduct)
 
 -- | Synonym for 'tau'.
 --
@@ -340,40 +340,17 @@ instance Num a => Monoid (ListProduct a) where
   mempty  = ListProduct mempty
   mappend = (<>)
 
--- | Represents an upper bound on a datatype
-data Bound a = Closed a | Open 
+-- Represent as a Reader monad
+newtype BoundedSetProduct a = BoundedSetProduct { getBoundedSetProduct :: a -> Set a }
 
-instance Ord a => Semigroup (Bound a) where
-  Open      <> b         = b
-  b         <> Open      = b
-  Closed b1 <> Closed b2 = Closed (min b1 b2)
+instance (Ord a, Num a) => Semigroup (BoundedSetProduct a) where
+  BoundedSetProduct f1 <> BoundedSetProduct f2 = BoundedSetProduct f
+    where f b = s1 <> s2 <> foldMap (\n -> S.takeWhileAntitone (<=b) $ S.mapMonotonic (* n) s2) s1
+            where s1 = f1 b
+                  s2 = f2 b
 
-instance Ord a => Monoid (Bound a) where
-  mempty = Open
-  mappend = (<>)
-
-withinBound :: Ord a => Bound a -> a -> Bool
-withinBound Open       _ = True
-withinBound (Closed b) v = v <= b
-
--- | Maintain a sorted bounded list product
-data BoundedListProduct a = BoundedListProduct { bound :: Bound a, getBoundedListProduct :: [a] }
-
-merge :: Ord a => [a] -> [a] -> [a]
-merge [] ys = ys
-merge xs [] = xs
-merge a@(x:xs) b@(y:ys)
-  | x <= y    = x : merge xs b
-  | otherwise = y : merge a ys
-
-instance (Ord a, Num a) => Semigroup (BoundedListProduct a) where
-  -- Precondition: s1 and s2 are sorted
-  BoundedListProduct b1 s1 <> BoundedListProduct b2 s2 = BoundedListProduct b s
-    where b = b1 <> b2
-          s = takeWhile (withinBound b) $ L.foldl1' merge (s1 : s2 : map (\n -> map (* n) s2) s1)
-
-instance (Ord a, Num a) => Monoid (BoundedListProduct a) where
-  mempty = BoundedListProduct mempty mempty
+instance (Ord a, Num a) => Monoid (BoundedSetProduct a) where
+  mempty = BoundedSetProduct mempty
   mappend = (<>)
 
 newtype IntSetProduct = IntSetProduct { getIntSetProduct :: IntSet }
