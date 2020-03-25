@@ -10,14 +10,6 @@
 -- and
 -- <http://programmingpraxis.com/2010/04/27/modern-elliptic-curve-factorization-part-2/>
 --
--- The implementation is not very optimised, so it is not suitable for factorising numbers
--- with only huge prime divisors. However, factors of 20-25 digits are normally found in
--- acceptable time. The time taken depends, however, strongly on how lucky the curve-picking
--- is. With luck, even large factors can be found in seconds; on the other hand, finding small
--- factors (about 10 digits) can take minutes when the curve-picking is bad.
---
--- Given enough time, the algorithm should be able to factor numbers of 100-120 digits, but it
--- is best suited for numbers of up to 50-60 digits.
 
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE CPP                 #-}
