@@ -12,10 +12,8 @@ module Math.NumberTheory.Primes.Sieve.Indexing
     , rho
     ) where
 
-import Data.Array.Unboxed
+import Data.Array.Base
 import Data.Bits
-
-import Math.NumberTheory.Unsafe
 
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)

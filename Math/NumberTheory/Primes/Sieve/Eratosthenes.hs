@@ -29,6 +29,7 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 import Control.Monad (when)
 import Control.Monad.ST
+import Data.Array.Base
 import Data.Array.ST
 import Data.Array.Unboxed
 import Data.Bits
@@ -39,7 +40,6 @@ import Data.Word
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
-import Math.NumberTheory.Unsafe
 
 #define IX_MASK     0xFFFFF
 #define IX_BITS     20

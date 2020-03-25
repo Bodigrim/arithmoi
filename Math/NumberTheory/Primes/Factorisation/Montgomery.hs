@@ -35,7 +35,7 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 
 import Control.Arrow
 import Control.Monad.Trans.State.Lazy
-import System.Random
+import Data.Array.Base (bounds, unsafeAt)
 import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -47,11 +47,11 @@ import Data.Proxy
 import Data.Semigroup
 #endif
 import Data.Traversable
-
 import GHC.Exts
 import GHC.Integer.GMP.Internals hiding (integerToInt, wordToInteger)
-import GHC.TypeNats.Compat
 import GHC.Natural
+import GHC.TypeNats.Compat
+import System.Random
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
@@ -61,7 +61,6 @@ import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Unsafe
 import Math.NumberTheory.Utils hiding (splitOff)
 import Math.NumberTheory.Utils.FromIntegral
 

@@ -26,9 +26,9 @@ import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
-import Math.NumberTheory.Unsafe
 
 import Control.Monad.ST
+import Data.Array.Base
 import Data.Array.ST
 import Data.Bits
 import Data.Int
