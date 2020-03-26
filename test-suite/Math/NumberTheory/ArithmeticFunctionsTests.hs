@@ -55,12 +55,12 @@ divisorsProperty4 (NonZero n) = S.toAscList (runFunction divisorsA n) == IS.toAs
 divisorsProperty5 :: NonZero Int -> Bool
 divisorsProperty5 (NonZero n) = S.toAscList (runFunction divisorsA n) == sort (runFunction divisorsListA n)
 
--- | 'divisorsInRange' matches 'divisorsA' with a filter
+-- | 'divisorsTo' matches 'divisorsA' with a filter
 divisorsProperty6 :: Positive Int -> NonNegative Int -> Bool
-divisorsProperty6 (Positive a) (NonNegative b) = runFunction (divisorsInRangeA to) n == expected
+divisorsProperty6 (Positive a) (NonNegative b) = runFunction (divisorsToA to) n == expected
   where to = a
         n = to + b
-        expected = S.takeWhileAntitone (<=to) (runFunction divisorsA n)
+        expected = fst $ S.split to (runFunction divisorsA n)
 
 -- | tau matches baseline from OEIS.
 tauOeis :: Assertion
@@ -326,7 +326,7 @@ testSuite = testGroup "ArithmeticFunctions"
     , testSmallAndQuick "matches definition"       divisorsProperty3
     , testSmallAndQuick "divisors = divisorsSmall" divisorsProperty4
     , testSmallAndQuick "divisors = divisorsList"  divisorsProperty5
-    , testSmallAndQuick "divisors = divisorsInRange"  divisorsProperty6
+    , testSmallAndQuick "divisors = divisorsTo"  divisorsProperty6
     ]
   , testGroup "Tau"
     [ testCase "OEIS" tauOeis

@@ -15,7 +15,7 @@ module Math.NumberTheory.ArithmeticFunctions.Standard
   , divisors, divisorsA
   , divisorsList, divisorsListA
   , divisorsSmall, divisorsSmallA
-  , divisorsInRange, divisorsInRangeA
+  , divisorsTo, divisorsToA
   , divisorCount, tau, tauA
   , sigma, sigmaA
   , totient, totientA
@@ -100,12 +100,20 @@ divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. w
 {-# INLINE divisorsHelperSmall #-}
 
 -- | See `divisorsInRangeA`
-divisorsInRange :: (UniqueFactorisation n, Ord n) => n -> n -> Set n
-divisorsInRange to = runFunction (divisorsInRangeA to)
+divisorsTo :: (UniqueFactorisation n, Ord n) => n -> n -> Set n
+divisorsTo to = runFunction (divisorsToA to)
 
--- | The sorted list of all (positive) divisors within the range (inclusive of endpoints) of an argument, produced in lazy fashion.
-divisorsInRangeA :: (UniqueFactorisation n, Ord n) => n -> ArithmeticFunction n (Set n)
-divisorsInRangeA to = ArithmeticFunction (\p k -> BoundedSetProduct (\bound -> S.takeWhileAntitone (<=bound) $ divisorsHelper (unPrime p) k)) (S.insert 1 . ($ to) . getBoundedSetProduct)
+-- | The set of all (positive) divisors strictly below `to` 
+divisorsToA :: (UniqueFactorisation n, Ord n) => n -> ArithmeticFunction n (Set n)
+divisorsToA to = ArithmeticFunction f unwrap
+  where f p k = BoundedSetProduct (\bound -> divisorsToHelper bound (unPrime p) k)
+        unwrap (BoundedSetProduct res) = if 1 < to then S.insert 1 (res to) else res to
+
+divisorsToHelper :: (Ord n, Num n) => n -> n -> Word -> Set n
+divisorsToHelper _ _ 0 = S.empty
+divisorsToHelper b p 1 = if p < b then S.singleton p else S.empty
+divisorsToHelper b p a = S.fromDistinctAscList $ take (wordToInt a) $ takeWhile (<b) $ iterate (p*) p
+{-# INLINE divisorsToHelper #-}
 
 -- | Synonym for 'tau'.
 --
@@ -345,7 +353,7 @@ newtype BoundedSetProduct a = BoundedSetProduct { getBoundedSetProduct :: a -> S
 
 instance (Ord a, Num a) => Semigroup (BoundedSetProduct a) where
   BoundedSetProduct f1 <> BoundedSetProduct f2 = BoundedSetProduct f
-    where f b = s1 <> s2 <> foldMap (\n -> S.takeWhileAntitone (<=b) $ S.mapMonotonic (* n) s2) s1
+    where f b = s1 <> s2 <> foldMap (\n -> fst $ S.split b $ S.mapMonotonic (* n) s2) s1
             where s1 = f1 b
                   s2 = f2 b
 
