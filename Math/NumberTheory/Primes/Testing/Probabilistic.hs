@@ -27,7 +27,7 @@ import Data.Mod
 import Data.Proxy
 import GHC.Base
 import GHC.Integer.GMP.Internals
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 
 import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Utils

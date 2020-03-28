@@ -26,7 +26,7 @@ import Data.Maybe (isJust, isNothing, mapMaybe)
 import Data.Mod
 import Data.Proxy
 import qualified Data.Set as S
-import GHC.TypeNats.Compat
+import GHC.TypeNats (SomeNat(..), someNatVal)
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions (totient)

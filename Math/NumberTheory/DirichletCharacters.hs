@@ -72,7 +72,7 @@ import Data.Semigroup                                      (Semigroup(..),Produc
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))
-import GHC.TypeNats.Compat                                 (Nat, SomeNat(..), natVal, someNatVal)
+import GHC.TypeNats                                        (Nat, SomeNat(..), natVal, someNatVal)
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)

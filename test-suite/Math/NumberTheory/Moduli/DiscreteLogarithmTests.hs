@@ -11,7 +11,7 @@ import Numeric.Natural
 import Test.Tasty
 import Data.Semigroup
 import Data.Proxy
-import GHC.TypeNats.Compat
+import GHC.TypeNats (SomeNat(..), someNatVal)
 
 import Math.NumberTheory.ArithmeticFunctions (totient)
 import Math.NumberTheory.Moduli.Multiplicative

@@ -50,7 +50,7 @@ import Data.Traversable
 import GHC.Exts
 import GHC.Integer.GMP.Internals hiding (integerToInt, wordToInteger)
 import GHC.Natural
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, SomeNat(..), natVal, someNatVal)
 import System.Random
 
 import Math.NumberTheory.Curves.Montgomery

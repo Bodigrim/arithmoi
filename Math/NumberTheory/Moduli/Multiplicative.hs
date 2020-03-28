@@ -28,7 +28,7 @@ import Control.Monad
 import Data.Constraint
 import Data.Mod
 import Data.Semigroup
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, natVal)
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli.Internal

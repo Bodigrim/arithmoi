@@ -18,7 +18,7 @@ import Data.Bits ((.&.))
 import Data.Mod
 import Data.Proxy
 import GHC.Integer.GMP.Internals (powModInteger)
-import GHC.TypeNats.Compat
+import GHC.TypeNats (SomeNat(..), someNatVal)
 
 import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes (unPrime)

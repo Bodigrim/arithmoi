@@ -39,7 +39,7 @@ import Data.Euclidean
 import Data.Mod
 import Data.Ratio
 import Data.Semiring (Semiring(..), (+), (-), (*), Ring)
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, natVal)
 
 import Math.NumberTheory.Moduli.SomeMod
 import Math.NumberTheory.Utils (recipMod)

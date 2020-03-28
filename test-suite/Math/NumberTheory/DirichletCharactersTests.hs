@@ -26,7 +26,7 @@ import Data.Semigroup
 import qualified Data.Vector as V
 import Numeric.Natural
 
-import GHC.TypeNats.Compat (SomeNat(..), someNatVal, KnownNat, natVal, sameNat)
+import GHC.TypeNats (SomeNat(..), someNatVal, KnownNat, natVal, sameNat)
 import Data.Type.Equality
 
 import Math.NumberTheory.ArithmeticFunctions (totient, divisorsList)

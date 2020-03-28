@@ -19,8 +19,8 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Mod
 import Data.Proxy
+import GHC.TypeNats (SomeNat(..), someNatVal)
 import GHC.Integer.GMP.Internals
-import GHC.TypeNats.Compat
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions

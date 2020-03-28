@@ -16,7 +16,7 @@ module Math.NumberTheory.CurvesTests where
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative)
 
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat)
 
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.TestUtils

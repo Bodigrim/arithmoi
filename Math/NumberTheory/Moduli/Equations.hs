@@ -19,7 +19,7 @@ import Data.Constraint
 import Data.Maybe
 import Data.Mod
 import GHC.Integer.GMP.Internals
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, natVal)
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Singleton

@@ -56,7 +56,7 @@ import Data.Proxy
 import Data.Semigroup
 #endif
 import GHC.Generics
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, Nat, natVal)
 import Numeric.Natural
 import Unsafe.Coerce
 

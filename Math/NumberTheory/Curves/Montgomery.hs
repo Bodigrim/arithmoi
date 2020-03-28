@@ -34,7 +34,7 @@ module Math.NumberTheory.Curves.Montgomery
 import Data.Proxy
 import GHC.Exts
 import GHC.Integer.Logarithms
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, SomeNat(..), Nat, natVal, someNatVal)
 
 import Math.NumberTheory.Utils (recipMod)
 

@@ -28,7 +28,7 @@ import Data.Semigroup
 #endif
 import Data.Semiring (Semiring(..), Ring(..))
 import Data.Type.Equality
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, SomeNat(..), sameNat, natVal, someNatVal)
 import Numeric.Natural
 
 -- | This type represents residues with unknown modulo and rational numbers.

@@ -19,7 +19,7 @@ description:
   powers (integer roots and tests, modular exponentiation).
 category:      Math, Algorithms, Number Theory
 author:        Andrew Lelechenko, Daniel Fischer
-tested-with:   GHC ==8.0.2 GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.3 GHC ==8.10.1
+tested-with:   GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.3 GHC ==8.10.1
 extra-source-files:
   changelog.md
 
@@ -29,9 +29,9 @@ source-repository head
 
 library
   build-depends:
-    base >=4.9 && <5,
+    base >=4.10 && <5,
     array >=0.5 && <0.6,
-    containers >=0.5 && <0.7,
+    containers >=0.5.8 && <0.7,
     chimera >= 0.3,
     constraints,
     deepseq,
@@ -46,7 +46,6 @@ library
     semirings >= 0.5.2,
     vector >= 0.12
   exposed-modules:
-    GHC.TypeNats.Compat
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Inverse
     Math.NumberTheory.ArithmeticFunctions.Mertens
@@ -117,7 +116,7 @@ library
 
 test-suite spec
   build-depends:
-    base >=4.9 && <5,
+    base >=4.10 && <5,
     arithmoi,
     containers,
     exact-pi >=0.4.1.1,

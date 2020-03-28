@@ -15,7 +15,7 @@ import Gauge.Main
 import Control.Monad
 import Data.Maybe
 import Data.Mod
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 import Data.Proxy
 import Numeric.Natural
 

@@ -19,7 +19,7 @@ module Math.NumberTheory.Recurrences.PentagonalTests
 
 import Data.Proxy                    (Proxy (..))
 import GHC.Natural                   (Natural)
-import GHC.TypeNats.Compat           (SomeNat (..), someNatVal)
+import GHC.TypeNats                  (SomeNat (..), someNatVal)
 
 import Math.NumberTheory.Moduli      (Mod, getVal)
 import Math.NumberTheory.Recurrences (partition)

@@ -16,7 +16,7 @@ import Test.Tasty
 import Data.List
 import Data.Mod
 import Data.Proxy
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli.Equations

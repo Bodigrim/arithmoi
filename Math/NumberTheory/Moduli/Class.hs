@@ -45,7 +45,7 @@ module Math.NumberTheory.Moduli.Class
 
 import Data.Mod
 import GHC.Natural
-import GHC.TypeNats.Compat
+import GHC.TypeNats (KnownNat, natVal)
 
 import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.SomeMod
