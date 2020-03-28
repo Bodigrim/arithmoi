@@ -31,7 +31,6 @@ import Control.Monad (when)
 import Control.Monad.ST
 import Data.Array.Base
 import Data.Array.ST
-import Data.Array.Unboxed
 import Data.Bits
 import Data.Coerce
 import Data.Proxy
