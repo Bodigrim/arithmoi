@@ -112,7 +112,7 @@ library
     Math.NumberTheory.Zeta.Riemann
     Math.NumberTheory.Zeta.Utils
   default-language: Haskell2010
-  ghc-options: -Wall -Widentities
+  ghc-options: -Wall -Widentities -Wcompat
 
 test-suite spec
   build-depends:
@@ -176,7 +176,7 @@ test-suite spec
   main-is: Test.hs
   default-language: Haskell2010
   hs-source-dirs: test-suite
-  ghc-options: -Wall -Widentities
+  ghc-options: -Wall -Widentities -Wcompat
 
 benchmark criterion
   build-depends:
@@ -211,7 +211,7 @@ benchmark criterion
   main-is: Bench.hs
   default-language: Haskell2010
   hs-source-dirs: benchmark
-  ghc-options: -Wall -Widentities
+  ghc-options: -Wall -Widentities -Wcompat
 
 executable sequence-model
   build-depends:
@@ -223,4 +223,4 @@ executable sequence-model
   main-is: SequenceModel.hs
   hs-source-dirs: app
   default-language: Haskell2010
-  ghc-options: -Wall -Widentities
+  ghc-options: -Wall -Widentities -Wcompat
