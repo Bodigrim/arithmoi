@@ -47,11 +47,11 @@ isCertifiedPrime n
 --   abstract to ensure the validity of proofs.
 data PrimalityProof
     = Pocklington { cprime :: !Integer          -- ^ The number whose primality is proved.
-                  , factorisedPart, cofactor :: !Integer
-                  , knownFactors :: ![(Integer, Word, Integer, PrimalityProof)]
+                  , _factorisedPart, _cofactor :: !Integer
+                  , _knownFactors :: ![(Integer, Word, Integer, PrimalityProof)]
                   }
     | TrialDivision { cprime :: !Integer        -- ^ The number whose primality is proved.
-                    , tdLimit :: !Integer }
+                    , _tdLimit :: !Integer }
     | Trivial { cprime :: !Integer              -- ^ The number whose primality is proved.
               }
       deriving Show

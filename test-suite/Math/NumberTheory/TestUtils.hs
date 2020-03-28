@@ -57,8 +57,8 @@ import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, g
 
 import Data.Bits
 import Data.Euclidean
+import Data.Kind
 import Data.Semiring (Semiring)
-import GHC.Exts
 import Numeric.Natural
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E (EisensteinInteger(..))
@@ -104,12 +104,12 @@ instance (Ord a, Num a, Euclidean a, Serial m a) => Serial m (SN.SmoothBasis a) 
 class    (f (g x)) => (f `Compose` g) x
 instance (f (g x)) => (f `Compose` g) x
 
-type family ConcatMap (w :: * -> Constraint) (cs :: [*]) :: Constraint
+type family ConcatMap (w :: Type -> Constraint) (cs :: [Type]) :: Constraint
   where
     ConcatMap w '[] = ()
     ConcatMap w (c ': cs) = (w c, ConcatMap w cs)
 
-type family Matrix (as :: [* -> Constraint]) (w :: * -> *) (bs :: [*]) :: Constraint
+type family Matrix (as :: [Type -> Constraint]) (w :: Type -> Type) (bs :: [Type]) :: Constraint
   where
     Matrix '[] w bs = ()
     Matrix (a ': as) w bs = (ConcatMap (a `Compose` w) bs, Matrix as w bs)

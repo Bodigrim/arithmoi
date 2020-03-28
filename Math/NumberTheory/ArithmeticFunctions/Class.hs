@@ -65,7 +65,11 @@ instance Semigroup a => Semigroup (ArithmeticFunction n a) where
 
 instance Monoid a => Monoid (ArithmeticFunction n a) where
   mempty  = pure mempty
+#if __GLASGOW_HASKELL__ < 803
   mappend = liftA2 mappend
+#else
+  mappend = (<>)
+#endif
 
 -- | Factorisation is expensive, so it is better to avoid doing it twice.
 -- Write 'runFunction (f + g) n' instead of 'runFunction f n + runFunction g n'.

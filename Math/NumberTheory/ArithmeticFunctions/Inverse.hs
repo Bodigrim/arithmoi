@@ -31,7 +31,7 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
 import Prelude hiding (rem, quot)
 import Data.Bits (Bits)
 import Data.Euclidean
-import Data.List
+import Data.List (foldl', partition, mapAccumL, sortOn)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe

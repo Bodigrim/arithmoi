@@ -61,6 +61,7 @@ import Control.Applicative                                 (liftA2)
 import Data.Bits                                           (Bits(..))
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
+import Data.Kind
 import Data.List                                           (mapAccumL, foldl', sort, find, unfoldr)
 import Data.Maybe                                          (mapMaybe, fromJust, fromMaybe)
 #if MIN_VERSION_base(4,12,0)
@@ -434,7 +435,7 @@ newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character i
                                                     deriving Eq
 
 -- | Wrapper to hide an unknown type-level natural.
-data WithNat (a :: Nat -> *) where
+data WithNat (a :: Nat -> Type) where
   WithNat :: KnownNat m => a m -> WithNat a
 
 -- | This function also provides access to the new modulus on type level, with a KnownNat instance

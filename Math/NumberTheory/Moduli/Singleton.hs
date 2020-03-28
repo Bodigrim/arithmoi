@@ -49,7 +49,8 @@ module Math.NumberTheory.Moduli.Singleton
 
 import Control.DeepSeq
 import Data.Constraint
-import Data.List
+import Data.Kind
+import Data.List (sort)
 import qualified Data.Map as M
 import Data.Proxy
 #if __GLASGOW_HASKELL__ < 803
@@ -65,7 +66,7 @@ import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 
 -- | Wrapper to hide an unknown type-level natural.
-data Some (a :: Nat -> *) where
+data Some (a :: Nat -> Type) where
   Some :: a m -> Some a
 
 -- | From "Data.Constraint.Nat".

@@ -54,7 +54,7 @@ module Math.NumberTheory.Recurrences.Bilinear
   ) where
 
 import Data.Euclidean (GcdDomain(..))
-import Data.List
+import Data.List (scanl', zipWith4)
 import Data.Maybe
 import Data.Ratio
 import Data.Semiring (Semiring(..))

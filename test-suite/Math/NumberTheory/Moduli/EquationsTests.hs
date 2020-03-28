@@ -13,7 +13,7 @@ module Math.NumberTheory.Moduli.EquationsTests
 
 import Test.Tasty
 
-import Data.List
+import Data.List (sort)
 import Data.Mod
 import Data.Proxy
 import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
