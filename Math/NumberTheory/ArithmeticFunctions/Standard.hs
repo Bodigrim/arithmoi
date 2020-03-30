@@ -100,11 +100,11 @@ divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. w
 {-# INLINE divisorsHelperSmall #-}
 
 -- | See `divisorsToA`
-divisorsTo :: (UniqueFactorisation n, Ord n) => n -> n -> Set n
+divisorsTo :: (UniqueFactorisation n, Ord n, Integral n) => n -> n -> Set n
 divisorsTo to = runFunction (divisorsToA to)
 
 -- | The set of all (positive) divisors below `to` (inclusive)
-divisorsToA :: (UniqueFactorisation n, Ord n) => n -> ArithmeticFunction n (Set n)
+divisorsToA :: (UniqueFactorisation n, Ord n, Integral n) => n -> ArithmeticFunction n (Set n)
 divisorsToA to = ArithmeticFunction f unwrap
   where f p k = BoundedSetProduct (\bound -> divisorsToHelper bound (unPrime p) k)
         unwrap (BoundedSetProduct res) = if 1 <= to then S.insert 1 (res to) else res to
