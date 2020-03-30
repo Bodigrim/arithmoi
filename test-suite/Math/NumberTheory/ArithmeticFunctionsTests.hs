@@ -60,7 +60,7 @@ divisorsProperty6 :: Positive Int -> NonNegative Int -> Bool
 divisorsProperty6 (Positive a) (NonNegative b) = runFunction (divisorsToA to) n == expected
   where to = a
         n = to + b
-        expected = fst $ S.split to (runFunction divisorsA n)
+        expected = S.filter (<=to) (runFunction divisorsA n)
 
 -- | tau matches baseline from OEIS.
 tauOeis :: Assertion

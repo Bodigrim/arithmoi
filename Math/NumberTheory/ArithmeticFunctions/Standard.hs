@@ -99,20 +99,21 @@ divisorsHelperSmall p 1 = IS.singleton p
 divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelperSmall #-}
 
--- | See `divisorsInRangeA`
+-- | See `divisorsToA`
 divisorsTo :: (UniqueFactorisation n, Ord n) => n -> n -> Set n
 divisorsTo to = runFunction (divisorsToA to)
 
--- | The set of all (positive) divisors strictly below `to` 
+-- | The set of all (positive) divisors below `to` (inclusive)
 divisorsToA :: (UniqueFactorisation n, Ord n) => n -> ArithmeticFunction n (Set n)
 divisorsToA to = ArithmeticFunction f unwrap
   where f p k = BoundedSetProduct (\bound -> divisorsToHelper bound (unPrime p) k)
-        unwrap (BoundedSetProduct res) = if 1 < to then S.insert 1 (res to) else res to
+        unwrap (BoundedSetProduct res) = if 1 <= to then S.insert 1 (res to) else res to
 
+-- | Generate at most `a` powers of `p` up to bound `b` (inclusive)
 divisorsToHelper :: (Ord n, Num n) => n -> n -> Word -> Set n
 divisorsToHelper _ _ 0 = S.empty
-divisorsToHelper b p 1 = if p < b then S.singleton p else S.empty
-divisorsToHelper b p a = S.fromDistinctAscList $ take (wordToInt a) $ takeWhile (<b) $ iterate (p*) p
+divisorsToHelper b p 1 = if p <= b then S.singleton p else S.empty
+divisorsToHelper b p a = S.fromDistinctAscList $ take (wordToInt a) $ takeWhile (<=b) $ iterate (p*) p
 {-# INLINE divisorsToHelper #-}
 
 -- | Synonym for 'tau'.
@@ -351,9 +352,13 @@ instance Num a => Monoid (ListProduct a) where
 -- Represent as a Reader monad
 newtype BoundedSetProduct a = BoundedSetProduct { getBoundedSetProduct :: a -> Set a }
 
+takeWhileLE :: Ord a => a -> Set a -> Set a
+takeWhileLE b xs = if m then S.insert b ls else ls
+  where (ls, m, _) = S.splitMember b xs 
+
 instance (Ord a, Num a) => Semigroup (BoundedSetProduct a) where
   BoundedSetProduct f1 <> BoundedSetProduct f2 = BoundedSetProduct f
-    where f b = s1 <> s2 <> foldMap (\n -> fst $ S.split b $ S.mapMonotonic (* n) s2) s1
+    where f b = s1 <> s2 <> foldMap (\n -> takeWhileLE b $ S.mapMonotonic (* n) s2) s1
             where s1 = f1 b
                   s2 = f2 b
 
