@@ -1,8 +1,10 @@
 *.hi
 *.o
 stack.yaml
+stack.yaml.lock
 dist
 dist-newstyle
 .ghc.environment*
 .tasty-rerun-log
 .swp
+.stack-work
