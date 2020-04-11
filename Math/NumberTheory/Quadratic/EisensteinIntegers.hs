@@ -165,28 +165,7 @@ divideByThree = go 0
         (q2, r2) = divMod (a + b) 3
 
 -- | Find an Eisenstein integer whose norm is the given prime number
--- in the form @3k + 1@ using a modification of the
--- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
---
--- The maintainer <https://github.com/cartazio/arithmoi/pull/121#issuecomment-415010647 Andrew Lelechenko>
--- derived the following:
---
---     * Each prime of the form @3n + 1@ is actually of the form @6k + 1@.
---     * One has @(z + 3k)^2 ≡ z^2 + 6kz + 9k^2 ≡ z^2 + (6k + 1)z - z + 9k^2 ≡ z^2 - z + 9k^2 (mod 6k + 1)@.
---
--- The goal is to solve @z^2 - z + 1 ≡ 0 (mod 6k + 1)@. One has:
---
---     1. @z^2 - z + 1 ≡ 0 (mod 6k + 1)@
---     2. @z^2 - z ≡ -1 (mod 6k + 1)@
---     3. @z^2 - z + 9k^2 ≡ 9k^2 - 1 (mod 6k + 1)@
---     4. @(z + 3k)^2 ≡ 9k^2 - 1 (mod 6k + 1)@
---     5. @z + 3k = sqrtsModPrime(9k^2 - 1) (mod 6k + 1)@
---     6. @z = (sqrtsModPrime(9k^2 - 1) (mod 6k + 1)) - 3k@
---
--- For example, let @p = 7@, then @k = 1@.
--- Square root of @9*1^2-1 ≡ 1 (mod 7)@, and @z = 1 - 3*1 = -2 ≡ 5 (mod 7)@.
---
--- Truly, @norm (5 :+ 1) = 25 - 5 + 1 = 21 ≡ 0 (mod 7)@.
+-- in the form @3k + 1@.
 findPrime :: Prime Integer -> U.Prime EisensteinInteger
 findPrime p = case sqrtsModPrime (9*k*k - 1) p of
     []    -> error "findPrime: argument must be prime p = 6k + 1"
