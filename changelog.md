@@ -15,6 +15,8 @@
 
 * Add `Semiring` instance of `SomeMod` ([#174](https://github.com/Bodigrim/arithmoi/pull/174)).
 
+* Generate divisors in range ([#183](https://github.com/Bodigrim/arithmoi/pull/183)).
+
 ### Changed
 
 * Speed up `partition`, using better container for memoization ([#176](https://github.com/Bodigrim/arithmoi/pull/176)).
