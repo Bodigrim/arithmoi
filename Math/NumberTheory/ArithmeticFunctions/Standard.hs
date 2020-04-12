@@ -40,7 +40,6 @@ import qualified Data.IntSet as IS
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
-import qualified Data.List as L
 import Data.Semigroup
 
 import Math.NumberTheory.ArithmeticFunctions.Class
@@ -350,11 +349,11 @@ instance Num a => Monoid (ListProduct a) where
   mappend = (<>)
 
 -- Represent as a Reader monad
-newtype BoundedSetProduct a = BoundedSetProduct { getBoundedSetProduct :: a -> Set a }
+newtype BoundedSetProduct a = BoundedSetProduct { _getBoundedSetProduct :: a -> Set a }
 
 takeWhileLE :: Ord a => a -> Set a -> Set a
 takeWhileLE b xs = if m then S.insert b ls else ls
-  where (ls, m, _) = S.splitMember b xs 
+  where (ls, m, _) = S.splitMember b xs
 
 instance (Ord a, Num a) => Semigroup (BoundedSetProduct a) where
   BoundedSetProduct f1 <> BoundedSetProduct f2 = BoundedSetProduct f
