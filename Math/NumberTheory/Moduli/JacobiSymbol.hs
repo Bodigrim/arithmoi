@@ -39,10 +39,6 @@ instance Semigroup JacobiSymbol where
     Zero     -> const Zero
     One      -> id
 
-instance Monoid JacobiSymbol where
-  mempty = One
-  mappend = (<>)
-
 negJS :: JacobiSymbol -> JacobiSymbol
 negJS = \case
   MinusOne -> One
