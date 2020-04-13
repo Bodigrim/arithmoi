@@ -122,6 +122,9 @@ isPrime g@(x :+ y)
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes (up to associates), in order of ascending
 -- magnitude.
+--
+-- >>> take 10 primes
+-- [Prime 1+ι,Prime 2+ι,Prime 1+2*ι,Prime 3,Prime 3+2*ι,Prime 2+3*ι,Prime 4+ι,Prime 1+4*ι,Prime 5+2*ι,Prime 2+5*ι]
 primes :: [U.Prime GaussianInteger]
 primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
   where
@@ -134,6 +137,9 @@ primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
+--
+-- >>> findPrime (nextPrime 5)
+-- Prime 2+ι
 findPrime :: Prime Integer -> U.Prime GaussianInteger
 findPrime p = case sqrtsModPrime (-1) p of
     []    -> error "findPrime: an argument must be prime p = 4k + 1"

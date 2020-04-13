@@ -98,17 +98,17 @@ divisorsHelperSmall p 1 = IS.singleton p
 divisorsHelperSmall p a = IS.fromDistinctAscList $ p : p * p : map (p ^) [3 .. wordToInt a]
 {-# INLINE divisorsHelperSmall #-}
 
--- | See `divisorsToA`
+-- | See 'divisorsToA'.
 divisorsTo :: (UniqueFactorisation n, Ord n, Integral n) => n -> n -> Set n
 divisorsTo to = runFunction (divisorsToA to)
 
--- | The set of all (positive) divisors below `to` (inclusive)
+-- | The set of all (positive) divisors up to an inclusive bound.
 divisorsToA :: (UniqueFactorisation n, Ord n, Integral n) => n -> ArithmeticFunction n (Set n)
 divisorsToA to = ArithmeticFunction f unwrap
   where f p k = BoundedSetProduct (\bound -> divisorsToHelper bound (unPrime p) k)
         unwrap (BoundedSetProduct res) = if 1 <= to then S.insert 1 (res to) else res to
 
--- | Generate at most `a` powers of `p` up to bound `b` (inclusive)
+-- | Generate at most @a@ powers of @p@ up to an inclusive bound @b@.
 divisorsToHelper :: (Ord n, Num n) => n -> n -> Word -> Set n
 divisorsToHelper _ _ 0 = S.empty
 divisorsToHelper b p 1 = if p <= b then S.singleton p else S.empty
