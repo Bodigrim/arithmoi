@@ -48,6 +48,8 @@ import qualified Math.NumberTheory.DirichletCharactersTests as DirichletChar
 
 import qualified Math.NumberTheory.RootsOfUnityTests as RootsOfUnity
 
+import qualified Math.NumberTheory.DiophantineTests as Diophantine
+
 main :: IO ()
 main = defaultMainWithRerun tests
 
@@ -91,7 +93,7 @@ tests = testGroup "All"
   , UniqueFactorisation.testSuite
   , Curves.testSuite
   , SmoothNumbers.testSuite
-
+  , Diophantine.testSuite
   , testGroup "Zeta"
     [ Riemann.testSuite
     , Dirichlet.testSuite
