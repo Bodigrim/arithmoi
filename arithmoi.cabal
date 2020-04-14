@@ -1,13 +1,12 @@
 name:          arithmoi
-version:       0.10.0.0
+version:       0.11.0.0
 cabal-version: >=1.10
 build-type:    Simple
 license:       MIT
 license-file:  LICENSE
-copyright:     (c) 2016-2019 Andrew Lelechenko, Carter Schonwald, 2011 Daniel Fischer
+copyright:     (c) 2016-2020 Andrew Lelechenko, 2016-2019 Carter Schonwald, 2011 Daniel Fischer
 maintainer:    Andrew Lelechenko andrew dot lelechenko at gmail dot com,
                Carter Schonwald  carter at wellposed dot com
-stability:     Provisional
 homepage:      https://github.com/Bodigrim/arithmoi
 bug-reports:   https://github.com/Bodigrim/arithmoi/issues
 synopsis:      Efficient basic number-theoretic functions.
