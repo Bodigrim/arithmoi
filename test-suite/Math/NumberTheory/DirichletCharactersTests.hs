@@ -34,7 +34,6 @@ import Math.NumberTheory.DirichletCharacters
 import qualified Math.NumberTheory.Moduli.Sqrt as J
 import Math.NumberTheory.Moduli.Class (SomeMod(..), modulo)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
-import Math.NumberTheory.RootsOfUnity
 
 -- | This tests property 6 from https://en.wikipedia.org/wiki/Dirichlet_character#Axiomatic_definition
 dirCharOrder :: forall n. KnownNat n => DirichletCharacter n -> Bool

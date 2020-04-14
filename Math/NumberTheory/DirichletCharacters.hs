@@ -51,6 +51,10 @@ module Math.NumberTheory.DirichletCharacters
   , induced
   , makePrimitive
   , WithNat(..)
+  -- * Roots of unity
+  , RootOfUnity(..)
+  , toRootOfUnity
+  , toComplex
   -- * Debugging
   , validChar
   ) where

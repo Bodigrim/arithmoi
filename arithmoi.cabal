@@ -83,7 +83,6 @@ library
     Math.NumberTheory.Recurrences
     Math.NumberTheory.Recurrences.Bilinear
     Math.NumberTheory.Recurrences.Linear
-    Math.NumberTheory.RootsOfUnity
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
   other-modules:
@@ -103,6 +102,7 @@ library
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
     Math.NumberTheory.Recurrences.Pentagonal
+    Math.NumberTheory.RootsOfUnity
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.DirichletSeries
     Math.NumberTheory.Utils.FromIntegral

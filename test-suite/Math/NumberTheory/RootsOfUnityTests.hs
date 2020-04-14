@@ -15,7 +15,7 @@ import Data.Complex
 import Data.Ratio
 import Data.Semigroup
 
-import Math.NumberTheory.RootsOfUnity
+import Math.NumberTheory.DirichletCharacters (toRootOfUnity, toComplex)
 import Math.NumberTheory.TestUtils (testSmallAndQuick, Positive(..))
 
 rootOfUnityTest :: Integer -> Positive Integer -> Bool
