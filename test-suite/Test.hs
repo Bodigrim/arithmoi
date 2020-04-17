@@ -9,6 +9,7 @@ import qualified Math.NumberTheory.Recurrences.LinearTests as RecurrencesLinear
 
 import qualified Math.NumberTheory.Moduli.ChineseTests as ModuliChinese
 import qualified Math.NumberTheory.Moduli.ClassTests as ModuliClass
+import qualified Math.NumberTheory.Moduli.CubicSymbolTests as ModuliCubic
 import qualified Math.NumberTheory.Moduli.DiscreteLogarithmTests as ModuliDiscreteLogarithm
 import qualified Math.NumberTheory.Moduli.EquationsTests as ModuliEquations
 import qualified Math.NumberTheory.Moduli.JacobiTests as ModuliJacobi
@@ -63,6 +64,7 @@ tests = testGroup "All"
   , testGroup "Moduli"
     [ ModuliChinese.testSuite
     , ModuliClass.testSuite
+    , ModuliCubic.testSuite
     , ModuliDiscreteLogarithm.testSuite
     , ModuliEquations.testSuite
     , ModuliJacobi.testSuite

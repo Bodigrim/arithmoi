@@ -148,6 +148,7 @@ test-suite spec
     Math.NumberTheory.Moduli.ChineseTests
     Math.NumberTheory.Moduli.DiscreteLogarithmTests
     Math.NumberTheory.Moduli.ClassTests
+    Math.NumberTheory.Moduli.CubicSymbolTests
     Math.NumberTheory.Moduli.EquationsTests
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests

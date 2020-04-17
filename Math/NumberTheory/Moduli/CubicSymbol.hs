@@ -4,17 +4,18 @@
 
 
 module Math.NumberTheory.Moduli.CubicSymbol
-    ( CubicSymbol(..)
-    , conj
-    , cubicSymbol
-    ) where
+      ( CubicSymbol(..)
+      , conj
+      , cubicSymbol
+      )where
 
 
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
     ( EisensteinInteger(..)
+    , ω
     , norm
-    , associates
+    , ids
     )
 import qualified Math.NumberTheory.Utils.FromIntegral as T (wordToInt, wordToInteger)
 import qualified Math.NumberTheory.Utils as U (splitOff)
@@ -49,7 +50,6 @@ instance Show CubicSymbol where
         Omega        -> "ω"
         OmegaSquare  -> "ω²"
         One          -> "1"
-        otherwise    -> error "Math.NumberTheory.Moduli.CubicSymbol:"
 
 
 
@@ -59,7 +59,6 @@ conj = \case
     Omega         -> OmegaSquare
     OmegaSquare   -> Omega
     One           -> One
-    otherwise     -> error "Math.NumberTheory.Moduli.CubicSymbol:"
 
 
 
@@ -83,36 +82,36 @@ conj = \case
 -- This function takes two Eisenstein integers and returns their cubic residue character.
 -- Note that the second argument must be coprime to 3 else the algorithm returns an error.
 cubicSymbol :: E.EisensteinInteger -> E.EisensteinInteger -> CubicSymbol
-cubicSymbol alpha beta
+cubicSymbol alpha beta = case ((E.norm beta) `mod` 3) of
     -- This checks whether beta is coprime to 3, i.e. divisible by @1 - ω@
-    -- In particular, it returns an error if beta == 0
-    | (betaNorm `mod` 3 == 0)    = error "Math.NumberTheory.Moduli.CubicSymbol: denominator is not coprime to 3."
-    -- It is necessary to check now whether @alpha == 0@ or @betaNorm == 1@ since later,
-    -- cubic reciprocity will be assumed to invert the arguments.
-    | alpha == 0                 = Zero
-    | betaNorm == 1              = One
-    | otherwise                  = cubicSymbolHelper alpha beta
-        where betaNorm = E.norm beta
+    -- In particular, it returns an error if @beta == 0@
+    0 -> error "Math.NumberTheory.Moduli.CubicSymbol: denominator is not coprime to 3."
+    _ -> cubicSymbolHelper alpha beta
 
 
 
 cubicSymbolHelper :: E.EisensteinInteger -> E.EisensteinInteger -> CubicSymbol
--- This happens when alpha and beta have a common factor. Note that, @alpha@
--- and @beta@ are swapped because cubic reciprocity is called later on.
--- Note this cannot be called in the first step of the recursion
-cubicSymbolHelper _ 0 = Zero
--- This happens when they are coprime. Note that the associated primary number
--- of any unit is 1, hence it is enough to wirte this case. Furthermore,
--- if @beta == 1@, then @alpha == 1@.
--- Note this cannot be called in the first step of the recursion
-cubicSymbolHelper _ 1 = One
--- This is the cubic reciprocity law
-cubicSymbolHelper alpha beta = (cubicSymbolHelper primaryBeta primaryRemainder) <> newSymbol
+cubicSymbolHelper alpha beta = (cubicReciprocity primaryRemainder primaryBeta) <> newSymbol
     where (primaryRemainder, primaryBeta, symbolExponent) = extractPrimaryContributions remainder beta
           remainder = A.rem alpha beta
           newSymbol = exponentiation (unmodularExponent) Omega
           unmodularExponent = T.wordToInt (M.unMod symbolExponent)
-          exponentiation = \k x -> if k == 0 then x else S.stimes k x
+          exponentiation = \k x -> if k == 0 then One else S.stimes k x
+
+
+
+-- This function first checks if its arguments are zero or units. If they are not,
+-- it invokes cubic reciprocity by calling cubicSymbolHelper with swapped arguments.
+cubicReciprocity :: E.EisensteinInteger -> E.EisensteinInteger -> CubicSymbol
+-- Note @cubicReciprocity 0 1 = One@. It turns out it is better to adopt this convention.
+cubicReciprocity _ 1 = One
+-- Checks if first argument is zero. Note @betaPrimary@ cannot be zero.
+cubicReciprocity 0 _ = Zero
+-- This checks if the first argument is a unit. Because it's primary,
+-- it is enough to pattern match with 1.
+cubicReciprocity 1 _ = One
+-- Otherwise, cubic reciprocity is called.
+cubicReciprocity alpha beta = cubicSymbolHelper beta alpha
 
 
 
@@ -124,7 +123,6 @@ cubicSymbolHelper alpha beta = (cubicSymbolHelper primaryBeta primaryRemainder) 
 extractPrimaryContributions :: E.EisensteinInteger -> E.EisensteinInteger -> (E.EisensteinInteger, E.EisensteinInteger, M.Mod 3)
 extractPrimaryContributions alpha beta = (gamma, delta, contribution)
     where contribution = j*m - i*m -i*n
-          -- Need to split conversion as [i,j] and [m,n] are of different types
           [i, j, m, n] = map (conversion) [iInt, jInt, mInt, nInt]
           conversion = \x -> (fromIntegral x) :: M.Mod 3
           mInt E.:+ nInt = A.quot (delta - 1) 3
@@ -141,7 +139,7 @@ factoriseBadPrime :: E.EisensteinInteger -> (Integer, E.EisensteinInteger)
 factoriseBadPrime e = (powerPrime, quotient)
     where quotient = A.quot e badPowerPrime
           badPowerPrime = badPrime ^ powerPrime
-          badPrime = 1 E.:+ (-1)
+          badPrime = 1 - E.ω
           powerPrime = T.wordToInteger (fst wordExponent)
           wordExponent = U.splitOff 3 norm
           norm = E.norm e
@@ -152,17 +150,21 @@ factoriseBadPrime e = (powerPrime, quotient)
 -- That is, given @e@ coprime with 3, it returns a unique integer (mod 6) @powerUnit@ and a unique
 -- Eisenstein number @factor@ such that @(1 + ω)^powerUnit * e = 1 + 3*factor@.
 -- Note that L.findIndex cannot return Nothing. This happens only if @e@ is
--- not coprime with 3.
+-- not coprime with 3. This cannot happen since @factoriseBadPrime@ is called before.
 getPrimaryDecomposition :: E.EisensteinInteger -> (Integer, E.EisensteinInteger)
+-- This is the case where a common factor between @alpha@ and @beta@ is detected.
+-- In this instance @cubicReciprocity@ will return @Zero@.
+-- Strictly speaking, this is not a primary decomposition.
+getPrimaryDecomposition 0 = (0, 0)
 getPrimaryDecomposition e = (toInteger powerUnit, factor)
     where factor = unit * e
-          unit = (1 E.:+ 1)^powerUnit
+          unit = (1 + E.ω)^powerUnit
           powerUnit = case findPowerUnit of
-              Just u -> u
+              Just u  -> u
               Nothing -> error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed."
           findPowerUnit = L.findIndex (== 1) listOfRemainders
           listOfRemainders = map (\x -> A.rem x 3) listOfAssociates
-          -- Note that associates are ordered in the following way:
-          -- The i^th element of associate is @e * (1 + ω)^i@.
-          -- That is @e@ times the i^th unit counting anticlockwise.
-          listOfAssociates = E.associates e
+          -- Note that the associates in @listOfAssociates@ are ordered in the following way:
+          -- The i^th element of @listOfAssociate@ is @e * (1 + ω)^i@ starting from i = 0@
+          -- That is @e@ times the i^th unit counting anticlockwise starting with 1.
+          listOfAssociates = map (*e) E.ids
