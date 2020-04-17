@@ -113,13 +113,13 @@ getPrimaryDecomposition e = (toInteger powerUnit, factor)
   where
     factor = unit * e
     unit = (1 + ω)^powerUnit
-    -- The @6 - _@ ensures @(1 + ω)^powerUnit * e = 1 (mod 3)@
-    powerUnit = 6 - fromMaybe
+    powerUnit = fromMaybe
       (error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed.")
       findPowerUnit
     -- Note that the units in @ids@ are ordered in the following way:
     -- The i^th element of @ids@ is @(1 + ω)^i@ starting from i = 0@
     -- That is the i^th unit counting anticlockwise starting with 1.
-    -- Note that this index is the inverse of what is needed.
-    findPowerUnit = elemIndex remainder ids
+    findPowerUnit = elemIndex inverseRemainder ids
+    inverseRemainder = conjugate remainder
+    -- Note that this number is the inverse of what is needed.
     remainder = e `A.rem` 3
