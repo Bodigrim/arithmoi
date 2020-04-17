@@ -5,7 +5,6 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
 
@@ -123,7 +122,7 @@ nextPrime n
 -- > precPrime  97 == 97
 precPrime :: (Bits a, Integral a, UniqueFactorisation a) => a -> Prime a
 precPrime n
-  | n < 2     = error $ "precPrime: tried to take `precPrime` of an argument less than 2"
+  | n < 2     = error "precPrime: tried to take `precPrime` of an argument less than 2"
   | n < 3     = Prime 2
   | n < 5     = Prime 3
   | n < 7     = Prime 5
@@ -153,7 +152,7 @@ succGeneric = \case
   Prime 2 -> Prime 3
   Prime 3 -> Prime 5
   Prime 5 -> Prime 7
-  Prime p -> head $ mapMaybe isPrime $ map fromWheel30 [toWheel30 p + 1 ..]
+  Prime p -> head $ mapMaybe (isPrime . fromWheel30) [toWheel30 p + 1 ..]
 
 succGenericBounded
   :: (Bits a, Integral a, UniqueFactorisation a, Bounded a)
@@ -163,7 +162,7 @@ succGenericBounded = \case
   Prime 2 -> Prime 3
   Prime 3 -> Prime 5
   Prime 5 -> Prime 7
-  Prime p -> case mapMaybe isPrime $ map fromWheel30 [toWheel30 p + 1 .. toWheel30 maxBound] of
+  Prime p -> case mapMaybe (isPrime . fromWheel30) [toWheel30 p + 1 .. toWheel30 maxBound] of
     []    -> error "Enum.succ{Prime}: tried to take `succ' near `maxBound'"
     q : _ -> q
 
@@ -173,7 +172,7 @@ predGeneric = \case
   Prime 3 -> Prime 2
   Prime 5 -> Prime 3
   Prime 7 -> Prime 5
-  Prime p -> head $ mapMaybe isPrime $ map fromWheel30 [toWheel30 p - 1, toWheel30 p - 2 ..]
+  Prime p -> head $ mapMaybe (isPrime . fromWheel30) [toWheel30 p - 1, toWheel30 p - 2 ..]
 
 -- 'dropWhile' is important, because 'psieveFrom' can actually contain primes less than p.
 enumFromGeneric :: Integral a => Prime a -> [Prime a]
@@ -206,7 +205,7 @@ enumFromToGeneric'
   -> [Prime a]
 enumFromToGeneric' p@(Prime p') q@(Prime q') = takeWhile (<= q) $ dropWhile (< p) $
   case chooseAlgorithm p' q' of
-    IsPrime -> Prime 2 : Prime 3 : Prime 5 : mapMaybe isPrime (map fromWheel30 [toWheel30 p' .. toWheel30 q'])
+    IsPrime -> Prime 2 : Prime 3 : Prime 5 : mapMaybe (isPrime . fromWheel30) [toWheel30 p' .. toWheel30 q']
     Sieve   ->
       if q' < fromIntegral sieveRange
       then           primeList $ primeSieve $ toInteger q'

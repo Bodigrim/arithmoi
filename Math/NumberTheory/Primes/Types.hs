@@ -8,7 +8,6 @@
 -- Should not be exposed to users.
 --
 
-{-# LANGUAGE CPP           #-}
 {-# LANGUAGE TypeFamilies  #-}
 {-# LANGUAGE DeriveGeneric #-}
 

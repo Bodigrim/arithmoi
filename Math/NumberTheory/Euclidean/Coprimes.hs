@@ -52,7 +52,7 @@ doPair x xm y ym
       g = gcd x y
 
       (x', g', xgs) = doPair (x `unsafeDivide` g) xm g (xm + ym)
-      xgs' = if isUnit g' then xgs else ((g', xm + ym) : xgs)
+      xgs' = if isUnit g' then xgs else (g', xm + ym) : xgs
 
       (y', rests) = mapAccumL go (y `unsafeDivide` g) xgs'
       go w (t, tm) = (w', if isUnit t' || tm == 0 then acc else (t', tm) : acc)
@@ -64,11 +64,11 @@ _propDoPair x xm y ym
   =  isJust (x `divide` x')
   && isJust (y `divide` y')
   && coprime x' y'
-  && all (coprime x') (map fst rest)
-  && all (coprime y') (map fst rest)
-  && all (not . isUnit) (map fst rest)
+  && all (coprime x' . fst) rest
+  && all (coprime y' . fst) rest
+  && not (any (isUnit . fst) rest)
   && and [ coprime s t | (s, _) : ts <- tails rest, (t, _) <- ts ]
-  && abs ((x ^ xm) * (y ^ ym)) == abs ((x' ^ xm) * (y' ^ ym) * product (map (\(r, k) -> r ^ k) rest))
+  && abs ((x ^ xm) * (y ^ ym)) == abs ((x' ^ xm) * (y' ^ ym) * product (map (uncurry (^)) rest))
   where
     (x', y', rest) = doPair x xm y ym
 

@@ -12,7 +12,6 @@
 
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
 
 module Math.NumberTheory.SmoothNumbers
   ( SmoothBasis

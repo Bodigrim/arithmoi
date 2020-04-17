@@ -21,8 +21,8 @@ idxPr n0
     | n0 < 7    = (0, 0)
     | otherwise = (fromIntegral bytes0, rm3)
   where
-    n = if (fromIntegral n0 .&. 1 == (1 :: Int))
-            then n0 else (n0-1)
+    n = if fromIntegral n0 .&. 1 == (1 :: Int)
+            then n0 else n0 - 1
     (bytes0,rm0) = (n-7) `quotRem` 30
     rm1 = fromIntegral rm0
     rm2 = rm1 `quot` 3
@@ -37,7 +37,7 @@ toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
 
 {-# INLINE rho #-}
 rho :: Int -> Int
-rho i = unsafeAt residues i
+rho = unsafeAt residues
 
 residues :: UArray Int Int
 residues = listArray (0,7) [7,11,13,17,19,23,29,31]

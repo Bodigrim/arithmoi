@@ -7,7 +7,6 @@
 -- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
 
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP          #-}
 
 module Math.NumberTheory.Recurrences.Linear
   ( factorial
@@ -18,8 +17,6 @@ module Math.NumberTheory.Recurrences.Linear
   , lucasPair
   , generalLucas
   ) where
-
-#include "MachDeps.h"
 
 import Data.Bits
 import Numeric.Natural
@@ -83,7 +80,7 @@ fibonacciPair :: Num a => Int -> (a, a)
 fibonacciPair n
   | n < 0     = let (f,g) = fibonacciPair (-(n+1)) in if testBit n 0 then (g, -f) else (-g, f)
   | n == 0    = (0, 1)
-  | otherwise = look (WORD_SIZE_IN_BITS - 2)
+  | otherwise = look (finiteBitSize (0 :: Word) - 2)
     where
       look k
         | testBit n k = go (k-1) 0 1
@@ -112,7 +109,7 @@ lucasPair :: Num a => Int -> (a, a)
 lucasPair n
   | n < 0     = let (f,g) = lucasPair (-(n+1)) in if testBit n 0 then (-g, f) else (g, -f)
   | n == 0    = (2, 1)
-  | otherwise = look (WORD_SIZE_IN_BITS - 2)
+  | otherwise = look (finiteBitSize (0 :: Word) - 2)
     where
       look k
         | testBit n k = go (k-1) 0 1
@@ -143,7 +140,7 @@ generalLucas :: Num a => a -> a -> Int -> (a, a, a, a)
 generalLucas p q k
   | k < 0       = error "generalLucas: negative index"
   | k == 0      = (0,1,2,p)
-  | otherwise   = look (WORD_SIZE_IN_BITS - 2)
+  | otherwise   = look (finiteBitSize (0 :: Word) - 2)
     where
       look i
         | testBit k i   = go (i-1) 1 p p q

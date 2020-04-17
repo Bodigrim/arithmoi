@@ -11,7 +11,6 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UnboxedTuples       #-}
 
 module Math.NumberTheory.ArithmeticFunctions.SieveBlock
   ( runFunctionOverBlock
@@ -168,8 +167,8 @@ sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
                 (q, r) = np `quotRem` p
             if r /= 0
             then do
-              MU.unsafeModify as (\x -> x * p')        (I# ix#)
-              MG.unsafeModify bs (\y -> y `append` f0) (I# ix#)
+              MU.unsafeModify as (* p')        (I# ix#)
+              MG.unsafeModify bs (`append` f0) (I# ix#)
             else do
               let pow = highestPowerDividing p q
               MU.unsafeModify as (\x -> x * p' ^ (pow + 2))                          (I# ix#)

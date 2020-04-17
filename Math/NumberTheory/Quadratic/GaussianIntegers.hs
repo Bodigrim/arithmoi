@@ -8,7 +8,6 @@
 -- computing their prime factorisations.
 --
 
-{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies  #-}
 
@@ -205,8 +204,7 @@ divideByPrime p np k = go k 0
             where
                 (d1, z') = go1 c 0 z
                 d2 = c - d1
-                z'' = head $ drop (wordToInt d2)
-                    $ iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z'
+                z'' = iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z' !! wordToInt d2
 
         go1 :: Word -> Word -> GaussianInteger -> (Word, GaussianInteger)
         go1 0 d z = (d, z)
@@ -219,7 +217,7 @@ divideByPrime p np k = go k 0
         err = error $ "divideByPrime: malformed arguments" ++ show (p, np, k)
 
 quotI :: GaussianInteger -> Integer -> GaussianInteger
-quotI (x :+ y) n = (x `quot` n :+ y `quot` n)
+quotI (x :+ y) n = x `quot` n :+ y `quot` n
 
 quotEvenI :: GaussianInteger -> Integer -> Maybe GaussianInteger
 quotEvenI (x :+ y) n

@@ -31,7 +31,6 @@
 -- (0.01 secs, 391,152 bytes)
 
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Recurrences.Bilinear
@@ -119,7 +118,7 @@ binomialLine n = scanl'
 -- [1,6,21,56,126,252]
 binomialDiagonal :: (Enum a, GcdDomain a) => a -> [a]
 binomialDiagonal n = scanl'
-  (\x k -> fromJust $ (x `times` (n `plus` k) `divide` k))
+  (\x k -> fromJust (x `times` (n `plus` k) `divide` k))
   one
   [one..]
 {-# SPECIALIZE binomialDiagonal :: Int     -> [Int]     #-}
@@ -140,7 +139,7 @@ binomialFactors n k
   | otherwise
   = filter ((/= 0) . snd)
   $ map (\p -> (p, mult (unPrime p) n - mult (unPrime p) (n - k) - mult (unPrime p) k))
-  $ [minBound .. precPrime n]
+    [minBound .. precPrime n]
   where
     mult :: Word -> Word -> Word
     mult p m = go mp mp
@@ -250,7 +249,7 @@ eulerian2 = scanl f [] [1..]
 --
 -- One could also consider 'Math.Combinat.Numbers.bernoulli' to compute stand-alone values.
 bernoulli :: Integral a => [Ratio a]
-bernoulli = helperForB_E_EP id (map recip [1..])
+bernoulli = helperForBEEP id (map recip [1..])
 {-# SPECIALIZE bernoulli :: [Ratio Int] #-}
 {-# SPECIALIZE bernoulli :: [Rational] #-}
 
@@ -265,7 +264,7 @@ faulhaberPoly :: (GcdDomain a, Integral a) => Int -> [Ratio a]
 faulhaberPoly p
   = zipWith (*) ((0:)
   $ reverse
-  $ take (p+1) $ bernoulli)
+  $ take (p + 1) bernoulli)
   $ map (% (fromIntegral p+1))
   $ zipWith (*) (iterate negate (if odd p then 1 else -1))
   $ binomial !! (p+1)
@@ -278,7 +277,7 @@ faulhaberPoly p
 -- >>> take 10 euler' :: [Rational]
 -- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
 euler' :: forall a . Integral a => [Ratio a]
-euler' = tail $ helperForB_E_EP tail as
+euler' = tail $ helperForBEEP tail as
   where
     as :: [Ratio a]
     as = zipWith3
@@ -309,7 +308,7 @@ euler = map numerator euler'
 -- >>> take 10 eulerPolyAt1 :: [Rational]
 -- [1 % 1,1 % 2,0 % 1,(-1) % 4,0 % 1,1 % 2,0 % 1,(-17) % 8,0 % 1,31 % 2]
 eulerPolyAt1 :: forall a . Integral a => [Ratio a]
-eulerPolyAt1 = tail $ helperForB_E_EP tail (map recip (iterate (2 *) 1))
+eulerPolyAt1 = tail $ helperForBEEP tail (map recip (iterate (2 *) 1))
 {-# SPECIALIZE eulerPolyAt1 :: [Ratio Int]     #-}
 {-# SPECIALIZE eulerPolyAt1 :: [Rational]      #-}
 
@@ -333,16 +332,16 @@ zipIndexedListWithTail f n as a = case as of
 -- zipping four lists together with multiplication, with one of those lists
 -- being the sublists in @stirling2@, and two of them being the factorial
 -- sequence and @cycle [1, -1]@. The remaining list is passed to
--- @helperForB_E_EP@ as an argument.
+-- @helperForBEEP@ as an argument.
 --
 -- Note: This function has a @([Ratio a] -> [Ratio a])@ argument because
 -- @bernoulli !! n@ will use, for all nonnegative @n@, every element in
 -- @stirling2 !! n@, while @euler, eulerPolyAt1@ only use
 -- @tail $ stirling2 !! n@. As such, this argument serves to pass @id@
 -- in the former case, and @tail@ in the latter.
-helperForB_E_EP :: Integral a => ([Ratio a] -> [Ratio a]) -> [Ratio a] -> [Ratio a]
-helperForB_E_EP g xs = map (f . g) stirling2
+helperForBEEP :: Integral a => ([Ratio a] -> [Ratio a]) -> [Ratio a] -> [Ratio a]
+helperForBEEP g xs = map (f . g) stirling2
   where
     f = sum . zipWith4 (\sgn fact x stir -> sgn * fact * x * stir) (cycle [1, -1]) factorial xs
-{-# SPECIALIZE helperForB_E_EP :: ([Ratio Int] -> [Ratio Int]) -> [Ratio Int] -> [Ratio Int] #-}
-{-# SPECIALIZE helperForB_E_EP :: ([Rational] -> [Rational]) -> [Rational] -> [Rational]     #-}
+{-# SPECIALIZE helperForBEEP :: ([Ratio Int] -> [Ratio Int]) -> [Ratio Int] -> [Ratio Int] #-}
+{-# SPECIALIZE helperForBEEP :: ([Rational] -> [Rational]) -> [Rational] -> [Rational]     #-}

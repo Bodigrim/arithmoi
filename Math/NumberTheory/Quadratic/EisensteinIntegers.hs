@@ -263,7 +263,7 @@ factorise g = concat $
         gp' = Prime (x :+ (x - y))
         (k, k', z') = divideByPrime gp gp' (unPrime p) e z
 
-        quotI (a :+ b) n = (a `quot` n :+ b `quot` n)
+        quotI (a :+ b) n = a `quot` n :+ b `quot` n
 
 -- | Remove @p@ and @conjugate p@ factors from the argument, where
 -- @p@ is an Eisenstein prime.

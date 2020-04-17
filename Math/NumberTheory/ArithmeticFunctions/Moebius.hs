@@ -19,7 +19,7 @@ module Math.NumberTheory.ArithmeticFunctions.Moebius
   , sieveBlockMoebius
   ) where
 
-import Control.Monad (forM_, liftM)
+import Control.Monad (forM_)
 import Control.Monad.ST (runST)
 import Data.Bits
 import Data.Int
@@ -82,16 +82,16 @@ instance M.MVector U.MVector Moebius where
   basicLength (MV_Moebius v) = M.basicLength v
   basicUnsafeSlice i n (MV_Moebius v) = MV_Moebius $ M.basicUnsafeSlice i n v
   basicOverlaps (MV_Moebius v1) (MV_Moebius v2) = M.basicOverlaps v1 v2
-  basicUnsafeNew n = MV_Moebius `liftM` M.basicUnsafeNew n
+  basicUnsafeNew n = MV_Moebius <$> M.basicUnsafeNew n
   basicInitialize (MV_Moebius v) = M.basicInitialize v
-  basicUnsafeReplicate n x = MV_Moebius `liftM` M.basicUnsafeReplicate n (fromMoebius x)
-  basicUnsafeRead (MV_Moebius v) i = toMoebius `liftM` M.basicUnsafeRead v i
+  basicUnsafeReplicate n x = MV_Moebius <$> M.basicUnsafeReplicate n (fromMoebius x)
+  basicUnsafeRead (MV_Moebius v) i = toMoebius <$> M.basicUnsafeRead v i
   basicUnsafeWrite (MV_Moebius v) i x = M.basicUnsafeWrite v i (fromMoebius x)
   basicClear (MV_Moebius v) = M.basicClear v
   basicSet (MV_Moebius v) x = M.basicSet v (fromMoebius x)
   basicUnsafeCopy (MV_Moebius v1) (MV_Moebius v2) = M.basicUnsafeCopy v1 v2
   basicUnsafeMove (MV_Moebius v1) (MV_Moebius v2) = M.basicUnsafeMove v1 v2
-  basicUnsafeGrow (MV_Moebius v) n = MV_Moebius `liftM` M.basicUnsafeGrow v n
+  basicUnsafeGrow (MV_Moebius v) n = MV_Moebius <$> M.basicUnsafeGrow v n
 
 instance G.Vector U.Vector Moebius where
   {-# INLINE basicUnsafeFreeze #-}
@@ -100,11 +100,11 @@ instance G.Vector U.Vector Moebius where
   {-# INLINE basicUnsafeSlice #-}
   {-# INLINE basicUnsafeIndexM #-}
   {-# INLINE elemseq #-}
-  basicUnsafeFreeze (MV_Moebius v) = V_Moebius `liftM` G.basicUnsafeFreeze v
-  basicUnsafeThaw (V_Moebius v) = MV_Moebius `liftM` G.basicUnsafeThaw v
+  basicUnsafeFreeze (MV_Moebius v) = V_Moebius <$> G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_Moebius v) = MV_Moebius <$> G.basicUnsafeThaw v
   basicLength (V_Moebius v) = G.basicLength v
   basicUnsafeSlice i n (V_Moebius v) = V_Moebius $ G.basicUnsafeSlice i n v
-  basicUnsafeIndexM (V_Moebius v) i = toMoebius `liftM` G.basicUnsafeIndexM v i
+  basicUnsafeIndexM (V_Moebius v) i = toMoebius <$> G.basicUnsafeIndexM v i
   basicUnsafeCopy (MV_Moebius mv) (V_Moebius v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
 
@@ -139,11 +139,11 @@ sieveBlockMoebius lowIndex' len'
           offset2 = negate lowIndex `mod` (p * p)
           l :: Word8
           l = fromIntegral $ intLog2 p .|. 1
-      forM_ [offset, offset + p .. len - 1] $ \ix -> do
-        MU.unsafeModify as (\y -> y + l) ix
-      forM_ [offset2, offset2 + p * p .. len - 1] $ \ix -> do
+      forM_ [offset, offset + p .. len - 1] $
+        MU.unsafeModify as (+ l)
+      forM_ [offset2, offset2 + p * p .. len - 1] $ \ix ->
         MU.unsafeWrite as ix 0
-    forM_ [0 .. len - 1] $ \ix -> do
+    forM_ [0 .. len - 1] $ \ix ->
       MU.unsafeModify as (mapper ix) ix
     U.unsafeFreeze as
 

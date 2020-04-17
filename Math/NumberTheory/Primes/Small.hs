@@ -21,7 +21,7 @@ import GHC.Exts hiding (fromList)
 import GHC.Word
 
 smallPrimesFromTo :: Word16 -> Word16 -> [Word16]
-smallPrimesFromTo !(W16# from#) !(W16# to#) = go k0#
+smallPrimesFromTo (W16# from#) (W16# to#) = go k0#
   where
     !(Ptr smallPrimesAddr#) = smallPrimesPtr
     fromD# = word2Double# from#

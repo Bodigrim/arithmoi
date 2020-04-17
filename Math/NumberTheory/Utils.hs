@@ -6,7 +6,11 @@
 --
 -- Some utilities, mostly for bit twiddling.
 --
-{-# LANGUAGE CPP, MagicHash, UnboxedTuples, BangPatterns #-}
+
+{-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE MagicHash     #-}
+{-# LANGUAGE UnboxedTuples #-}
+
 module Math.NumberTheory.Utils
     ( shiftToOddCount
     , shiftToOdd
@@ -23,8 +27,6 @@ module Math.NumberTheory.Utils
     , toWheel30
     , fromWheel30
     ) where
-
-#include "MachDeps.h"
 
 import Prelude hiding (mod, quotRem)
 import qualified Prelude as P
@@ -71,10 +73,10 @@ shiftOCInteger n@(S# i#) =
       (# z#, w# #) -> (W# z#, wordToInteger w#)
 shiftOCInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
-                                 z#  -> (W# z#, bigNatToInteger (bn# `shiftRBigNat` (word2Int# z#)))
+                                 z#  -> (W# z#, bigNatToInteger (bn# `shiftRBigNat` word2Int# z#))
 shiftOCInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
-                                 z#  -> (W# z#, bigNatToNegInteger (bn# `shiftRBigNat` (word2Int# z#)))
+                                 z#  -> (W# z#, bigNatToNegInteger (bn# `shiftRBigNat` word2Int# z#))
 
 -- | Specialised version for @'Natural'@.
 --   Precondition: argument nonzero (not checked).
@@ -85,21 +87,22 @@ shiftOCNatural n@(NatS# i#) =
       (# z#, w# #) -> (W# z#, NatS# w#)
 shiftOCNatural n@(NatJ# bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
-                                 z#  -> (W# z#, bigNatToNatural (bn# `shiftRBigNat` (word2Int# z#)))
+                                 z#  -> (W# z#, bigNatToNatural (bn# `shiftRBigNat` word2Int# z#))
 
 shiftToOddCountBigNat :: BigNat -> (Word, BigNat)
 shiftToOddCountBigNat bn# = case bigNatZeroCount bn# of
   0## -> (0, bn#)
-  z#  -> (W# z#, bn# `shiftRBigNat` (word2Int# z#))
+  z#  -> (W# z#, bn# `shiftRBigNat` word2Int# z#)
 
 -- | Count trailing zeros in a @'BigNat'@.
 --   Precondition: argument nonzero (not checked, Integer invariant).
 bigNatZeroCount :: BigNat -> Word#
 bigNatZeroCount bn# = count 0## 0#
   where
+    !(W# bitSize#) = fromIntegral (finiteBitSize (0 :: Word))
     count a# i# =
           case indexBigNat# bn# i# of
-            0## -> count (a# `plusWord#` WORD_SIZE_IN_BITS##) (i# +# 1#)
+            0## -> count (a# `plusWord#` bitSize#) (i# +# 1#)
             w#  -> a# `plusWord#` ctz# w#
 
 -- | Remove factors of @2@. If @n = 2^k*m@ with @m@ odd, the result is @m@.
@@ -129,10 +132,10 @@ shiftOInteger :: Integer -> Integer
 shiftOInteger (S# i#) = wordToInteger (shiftToOdd# (int2Word# i#))
 shiftOInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
                                  0## -> n
-                                 z#  -> bigNatToInteger (bn# `shiftRBigNat` (word2Int# z#))
+                                 z#  -> bigNatToInteger (bn# `shiftRBigNat` word2Int# z#)
 shiftOInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
                                  0## -> n
-                                 z#  -> bigNatToNegInteger (bn# `shiftRBigNat` (word2Int# z#))
+                                 z#  -> bigNatToNegInteger (bn# `shiftRBigNat` word2Int# z#)
 
 -- | Shift argument right until the result is odd.
 --   Precondition: argument not @0@, not checked.

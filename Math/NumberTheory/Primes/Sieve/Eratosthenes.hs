@@ -393,14 +393,14 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
 
 {-# INLINE delta #-}
 delta :: Int -> Int
-delta i = unsafeAt deltas i
+delta = unsafeAt deltas
 
 deltas :: UArray Int Int
 deltas = listArray (0,7) [4,2,4,2,4,6,2,6]
 
 {-# INLINE tau #-}
 tau :: Int -> Int
-tau i = unsafeAt taus i
+tau = unsafeAt taus
 
 taus :: UArray Int Int
 taus = listArray (0,63)
@@ -416,25 +416,25 @@ taus = listArray (0,63)
 
 {-# INLINE byte #-}
 byte :: Int -> Int
-byte i = unsafeAt startByte i
+byte = unsafeAt startByte
 
 startByte :: UArray Int Int
 startByte = listArray (0,7) [1,3,5,9,11,17,27,31]
 
 {-# INLINE idx #-}
 idx :: Int -> Int
-idx i = unsafeAt startIdx i
+idx = unsafeAt startIdx
 
 startIdx :: UArray Int Int
 startIdx = listArray (0,7) [4,7,4,4,7,4,7,7]
 
 {-# INLINE mu #-}
 mu :: Int -> Int
-mu i = unsafeAt mArr i
+mu = unsafeAt mArr
 
 {-# INLINE nu #-}
 nu :: Int -> Int
-nu i = unsafeAt nArr i
+nu = unsafeAt nArr
 
 mArr :: UArray Int Int
 mArr = listArray (0,63)

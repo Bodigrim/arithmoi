@@ -153,7 +153,7 @@ invSigma k fs
 
     pksLarge :: Map (Prime a) (Set Word)
     pksLarge = M.unionsWith (<>)
-      [ maybe mempty (flip M.singleton (S.singleton e)) (isPrime p)
+      [ maybe mempty (`M.singleton` S.singleton e) (isPrime p)
       | d <- divs
       , e <- [1 .. intToWord (quot (integerLogBase (toInteger lim) (toInteger d)) (wordToInt k)) ]
       , let p = integerRoot (e * k) (d - 1)
@@ -206,7 +206,7 @@ invertFunction
   -- ^ Semiring element, representing preimages
 invertFunction point f invF n
   = DS.lookup n
-  $ foldl' (\ds b -> uncurry processBatch b ds) (DS.fromDistinctAscList []) batches
+  $ foldl' (flip (uncurry processBatch)) (DS.fromDistinctAscList []) batches
   where
     factors = factorise n
     batches = strategy f factors $ invF factors

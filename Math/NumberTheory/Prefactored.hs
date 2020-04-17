@@ -7,7 +7,6 @@
 -- Type for numbers, accompanied by their factorisation.
 --
 
-{-# LANGUAGE CPP           #-}
 {-# LANGUAGE TypeFamilies  #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}

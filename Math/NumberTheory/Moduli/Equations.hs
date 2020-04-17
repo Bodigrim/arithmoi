@@ -130,8 +130,7 @@ solveQuadraticPrime a b c p
   | a `rem` p' == 0
   = solveLinear' p' b c
   | otherwise
-  = map (\n -> n * recipModInteger (2 * a) p' `mod` p')
-  $ map (subtract b)
+  = map (\n -> (n - b) * recipModInteger (2 * a) p' `mod` p')
   $ sqrtsModPrime (b * b - 4 * a * c) p
     where
       p' :: Integer
