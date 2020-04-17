@@ -37,9 +37,8 @@ cubicSymbolDenominator alpha beta1 beta2 = (symbol1 <> symbol2) == symbolProduct
 -- Checks that the cubic symbol is correct when the denominator is primebeta
 -- as explanined in § 3.3.2 in https://en.wikipedia.org/wiki/Cubic_reciprocity
 cubicSymbol3 :: EisensteinInteger -> Prime EisensteinInteger -> Bool
-cubicSymbol3 alpha prime = isBadDenominator beta || isNotDivisible || cubicSymbol alpha beta == cubicSymbolPrime alpha beta
+cubicSymbol3 alpha prime = isBadDenominator beta || cubicSymbol alpha beta == cubicSymbolPrime alpha beta
     where beta = unPrime prime
-          isNotDivisible = alpha `A.rem` beta == 0
 
 cubicSymbolPrime :: EisensteinInteger -> EisensteinInteger -> CubicSymbol
 cubicSymbolPrime alpha beta = findCubicSymbol residue beta
