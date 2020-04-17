@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0.0
+
+### Removed
+
+* Remove modules and functions, deprecated in the previous release.
+
 ## 0.11.0.0
 
 ### Added
@@ -38,6 +44,10 @@
 
 * Deprecate `Math.NumberTheory.Moduli.{DiscreteLogarithm,PrimitiveRoot}`,
   use `Math.NumberTheory.Moduli.Multiplicative` instead.
+
+### Removed
+
+* Remove modules and functions, deprecated in the previous release.
 
 ### Fixed
 

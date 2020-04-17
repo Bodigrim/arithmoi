@@ -52,26 +52,16 @@ library
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.Curves.Montgomery
     Math.NumberTheory.DirichletCharacters
-    Math.NumberTheory.Euclidean
     Math.NumberTheory.Euclidean.Coprimes
     Math.NumberTheory.Moduli
     Math.NumberTheory.Moduli.Chinese
     Math.NumberTheory.Moduli.Class
-    Math.NumberTheory.Moduli.DiscreteLogarithm
     Math.NumberTheory.Moduli.Equations
-    Math.NumberTheory.Moduli.Jacobi
     Math.NumberTheory.Moduli.Multiplicative
-    Math.NumberTheory.Moduli.PrimitiveRoot
     Math.NumberTheory.Moduli.Singleton
     Math.NumberTheory.Moduli.Sqrt
     Math.NumberTheory.MoebiusInversion
-    Math.NumberTheory.Powers
-    Math.NumberTheory.Powers.Cubes
-    Math.NumberTheory.Powers.Fourth
-    Math.NumberTheory.Powers.General
     Math.NumberTheory.Powers.Modular
-    Math.NumberTheory.Powers.Squares
-    Math.NumberTheory.Powers.Squares.Internal
     Math.NumberTheory.Prefactored
     Math.NumberTheory.Primes
     Math.NumberTheory.Primes.Counting
