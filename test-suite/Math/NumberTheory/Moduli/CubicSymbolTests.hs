@@ -4,10 +4,7 @@ module Math.NumberTheory.Moduli.CubicSymbolTests
 
 import qualified Math.NumberTheory.Moduli.CubicSymbol as C
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
-
-
 import Test.Tasty                                     (TestTree, testGroup)
-
 import Math.NumberTheory.TestUtils
 
 -- Checks multiplicative property of the numerator
@@ -23,8 +20,6 @@ cubicSymbolNumerator alpha1 alpha2 beta = (symbol1 <> symbol2) == symbolProduct
           symbolProduct = C.cubicSymbol alphaProduct beta
           alphaProduct = alpha1 * alpha2
 
-
-
 -- Checks multiplicative property of the denominator
 cubicSymbol2 :: E.EisensteinInteger -> E.EisensteinInteger -> E.EisensteinInteger -> Bool
 cubicSymbol2 alpha beta1 beta2 = (modularNorm1 == 0) || (modularNorm2 == 0) || cubicSymbolDenominator alpha beta1 beta2
@@ -37,15 +32,6 @@ cubicSymbolDenominator alpha beta1 beta2 = (symbol1 <> symbol2) == symbolProduct
           symbol2 = C.cubicSymbol alpha beta2
           symbolProduct = C.cubicSymbol alpha betaProduct
           betaProduct = beta1 * beta2
-
-
-
-
-
-
-
-
-
 
 testSuite :: TestTree
 testSuite = testGroup "CubicSymbol" $
