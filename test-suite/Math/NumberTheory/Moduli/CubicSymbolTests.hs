@@ -35,6 +35,6 @@ cubicSymbolDenominator alpha beta1 beta2 = (symbol1 <> symbol2) == symbolProduct
 
 testSuite :: TestTree
 testSuite = testGroup "CubicSymbol" $
-    [ testSmallAndQuick "Multiplicative property of numerator." cubicSymbol1
-    , testSmallAndQuick "Multiplicative property of denominator." cubicSymbol2
+    [ testSmallAndQuick "multiplicative property of numerators" cubicSymbol1
+    , testSmallAndQuick "multiplicative property of denominators" cubicSymbol2
     ]

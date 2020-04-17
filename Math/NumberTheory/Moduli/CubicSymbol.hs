@@ -3,18 +3,18 @@
 
 module Math.NumberTheory.Moduli.CubicSymbol
       ( CubicSymbol(..)
-      , conj
       , cubicSymbol
       ) where
 
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
     (EisensteinInteger(..), ω, norm, ids)
 import qualified Math.NumberTheory.Utils.FromIntegral as T (wordToInt, wordToInteger)
-import qualified Math.NumberTheory.Utils as U (splitOff)
 import qualified Data.Mod.Word as M (Mod (..), unMod)
 import qualified Data.Euclidean as A (quot, rem)
+import qualified Math.NumberTheory.Utils as U (splitOff)
 import qualified Data.Semigroup as S (stimes)
-import qualified Data.List as L (findIndex)
+import qualified Data.List as L (elemIndex)
+import qualified Data.Maybe as D (fromMaybe)
 
 data CubicSymbol = Zero | Omega | OmegaSquare | One deriving (Eq)
 
@@ -35,13 +35,6 @@ instance Show CubicSymbol where
         OmegaSquare  -> "ω²"
         One          -> "1"
 
-conj :: CubicSymbol -> CubicSymbol
-conj = \case
-    Zero          -> Zero
-    Omega         -> OmegaSquare
-    OmegaSquare   -> Omega
-    One           -> One
-
 -- The algorithm cubicSymbol takes two Eisentein numbers @alpha@ and @beta@ and returns
 -- their cubic residue. It is divided in the following steps.
 
@@ -59,7 +52,7 @@ conj = \case
 -- This function takes two Eisenstein integers and returns their cubic residue character.
 -- Note that the second argument must be coprime to 3 else the algorithm returns an error.
 cubicSymbol :: E.EisensteinInteger -> E.EisensteinInteger -> CubicSymbol
-cubicSymbol alpha beta = case (betaNorm `mod` 3) of
+cubicSymbol alpha beta = case betaNorm `mod` 3 of
     -- This checks whether beta is coprime to 3, i.e. divisible by @1 - ω@
     -- In particular, it returns an error if @beta == 0@
     0 -> error "Math.NumberTheory.Moduli.CubicSymbol: denominator is not coprime to 3."
@@ -68,12 +61,12 @@ cubicSymbol alpha beta = case (betaNorm `mod` 3) of
     where betaNorm = E.norm beta
 
 cubicSymbolHelper :: E.EisensteinInteger -> E.EisensteinInteger -> CubicSymbol
-cubicSymbolHelper alpha beta = (cubicReciprocity primaryRemainder primaryBeta) <> newSymbol
+cubicSymbolHelper alpha beta = cubicReciprocity primaryRemainder primaryBeta <> newSymbol
     where (primaryRemainder, primaryBeta, symbolExponent) = extractPrimaryContributions remainder beta
           remainder = A.rem alpha beta
-          newSymbol = exponentiation (unmodularExponent) Omega
+          newSymbol = exponentiation unmodularExponent Omega
           unmodularExponent = T.wordToInt (M.unMod symbolExponent)
-          exponentiation = \k x -> if k == 0 then One else S.stimes k x
+          exponentiation k x = if k == 0 then One else S.stimes k x
 
 -- This function first checks if its arguments are zeros or units. If they are not,
 -- it invokes cubic reciprocity by calling cubicSymbolHelper with swapped arguments.
@@ -96,8 +89,8 @@ cubicReciprocity alpha beta = cubicSymbolHelper beta alpha
 extractPrimaryContributions :: E.EisensteinInteger -> E.EisensteinInteger -> (E.EisensteinInteger, E.EisensteinInteger, M.Mod 3)
 extractPrimaryContributions alpha beta = (gamma, delta, contribution)
     where contribution = j*m - i*m -i*n
-          [i, j, m, n] = map (conversion) [iInt, jInt, mInt, nInt]
-          conversion = \x -> (fromIntegral x) :: M.Mod 3
+          [i, j, m, n] = map conversion [iInt, jInt, mInt, nInt]
+          conversion x = fromIntegral x :: M.Mod 3
           mInt E.:+ nInt = A.quot (delta - 1) 3
           (iInt, gamma) = getPrimaryDecomposition alphaThreeFree
           (_, delta) = getPrimaryDecomposition beta
@@ -119,11 +112,11 @@ getPrimaryDecomposition 0 = (0, 0)
 getPrimaryDecomposition e = (toInteger powerUnit, factor)
     where factor = unit * e
           unit = (1 + E.ω)^powerUnit
-          powerUnit = case findPowerUnit of
-              Just u  -> u
-              Nothing -> error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed."
-          findPowerUnit = L.findIndex (== 1) listOfRemainders
-          listOfRemainders = map (\x -> A.rem x 3) listOfAssociates
+          powerUnit = D.fromMaybe
+              (error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed.")
+              findPowerUnit
+          findPowerUnit = L.elemIndex 1 listOfRemainders
+          listOfRemainders = map (`A.rem` 3) listOfAssociates
           -- Note that the units in @E.ids@ are ordered in the following way:
           -- The i^th element of @E.ids@ is @(1 + ω)^i@ starting from i = 0@
           -- That is the i^th unit counting anticlockwise starting with 1.
