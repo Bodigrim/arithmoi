@@ -14,26 +14,37 @@ import           Math.NumberTheory.Primes       ( factorise
 import           Math.NumberTheory.Roots        ( integerSquareRoot )
 import           Math.NumberTheory.Utils.FromIntegral
 
--- | Finds all primitive solutions (x,y) to the diophantine equation 
--- |    x^2 + d*y^2 = m
--- | when 1 <= d < m and d,m are coprime.
--- | Given m is square free these are all the solutions
-cornacchiaPrimitive :: Integer -> Integer -> [(Integer, Integer)]
-cornacchiaPrimitive d m
-  | not (1 <= d && d < m && gcd d m == 1) = error "pre-conditions not satisfied"
-  | otherwise = concatMap
-    (findSolution . head . dropWhile (\r -> r * r >= m) . gcdSeq)
+-- | See `cornacchiaPrimitive`, this has the additional constraint of coprime input
+cornacchiaPrimitive' :: Integer -> Integer -> [(Integer, Integer)]
+cornacchiaPrimitive' d m =
+  concatMap
+    (findSolution . head . dropWhile (\r -> r * r >= m) . gcdSeq m)
     roots
  where
   roots =
-    filter (<=m `div` 2) $ sqrtsModFactorisation (m - d) (factorise m)
-  gcdSeq = go m where go a b = a : go b (mod a b)
+    filter (<= m `div` 2) $ sqrtsModFactorisation (m - d) (factorise m)
+  gcdSeq a b = a : gcdSeq b (mod a b)
   -- If s = sqrt((m - r*r) / d) is an integer then (r, s) is a solution
   findSolution r = [ (r, s) | rem1 == 0 && s * s == s2 ]
    where
     (s2, rem1) = divMod (m - r * r) d
     s          = integerSquareRoot s2
 
+-- | Finds all primitive solutions (x,y) to the diophantine equation 
+-- |    x^2 + d*y^2 = m
+-- | when 1 <= d < m. Given m is square free these are all the solutions
+cornacchiaPrimitive :: Integer -> Integer -> [(Integer, Integer)]
+cornacchiaPrimitive d m
+  | not (1 <= d && d < m) = error "pre-conditions not satisfied"
+  | gRoot * gRoot /= g || not (1 <= d' && d' < m') = []
+  | otherwise = map (\(x, y) -> (gRoot * x, y)) (cornacchiaPrimitive' d' m')
+ where
+  g     = gcd d m
+  gRoot = integerSquareRoot g
+  d'    = d `div` g
+  m'    = m `div` g
+
+-- Find numbers whose square is a factor of the input
 squareFactors :: UniqueFactorisation a => a -> [a]
 squareFactors = foldl squareProducts [1] . factorise
  where
@@ -42,12 +53,11 @@ squareFactors = foldl squareProducts [1] . factorise
 
 -- | Finds all solutions (x,y) to the diophantine equation 
 -- |    x^2 + d*y^2 = m
--- | when 1 <= d < m and d,m are coprime.
+-- | when 1 <= d < m
 cornacchia :: Integer -> Integer -> [(Integer, Integer)]
 cornacchia d m
-  | not (1 <= d && d < m && gcd d m == 1) = error "pre-conditions not satisfied"
-  | otherwise = [ s | sf <- squareFactors m, sf <= bound, s <- solve sf ]
+  | not (1 <= d && d < m) = error "pre-conditions not satisfied"
+  | otherwise = concatMap solve $ filter ((>d) . snd) candidates
  where
-  bound = integerSquareRoot (m `div` d)
-  solve sf = map (\(x, y) -> (x * sf, y * sf))
-    $ cornacchiaPrimitive d (m `div` (sf * sf))
+  candidates = map (\sf -> (sf, m `div` (sf * sf))) (squareFactors m)
+  solve (sf, m') = map (\(x, y) -> (x * sf, y * sf)) (cornacchiaPrimitive d m')

@@ -10,16 +10,12 @@ module Math.NumberTheory.DiophantineTests
 
 import Test.Tasty
 
-import Math.NumberTheory.Primes
 import Math.NumberTheory.Diophantine
 import Math.NumberTheory.TestUtils
 
--- Test cornacchia implementation by generating coprime (d,m) with a solution
-cornacchiaTest :: Prime Integer -> NonNegative Integer -> Positive Integer -> Bool
-cornacchiaTest p (NonNegative a) (Positive b) = all checkSoln solns && (a*d+1, b) `elem` solns
-  where d = unPrime p
-        m = (a*d+1)^2 + d*b*b
-        solns = cornacchia d m
+cornacchiaTest :: Positive Integer -> Positive Integer -> Bool
+cornacchiaTest (Positive d) (Positive a) = all checkSoln (cornacchia d m)
+  where m = d + a
         checkSoln (x, y) = x*x + d*y*y == m
 
 testSuite :: TestTree
