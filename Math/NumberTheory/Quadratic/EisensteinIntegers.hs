@@ -45,7 +45,7 @@ import Math.NumberTheory.Utils.FromIntegral
 infix 6 :+
 
 -- | An Eisenstein integer is @a + bω@, where @a@ and @b@ are both integers.
-data EisensteinInteger = (:+) { real :: !Integer, imag :: !Integer }
+data EisensteinInteger = !Integer :+ !Integer
     deriving (Eq, Ord, Generic)
 
 instance NFData EisensteinInteger
@@ -88,14 +88,20 @@ instance S.Ring EisensteinInteger where
 -- | Returns an @EisensteinInteger@'s sign, and its associate in the first
 -- sextant.
 absSignum :: EisensteinInteger -> (EisensteinInteger, EisensteinInteger)
+absSignum 0 = (0, 0)
 absSignum z@(a :+ b)
-    | a == 0 && b == 0                                  = (z, 0)            -- origin
-    | a > b && b >= 0                                   = (z, 1)            -- first sextant: 0 ≤ Arg(η) < π/3
-    | b >= a && a > 0                                   = ((-ω) * z, 1 + ω) -- second sextant: π/3 ≤ Arg(η) < 2π/3
-    | b > 0 && 0 >= a                                   = ((-1 - ω) * z, ω) -- third sextant: 2π/3 ≤ Arg(η) < π
-    | a < b && b <= 0                                   = (- z, -1)         -- fourth sextant: -π < Arg(η) < -2π/3 or Arg(η) = π
-    | b <= a && a < 0                                   = (ω * z, -1 - ω)   -- fifth sextant: -2π/3 ≤ Arg(η) < -π/3
-    | otherwise                                         = ((1 + ω) * z, -ω) -- sixth sextant: -π/3 ≤ Arg(η) < 0
+  -- first sextant: 0 ≤ Arg(z) < π/3
+  | a > b && b >= 0 = (z, 1)
+  -- second sextant: π/3 ≤ Arg(z) < 2π/3
+  | b >= a && a > 0 = (b :+ (b - a), 1 :+ 1)
+  -- third sextant: 2π/3 ≤ Arg(z) < π
+  | b > 0 && 0 >= a = ((b - a) :+ (-a), 0 :+ 1)
+  -- fourth sextant: -π ≤ Arg(z) < -2π/3
+  | a < b && b <= 0 = (-z, -1)
+  -- fifth sextant: -2π/3 ≤ Arg(η) < -π/3
+  | b <= a && a < 0 = ((-b) :+ (a - b), (-1) :+ (-1))
+  -- sixth sextant: -π/3 ≤ Arg(η) < 0
+  | otherwise       = ((a - b) :+ a, 0 :+ (-1))
 
 -- | List of all Eisenstein units, counterclockwise across all sextants,
 -- starting with @1@.
@@ -109,23 +115,22 @@ associates e = map (e *) ids
 instance GcdDomain EisensteinInteger
 
 instance Euclidean EisensteinInteger where
-    degree = fromInteger . norm
-    quotRem = divHelper
-
--- | Function that does most of the underlying work for @divMod@ and
--- @quotRem@, apart from choosing the specific integer division algorithm.
--- This is instead done by the calling function (either @divMod@ which uses
--- @div@, or @quotRem@, which uses @quot@.)
-divHelper
-    :: EisensteinInteger
-    -> EisensteinInteger
-    -> (EisensteinInteger, EisensteinInteger)
-divHelper g h = (q, r)
+  degree = fromInteger . norm
+  quotRem x (d :+ 0) = quotRemInt x d
+  quotRem x y = (q, x - q * y)
     where
-        nr :+ ni = g * conjugate h
-        denom = norm h
-        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+   ((ni + signum ni * denom `quot` 2) `quot` denom)
-        r = g - h * q
+      (q, _) = quotRemInt (x * conjugate y) (norm y)
+
+quotRemInt :: EisensteinInteger -> Integer -> (EisensteinInteger, EisensteinInteger)
+quotRemInt z   1  = ( z, 0)
+quotRemInt z (-1) = (-z, 0)
+quotRemInt (a :+ b) c = (qa :+ qb, (ra - bumpA) :+ (rb - bumpB))
+  where
+    halfC    = abs c `quot` 2
+    bumpA    = signum a * halfC
+    bumpB    = signum b * halfC
+    (qa, ra) = (a + bumpA) `quotRem` c
+    (qb, rb) = (b + bumpB) `quotRem` c
 
 -- | Conjugate a Eisenstein integer.
 conjugate :: EisensteinInteger -> EisensteinInteger

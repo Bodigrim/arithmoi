@@ -79,29 +79,36 @@ instance S.Ring GaussianInteger where
     negate = negate
 
 absSignum :: GaussianInteger -> (GaussianInteger, GaussianInteger)
+absSignum 0 = (0, 0)
 absSignum z@(a :+ b)
-    | a == 0 && b == 0 =   (z, 0)              -- origin
-    | a >  0 && b >= 0 =   (z, 1)              -- first quadrant: (0, inf) x [0, inf)i
-    | a <= 0 && b >  0 =   (b  :+ (-a), ι)     -- second quadrant: (-inf, 0] x (0, inf)i
-    | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
-    | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
+  -- first quadrant: (0, inf) x [0, inf)i
+  | a >  0 && b >= 0 = (z, 1)
+  -- second quadrant: (-inf, 0] x (0, inf)i
+  | a <= 0 && b >  0 = (b :+ (-a), ι)
+  -- third quadrant: (-inf, 0) x (-inf, 0]i
+  | a <  0 && b <= 0 = (-z, -1)
+  -- fourth quadrant: [0, inf) x (-inf, 0)i
+  | otherwise        = ((-b) :+ a, -ι)
 
 instance GcdDomain GaussianInteger
 
 instance Euclidean GaussianInteger where
-    degree = fromInteger . norm
-    quotRem = divHelper
-
-divHelper
-    :: GaussianInteger
-    -> GaussianInteger
-    -> (GaussianInteger, GaussianInteger)
-divHelper g h = (q, r)
+  degree = fromInteger . norm
+  quotRem x (d :+ 0) = quotRemInt x d
+  quotRem x y = (q, x - q * y)
     where
-        nr :+ ni = g * conjugate h
-        denom = norm h
-        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+ ((ni + signum ni * denom `quot` 2) `quot` denom)
-        r = g - h * q
+      (q, _) = quotRemInt (x * conjugate y) (norm y)
+
+quotRemInt :: GaussianInteger -> Integer -> (GaussianInteger, GaussianInteger)
+quotRemInt z   1  = ( z, 0)
+quotRemInt z (-1) = (-z, 0)
+quotRemInt (a :+ b) c = (qa :+ qb, (ra - bumpA) :+ (rb - bumpB))
+  where
+    halfC    = abs c `quot` 2
+    bumpA    = signum a * halfC
+    bumpB    = signum b * halfC
+    (qa, ra) = (a + bumpA) `quotRem` c
+    (qb, rb) = (b + bumpB) `quotRem` c
 
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger
