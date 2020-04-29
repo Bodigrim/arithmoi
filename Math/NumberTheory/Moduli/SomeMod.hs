@@ -148,7 +148,7 @@ instance Fractional SomeMod where
   fromRational = InfMod
   {-# INLINE fromRational #-}
   recip x = case invertSomeMod x of
-    Nothing -> error $ "recip{SomeMod}: residue is not coprime with modulo"
+    Nothing -> error "recip{SomeMod}: residue is not coprime with modulo"
     Just y  -> y
 
 -- | See the warning about division above.

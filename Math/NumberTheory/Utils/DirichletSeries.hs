@@ -9,7 +9,6 @@
 
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE ViewPatterns          #-}
 
 module Math.NumberTheory.Utils.DirichletSeries
   ( DirichletSeries

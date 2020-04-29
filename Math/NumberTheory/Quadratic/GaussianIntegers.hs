@@ -8,7 +8,6 @@
 -- computing their prime factorisations.
 --
 
-{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies  #-}
 
@@ -80,29 +79,36 @@ instance S.Ring GaussianInteger where
     negate = negate
 
 absSignum :: GaussianInteger -> (GaussianInteger, GaussianInteger)
+absSignum 0 = (0, 0)
 absSignum z@(a :+ b)
-    | a == 0 && b == 0 =   (z, 0)              -- origin
-    | a >  0 && b >= 0 =   (z, 1)              -- first quadrant: (0, inf) x [0, inf)i
-    | a <= 0 && b >  0 =   (b  :+ (-a), ι)     -- second quadrant: (-inf, 0] x (0, inf)i
-    | a <  0 && b <= 0 = ((-a) :+ (-b), -1)    -- third quadrant: (-inf, 0) x (-inf, 0]i
-    | otherwise        = ((-b) :+   a, -ι)     -- fourth quadrant: [0, inf) x (-inf, 0)i
+  -- first quadrant: (0, inf) x [0, inf)i
+  | a >  0 && b >= 0 = (z, 1)
+  -- second quadrant: (-inf, 0] x (0, inf)i
+  | a <= 0 && b >  0 = (b :+ (-a), ι)
+  -- third quadrant: (-inf, 0) x (-inf, 0]i
+  | a <  0 && b <= 0 = (-z, -1)
+  -- fourth quadrant: [0, inf) x (-inf, 0)i
+  | otherwise        = ((-b) :+ a, -ι)
 
 instance GcdDomain GaussianInteger
 
 instance Euclidean GaussianInteger where
-    degree = fromInteger . norm
-    quotRem = divHelper
-
-divHelper
-    :: GaussianInteger
-    -> GaussianInteger
-    -> (GaussianInteger, GaussianInteger)
-divHelper g h = (q, r)
+  degree = fromInteger . norm
+  quotRem x (d :+ 0) = quotRemInt x d
+  quotRem x y = (q, x - q * y)
     where
-        nr :+ ni = g * conjugate h
-        denom = norm h
-        q = ((nr + signum nr * denom `quot` 2) `quot` denom) :+ ((ni + signum ni * denom `quot` 2) `quot` denom)
-        r = g - h * q
+      (q, _) = quotRemInt (x * conjugate y) (norm y)
+
+quotRemInt :: GaussianInteger -> Integer -> (GaussianInteger, GaussianInteger)
+quotRemInt z   1  = ( z, 0)
+quotRemInt z (-1) = (-z, 0)
+quotRemInt (a :+ b) c = (qa :+ qb, (ra - bumpA) :+ (rb - bumpB))
+  where
+    halfC    = abs c `quot` 2
+    bumpA    = signum a * halfC
+    bumpB    = signum b * halfC
+    (qa, ra) = (a + bumpA) `quotRem` c
+    (qb, rb) = (b + bumpB) `quotRem` c
 
 -- |Conjugate a Gaussian integer.
 conjugate :: GaussianInteger -> GaussianInteger
@@ -122,6 +128,9 @@ isPrime g@(x :+ y)
 -- |An infinite list of the Gaussian primes. Uses primes in Z to exhaustively
 -- generate all Gaussian primes (up to associates), in order of ascending
 -- magnitude.
+--
+-- >>> take 10 primes
+-- [Prime 1+ι,Prime 2+ι,Prime 1+2*ι,Prime 3,Prime 3+2*ι,Prime 2+3*ι,Prime 4+ι,Prime 1+4*ι,Prime 5+2*ι,Prime 2+5*ι]
 primes :: [U.Prime GaussianInteger]
 primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
   where
@@ -134,6 +143,9 @@ primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
+--
+-- >>> findPrime (nextPrime 5)
+-- Prime 2+ι
 findPrime :: Prime Integer -> U.Prime GaussianInteger
 findPrime p = case sqrtsModPrime (-1) p of
     []    -> error "findPrime: an argument must be prime p = 4k + 1"
@@ -199,8 +211,7 @@ divideByPrime p np k = go k 0
             where
                 (d1, z') = go1 c 0 z
                 d2 = c - d1
-                z'' = head $ drop (wordToInt d2)
-                    $ iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z'
+                z'' = iterate (\g -> fromMaybe err $ (g * unPrime p) `quotEvenI` np) z' !! wordToInt d2
 
         go1 :: Word -> Word -> GaussianInteger -> (Word, GaussianInteger)
         go1 0 d z = (d, z)
@@ -213,7 +224,7 @@ divideByPrime p np k = go k 0
         err = error $ "divideByPrime: malformed arguments" ++ show (p, np, k)
 
 quotI :: GaussianInteger -> Integer -> GaussianInteger
-quotI (x :+ y) n = (x `quot` n :+ y `quot` n)
+quotI (x :+ y) n = x `quot` n :+ y `quot` n
 
 quotEvenI :: GaussianInteger -> Integer -> Maybe GaussianInteger
 quotEvenI (x :+ y) n

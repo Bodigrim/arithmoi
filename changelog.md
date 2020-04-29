@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0.0
+
+### Removed
+
+* Remove modules and functions, deprecated in the previous release.
+
 ## 0.11.0.0
 
 ### Added
@@ -14,6 +20,8 @@
   ([#151](https://github.com/Bodigrim/arithmoi/pull/151)). There are also `factoriseFactorial` and `factoriseBinomial` ([#152](https://github.com/Bodigrim/arithmoi/pull/152)).
 
 * Add `Semiring` instance of `SomeMod` ([#174](https://github.com/Bodigrim/arithmoi/pull/174)).
+
+* Generate divisors in range ([#183](https://github.com/Bodigrim/arithmoi/pull/183)).
 
 ### Changed
 
@@ -36,6 +44,10 @@
 
 * Deprecate `Math.NumberTheory.Moduli.{DiscreteLogarithm,PrimitiveRoot}`,
   use `Math.NumberTheory.Moduli.Multiplicative` instead.
+
+### Removed
+
+* Remove modules and functions, deprecated in the previous release.
 
 ### Fixed
 

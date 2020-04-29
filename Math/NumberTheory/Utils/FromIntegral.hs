@@ -7,8 +7,6 @@
 -- Monomorphic `fromIntegral`.
 --
 
-{-# LANGUAGE CPP                 #-}
-
 module Math.NumberTheory.Utils.FromIntegral
   ( wordToInt
   , wordToInteger

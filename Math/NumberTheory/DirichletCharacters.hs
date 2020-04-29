@@ -51,6 +51,10 @@ module Math.NumberTheory.DirichletCharacters
   , induced
   , makePrimitive
   , WithNat(..)
+  -- * Roots of unity
+  , RootOfUnity(..)
+  , toRootOfUnity
+  , toComplex
   -- * Debugging
   , validChar
   ) where
@@ -308,9 +312,9 @@ mkTemplate = go . sort . factorise
 unroll :: [Template] -> Natural -> [DirichletFactor]
 unroll t m = snd (mapAccumL func m t)
   where func :: Natural -> Template -> (Natural, DirichletFactor)
-        func a (OddTemplate p k g n) = (a1, OddPrime p k g (toRootOfUnity $ (toInteger a2) % (toInteger n)))
+        func a (OddTemplate p k g n) = (a1, OddPrime p k g (toRootOfUnity $ toInteger a2 % toInteger n))
           where (a1,a2) = quotRem a n
-        func a (TwoPTemplate k n) = (b1, TwoPower k (toRootOfUnity $ (toInteger a2) % 2) (toRootOfUnity $ (toInteger b2) % (toInteger n)))
+        func a (TwoPTemplate k n) = (b1, TwoPower k (toRootOfUnity $ toInteger a2 % 2) (toRootOfUnity $ toInteger b2 % toInteger n))
           where (a1,a2) = quotRem a 2
                 (b1,b2) = quotRem a1 n
         func a TwoTemplate = (a, Two)
@@ -361,7 +365,7 @@ jacobiCharacter = if odd n
                      else Nothing
   where n = natVal (Proxy :: Proxy n)
         go :: Template -> DirichletFactor
-        go (OddTemplate p k g _) = OddPrime p k g $ toRootOfUnity ((toInteger k) % 2)
+        go (OddTemplate p k g _) = OddPrime p k g $ toRootOfUnity (toInteger k % 2)
           -- jacobi symbol of a primitive root mod p over p is always -1
         go _ = error "internal error in jacobiCharacter: please report this as a bug"
           -- every factor of n should be odd
@@ -565,4 +569,8 @@ exp4terms = [4^k % product [1..k] | k <- [0..]]
 -- In particular, lambda (exp4 n) n == 1 (for n >= 3)
 -- I've verified this for 3 <= n <= 2000, so the reasoning in fromTable should be accurate for moduli below 2^2000
 exp4 :: Int -> Integer
-exp4 n = (`mod` bit n) $ sum $ map (`mod` bit n) $ map (\q -> numerator q * fromMaybe (error "error in exp4") (recipMod (denominator q) (bit n))) $ take n $ exp4terms
+exp4 n
+  = (`mod` bit n)
+  $ sum
+  $ map (\q -> (numerator q * fromMaybe (error "error in exp4") (recipMod (denominator q) (bit n))) `mod` bit n)
+  $ take n exp4terms

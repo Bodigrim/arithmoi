@@ -1,13 +1,12 @@
 name:          arithmoi
-version:       0.10.0.0
+version:       0.11.0.0
 cabal-version: >=1.10
 build-type:    Simple
 license:       MIT
 license-file:  LICENSE
-copyright:     (c) 2016-2019 Andrew Lelechenko, Carter Schonwald, 2011 Daniel Fischer
+copyright:     (c) 2016-2020 Andrew Lelechenko, 2016-2019 Carter Schonwald, 2011 Daniel Fischer
 maintainer:    Andrew Lelechenko andrew dot lelechenko at gmail dot com,
                Carter Schonwald  carter at wellposed dot com
-stability:     Provisional
 homepage:      https://github.com/Bodigrim/arithmoi
 bug-reports:   https://github.com/Bodigrim/arithmoi/issues
 synopsis:      Efficient basic number-theoretic functions.
@@ -32,19 +31,18 @@ library
     base >=4.10 && <5,
     array >=0.5 && <0.6,
     containers >=0.5.8 && <0.7,
-    chimera >= 0.3,
+    chimera >=0.3,
     constraints,
     deepseq,
     exact-pi >=0.5,
-    ghc-prim <0.6,
     integer-gmp <1.1,
     integer-logarithms >=1.0,
     integer-roots >=1.0,
     mod,
     random >=1.0 && <1.2,
     transformers >=0.4 && <0.6,
-    semirings >= 0.5.2,
-    vector >= 0.12
+    semirings >=0.5.2,
+    vector >=0.12
   exposed-modules:
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Inverse
@@ -54,27 +52,17 @@ library
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.Curves.Montgomery
     Math.NumberTheory.DirichletCharacters
-    Math.NumberTheory.Euclidean
     Math.NumberTheory.Euclidean.Coprimes
     Math.NumberTheory.Moduli
     Math.NumberTheory.Moduli.Chinese
     Math.NumberTheory.Moduli.Class
     Math.NumberTheory.Moduli.CubicSymbol
-    Math.NumberTheory.Moduli.DiscreteLogarithm
     Math.NumberTheory.Moduli.Equations
-    Math.NumberTheory.Moduli.Jacobi
     Math.NumberTheory.Moduli.Multiplicative
-    Math.NumberTheory.Moduli.PrimitiveRoot
     Math.NumberTheory.Moduli.Singleton
     Math.NumberTheory.Moduli.Sqrt
     Math.NumberTheory.MoebiusInversion
-    Math.NumberTheory.Powers
-    Math.NumberTheory.Powers.Cubes
-    Math.NumberTheory.Powers.Fourth
-    Math.NumberTheory.Powers.General
     Math.NumberTheory.Powers.Modular
-    Math.NumberTheory.Powers.Squares
-    Math.NumberTheory.Powers.Squares.Internal
     Math.NumberTheory.Prefactored
     Math.NumberTheory.Primes
     Math.NumberTheory.Primes.Counting
@@ -84,7 +72,6 @@ library
     Math.NumberTheory.Recurrences
     Math.NumberTheory.Recurrences.Bilinear
     Math.NumberTheory.Recurrences.Linear
-    Math.NumberTheory.RootsOfUnity
     Math.NumberTheory.SmoothNumbers
     Math.NumberTheory.Zeta
   other-modules:
@@ -104,6 +91,7 @@ library
     Math.NumberTheory.Primes.Testing.Probabilistic
     Math.NumberTheory.Primes.Types
     Math.NumberTheory.Recurrences.Pentagonal
+    Math.NumberTheory.RootsOfUnity
     Math.NumberTheory.Utils
     Math.NumberTheory.Utils.DirichletSeries
     Math.NumberTheory.Utils.FromIntegral
@@ -115,7 +103,7 @@ library
   default-language: Haskell2010
   ghc-options: -Wall -Widentities -Wcompat
 
-test-suite spec
+test-suite arithmoi-tests
   build-depends:
     base >=4.10 && <5,
     arithmoi,
@@ -126,12 +114,12 @@ test-suite spec
     mod,
     QuickCheck >=2.10,
     quickcheck-classes >=0.6.3,
-    semirings >= 0.2,
+    semirings >=0.2,
     smallcheck >=1.1.3 && <1.2,
     tasty >=0.10,
     tasty-hunit >=0.9 && <0.11,
     tasty-quickcheck >=0.9 && <0.11,
-    tasty-rerun >= 1.1.17,
+    tasty-rerun >=1.1.17,
     tasty-smallcheck >=0.8 && <0.9,
     transformers >=0.5,
     vector
@@ -180,7 +168,7 @@ test-suite spec
   hs-source-dirs: test-suite
   ghc-options: -Wall -Widentities -Wcompat
 
-benchmark criterion
+benchmark arithmoi-gauge
   build-depends:
     base,
     arithmoi,
@@ -215,14 +203,15 @@ benchmark criterion
   hs-source-dirs: benchmark
   ghc-options: -Wall -Widentities -Wcompat
 
-executable sequence-model
+benchmark arithmoi-sequence-model
   build-depends:
     base,
     arithmoi,
     containers,
     hmatrix-gsl
   buildable: False
+  type: exitcode-stdio-1.0
   main-is: SequenceModel.hs
-  hs-source-dirs: app
   default-language: Haskell2010
+  hs-source-dirs: app
   ghc-options: -Wall -Widentities -Wcompat

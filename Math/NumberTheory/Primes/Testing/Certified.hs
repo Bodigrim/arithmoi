@@ -155,7 +155,7 @@ findDecomposition n = go 1 n [] prms
   where
     sr = integerSquareRoot n
     pbd = min 1000000 (sr+20)
-    prms = map unPrime $ primeList (primeSieve $ pbd)
+    prms = map unPrime $ primeList (primeSieve pbd)
     go a b afs (p:ps)
         | a > b     = (a,afs,b)
         | otherwise = case splitOff p b of

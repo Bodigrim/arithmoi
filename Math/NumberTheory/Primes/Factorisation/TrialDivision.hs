@@ -49,7 +49,7 @@ trialDivisionTo :: Integer -> Integer -> [(Integer, Word)]
 trialDivisionTo bd
     | bd < 100      = trialDivisionTo 100
     | bd < 10000000 = trialDivisionWith (map unPrime $ primeList $ primeSieve bd)
-    | otherwise     = trialDivisionWith (takeWhile (<= bd) $ map unPrime $ (psieveList >>= primeList))
+    | otherwise     = trialDivisionWith (takeWhile (<= bd) $ map unPrime $ psieveList >>= primeList)
 
 -- | Check whether a number is coprime to all of the numbers in the list
 --   (assuming that list contains only numbers > 1 and is ascending).
@@ -68,4 +68,4 @@ trialDivisionPrimeTo :: Integer -> Integer -> Bool
 trialDivisionPrimeTo bd
     | bd < 100      = trialDivisionPrimeTo 100
     | bd < 10000000 = trialDivisionPrimeWith (map unPrime $ primeList $ primeSieve bd)
-    | otherwise     = trialDivisionPrimeWith (takeWhile (<= bd) $ map unPrime $ (psieveList >>= primeList))
+    | otherwise     = trialDivisionPrimeWith (takeWhile (<= bd) $ map unPrime $ psieveList >>= primeList)

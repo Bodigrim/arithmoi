@@ -7,34 +7,18 @@
 -- Chinese remainder theorem
 --
 
-{-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
-{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeOperators       #-}
-
-#if __GLASGOW_HASKELL__ > 805
-{-# LANGUAGE NoStarIsType #-}
-#endif
 
 module Math.NumberTheory.Moduli.Chinese
   ( -- * Safe interface
     chinese
-  , chineseCoprime
   , chineseSomeMod
-  , chineseCoprimeSomeMod
-
-  , -- * Unsafe interface
-    chineseRemainder
-  , chineseRemainder2
   ) where
 
 import Prelude hiding ((^), (+), (-), (*), rem, mod, quot, gcd, lcm)
-import qualified Prelude
 
-import Control.Monad (foldM)
 import Data.Euclidean
 import Data.Mod
 import Data.Ratio
@@ -42,26 +26,6 @@ import Data.Semiring (Semiring(..), (+), (-), (*), Ring)
 import GHC.TypeNats (KnownNat, natVal)
 
 import Math.NumberTheory.Moduli.SomeMod
-import Math.NumberTheory.Utils (recipMod)
-
--- | 'chineseCoprime' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
--- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@.
--- Moduli @m1@ and @m2@ must be coprime, otherwise 'Nothing' is returned.
---
--- This function is slightly faster than 'chinese', but more restricted.
---
--- >>> chineseCoprime (1, 2) (2, 3)
--- Just 5
--- >>> chineseCoprime (3, 4) (5, 6)
--- Nothing -- moduli must be coprime
-chineseCoprime :: (Eq a, Ring a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
-chineseCoprime (n1, m1) (n2, m2)
-  | d == one
-  = Just $ (v * m2 * n1 + u * m1 * n2) `rem` (m1 * m2)
-  | otherwise = Nothing
-  where
-    (d, u, v) = extendedGCD m1 m2
-{-# DEPRECATED chineseCoprime "Use 'chinese' instead" #-}
 
 -- | 'chinese' @(n1, m1)@ @(n2, m2)@ returns @n@ such that
 -- @n \`mod\` m1 == n1@ and @n \`mod\` m2 == n2@, if exists.
@@ -114,18 +78,6 @@ chineseWrap _ _ (InfMod r1) (InfMod r2)
   | r1 == r2  = Just $ InfMod r1
   | otherwise = Nothing
 
--- | Same as 'chineseCoprime', but operates on residues.
---
--- >>> :set -XDataKinds
--- >>> import Math.NumberTheory.Moduli.Class
--- >>> (1 `modulo` 2) `chineseCoprimeSomeMod` (2 `modulo` 3)
--- Just (5 `modulo` 6)
--- >>> (3 `modulo` 4) `chineseCoprimeSomeMod` (5 `modulo` 6)
--- Nothing
-chineseCoprimeSomeMod :: SomeMod -> SomeMod -> Maybe SomeMod
-chineseCoprimeSomeMod = chineseWrap (*) chineseCoprime
-{-# DEPRECATED chineseCoprimeSomeMod "Use 'chineseSomeMod' instead" #-}
-
 -- | Same as 'chinese', but operates on residues.
 --
 -- >>> :set -XDataKinds
@@ -138,43 +90,6 @@ chineseCoprimeSomeMod = chineseWrap (*) chineseCoprime
 -- Nothing
 chineseSomeMod :: SomeMod -> SomeMod -> Maybe SomeMod
 chineseSomeMod = chineseWrap lcm chinese
-
--------------------------------------------------------------------------------
--- Unsafe interface
-
--- | Given a list @[(r_1,m_1), ..., (r_n,m_n)]@ of @(residue,modulus)@
---   pairs, @chineseRemainder@ calculates the solution to the simultaneous
---   congruences
---
--- >
--- > r ≡ r_k (mod m_k)
--- >
---
---   if all moduli are positive and pairwise coprime. Otherwise
---   the result is @Nothing@ regardless of whether
---   a solution exists.
-chineseRemainder :: [(Integer, Integer)] -> Maybe Integer
-chineseRemainder remainders = foldM addRem 0 remainders
-  where
-    !modulus = product (map snd remainders)
-    addRem acc (_,1) = Just acc
-    addRem acc (r,m) = do
-        let cf = modulus `quot` m
-        inv <- recipMod cf m
-        Just $! (acc + inv*cf*r) `rem` modulus
-{-# DEPRECATED chineseRemainder "Use 'chinese' instead" #-}
-
--- | @chineseRemainder2 (r_1,m_1) (r_2,m_2)@ calculates the solution of
---
--- >
--- > r ≡ r_k (mod m_k)
---
---   if @m_1@ and @m_2@ are coprime.
-chineseRemainder2 :: (Integer, Integer) -> (Integer, Integer) -> Integer
-chineseRemainder2 (n1, m1) (n2, m2) = ((1 - u * m1) * n1 + (1 - v * m2) * n2) `Prelude.mod` (m1 * m2)
-  where
-    (_, u, v) = extendedGCD m1 m2
-{-# DEPRECATED chineseRemainder2 "Use 'chinese' instead" #-}
 
 -------------------------------------------------------------------------------
 -- Utils

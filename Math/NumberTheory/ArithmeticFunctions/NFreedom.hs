@@ -71,7 +71,7 @@ sieveBlockNFree n lowIndex len'
           -- by @nFrees@, see the comments in it.
           indices :: [a]
           indices = [offset, offset + pPow .. len - 1]
-      forM_ indices $ \ix -> do
+      forM_ indices $ \ix ->
           MU.write as (fromIntegral ix) False
     U.freeze as
 
@@ -97,7 +97,7 @@ nFrees
     -- ^ Generated infinite list of @n@-free numbers.
 nFrees 0 = [1]
 nFrees 1 = [1]
-nFrees n = concatMap (\(lo, len) -> nFreesBlock n lo len) $ zip bounds strides
+nFrees n = concatMap (uncurry (nFreesBlock n)) $ zip bounds strides
   where
     -- The 56th element of @iterate (2 *) 256@ is @2^64 :: Word == 0@, so to
     -- avoid overflow only the first 55 elements of this list are used.

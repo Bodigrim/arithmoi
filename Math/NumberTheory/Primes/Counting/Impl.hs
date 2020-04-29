@@ -246,7 +246,7 @@ calcST lim plim = do
   where
     (bt,ri) = idxPr plim
     !start = 8*bt + ri
-    !size = fromIntegral $ (integerSquareRoot lim) `quot` 4
+    !size = fromIntegral $ integerSquareRoot lim `quot` 4
     !end = 2*size
 
 treat :: Int -> Int64 -> STUArray s Int Int64 -> STUArray s Int Int64 -> ST s Int

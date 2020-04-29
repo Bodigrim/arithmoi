@@ -115,7 +115,7 @@ fastInvertST _ fun n = do
 
     small <- MG.unsafeNew (mk0 + 1) :: ST s (G.Mutable v s t)
     MG.unsafeWrite small 0 0
-    MG.unsafeWrite small 1 $! (fun 1)
+    MG.unsafeWrite small 1 $! fun 1
     when (mk0 >= 2) $
         MG.unsafeWrite small 2 $! (fun 2 - fun 1)
 

@@ -75,7 +75,7 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
                       (\powOfA int -> powOfA * fromInteger int)
                       powsOfAPlusN
                       [-1, 0..]
-         in map ((/) aPlusN) denoms
+         in map (aPlusN /) denoms
 
     -- [      1      |             ]
     -- [ ----------- | s <- [0 ..] ]
@@ -110,7 +110,7 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
 
     fracs :: [a]
     fracs = map
-            (\pochh -> sum $ zipWith (\s p -> s * fromInteger p) second pochh)
+            (sum . zipWith (\s p -> s * fromInteger p) second)
             pochhammers
 
     -- Infinite list of @T@ values in 4.8.5 formula, for every @s@ in

@@ -8,9 +8,9 @@
 -- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.
 --
 
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE CPP          #-}
+{-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ViewPatterns  #-}
 
 module Math.NumberTheory.Moduli.Sqrt
   ( -- * Modular square roots
@@ -60,10 +60,10 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
     ms = map (\(p, pow) -> unPrime p ^ pow) pps
 
     rs :: [[Integer]]
-    rs = map (\(p, pow) -> sqrtsModPrimePower n p pow) pps
+    rs = map (uncurry (sqrtsModPrimePower n)) pps
 
     cs :: [[(Integer, Integer)]]
-    cs = zipWith (\l m -> map (\x -> (x, m)) l) rs ms
+    cs = zipWith (\l m -> map (, m) l) rs ms
 
     comb t1@(_, m1) t2@(_, m2) = (if ch < 0 then ch + m else ch, m)
       where
@@ -202,7 +202,7 @@ sqM2P n e
     | e < 2     = Just (n `mod` 2)
     | n' == 0   = Just 0
     | odd k     = Nothing
-    | otherwise = fmap ((`mod` mdl) . (`shiftL` wordToInt k2)) $ solve s e2
+    | otherwise = (`mod` mdl) . (`shiftL` wordToInt k2) <$> solve s e2
       where
         mdl = 1 `shiftL` wordToInt e
         n' = n `mod` mdl

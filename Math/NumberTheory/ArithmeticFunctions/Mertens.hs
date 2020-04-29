@@ -7,7 +7,6 @@
 -- Values of <https://en.wikipedia.org/wiki/Mertens_function Mertens function>.
 --
 
-{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Mertens
@@ -30,7 +29,7 @@ mertens 0 = 0
 mertens 1 = 1
 mertens x = sumMultMoebius lookupMus (\n -> sfunc (x `quot` n)) [1 .. x `quot` u]
   where
-    u = (integerSquareRoot x + 1) `max` ((integerCubeRoot x) ^ (2 :: Word) `quot` 2)
+    u = (integerSquareRoot x + 1) `max` (integerCubeRoot x ^ (2 :: Word) `quot` 2)
 
     sfunc :: Word -> Int
     sfunc y

@@ -7,7 +7,6 @@
 -- Modular powers (a. k. a. modular exponentiation).
 --
 
-{-# LANGUAGE CPP       #-}
 {-# LANGUAGE MagicHash #-}
 
 module Math.NumberTheory.Powers.Modular
@@ -16,11 +15,9 @@ module Math.NumberTheory.Powers.Modular
   , powModInt
   ) where
 
-import qualified GHC.Integer.GMP.Internals as GMP (powModInteger)
-
 import GHC.Exts (Word(..))
 import GHC.Natural (powModNatural)
-import qualified GHC.Integer.GMP.Internals as GMP (powModWord)
+import qualified GHC.Integer.GMP.Internals as GMP (powModInteger, powModWord)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | @powMod@ @b@ @e@ @m@ computes (@b^e@) \`mod\` @m@ in effective way.
@@ -54,7 +51,7 @@ powMod x y m
   where
     f _ 0 acc = acc
     f b e acc = f (b * b `rem` m) (e `quot` 2)
-      (if odd e then (b * acc `rem` m) else acc)
+      (if odd e then b * acc `rem` m else acc)
 
 {-# INLINE [1] powMod #-}
 {-# RULES

@@ -97,8 +97,8 @@ stdGenFactorisation :: Maybe Integer     -- ^ Lower bound for composite divisors
                     -> Maybe Int         -- ^ Estimated number of digits of smallest prime factor
                     -> Integer           -- ^ The number to factorise
                     -> [(Integer, Word)] -- ^ List of prime factors and exponents
-stdGenFactorisation primeBound sg digits n
-    = curveFactorisation primeBound bailliePSW (\m -> randomR (6,m-2)) sg digits n
+stdGenFactorisation primeBound =
+  curveFactorisation primeBound bailliePSW (\m -> randomR (6, m - 2))
 
 -- | 'curveFactorisation' is the driver for the factorisation. Its performance (and success)
 --   can be influenced by passing appropriate arguments. If you know that @n@ has no prime divisors
@@ -181,7 +181,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                 -- Since all @cs@ are coprime, we can factor each of
                 -- them and just concat results, without summing up
                 -- powers of the same primes in different elements.
-                fmap mconcat $ flip mapM cs $
+                fmap mconcat $ forM cs $
                   \(x, xm) -> if ptest x
                               then pure $ singlePrimeFactor x xm
                               else repFact x b1 b2 (count - 1)
@@ -307,7 +307,7 @@ bigStep q b1 b2 = rs
     n = pointN q
 
     b0 = b1 - b1 `rem` wheel
-    qks = zip [0..] $ map (\k -> multiply k q) wheelCoprimes
+    qks = zip [0..] $ map (`multiply` q) wheelCoprimes
     qs = enumAndMultiplyFromThenTo q b0 (b0 + wheel) b2
 
     rs = foldl' (\ts (_cHi, p) -> foldl' (\us (_cLo, pq) ->
@@ -365,7 +365,7 @@ smallFactors = \case
     !(Ptr smallPrimesAddr#) = smallPrimesPtr
 
     goBigNat :: BigNat -> Int -> ([(Natural, Word)], Maybe Natural)
-    goBigNat !m !i@(I# i#)
+    goBigNat !m i@(I# i#)
       | isTrue# (sizeofBigNat# m ==# 1#)
       = goWord (bigNatToWord m) i
       | i >= smallPrimesLength
@@ -389,7 +389,7 @@ smallFactors = \case
       = if isTrue# (m# `leWord#` 4294967295##) -- 65536 * 65536 - 1
         then ([(NatS# m#, 1)], Nothing)
         else ([], Just (NatS# m#))
-    goWord m# !i@(I# i#) = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
+    goWord m# i@(I# i#) = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
       if isTrue# (m# `ltWord#` (p# `timesWord#` p#))
         then ([(NatS# m#, 1)], Nothing)
         else case m# `quotRemWord#` p# of

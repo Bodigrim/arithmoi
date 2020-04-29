@@ -7,9 +7,6 @@
 -- Highest points under hyperbola.
 --
 
-{-# LANGUAGE CPP        #-}
-{-# LANGUAGE LambdaCase #-}
-
 module Math.NumberTheory.Utils.Hyperbola
   ( pointsUnderHyperbola
   ) where
@@ -50,19 +47,15 @@ initBresenham n x = Bresenham x beta gamma delta1 epsilon
 
 -- | bresenham(x+1) -> bresenham(x) for x >= (2n)^1/3
 stepBack :: Bresenham -> Bresenham
-stepBack (Bresenham x' beta' gamma' delta1' epsilon') =
-  if eps >= x
-    then (if eps >= x `shiftL` 1
-      then {- delta2 = 2 -}
-        let delta1 = delta1' + 2 in (Bresenham x (beta' + delta1) (gamma' + delta1 `shiftL` 1 - x `shiftL` 1) delta1 (eps - x `shiftL` 1))
-      else {- delta1 = 1 -}
-        let delta1 = delta1' + 1 in (Bresenham x (beta' + delta1) (gamma' + delta1 `shiftL` 1 - x) delta1 (eps - x))
-      )
-    else (if eps >= 0
-      then {- delta2 =  0 -}
-        (Bresenham x (beta' + delta1') (gamma' + delta1' `shiftL` 1) delta1' eps)
-      else {- delta2 = -1 -}
-        let delta1 = delta1' - 1 in (Bresenham x (beta' + delta1) (gamma' + delta1 `shiftL` 1 + x) delta1 (eps + x)))
+stepBack (Bresenham x' beta' gamma' delta1' epsilon')
+  | eps >= x `shiftL` 1 {- delta2 = 2 -}
+  = let delta1 = delta1' + 2 in Bresenham x (beta' + delta1) (gamma' + delta1 `shiftL` 1 - x `shiftL` 1) delta1 (eps - x `shiftL` 1)
+  | eps >= x {- delta1 = 1 -}
+  = let delta1 = delta1' + 1 in Bresenham x (beta' + delta1) (gamma' + delta1 `shiftL` 1 - x) delta1 (eps - x)
+  | eps >= 0 {- delta2 =  0 -}
+  = Bresenham x (beta' + delta1') (gamma' + delta1' `shiftL` 1) delta1' eps
+  | otherwise {- delta2 = -1 -}
+  = let delta1 = delta1' - 1 in Bresenham x (beta' + delta1) (gamma' + delta1 `shiftL` 1 + x) delta1 (eps + x)
   where
     x       = x' - 1
     eps     = epsilon' + gamma'
