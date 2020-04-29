@@ -11,8 +11,6 @@ import Math.NumberTheory.Utils.FromIntegral
 import qualified Data.Euclidean as A
 import Math.NumberTheory.Utils
 import Data.Semigroup
-import Data.Maybe
-import Data.List
 
 data CubicSymbol = Zero | Omega | OmegaSquare | One deriving (Eq)
 
@@ -96,8 +94,7 @@ cubicReciprocity alpha beta = cubicSymbolHelper beta alpha
 extractPrimaryContributions :: EisensteinInteger -> EisensteinInteger -> (EisensteinInteger, EisensteinInteger, CubicSymbol)
 extractPrimaryContributions alpha beta = (gamma, delta, newSymbol)
   where
-    newSymbol = stimes contribution Omega
-    contribution = j*m - i*m -i*n
+    newSymbol = stimes (j * m) Omega <> stimes (- m - n) i
     m :+ n = A.quot (delta - 1) 3
     (i, gamma) = getPrimaryDecomposition alphaThreeFree
     (_, delta) = getPrimaryDecomposition beta
@@ -106,27 +103,22 @@ extractPrimaryContributions alpha beta = (gamma, delta, newSymbol)
     -- @(1 - ω)^jIntWord * alphaThreeFree = alpha@.
     (jIntWord, alphaThreeFree) = splitOff (1 - ω) alpha
 
--- This function takes an Eisenstein number and returns its primary decomposition @(powerUnit, factor)@
--- That is, given @e@ coprime with 3, it returns a unique integer (mod 6) @powerUnit@ and a unique
--- Eisenstein number @factor@ such that @(1 + ω)^powerUnit * e = 1 + 3*factor@.
--- Note that L.findIndex cannot return Nothing. This happens only if @e@ is not
+-- This function takes an Eisenstein number and returns its primary decomposition
+-- @(symbol, delta)@. That is, given @e@ coprime with 3, it finds a unique integer
+-- x (mod 6) such that (1 + ω)^x * e = 1 (mod 3).
+-- It then returns @symbol = x^2@ and @delta = (1 + ω)^x * e@.
+-- Note that the error message should not be displayed. This happens only if @e@ is not
 -- coprime with 3. This cannot happen since @U.splitOff@ is called just before.
-getPrimaryDecomposition :: EisensteinInteger -> (Integer, EisensteinInteger)
+getPrimaryDecomposition :: EisensteinInteger -> (CubicSymbol, EisensteinInteger)
 -- This is the case where a common factor between @alpha@ and @beta@ is detected.
 -- In this instance @cubicReciprocity@ will return @Zero@.
 -- Strictly speaking, this is not a primary decomposition.
-getPrimaryDecomposition 0 = (0, 0)
-getPrimaryDecomposition e = (toInteger powerUnit, factor)
-  where
-    factor = unit * e
-    unit = (1 + ω)^powerUnit
-    powerUnit = fromMaybe
-      (error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed.")
-      findPowerUnit
-    -- Note that the units in @ids@ are ordered in the following way:
-    -- The i^th element of @ids@ is @(1 + ω)^i@ starting from i = 0@
-    -- That is the i^th unit counting anticlockwise starting with 1.
-    findPowerUnit = elemIndex inverseRemainder ids
-    inverseRemainder = conjugate remainder
-    -- Note that this number is the inverse of what is needed.
-    remainder = e `A.rem` 3
+getPrimaryDecomposition 0 = (Zero, 0)
+getPrimaryDecomposition e = case e `A.rem` 3 of
+  1            -> (One, e)
+  1 :+ 1       -> (OmegaSquare, -ω * e)
+  0 :+ 1       -> (Omega, (-1 - ω) * e)
+  -1           -> (One, -e)
+  (-1) :+ (-1) -> (OmegaSquare, ω * e)
+  0 :+ (-1)    -> (Omega, (1 + ω) * e)
+  _            -> error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed."
