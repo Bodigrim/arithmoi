@@ -1,3 +1,12 @@
+-- |
+-- Module:      Math.NumberTheory.Moduli.CubicSymbol
+-- Copyright:   (c) 2020 Federico Bongiorno
+-- Licence:     MIT
+-- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
+--
+-- Test for Math.NumberTheory.Moduli.CubicSymbol
+--
+
 module Math.NumberTheory.Moduli.CubicSymbolTests
   ( testSuite
   ) where
@@ -10,7 +19,9 @@ import Data.List
 import Test.Tasty
 import Math.NumberTheory.TestUtils
 
--- Checks multiplicative property of the numerators
+-- Checks multiplicative property of numerators. In details,
+-- @cubicSymbol1 alpha1 alpha2 beta@ checks that
+-- @(cubicSymbol alpha1 beta) <> (cubicSymbol alpha2 beta) == (cubicSymbol alpha1*alpha2 beta)@
 cubicSymbol1 :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger -> Bool
 cubicSymbol1 alpha1 alpha2 beta = isBadDenominator beta || cubicSymbolNumerator alpha1 alpha2 beta
 
@@ -22,7 +33,9 @@ cubicSymbolNumerator alpha1 alpha2 beta = (symbol1 <> symbol2) == symbolProduct
     symbolProduct = cubicSymbol alphaProduct beta
     alphaProduct = alpha1 * alpha2
 
--- Checks multiplicative property of the denominators
+-- Checks multiplicative property of denominators. In details,
+-- @cubicSymbol2 alpha beta1 beta2@ checks that
+-- @(cubicSymbol alpha beta1) <> (cubicSymbol alpha beta2) == (cubicSymbol alpha beta1*beta2)@
 cubicSymbol2 :: EisensteinInteger -> EisensteinInteger -> EisensteinInteger -> Bool
 cubicSymbol2 alpha beta1 beta2 = isBadDenominator beta1 || isBadDenominator beta2 || cubicSymbolDenominator alpha beta1 beta2
 
@@ -34,8 +47,9 @@ cubicSymbolDenominator alpha beta1 beta2 = (symbol1 <> symbol2) == symbolProduct
     symbolProduct = cubicSymbol alpha betaProduct
     betaProduct = beta1 * beta2
 
--- Checks that the cubic symbol is correct when the denominator is primebeta
--- as explanined in § 3.3.2 in https://en.wikipedia.org/wiki/Cubic_reciprocity
+-- Checks that @cubicSymbol@ agrees with the computational definition
+-- <https://en.wikipedia.org/wiki/Cubic_reciprocity#Definition here>
+-- when the denominator is prime.
 cubicSymbol3 :: EisensteinInteger -> Prime EisensteinInteger -> Bool
 cubicSymbol3 alpha prime = isBadDenominator beta || cubicSymbol alpha beta == cubicSymbolPrime alpha beta
     where beta = unPrime prime
@@ -58,7 +72,7 @@ isBadDenominator x = modularNorm == 0
 -- This complication is necessary because it may happen that the residue field
 -- of @beta@ has characteristic two. In this case 1=-1 and the Euclidean algorithm
 -- can return both. Therefore it is not enough to pattern match for the values
--- which give a well defined cubicSymbol.
+-- which give a well defined @cubicSymbol@.
 findCubicSymbol :: EisensteinInteger -> EisensteinInteger -> CubicSymbol
 findCubicSymbol residue beta
   | residue `A.rem` beta == 0             = Zero
