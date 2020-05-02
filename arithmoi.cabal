@@ -56,6 +56,7 @@ library
     Math.NumberTheory.Moduli
     Math.NumberTheory.Moduli.Chinese
     Math.NumberTheory.Moduli.Class
+    Math.NumberTheory.Moduli.CubicSymbol
     Math.NumberTheory.Moduli.Equations
     Math.NumberTheory.Moduli.Multiplicative
     Math.NumberTheory.Moduli.Singleton
@@ -135,6 +136,7 @@ test-suite arithmoi-tests
     Math.NumberTheory.Moduli.ChineseTests
     Math.NumberTheory.Moduli.DiscreteLogarithmTests
     Math.NumberTheory.Moduli.ClassTests
+    Math.NumberTheory.Moduli.CubicSymbolTests
     Math.NumberTheory.Moduli.EquationsTests
     Math.NumberTheory.Moduli.JacobiTests
     Math.NumberTheory.Moduli.PrimitiveRootTests
