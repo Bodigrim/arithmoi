@@ -21,12 +21,12 @@ import qualified Data.Euclidean as A
 import Math.NumberTheory.Utils
 import Data.Semigroup
 
--- | Represents
--- <https://en.wikipedia.org/wiki/Cubic_reciprocity#Cubic_residue_character cubic symbol>
+-- | Represents the
+-- <https://en.wikipedia.org/wiki/Cubic_reciprocity#Cubic_residue_character cubic residue character>
 -- It is either @0@, @ω@, @ω²@ or @1@.
 data CubicSymbol = Zero | Omega | OmegaSquare | One deriving (Eq)
 
--- | The set of cubic symbols form a semigroup. However @stimes@
+-- | The set of cubic symbols form a semigroup. Note `stimes`
 -- is allowed to take non-positive values. In other words, the set
 -- of non-zero cubic symbols is regarded as a group.
 --
@@ -68,8 +68,9 @@ symbolToNum = \case
   OmegaSquare -> -1 - ω
   One         -> 1
 
--- The algorithm cubicSymbol is divided in the following steps.
--- It is adapted from <https://cs.au.dk/~gudmund/Documents/cubicres.pdf here>.
+-- The algorithm `cubicSymbol` is adapted from
+-- <https://cs.au.dk/~gudmund/Documents/cubicres.pdf here>.
+-- It is divided in the following steps.
 --
 -- (1) Check whether @beta@ is coprime to 3.
 -- (2) Replace @alpha@ by the remainder of @alpha@ mod @beta@
@@ -77,8 +78,8 @@ symbolToNum = \case
 -- (3) Replace @alpha@ and @beta@ by their associated primary
 --     divisors and keep track of how their cubic residue changes.
 -- (4) Check if any of the two numbers is a zero or a unit. In this
---     case, it return their cubic residue.
--- (5) Otherwise, it invoke cubic reciprocity by swapping @alpha@ and
+--     case, return their cubic residue.
+-- (5) Otherwise, invoke cubic reciprocity by swapping @alpha@ and
 --     @beta@. Note both numbers have to be primary.
 --     Return to Step 2.
 
@@ -121,8 +122,8 @@ cubicReciprocity alpha beta = cubicSymbolHelper beta alpha
 
 -- | This function takes two Eisenstein intgers @alpha@ and @beta@ and returns
 -- three arguments @(gamma, delta, newSymbol)@. @gamma@ and @delta@ are the
--- associated primary numbers to alpha and beta respectively. @newSymbol@
--- is a the cubic symbol measuring the discrepancy between the cubic residue
+-- associated primary numbers of alpha and beta respectively. @newSymbol@
+-- is the cubic symbol measuring the discrepancy between the cubic residue
 -- of @alpha@ and @beta@, and the cubic residue of @gamma@ and @delta@.
 extractPrimaryContributions :: EisensteinInteger -> EisensteinInteger -> (EisensteinInteger, EisensteinInteger, CubicSymbol)
 extractPrimaryContributions alpha beta = (gamma, delta, newSymbol)
@@ -141,7 +142,7 @@ extractPrimaryContributions alpha beta = (gamma, delta, newSymbol)
 -- cubic symbol discrepancy between @e@ and @delta@. @delta@ is defined to be
 -- the unique associated Eisenstein Integer to @e@ such that
 -- \( \textrm{delta} \equiv 1 (\textrm{mod} 3) \).
--- Note that this is well defined if and only if @e@ is coprime to 3. In this
+-- Note that @delta@ exists if and only if @e@ is coprime to 3. In this
 -- case, an error message is displayed.
 getPrimaryDecomposition :: EisensteinInteger -> (CubicSymbol, EisensteinInteger)
 -- This is the case where a common factor between @alpha@ and @beta@ is detected.
@@ -152,7 +153,7 @@ getPrimaryDecomposition e = case e `A.rem` 3 of
   1            -> (One, e)
   1 :+ 1       -> (OmegaSquare, -ω * e)
   0 :+ 1       -> (Omega, (-1 - ω) * e)
-  -1           -> (One, -e)
+  (-1) :+ 0    -> (One, -e)
   (-1) :+ (-1) -> (OmegaSquare, ω * e)
   0 :+ (-1)    -> (Omega, (1 + ω) * e)
   _            -> error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed."

@@ -47,7 +47,7 @@ cubicSymbolDenominator alpha beta1 beta2 = (symbol1 <> symbol2) == symbolProduct
     symbolProduct = cubicSymbol alpha betaProduct
     betaProduct = beta1 * beta2
 
--- Checks that @cubicSymbol@ agrees with the computational definition
+-- Checks that `cubicSymbol` agrees with the computational definition
 -- <https://en.wikipedia.org/wiki/Cubic_reciprocity#Definition here>
 -- when the denominator is prime.
 cubicSymbol3 :: EisensteinInteger -> Prime EisensteinInteger -> Bool
