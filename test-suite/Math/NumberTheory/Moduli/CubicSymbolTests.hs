@@ -7,6 +7,8 @@
 -- Test for Math.NumberTheory.Moduli.CubicSymbol
 --
 
+{-# LANGUAGE CPP #-}
+
 module Math.NumberTheory.Moduli.CubicSymbolTests
   ( testSuite
   ) where
@@ -16,6 +18,9 @@ import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Primes
 import qualified Data.Euclidean as A
 import Data.List
+#if __GLASGOW_HASKELL__ < 803
+import Data.Semigroup
+#endif
 import Test.Tasty
 import Math.NumberTheory.TestUtils
 
