@@ -337,7 +337,7 @@ enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
     pThen = multiply thn  p
     pStep = multiply step p
 
-    progression = pFrom : pThen : zipWith (\x0 x1 -> add x0 pStep x1) progression (tail progression)
+    progression = pFrom : pThen : zipWith (`add` pStep) progression (tail progression)
 
 -- primes, compactly stored as a bit sieve
 primeStore :: [PrimeSieve]

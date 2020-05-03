@@ -9,7 +9,6 @@
 
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
 
 module Math.NumberTheory.Moduli.Chinese
   ( -- * Safe interface

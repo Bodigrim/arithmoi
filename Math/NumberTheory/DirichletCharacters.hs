@@ -547,7 +547,7 @@ iterateMaybe f x = unfoldr (fmap (\t -> (t, f t))) (Just x)
 -- An inverse to `evalAll`, defined only on its image.
 fromTable :: forall n. KnownNat n => Vector (OrZero RootOfUnity) -> Maybe (DirichletCharacter n)
 fromTable v = if length v == fromIntegral n
-                 then Generated <$> traverse makeFactor tmpl >>= check
+                 then traverse makeFactor tmpl >>= check . Generated
                  else Nothing
   where n = natVal (Proxy :: Proxy n)
         n' = fromIntegral n :: Integer

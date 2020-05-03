@@ -9,7 +9,6 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 module Math.NumberTheory.Moduli.Multiplicative
   ( -- * Multiplicative group
