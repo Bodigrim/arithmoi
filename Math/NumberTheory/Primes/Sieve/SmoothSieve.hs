@@ -1,9 +1,8 @@
 module Math.NumberTheory.Primes.Sieve.SmoothSieve
-  ( smoothData,
-    smoothNumbers,
+  ( smoothData
+  , smoothNumbers
   ) where
 
-import Data.Vector (Vector, replicate, findIndices, accumulate, map)
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Control.Monad.ST
@@ -12,11 +11,11 @@ import Control.Monad
 import Math.NumberTheory.Primes.Counting.Impl
 
 smoothData :: Int -> Int -> (V.Vector Int, V.Vector (V.Vector Bool))
-smoothData n b = (smoothNumbers, smoothFactorisations)
+smoothData n b = (smoothIndices, smoothFactorisations)
     where
         smoothFactorisations = V.map (factorisationsArray V.!) indicesArray
         indicesArray = V.findIndices (== 1) numbersArray
-        smoothNumbers = V.map (+2) indicesArray
+        smoothIndices = V.map (+2) indicesArray
         (numbersArray, factorisationsArray) = smoothSieve n b
 
 smoothNumbers :: Int -> Int -> V.Vector Int
@@ -73,8 +72,7 @@ addFactor numbersM factorisationsM primePositionM n prime divisor = do
     -- This is the position storing information about prime
     index <- MV.read primePositionM 0
     -- There must be a better way to change the entry
-    let addComponent v = accumulate (\x _ -> not x) v (V.singleton (index, 0))
-        divide x = x `div` prime
+    let addComponent v = V.update v (V.singleton (index, not (v V.! index)))
     forM_ [divisor, divisor*2..n] $ \multiple -> do
-        MV.modify numbersM divide (multiple - 2)
+        MV.modify numbersM (`div` prime) (multiple - 2)
         MV.modify factorisationsM addComponent (multiple - 2)
