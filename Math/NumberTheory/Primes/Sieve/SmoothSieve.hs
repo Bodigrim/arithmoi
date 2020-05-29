@@ -6,19 +6,22 @@ module Math.NumberTheory.Primes.Sieve.SmoothSieve
 import Control.Monad
 import Control.Monad.ST
 import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Mutable as MV
+import qualified Data.Vector.Unboxed.Mutable as UMV
+import Data.Vector.Generic (convert)
 -- Finds the number of primes less than or equal to a given number
 import Math.NumberTheory.Primes.Counting.Impl
 
-smoothData :: Int -> Int -> (V.Vector Int, V.Vector (V.Vector Bool))
+smoothData :: Int -> Int -> (U.Vector Int, V.Vector (U.Vector Bool))
 smoothData n b = (smoothIndices, smoothFactorisations)
     where
-        smoothFactorisations = V.map (factorisationsArray V.!) indicesArray
-        indicesArray = V.findIndices (== 1) numbersArray
-        smoothIndices = V.map (+2) indicesArray
+        smoothFactorisations = V.map (factorisationsArray V.!) (convert indicesArray)
+        indicesArray = U.findIndices (== 1) numbersArray
+        smoothIndices = U.map (+2) indicesArray
         (numbersArray, factorisationsArray) = smoothSieve n b
 
-smoothNumbers :: Int -> Int -> V.Vector Int
+smoothNumbers :: Int -> Int -> U.Vector Int
 smoothNumbers n b = fst (smoothData n b)
 
 -- Input an integer n and b and it returns a tuple of vectors. The first
@@ -31,48 +34,48 @@ smoothNumbers n b = fst (smoothData n b)
 -- For example, given factor base [2,3,5,7], the factorisation vector
 -- of 63 is [0,0,0,1] = [True, True, True, False]
 -- At the moment, using Int rather than Integers
-smoothSieve :: Int -> Int -> (V.Vector Int, V.Vector (V.Vector Bool))
+smoothSieve :: Int -> Int -> (U.Vector Int, V.Vector (U.Vector Bool))
 smoothSieve n b
-    | n < 2 || b < 2 = (V.empty, V.empty)
+    | n < 2 || b < 2 = (U.empty, V.empty)
     | otherwise      = runST $ do
         -- It may be more efficient to skip this step and let b
         -- be the number of primes
         -- Discuss whether use Int or Integer
         let numberOfPrimes = fromInteger (primeCount (toInteger b))
             -- Array keeping track of divisions
-            numbers = V.generate (n - 1) (\x -> x + 2)
-            factorisations = V.replicate (n - 1) (V.replicate numberOfPrimes True)
+            numbers = U.generate (n - 1) (\x -> x + 2)
+            factorisations = V.replicate (n - 1) (U.replicate numberOfPrimes True)
             -- This index keeps track of the number of primes
             -- Is there more elegant way to keep track of the
             -- number of primes?
-            primePosition = V.singleton 0
-        numbersM <- V.thaw numbers
+            primePosition = U.singleton 0
+        numbersM <- U.thaw numbers
         factorisationsM <- V.thaw factorisations
-        primePositionM <- V.thaw primePosition
+        primePositionM <- U.thaw primePosition
         smoothSieveM numbersM factorisationsM primePositionM n b
-        numbersArray <- V.unsafeFreeze numbersM
+        numbersArray <- U.unsafeFreeze numbersM
         factorisationsArray <- V.unsafeFreeze factorisationsM
         pure (numbersArray, factorisationsArray)
 
-smoothSieveM :: MV.MVector s Int -> MV.MVector s (V.Vector Bool) -> MV.MVector s Int -> Int -> Int -> ST s ()
+smoothSieveM :: UMV.MVector s Int -> MV.MVector s (U.Vector Bool) -> UMV.MVector s Int -> Int -> Int -> ST s ()
 smoothSieveM numbersM factorisationsM primePositionM n b = do
     let bound = minimum [n,b]
     forM_ [2..bound] $ \index -> do
-        prime <- MV.read numbersM (index - 2)
+        prime <- UMV.read numbersM (index - 2)
         -- Check if number is equal to its index
         -- i.e. if the number is a prime
         when (prime == index) $ do
             let powers = takeWhile (< n) (iterate (* prime) prime)
             forM_ powers $ \divisor ->
                 addFactor numbersM factorisationsM primePositionM n prime divisor
-            MV.modify primePositionM (+1) 0
+            UMV.modify primePositionM (+1) 0
 
-addFactor :: MV.MVector s Int -> MV.MVector s (V.Vector Bool) -> MV.MVector s Int -> Int -> Int -> Int -> ST s ()
+addFactor :: UMV.MVector s Int -> MV.MVector s (U.Vector Bool) -> UMV.MVector s Int -> Int -> Int -> Int -> ST s ()
 addFactor numbersM factorisationsM primePositionM n prime divisor = do
     -- This is the position storing information about prime
-    index <- MV.read primePositionM 0
+    index <- UMV.read primePositionM 0
     -- There must be a better way to change the entry
-    let addComponent v = V.update v (V.singleton (index, not (v V.! index)))
+    let addComponent u = U.update u (U.singleton (index, not (u U.! index)))
     forM_ [divisor, divisor*2..n] $ \multiple -> do
-        MV.modify numbersM (`div` prime) (multiple - 2)
+        UMV.modify numbersM (`div` prime) (multiple - 2)
         MV.modify factorisationsM addComponent (multiple - 2)
