@@ -3,10 +3,10 @@ module Math.NumberTheory.Primes.Sieve.SmoothSieve
   , smoothNumbers
   ) where
 
+import Control.Monad
+import Control.Monad.ST
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-import Control.Monad.ST
-import Control.Monad
 -- Finds the number of primes less than or equal to a given number
 import Math.NumberTheory.Primes.Counting.Impl
 
