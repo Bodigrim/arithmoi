@@ -44,7 +44,7 @@ mertensDiffPointwise lo len = sum $ map (runMoebius . moebius) [lo + 1 .. lo + l
 
 mertensDiffBlockSpecial :: Word -> Word -> Int
 mertensDiffBlockSpecial lo len = U.sum $ U.map runMoebius
-  $ sieveBlockMoebius (lo + 1) len
+  $ runMoebiusOverBlock (lo + 1) len
 
 mertensDiffBlockUnboxed :: Word -> Word -> Int
 mertensDiffBlockUnboxed lo len = U.sum $ U.map runMoebius

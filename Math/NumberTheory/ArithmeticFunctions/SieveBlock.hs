@@ -14,18 +14,12 @@
 
 module Math.NumberTheory.ArithmeticFunctions.SieveBlock
   ( runFunctionOverBlock
-  , SieveBlockConfig(..)
-  , multiplicativeSieveBlockConfig
-  , additiveSieveBlockConfig
-  , sieveBlock
-  , sieveBlockUnboxed
-  , sieveBlockMoebius
+  , runMoebiusOverBlock
   ) where
 
 import Control.Monad (forM_, when)
 import Control.Monad.ST (runST)
 import Data.Bits
-import Data.Coerce
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as MG
 import qualified Data.Vector as V
@@ -34,72 +28,12 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Exts
 
 import Math.NumberTheory.ArithmeticFunctions.Class
-import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius, sieveBlockMoebius)
+import Math.NumberTheory.ArithmeticFunctions.Moebius (Moebius, runMoebiusOverBlock)
 import Math.NumberTheory.Logarithms (wordLog2, integerLogBase')
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
-
--- | A record, which specifies a function to evaluate over a block.
---
--- For example, here is a configuration for the totient function:
---
--- > SieveBlockConfig
--- >   { sbcEmpty                = 1
--- >   , sbcFunctionOnPrimePower = \p a -> (unPrime p - 1) * unPrime p ^ (a - 1)
--- >   , sbcAppend               = (*)
--- >   }
-data SieveBlockConfig a = SieveBlockConfig
-  { sbcEmpty                :: a
-    -- ^ value of a function on 1
-  , sbcFunctionOnPrimePower :: Prime Word -> Word -> a
-    -- ^ how to evaluate a function on prime powers
-  , sbcAppend               :: a -> a -> a
-    -- ^ how to combine values of a function on coprime arguments
-  }
-
--- | Create a config for a multiplicative function from its definition on prime powers.
-multiplicativeSieveBlockConfig :: Num a => (Prime Word -> Word -> a) -> SieveBlockConfig a
-multiplicativeSieveBlockConfig f = SieveBlockConfig
-  { sbcEmpty                = 1
-  , sbcFunctionOnPrimePower = f
-  , sbcAppend               = (*)
-  }
-
--- | Create a config for an additive function from its definition on prime powers.
-additiveSieveBlockConfig :: Num a => (Prime Word -> Word -> a) -> SieveBlockConfig a
-additiveSieveBlockConfig f = SieveBlockConfig
-  { sbcEmpty                = 0
-  , sbcFunctionOnPrimePower = f
-  , sbcAppend               = (+)
-  }
-
--- | 'runFunctionOverBlock' @f@ @x@ @l@ evaluates an arithmetic function
--- for integers between @x@ and @x+l-1@ and returns a vector of length @l@.
--- It completely avoids factorisation, so it is asymptotically faster than
--- pointwise evaluation of @f@.
---
--- Value of @f@ at 0, if zero falls into block, is undefined.
---
--- Beware that for underlying non-commutative monoids the results may potentially
--- differ from pointwise application via 'runFunction'.
---
--- This is a thin wrapper over 'sieveBlock', read more details there.
---
--- >>> import Math.NumberTheory.ArithmeticFunctions
--- >>> runFunctionOverBlock carmichaelA 1 10
--- [1,1,2,2,4,2,6,2,6,4]
-runFunctionOverBlock
-  :: ArithmeticFunction Word a
-  -> Word
-  -> Word
-  -> V.Vector a
-runFunctionOverBlock (ArithmeticFunction f g) = (G.map g .) . sieveBlock SieveBlockConfig
-  { sbcEmpty                = mempty
-  , sbcAppend               = mappend
-  , sbcFunctionOnPrimePower = coerce f
-  }
 
 -- | Evaluate a function over a block in accordance to provided configuration.
 -- Value of @f@ at 0, if zero falls into block, is undefined.
@@ -108,22 +42,22 @@ runFunctionOverBlock (ArithmeticFunction f g) = (G.map g .) . sieveBlock SieveBl
 --
 -- For example, following code lists smallest prime factors:
 --
--- >>> sieveBlock (SieveBlockConfig maxBound (\p _ -> unPrime p) min) 2 10 :: Data.Vector.Vector Word
+-- >>> runFunctionOverBlock (ArithmeticFunction maxBound (\p _ -> unPrime p) min) 2 10 :: Data.Vector.Vector Word
 -- [2,3,2,5,2,7,2,3,2,11]
 --
 -- And this is how to factorise all numbers in a block:
 --
--- >>> sieveBlock (SieveBlockConfig [] (\p k -> [(unPrime p, k)]) (++)) 2 10 :: Data.Vector.Vector [(Word, Word)]
+-- >>> runFunctionOverBlock (ArithmeticFunction [] (\p k -> [(unPrime p, k)]) (++)) 2 10 :: Data.Vector.Vector [(Word, Word)]
 -- [[(2,1)],[(3,1)],[(2,2)],[(5,1)],[(2,1),(3,1)],[(7,1)],[(2,3)],[(3,2)],[(2,1),(5,1)],[(11,1)]]
-sieveBlock
+runFunctionOverBlock
   :: forall v a.
      G.Vector v a
-  => SieveBlockConfig a
+  => ArithmeticFunction Word a
   -> Word
   -> Word
   -> v a
-sieveBlock _ _ 0 = G.empty
-sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
+runFunctionOverBlock _ _ 0 = G.empty
+runFunctionOverBlock (ArithmeticFunction empty f append) !lowIndex' len' = runST $ do
 
     let lowIndex :: Int
         lowIndex = wordToInt lowIndex'
@@ -194,19 +128,7 @@ highestPowerDividing p n = go 0 n
       (q, 0) -> go (k + 1) q
       _      -> k
 
--- | This is 'sieveBlock' specialized to unboxed vectors.
---
--- >>> sieveBlockUnboxed (SieveBlockConfig 1 (\_ a -> a + 1) (*)) 1 10
--- [1,2,2,3,2,4,2,4,3,4]
-sieveBlockUnboxed
-  :: U.Unbox a
-  => SieveBlockConfig a
-  -> Word
-  -> Word
-  -> U.Vector a
-sieveBlockUnboxed = sieveBlock
-
-{-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Int  -> Word -> Word -> U.Vector Int  #-}
-{-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Word -> Word -> Word -> U.Vector Word #-}
-{-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Bool -> Word -> Word -> U.Vector Bool #-}
-{-# SPECIALIZE sieveBlockUnboxed :: SieveBlockConfig Moebius -> Word -> Word -> U.Vector Moebius #-}
+{-# SPECIALIZE runFunctionOverBlock :: ArithmeticFunction Word Int  -> Word -> Word -> U.Vector Int  #-}
+{-# SPECIALIZE runFunctionOverBlock :: ArithmeticFunction Word Word -> Word -> Word -> U.Vector Word #-}
+{-# SPECIALIZE runFunctionOverBlock :: ArithmeticFunction Word Bool -> Word -> Word -> U.Vector Bool #-}
+{-# SPECIALIZE runFunctionOverBlock :: ArithmeticFunction Word Moebius -> Word -> Word -> U.Vector Moebius #-}

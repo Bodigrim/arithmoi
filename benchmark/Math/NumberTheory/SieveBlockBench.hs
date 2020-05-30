@@ -72,6 +72,6 @@ benchSuite = bgroup "SieveBlock"
   , bgroup "moebius"
     [ bench "boxed"   $ nf (V.sum . V.map runMoebius . sieveBlock        moebiusConfig 1 :: Word -> Int) blockLen
     , bench "unboxed" $ nf (U.sum . U.map runMoebius . sieveBlockUnboxed moebiusConfig 1 :: Word -> Int) blockLen
-    , bench "special" $ nf (U.sum . U.map runMoebius . sieveBlockMoebius 1 :: Word -> Int) blockLen
+    , bench "special" $ nf (U.sum . U.map runMoebius . runMoebiusOverBlock 1 :: Word -> Int) blockLen
     ]
   ]

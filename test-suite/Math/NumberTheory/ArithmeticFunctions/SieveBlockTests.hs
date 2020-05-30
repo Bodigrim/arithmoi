@@ -36,7 +36,7 @@ moebiusTest :: Word -> Word -> Bool
 moebiusTest m n
   = m == 0
   || sieveBlockUnboxed moebiusConfig m n
-  == sieveBlockMoebius m n
+  == runMoebiusOverBlock m n
 
 moebiusSpecialCases :: [TestTree]
 moebiusSpecialCases = map (uncurry pairToTest)

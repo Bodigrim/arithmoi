@@ -16,7 +16,7 @@
 module Math.NumberTheory.ArithmeticFunctions.Moebius
   ( Moebius(..)
   , runMoebius
-  , sieveBlockMoebius
+  , runMoebiusOverBlock
   ) where
 
 import Control.Monad (forM_)
@@ -124,14 +124,14 @@ instance Monoid Moebius where
 --
 -- Based on the sieving algorithm from p. 3 of <https://arxiv.org/pdf/1610.08551.pdf Computations of the Mertens function and improved bounds on the Mertens conjecture> by G. Hurst. It is approximately 5x faster than 'Math.NumberTheory.ArithmeticFunctions.SieveBlock.sieveBlockUnboxed'.
 --
--- >>> sieveBlockMoebius 1 10
+-- >>> runMoebiusOverBlock 1 10
 -- [MoebiusP,MoebiusN,MoebiusN,MoebiusZ,MoebiusN,MoebiusP,MoebiusN,MoebiusZ,MoebiusZ,MoebiusP]
-sieveBlockMoebius
+runMoebiusOverBlock
   :: Word
   -> Word
   -> U.Vector Moebius
-sieveBlockMoebius _ 0 = U.empty
-sieveBlockMoebius lowIndex' len'
+runMoebiusOverBlock _ 0 = U.empty
+runMoebiusOverBlock lowIndex' len'
   = (unsafeCoerce :: U.Vector Word8 -> U.Vector Moebius) $ runST $ do
     as <- MU.replicate len (0x80 :: Word8)
     forM_ ps $ \p -> do

@@ -47,7 +47,7 @@ mertens x = sumMultMoebius lookupMus (\n -> sfunc (x `quot` n)) [1 .. x `quot` u
 
     -- 1-based index
     mus :: U.Vector Moebius
-    mus = sieveBlockMoebius 1 cacheSize
+    mus = runMoebiusOverBlock 1 cacheSize
 
     lookupMus :: Word -> Moebius
     lookupMus i = U.unsafeIndex mus (fromIntegral (i - 1))
