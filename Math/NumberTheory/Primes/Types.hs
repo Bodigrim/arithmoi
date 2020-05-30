@@ -8,8 +8,10 @@
 -- Should not be exposed to users.
 --
 
-{-# LANGUAGE TypeFamilies  #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Math.NumberTheory.Primes.Types
   ( Prime(..)
@@ -17,6 +19,9 @@ module Math.NumberTheory.Primes.Types
 
 import GHC.Generics
 import Control.DeepSeq
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Unboxed as U
 
 -- | Wrapper for prime elements of @a@. It is supposed to be constructed
 -- by 'Math.NumberTheory.Primes.nextPrime' / 'Math.NumberTheory.Primes.precPrime'.
@@ -71,3 +76,50 @@ instance Show a => Show (Prime a) where
   showsPrec d (Prime p) r = (if d > 10 then "(" ++ s ++ ")" else s) ++ r
     where
       s = "Prime " ++ show p
+
+newtype instance U.MVector s (Prime a) = MV_Prime (U.MVector s a)
+newtype instance U.Vector    (Prime a) = V_Prime  (U.Vector    a)
+
+instance U.Unbox a => U.Unbox (Prime a)
+
+instance M.MVector U.MVector a => M.MVector U.MVector (Prime a) where
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicOverlaps #-}
+  {-# INLINE basicUnsafeNew #-}
+  {-# INLINE basicInitialize #-}
+  {-# INLINE basicUnsafeReplicate #-}
+  {-# INLINE basicUnsafeRead #-}
+  {-# INLINE basicUnsafeWrite #-}
+  {-# INLINE basicClear #-}
+  {-# INLINE basicSet #-}
+  {-# INLINE basicUnsafeCopy #-}
+  {-# INLINE basicUnsafeGrow #-}
+  basicLength (MV_Prime v) = M.basicLength v
+  basicUnsafeSlice i n (MV_Prime v) = MV_Prime $ M.basicUnsafeSlice i n v
+  basicOverlaps (MV_Prime v1) (MV_Prime v2) = M.basicOverlaps v1 v2
+  basicUnsafeNew n = MV_Prime <$> M.basicUnsafeNew n
+  basicInitialize (MV_Prime v) = M.basicInitialize v
+  basicUnsafeReplicate n x = MV_Prime <$> M.basicUnsafeReplicate n (unPrime x)
+  basicUnsafeRead (MV_Prime v) i = Prime <$> M.basicUnsafeRead v i
+  basicUnsafeWrite (MV_Prime v) i x = M.basicUnsafeWrite v i (unPrime x)
+  basicClear (MV_Prime v) = M.basicClear v
+  basicSet (MV_Prime v) x = M.basicSet v (unPrime x)
+  basicUnsafeCopy (MV_Prime v1) (MV_Prime v2) = M.basicUnsafeCopy v1 v2
+  basicUnsafeMove (MV_Prime v1) (MV_Prime v2) = M.basicUnsafeMove v1 v2
+  basicUnsafeGrow (MV_Prime v) n = MV_Prime <$> M.basicUnsafeGrow v n
+
+instance G.Vector U.Vector a => G.Vector U.Vector (Prime a) where
+  {-# INLINE basicUnsafeFreeze #-}
+  {-# INLINE basicUnsafeThaw #-}
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicUnsafeIndexM #-}
+  {-# INLINE elemseq #-}
+  basicUnsafeFreeze (MV_Prime v) = V_Prime <$> G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_Prime v) = MV_Prime <$> G.basicUnsafeThaw v
+  basicLength (V_Prime v) = G.basicLength v
+  basicUnsafeSlice i n (V_Prime v) = V_Prime $ G.basicUnsafeSlice i n v
+  basicUnsafeIndexM (V_Prime v) i = Prime <$> G.basicUnsafeIndexM v i
+  basicUnsafeCopy (MV_Prime mv) (V_Prime v) = G.basicUnsafeCopy mv v
+  elemseq _ = seq
