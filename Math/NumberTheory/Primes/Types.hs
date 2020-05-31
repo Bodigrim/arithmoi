@@ -15,8 +15,10 @@
 
 module Math.NumberTheory.Primes.Types
   ( Prime(..)
+  , toPrimeIntegral
   ) where
 
+import Data.Bits
 import GHC.Generics
 import Control.DeepSeq
 import qualified Data.Vector.Generic as G
@@ -123,3 +125,39 @@ instance G.Vector U.Vector a => G.Vector U.Vector (Prime a) where
   basicUnsafeIndexM (V_Prime v) i = Prime <$> G.basicUnsafeIndexM v i
   basicUnsafeCopy (MV_Prime mv) (V_Prime v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
+
+-- | Convert between primes of different types, similar in spirit to 'toIntegralSized'.
+--
+-- A simpler version of this function is:
+--
+-- > toPrimeIntegral :: (Integral a, Integral b) => a -> Maybe b
+-- > toPrimeIntegral (Prime a)
+-- >   | toInteger a == b = Just (Prime (fromInteger b))
+-- >   | otherwise        = Nothing
+-- >   where
+-- >     b = toInteger a
+--
+-- The point of 'toPrimeIntegral' is to avoid redundant conversions and conditions,
+-- when it is safe to do so, determining type sizes statically with 'bitSizeMaybe'.
+-- For example, 'toPrimeIntegral' from 'Prime' 'Int' to 'Prime' 'Word' boils down to
+-- 'Just' . 'fromIntegral'.
+--
+toPrimeIntegral :: (Integral a, Integral b, Bits a, Bits b) => Prime a -> Maybe (Prime b)
+toPrimeIntegral (Prime a) = case unsignedWidth b of
+  Nothing -> res
+  Just bW -> case unsignedWidth a of
+    Just aW
+      | aW <= bW -> res
+    _
+      | a <= bit bW - 1 -> res
+      | otherwise       -> Nothing
+  where
+    b = fromIntegral a
+    res = Just (Prime b)
+{-# INLINE toPrimeIntegral #-}
+
+unsignedWidth :: Bits a => a -> Maybe Int
+unsignedWidth t
+  | isSigned t = (subtract 1) <$> bitSizeMaybe t
+  | otherwise  =                  bitSizeMaybe t
+{-# INLINE unsignedWidth #-}
