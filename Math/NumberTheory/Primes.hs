@@ -13,6 +13,7 @@
 module Math.NumberTheory.Primes
     ( Prime
     , unPrime
+    , toPrimeIntegral
     , nextPrime
     , precPrime
     , UniqueFactorisation(..)
