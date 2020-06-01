@@ -11,6 +11,7 @@
 
 module Math.NumberTheory.Moduli.CubicSymbol
   ( CubicSymbol(..)
+  , stimes
   , cubicSymbol
   , symbolToNum
   ) where
@@ -30,9 +31,9 @@ data CubicSymbol = Zero | Omega | OmegaSquare | One deriving (Eq)
 -- is allowed to take non-positive values. In other words, the set
 -- of non-zero cubic symbols is regarded as a group.
 --
--- >>> stimes -1 ω
+-- >>> stimes (-1) Omega
 -- ω²
--- >>> stimes 0 0
+-- >>> stimes 0 Zero
 -- 1
 instance Semigroup CubicSymbol where
   Zero <> _                    = Zero
