@@ -92,7 +92,6 @@ library
     Math.NumberTheory.Primes.Factorisation.TrialDivision
     Math.NumberTheory.Primes.Sieve.Eratosthenes
     Math.NumberTheory.Primes.Sieve.Indexing
-    Math.NumberTheory.Primes.Sieve.SmoothSieve
     Math.NumberTheory.Primes.Small
     Math.NumberTheory.Primes.Testing.Certified
     Math.NumberTheory.Primes.Testing.Probabilistic
