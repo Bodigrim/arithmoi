@@ -2,6 +2,7 @@
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( quadraticSieve
+  , gaussianElimination
   ) where
 
 import Control.Monad
@@ -41,8 +42,10 @@ quadraticSieve n b t = runST $ do
         -- This is to acces indexedSmoothNumbers aftwerwards. There is
         -- probably a better way to remember vector
         factorisations = snd indexedFactorisations
+        leadingPrimes = V.singleton S.empty
     factorisationsM <- V.thaw factorisations
-    --gaussianElimination factorisationsM
+    leadingPrimesM <- V.thaw leadingPrimes
+    gaussianElimination factorisationsM leadingPrimesM
     factorisationsF <- V.unsafeFreeze factorisationsM
     -- let perfectCombination = linearSolve factorisations
     pure factorisationsF
@@ -75,19 +78,37 @@ findSmoothNumbers sievingIntervalF = V.unzip smoothTuples
 
 -- This algorithm takes the factorisations of the smooth numbers reduced
 -- modulo 2 and returns a combitation which gives a prefect square
--- gaussianElimination :: MV.MVector s S.IntSet -> ST s ()
--- gaussianElimination factorisations = do
---     -- This is to remember the index of the factorisation
---     let s = MV.length factorisations
---     forM_ [0..(s - 1)] $ \indexFactorisation -> do
---         primeFactorisation <- MV.read factorisations indexFactorisation
---         -- Consider case primeFactorisation is empty
---         let () = S.partition
---         -- Delete entries in same column
---         MV.write factorisations indexFactorisation (S.singleton firstPrime)
---         -- Delete entries in further columns
---         forM_ [indexFactorisation..(s - 1)] $ \column -> do
-
+-- There is one thing that ideally should change. At the moment, a mutable
+-- IntSet is passed as an argument to keep track of what primes appear
+-- in the leading diagonal of the matrix.
+gaussianElimination :: MV.MVector s S.IntSet ->  MV.MVector s S.IntSet -> ST s ()
+gaussianElimination factorisationsM leadingPrimesM = do
+    -- This is to remember the index of the factorisation
+    let s = MV.length factorisationsM
+    forM_ [0..(s - 1)] $ \indexFactorisation -> do
+        primeFactorisation <- MV.read factorisationsM indexFactorisation
+        -- Consider case primeFactorisation is empty
+        -- In this case, findMin throws an exception
+        listOfLeadingPrimes <- MV.read leadingPrimesM 0
+        -- What is the correct syntax to go to the next iteration of the loop
+        --let leadingPrime = case (primeFactorisation `difference` listOfLeadingPrimes) of
+            --S.empty -> -- break loop
+            --_       -> findMin (primeFactorisation `difference` listOfLeadingPrimes)
+        let leadingPrime = S.findMin (primeFactorisation `S.difference` listOfLeadingPrimes)
+        MV.modify leadingPrimesM (S.insert leadingPrime) 0
+        newLeadingPrimes <- MV.read leadingPrimesM 0
+        -- Delete entries in same column
+        MV.write factorisationsM indexFactorisation (primeFactorisation `S.intersection` newLeadingPrimes)
+        let extraPrimes = primeFactorisation `S.difference` newLeadingPrimes
+        forM_ [(indexFactorisation + 1)..(s - 1)] $ \column -> do
+            primeColumn <- MV.read factorisationsM column
+            -- This should be written afterwards
+            let xor a b = (a `S.difference` b) `S.union` (b `S.difference` a)
+            if (S.member leadingPrime primeColumn)
+                then MV.modify factorisationsM (xor extraPrimes) column
+                -- Definitely not the correct syntax
+                -- What is the correct syntax to go to the next iteration of the loop
+                else MV.modify factorisationsM (id) column
 
 --
 -- findFirstSquare :: U.Vector Int -> IntSet -> Integer
