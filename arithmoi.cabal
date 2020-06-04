@@ -66,6 +66,7 @@ library
     Math.NumberTheory.Prefactored
     Math.NumberTheory.Primes
     Math.NumberTheory.Primes.Counting
+    Math.NumberTheory.Primes.IntSet
     Math.NumberTheory.Primes.Testing
     Math.NumberTheory.Quadratic.GaussianIntegers
     Math.NumberTheory.Quadratic.EisensteinIntegers
