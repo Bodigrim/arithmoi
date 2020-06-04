@@ -5,6 +5,7 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -13,6 +14,7 @@
 
 module Math.NumberTheory.Primes.IntSet
   ( PrimeIntSet
+  , unPrimeIntSet
   , Key
   , empty
   , singleton
@@ -32,7 +34,9 @@ module Math.NumberTheory.Primes.IntSet
   , size
   , isSubsetOf
   , isProperSubsetOf
+#if MIN_VERSION_containers(0,5,11)
   , disjoint
+#endif
   , union
   , unions
   , difference
@@ -42,6 +46,7 @@ module Math.NumberTheory.Primes.IntSet
   , partition
   , split
   , splitMember
+  , splitLookupEQ
   , splitRoot
   , foldr
   , foldl
@@ -61,18 +66,19 @@ module Math.NumberTheory.Primes.IntSet
   , toDescList
   ) where
 
-import Prelude (Eq, Ord, Show, Semigroup, Monoid, Bool, Maybe(..), Foldable, Int, otherwise)
+import Prelude (Eq, Ord, Show, Monoid, Bool, Maybe(..), Foldable, Int, otherwise)
 import Control.DeepSeq (NFData)
 import Data.Coerce (coerce)
 import Data.Data (Data)
 import qualified Data.Foldable
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
+import Data.Semigroup (Semigroup)
 import qualified GHC.Exts (IsList(..))
 
 import Math.NumberTheory.Primes.Types (Prime(..))
 
-newtype PrimeIntSet = PrimeIntSet IntSet
+newtype PrimeIntSet = PrimeIntSet { unPrimeIntSet :: IntSet }
   deriving (Eq, Ord, Data, Show, Semigroup, Monoid, NFData)
 
 type Key = Prime Int
@@ -100,15 +106,12 @@ fromDistinctAscList = coerce IS.fromDistinctAscList
 insert :: Key -> PrimeIntSet -> PrimeIntSet
 insert = coerce IS.insert
 
--- TODO allow Int in the first argument
-delete :: Key -> PrimeIntSet -> PrimeIntSet
+delete :: Int -> PrimeIntSet -> PrimeIntSet
 delete = coerce IS.delete
 
--- TODO allow Int in the first argument
 member :: Key -> PrimeIntSet -> Bool
 member = coerce IS.member
 
--- TODO allow Int in the first argument
 notMember :: Key -> PrimeIntSet -> Bool
 notMember = coerce IS.notMember
 
@@ -135,17 +138,16 @@ null = coerce IS.null
 size :: PrimeIntSet -> Int
 size = coerce IS.size
 
--- TODO allow IntSet in any argument
 isSubsetOf :: PrimeIntSet -> PrimeIntSet -> Bool
 isSubsetOf = coerce IS.isSubsetOf
 
--- TODO allow IntSet in any argument
 isProperSubsetOf :: PrimeIntSet -> PrimeIntSet -> Bool
 isProperSubsetOf = coerce IS.isProperSubsetOf
 
--- TODO allow IntSet in any argument
+#if MIN_VERSION_containers(0,5,11)
 disjoint :: PrimeIntSet -> PrimeIntSet -> Bool
 disjoint = coerce IS.disjoint
+#endif
 
 union :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
 union = coerce IS.union
@@ -153,16 +155,13 @@ union = coerce IS.union
 unions :: Foldable f => f PrimeIntSet -> PrimeIntSet
 unions = Data.Foldable.foldl' union empty
 
--- TODO allow IntSet in the second argument
-difference :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
+difference :: PrimeIntSet -> IntSet -> PrimeIntSet
 difference = coerce IS.difference
 
--- TODO allow IntSet in the second argument
-(\\) :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
+(\\) :: PrimeIntSet -> IntSet -> PrimeIntSet
 (\\) = coerce (IS.\\)
 
--- TODO allow IntSet in exactly one argument
-intersection :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
+intersection :: PrimeIntSet -> IntSet -> PrimeIntSet
 intersection = coerce IS.intersection
 
 filter :: (Key -> Bool) -> PrimeIntSet -> PrimeIntSet
@@ -174,9 +173,13 @@ partition = coerce IS.partition
 split :: Int -> PrimeIntSet -> (PrimeIntSet, PrimeIntSet)
 split = coerce IS.split
 
--- TODO allow Int in the first argument
 splitMember :: Key -> PrimeIntSet -> (PrimeIntSet, Bool, PrimeIntSet)
 splitMember = coerce IS.splitMember
+
+splitLookupEQ :: Int -> PrimeIntSet -> (PrimeIntSet, Maybe Key, PrimeIntSet)
+splitLookupEQ x xs = (lt, if eq then Just (Prime x) else Nothing, gt)
+  where
+    (lt, eq, gt) = coerce IS.splitMember x xs
 
 splitRoot :: PrimeIntSet -> [PrimeIntSet]
 splitRoot = coerce IS.splitRoot
