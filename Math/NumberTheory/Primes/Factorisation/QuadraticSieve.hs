@@ -16,6 +16,7 @@ import qualified Data.Vector.Mutable as MV
 --import qualified Data.Vector.Unboxed.Mutable as MU
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
+import Math.NumberTheory.Primes.IntSet as SP
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Utils.FromIntegral
 
@@ -32,7 +33,7 @@ quadraticSieve n b t = runST $ do
         -- t and returns the sieving internal (x^2 - n, factorisation) as x goes
         -- from the square root of n to t.
         --I.IntMap (Int)
-        sievingInterval = V.generate t (\index -> (reduce index, S.empty))
+        sievingInterval = V.generate t (\index -> (reduce index, SP.empty))
         reduce i = integerToInt ((squareRoot + (intToInteger i)) ^ (2 :: Int) - n)
     sievingIntervalM <- V.thaw sievingInterval
     smoothSieveM sievingIntervalM factorBase n
@@ -43,7 +44,6 @@ quadraticSieve n b t = runST $ do
         -- Consider writing a vector whose non-smooth number entries
         -- are empty and the smooth ones are signaled
         factorisations = fmap snd indexedFactorisations
-        s = V.length factorisations
     factorisationsM <- V.thaw factorisations
     pivots <- gaussianEliminationM factorisationsM
     factorisationsF <- V.unsafeFreeze factorisationsM
@@ -58,7 +58,7 @@ quadraticSieve n b t = runST $ do
 -- This algorithm takes the sievingInterval, the factorBase and the
 -- modularSquareRoots and returns the smooth numbers in the interval with
 -- respect to the factorBase together with their factorisations.
-smoothSieveM :: MV.MVector s (Int, S.IntSet) -> [Prime Int] -> Integer -> ST s ()
+smoothSieveM :: MV.MVector s (Int, SP.PrimeIntSet) -> [Prime Int] -> Integer -> ST s ()
 smoothSieveM sievingIntervalM factorBase n = do
     let t = MV.length sievingIntervalM
         squareRoot = (integerSquareRoot n) + 1
@@ -67,14 +67,14 @@ smoothSieveM sievingIntervalM factorBase n = do
         forM_ modularSquareRoots $ \modularSquareRoot -> do
             let startingIndex = integerToInt ((intToInteger modularSquareRoot - squareRoot) `mod` (intToInteger . unPrime) prime)
             forM_ [startingIndex, startingIndex + (unPrime prime)..(t - 1)] $ \entry -> do
-                let change (y, is) = (y `div` unPrime prime, S.insert (unPrime prime) is)
+                let change (y, is) = (y `div` unPrime prime, SP.insert prime is)
                 MV.modify sievingIntervalM change entry
 
 -- This function returns the smooth numbers together with their index in order
 -- to retrieve later the value of x and x^2 - n.
 -- This function should be better written.
 -- Change it to V.Vector (Int, S.IntSet)
-findSmoothNumbers :: V.Vector (Int, S.IntSet) -> V.Vector (Int, S.IntSet)
+findSmoothNumbers :: V.Vector (Int, SP.PrimeIntSet) -> V.Vector (Int, SP.PrimeIntSet)
 findSmoothNumbers = V.imapMaybe selectSmooth
      where
          selectSmooth index (residue, factorisation)
@@ -90,7 +90,7 @@ findSmoothNumbers = V.imapMaybe selectSmooth
 -- information, however it may be expensive to continously convert
 -- between one and the other in the course of the algorithm.
 -- Make one mutable vector out of rownumbersM and factorisationM
-gaussianEliminationM :: MV.MVector s S.IntSet -> ST s (I.IntMap Int)
+gaussianEliminationM :: MV.MVector s SP.PrimeIntSet -> ST s (I.IntMap (Prime Int))
 gaussianEliminationM factorisationsM = do
     let s = MV.length factorisationsM
     -- Pivots remembers the matrix entry where the pivots are
@@ -98,29 +98,29 @@ gaussianEliminationM factorisationsM = do
             | column >= s = pure pivots
             | otherwise = do
                 primeFactorisation <- MV.read factorisationsM column
-                let setOfPivotRows = (S.fromList . I.elems) pivots
-                    difference = primeFactorisation S.\\ setOfPivotRows
+                let setOfPivotRows = (SP.fromList . I.elems) pivots
+                    difference = primeFactorisation SP.\\ setOfPivotRows
                 -- If column is linearly dependent go to the next one
-                if (difference == S.empty)
+                if (difference == SP.empty)
                     then go pivots (column + 1)
                     else do
                         -- otherwise find the new pivot
-                        let (rowPivot, nonZeroRows) = S.deleteFindMin difference
+                        let (rowPivot, nonZeroRows) = SP.deleteFindMin difference
                         -- Delete entries in same column
-                        MV.write factorisationsM column (primeFactorisation S.\\ nonZeroRows)
+                        MV.write factorisationsM column (primeFactorisation SP.\\ nonZeroRows)
                         -- Delete entries in further columns
                         forM_ [(column + 1)..(s - 1)] $ \index -> do
                             nextFactorisation <- MV.read factorisationsM index
-                            when (rowPivot `S.member` nextFactorisation) $ do
-                                let xor a b = (a S.\\ b) <> (b S.\\ a)
+                            when (rowPivot `SP.member` nextFactorisation) $ do
+                                let xor a b = (a SP.\\ b) <> (b SP.\\ a)
                                 MV.modify factorisationsM (xor nonZeroRows) index
                         -- Go to the next column remembering pivot
                         go (I.insert column rowPivot pivots) (column + 1)
 
     go I.empty 0
 
-linearSolve :: V.Vector S.IntSet -> I.IntMap Int -> V.Vector S.IntSet
-linearSolve rowReducedMatrix im = foldr accumulate (V.replicate s S.empty) [0..(s -1)]
+linearSolve :: V.Vector SP.PrimeIntSet -> I.IntMap (Prime Int) -> V.Vector S.IntSet
+linearSolve rowReducedMatrix im = Prelude.foldr accumulate (V.replicate s S.empty) [0..(s -1)]
     where
         s = V.length rowReducedMatrix
         accumulate column oldSolutions = case I.lookup column im of
@@ -129,13 +129,13 @@ linearSolve rowReducedMatrix im = foldr accumulate (V.replicate s S.empty) [0..(
             -- When there is a pivot in the given column
             Just rowNumber -> oldSolutions V.// [(column, combination)]
                 where
-                    combination = foldr combine S.empty [(column + 1)..(s - 1)]
+                    combination = Prelude.foldr combine S.empty [(column + 1)..(s - 1)]
                     xor a b = (a S.\\ b) <> (b S.\\ a)
                     combine index oldCombination
                         -- The column index does have a 1 at rowNumber
-                        | (rowNumber `S.member` (rowReducedMatrix V.! index)) = xor oldCombination (oldSolutions V.! index)
+                        | (rowNumber `SP.member` (rowReducedMatrix V.! index)) = xor oldCombination (oldSolutions V.! index)
                         -- The column index does not have a 1 at rowNumber
-                        | otherwise                                           = oldCombination
+                        | otherwise                                            = oldCombination
 
 
 -- This function takes a subset of the freeVaraibles and returns the
