@@ -99,7 +99,7 @@ gaussianEliminationM factorisationsM = do
             | otherwise = do
                 primeFactorisation <- MV.read factorisationsM column
                 let setOfPivotRows = (SP.fromList . I.elems) pivots
-                    difference = primeFactorisation SP.\\ setOfPivotRows
+                    difference = primeFactorisation SP.\\ unPrimeIntSet setOfPivotRows
                 -- If column is linearly dependent go to the next one
                 if (difference == SP.empty)
                     then go pivots (column + 1)
@@ -107,12 +107,12 @@ gaussianEliminationM factorisationsM = do
                         -- otherwise find the new pivot
                         let (rowPivot, nonZeroRows) = SP.deleteFindMin difference
                         -- Delete entries in same column
-                        MV.write factorisationsM column (primeFactorisation SP.\\ nonZeroRows)
+                        MV.write factorisationsM column (primeFactorisation SP.\\ unPrimeIntSet nonZeroRows)
                         -- Delete entries in further columns
                         forM_ [(column + 1)..(s - 1)] $ \index -> do
                             nextFactorisation <- MV.read factorisationsM index
                             when (rowPivot `SP.member` nextFactorisation) $ do
-                                let xor a b = (a SP.\\ b) <> (b SP.\\ a)
+                                let xor a b = (a SP.\\ unPrimeIntSet b) <> (b SP.\\ unPrimeIntSet a)
                                 MV.modify factorisationsM (xor nonZeroRows) index
                         -- Go to the next column remembering pivot
                         go (I.insert column rowPivot pivots) (column + 1)
