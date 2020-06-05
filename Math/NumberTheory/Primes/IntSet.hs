@@ -4,6 +4,13 @@
 -- Licence:     MIT
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
+-- A newtype wrapper around 'IntSet'.
+--
+-- This module is intended to be imported qualified, e. g.,
+--
+-- > import Math.NumberTheory.Primes.IntSet (PrimeIntSet)
+-- > import qualified Math.NumberTheory.Primes.IntSet as PrimeIntSet
+--
 
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
@@ -13,16 +20,20 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Math.NumberTheory.Primes.IntSet
-  ( PrimeIntSet
+  ( -- * Set type
+    PrimeIntSet
   , unPrimeIntSet
-  , Key
-  , empty
+  -- * Construction
+  -- | Use 'Data.Monoid.mempty' to create an empty set.
   , singleton
   , fromList
   , fromAscList
   , fromDistinctAscList
+  -- * Insertion
   , insert
+  -- * Deletion
   , delete
+  -- * Query
   , member
   , notMember
   , lookupEQ
@@ -37,40 +48,37 @@ module Math.NumberTheory.Primes.IntSet
 #if MIN_VERSION_containers(0,5,11)
   , disjoint
 #endif
-  , union
-  , unions
+  -- * Combine
+  -- | Use 'Data.Semigroup.<>' for unions.
   , difference
   , (\\)
   , intersection
+  -- * Filter
   , filter
   , partition
   , split
   , splitMember
   , splitLookupEQ
   , splitRoot
+  -- * Folds
   , foldr
   , foldl
   , foldr'
   , foldl'
-  , findMin
-  , findMax
+  -- * Min/Max
   , deleteMin
   , deleteMax
-  , deleteFindMin
-  , deleteFindMax
-  , maxView
   , minView
-  , elems
-  , toList
+  , maxView
+  -- * Conversion
   , toAscList
   , toDescList
   ) where
 
-import Prelude (Eq, Ord, Show, Monoid, Bool, Maybe(..), Foldable, Int, otherwise)
+import Prelude (Eq, Ord, Show, Monoid, Bool, Maybe(..), Int, otherwise)
 import Control.DeepSeq (NFData)
 import Data.Coerce (coerce)
 import Data.Data (Data)
-import qualified Data.Foldable
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 import Data.Semigroup (Semigroup)
@@ -78,156 +86,178 @@ import qualified GHC.Exts (IsList(..))
 
 import Math.NumberTheory.Primes.Types (Prime(..))
 
-newtype PrimeIntSet = PrimeIntSet { unPrimeIntSet :: IntSet }
+-- | A set of 'Prime' integers.
+newtype PrimeIntSet = PrimeIntSet {
+  -- | Convert to a set of integers.
+  unPrimeIntSet :: IntSet
+  }
   deriving (Eq, Ord, Data, Show, Semigroup, Monoid, NFData)
 
-type Key = Prime Int
-
 instance GHC.Exts.IsList PrimeIntSet where
-  type Item PrimeIntSet = Key
-  fromList = fromList
-  toList = toList
+  type Item PrimeIntSet = Prime Int
+  fromList = coerce IS.fromList
+  toList = coerce IS.toList
 
-empty :: PrimeIntSet
-empty = coerce IS.empty
-
-singleton :: Key -> PrimeIntSet
+-- | Build a singleton set.
+singleton :: Prime Int -> PrimeIntSet
 singleton = coerce IS.singleton
 
-fromList :: [Key] -> PrimeIntSet
+-- | Build a set from a list of primes.
+fromList :: [Prime Int] -> PrimeIntSet
 fromList = coerce IS.fromList
 
-fromAscList :: [Key] -> PrimeIntSet
+-- | Build a set from an ascending list of primes
+-- (the precondition is not checked).
+fromAscList :: [Prime Int] -> PrimeIntSet
 fromAscList = coerce IS.fromAscList
 
-fromDistinctAscList :: [Key] -> PrimeIntSet
+-- | Build a set from an ascending list of distinct primes
+-- (the precondition is not checked).
+fromDistinctAscList :: [Prime Int] -> PrimeIntSet
 fromDistinctAscList = coerce IS.fromDistinctAscList
 
-insert :: Key -> PrimeIntSet -> PrimeIntSet
+-- | Insert a prime into the set.
+insert :: Prime Int -> PrimeIntSet -> PrimeIntSet
 insert = coerce IS.insert
 
+-- | Delete an integer from the set.
 delete :: Int -> PrimeIntSet -> PrimeIntSet
 delete = coerce IS.delete
 
-member :: Key -> PrimeIntSet -> Bool
+-- | Check whether the given prime is a member of the set.
+member :: Prime Int -> PrimeIntSet -> Bool
 member = coerce IS.member
 
-notMember :: Key -> PrimeIntSet -> Bool
+-- | Check whether the given prime is not a member of the set.
+notMember :: Prime Int -> PrimeIntSet -> Bool
 notMember = coerce IS.notMember
 
-lookupEQ :: Int -> PrimeIntSet -> Maybe Key
+-- | Find a prime in the set,
+-- equal to the given integer, if any exists.
+lookupEQ :: Int -> PrimeIntSet -> Maybe (Prime Int)
 lookupEQ x xs
   | coerce member x xs = Just (Prime x)
   | otherwise          = Nothing
 
-lookupLT :: Int -> PrimeIntSet -> Maybe Key
+-- | Find the largest prime in the set,
+-- smaller than the given integer, if any exists.
+lookupLT :: Int -> PrimeIntSet -> Maybe (Prime Int)
 lookupLT = coerce IS.lookupLT
 
-lookupGT :: Int -> PrimeIntSet -> Maybe Key
+-- | Find the smallest prime in the set,
+-- greater than the given integer, if any exists.
+lookupGT :: Int -> PrimeIntSet -> Maybe (Prime Int)
 lookupGT = coerce IS.lookupGT
 
-lookupLE :: Int -> PrimeIntSet -> Maybe Key
+-- | Find the largest prime in the set,
+-- smaller or equal to the given integer, if any exists.
+lookupLE :: Int -> PrimeIntSet -> Maybe (Prime Int)
 lookupLE = coerce IS.lookupLE
 
-lookupGE :: Int -> PrimeIntSet -> Maybe Key
+-- | Find the smallest prime in the set,
+-- greater or equal to the given integer, if any exists.
+lookupGE :: Int -> PrimeIntSet -> Maybe (Prime Int)
 lookupGE = coerce IS.lookupGE
 
+-- | Check whether the set is empty.
 null :: PrimeIntSet -> Bool
 null = coerce IS.null
 
+-- | Cardinality of the set.
 size :: PrimeIntSet -> Int
 size = coerce IS.size
 
+-- | Check whether the first argument is a subset of the second one.
 isSubsetOf :: PrimeIntSet -> PrimeIntSet -> Bool
 isSubsetOf = coerce IS.isSubsetOf
 
+-- | Check whether the first argument is a proper subset of the second one.
 isProperSubsetOf :: PrimeIntSet -> PrimeIntSet -> Bool
 isProperSubsetOf = coerce IS.isProperSubsetOf
 
 #if MIN_VERSION_containers(0,5,11)
+-- | Check whether two sets are disjoint.
 disjoint :: PrimeIntSet -> PrimeIntSet -> Bool
 disjoint = coerce IS.disjoint
 #endif
 
-union :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
-union = coerce IS.union
-
-unions :: Foldable f => f PrimeIntSet -> PrimeIntSet
-unions = Data.Foldable.foldl' union empty
-
+-- | Difference between a set of primes and a set of integers.
 difference :: PrimeIntSet -> IntSet -> PrimeIntSet
 difference = coerce IS.difference
 
+-- | An alias to 'difference'.
 (\\) :: PrimeIntSet -> IntSet -> PrimeIntSet
 (\\) = coerce (IS.\\)
 
+infixl 9 \\{- -}
+
+-- | Intersection of a set of primes and a set of integers.
 intersection :: PrimeIntSet -> IntSet -> PrimeIntSet
 intersection = coerce IS.intersection
 
-filter :: (Key -> Bool) -> PrimeIntSet -> PrimeIntSet
+-- | Filter primes satisfying a predicate.
+filter :: (Prime Int -> Bool) -> PrimeIntSet -> PrimeIntSet
 filter = coerce IS.filter
 
-partition :: (Key -> Bool) -> PrimeIntSet -> (PrimeIntSet, PrimeIntSet)
+-- | Partition primes according to a predicate.
+partition :: (Prime Int -> Bool) -> PrimeIntSet -> (PrimeIntSet, PrimeIntSet)
 partition = coerce IS.partition
 
+-- | Split into primes strictly less and strictly greater
+-- than the first argument.
 split :: Int -> PrimeIntSet -> (PrimeIntSet, PrimeIntSet)
 split = coerce IS.split
 
-splitMember :: Key -> PrimeIntSet -> (PrimeIntSet, Bool, PrimeIntSet)
+-- | Simultaneous 'split' and 'member'.
+splitMember :: Prime Int -> PrimeIntSet -> (PrimeIntSet, Bool, PrimeIntSet)
 splitMember = coerce IS.splitMember
 
-splitLookupEQ :: Int -> PrimeIntSet -> (PrimeIntSet, Maybe Key, PrimeIntSet)
+-- | Simultaneous 'split' and 'lookupEQ'.
+splitLookupEQ :: Int -> PrimeIntSet -> (PrimeIntSet, Maybe (Prime Int), PrimeIntSet)
 splitLookupEQ x xs = (lt, if eq then Just (Prime x) else Nothing, gt)
   where
     (lt, eq, gt) = coerce IS.splitMember x xs
 
+-- | Decompose a set into pieces based on the structure of the underlying tree.
 splitRoot :: PrimeIntSet -> [PrimeIntSet]
 splitRoot = coerce IS.splitRoot
 
-foldr :: forall b. (Key -> b -> b) -> b -> PrimeIntSet -> b
+-- | Fold a set using the given right-associative operator.
+foldr :: forall b. (Prime Int -> b -> b) -> b -> PrimeIntSet -> b
 foldr = coerce (IS.foldr @b)
 
-foldl :: forall a. (a -> Key -> a) -> a -> PrimeIntSet -> a
+-- | Fold a set using the given left-associative operator.
+foldl :: forall a. (a -> Prime Int -> a) -> a -> PrimeIntSet -> a
 foldl = coerce (IS.foldl @a)
 
-foldr' :: forall b. (Key -> b -> b) -> b -> PrimeIntSet -> b
+-- | A strict version of 'foldr'.
+foldr' :: forall b. (Prime Int -> b -> b) -> b -> PrimeIntSet -> b
 foldr' = coerce (IS.foldr' @b)
 
-foldl' :: forall a. (a -> Key -> a) -> a -> PrimeIntSet -> a
+-- | A strict version of 'foldl'.
+foldl' :: forall a. (a -> Prime Int -> a) -> a -> PrimeIntSet -> a
 foldl' = coerce (IS.foldl' @a)
 
-findMin :: PrimeIntSet -> Key
-findMin = coerce IS.findMin
-
-findMax :: PrimeIntSet -> Key
-findMax = coerce IS.findMax
-
+-- | Delete the smallest prime in the set.
 deleteMin :: PrimeIntSet -> PrimeIntSet
 deleteMin = coerce IS.deleteMin
 
+-- | Delete the largest prime in the set.
 deleteMax :: PrimeIntSet -> PrimeIntSet
 deleteMax = coerce IS.deleteMax
 
-deleteFindMin :: PrimeIntSet -> (Key, PrimeIntSet)
-deleteFindMin = coerce IS.deleteFindMin
-
-deleteFindMax :: PrimeIntSet -> (Key, PrimeIntSet)
-deleteFindMax = coerce IS.deleteFindMax
-
-maxView :: PrimeIntSet -> Maybe (Key, PrimeIntSet)
-maxView = coerce IS.maxView
-
-minView :: PrimeIntSet -> Maybe (Key, PrimeIntSet)
+-- | Split a set into the smallest prime and the rest, if non-empty.
+minView :: PrimeIntSet -> Maybe (Prime Int, PrimeIntSet)
 minView = coerce IS.minView
 
-elems :: PrimeIntSet -> [Key]
-elems = coerce IS.elems
+-- | Split a set into the largest prime and the rest, if non-empty.
+maxView :: PrimeIntSet -> Maybe (Prime Int, PrimeIntSet)
+maxView = coerce IS.maxView
 
-toList :: PrimeIntSet -> [Key]
-toList = coerce IS.toList
-
-toAscList :: PrimeIntSet -> [Key]
+-- | Convert the set to a list of ascending primes.
+toAscList :: PrimeIntSet -> [Prime Int]
 toAscList = coerce IS.toAscList
 
-toDescList :: PrimeIntSet -> [Key]
+-- | Convert the set to a list of descending primes.
+toDescList :: PrimeIntSet -> [Prime Int]
 toDescList = coerce IS.toDescList
