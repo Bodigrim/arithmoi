@@ -7,8 +7,6 @@
 -- Tests for Math.NumberTheory.Powers.Modular
 --
 
-{-# LANGUAGE CPP #-}
-
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.Powers.ModularTests
@@ -18,12 +16,11 @@ module Math.NumberTheory.Powers.ModularTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Bits
 import Numeric.Natural
 
 import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.TestUtils
-
-#include "MachDeps.h"
 
 powMod' :: Integer -> Natural -> Integer -> Integer
 powMod' = powMod
@@ -59,7 +56,6 @@ powModProperty_Integer (AnySign b) (NonNegative e) (Positive m) = powMod b e m =
 powModProperty_Natural :: AnySign Natural -> NonNegative Natural -> Positive Natural -> Bool
 powModProperty_Natural (AnySign b) (NonNegative e) (Positive m) = powMod b e m == fromInteger (powMod' (fromIntegral b) e (fromIntegral m))
 
-#if WORD_SIZE_IN_BITS == 64
 -- | Large modulo m such that m^2 overflows.
 powModSpecialCase1_Int :: Assertion
 powModSpecialCase1_Int =
@@ -69,11 +65,10 @@ powModSpecialCase1_Int =
 powModSpecialCase1_Word :: Assertion
 powModSpecialCase1_Word =
   assertEqual "powModWord" (powModWord 3 101 (2^60-1)) 1018105167100379328
-#endif
 
 testSuite :: TestTree
 testSuite = testGroup "Modular"
-  [ testGroup "powMod"
+  [ testGroup "powMod" $
     [ testSmallAndQuick "range"                  powModProperty1
     , testSmallAndQuick "multiplicative by base" powModProperty2
     , testSmallAndQuick "additive by exponent"   powModProperty3
@@ -82,10 +77,8 @@ testSuite = testGroup "Modular"
     , testSmallAndQuick "powModWord"             powModProperty_Word
     , testSmallAndQuick "powModInteger"          powModProperty_Integer
     , testSmallAndQuick "powModNatural"          powModProperty_Natural
-
-#if WORD_SIZE_IN_BITS == 64
-    , testCase          "large modulo :: Int"    powModSpecialCase1_Int
+    ] ++ if finiteBitSize (0 :: Word) /= 64 then [] else
+    [ testCase          "large modulo :: Int"    powModSpecialCase1_Int
     , testCase          "large modulo :: Word"   powModSpecialCase1_Word
-#endif
     ]
   ]

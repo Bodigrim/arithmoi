@@ -7,7 +7,6 @@
 -- Sieve
 --
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -25,8 +24,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
     , sieveTo
     ) where
 
-#include "MachDeps.h"
-
 import Control.Monad (when)
 import Control.Monad.ST
 import Data.Array.Base
@@ -40,23 +37,33 @@ import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 
-#define IX_MASK     0xFFFFF
-#define IX_BITS     20
-#define IX_J_MASK   0x7FFFFF
-#define IX_J_BITS   23
-#define J_MASK      7
-#define J_BITS      3
-#define SIEVE_KB    128
+iXMASK :: Num a => a
+iXMASK   = 0xFFFFF
+
+iXBITS :: Int
+iXBITS   = 20
+
+iXJMASK :: Num a => a
+iXJMASK = 0x7FFFFF
+
+iXJBITS :: Int
+iXJBITS = 23
+
+jMASK :: Int
+jMASK    = 7
+
+jBITS :: Int
+jBITS    = 3
 
 -- Sieve in 128K chunks.
 -- Large enough to get something done per chunk
 -- and hopefully small enough to fit in the cache.
 sieveBytes :: Int
-sieveBytes = SIEVE_KB*1024
+sieveBytes = 128 * 1024
 
 -- Number of bits per chunk.
 sieveBits :: Int
-sieveBits = 8*sieveBytes
+sieveBits = 8 * sieveBytes
 
 -- Last index of chunk.
 lastIndex :: Int
@@ -64,21 +71,10 @@ lastIndex = sieveBits - 1
 
 -- Range of a chunk.
 sieveRange :: Int
-sieveRange = 30*sieveBytes
+sieveRange = 30 * sieveBytes
 
-type CacheWord = Word64
-
-#if SIZEOF_HSWORD == 8
-#define RMASK 63
-#define WSHFT 6
-#define TOPB 32
-#define TOPM 0xFFFFFFFF
-#else
-#define RMASK 31
-#define WSHFT 5
-#define TOPB 16
-#define TOPM 0xFFFF
-#endif
+wSHFT :: (Bits a, Num a) => a
+wSHFT = if finiteBitSize (0 :: Word) == 64 then 6 else 5
 
 -- | Compact store of primality flags.
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
@@ -167,30 +163,30 @@ psieveList = makeSieves plim sqlim 0 0 cache
     sqlim = plim*plim
     cache = runSTUArray $ do
         sieve <- sieveTo (4801 :: Integer)
-        new <- unsafeNewArray_ (0,1287) :: ST s (STUArray s Int CacheWord)
+        new <- unsafeNewArray_ (0,1287) :: ST s (STUArray s Int Word64)
         let fill j indx
               | 1279 < indx = return new    -- index of 4801 = 159*30 + 31 ~> 159*8+7
               | otherwise = do
                 p <- unsafeRead sieve indx
                 if p
                   then do
-                    let !i = indx .&. J_MASK
-                        k = indx `shiftR` J_BITS
-                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` J_BITS + idx i
-                        !strt = fromIntegral (strt1 .&. IX_MASK)
-                        !skip = fromIntegral (strt1 `shiftR` IX_BITS)
-                        !ixes = fromIntegral indx `shiftL` IX_J_BITS + strt `shiftL` J_BITS + fromIntegral i
+                    let !i = indx .&. jMASK
+                        k = indx `shiftR` jBITS
+                        strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` jBITS + idx i
+                        !strt = fromIntegral (strt1 .&. iXMASK)
+                        !skip = fromIntegral (strt1 `shiftR` iXBITS)
+                        !ixes = fromIntegral indx `shiftL` iXJBITS + strt `shiftL` jBITS + fromIntegral i
                     unsafeWrite new j skip
                     unsafeWrite new (j+1) ixes
                     fill (j+2) (indx+1)
                   else fill j (indx+1)
         fill 0 0
 
-makeSieves :: Integer -> Integer -> Integer -> Integer -> UArray Int CacheWord -> [PrimeSieve]
+makeSieves :: Integer -> Integer -> Integer -> Integer -> UArray Int Word64 -> [PrimeSieve]
 makeSieves plim sqlim bitOff valOff cache
   | valOff' < sqlim =
       let (nc, bs) = runST $ do
-            cch <- unsafeThaw cache :: ST s (STUArray s Int CacheWord)
+            cch <- unsafeThaw cache :: ST s (STUArray s Int Word64)
             bs0 <- slice cch
             fcch <- unsafeFreeze cch
             fbs0 <- unsafeFreeze bs0
@@ -210,7 +206,7 @@ makeSieves plim sqlim bitOff valOff cache
       valOff' = valOff + fromIntegral sieveRange
       bitOff' = bitOff + fromIntegral sieveBits
 
-slice :: STUArray s Int CacheWord -> ST s (STUArray s Int Bool)
+slice :: STUArray s Int Word64 -> ST s (STUArray s Int Bool)
 slice cache = do
     hi <- snd `fmap` getBounds cache
     sieve <- newArray (0,lastIndex) True
@@ -222,25 +218,25 @@ slice cache = do
               then unsafeWrite cache pr (w-1)
               else do
                 ixes <- unsafeRead cache (pr+1)
-                let !stj = fromIntegral ixes .&. IX_J_MASK   -- position of multiple and index of cofactor
-                    !ixw = fromIntegral (ixes `shiftR` IX_J_BITS)  -- prime data, up to 41 bits
-                    !i = ixw .&. J_MASK
+                let !stj = fromIntegral ixes .&. iXJMASK   -- position of multiple and index of cofactor
+                    !ixw = fromIntegral (ixes `shiftR` iXJBITS)  -- prime data, up to 41 bits
+                    !i = ixw .&. jMASK
                     !k = ixw - i        -- On 32-bits, k > 44717396 means overflow is possible in tick
-                    !o = i `shiftL` J_BITS
-                    !j = stj .&. J_MASK          -- index of cofactor
-                    !s = stj `shiftR` J_BITS     -- index of first multiple to tick off
+                    !o = i `shiftL` jBITS
+                    !j = stj .&. jMASK          -- index of cofactor
+                    !s = stj `shiftR` jBITS     -- index of first multiple to tick off
                 (n, u) <- tick k o j s
-                let !skip = fromIntegral (n `shiftR` IX_BITS)
-                    !strt = fromIntegral (n .&. IX_MASK)
+                let !skip = fromIntegral (n `shiftR` iXBITS)
+                    !strt = fromIntegral (n .&. iXMASK)
                 unsafeWrite cache pr skip
-                unsafeWrite cache (pr+1) ((ixes .&. complement IX_J_MASK) .|. strt `shiftL` J_BITS .|. fromIntegral u)
+                unsafeWrite cache (pr+1) ((ixes .&. complement iXJMASK) .|. strt `shiftL` jBITS .|. fromIntegral u)
             treat (pr+2)
         tick stp off j ix
           | lastIndex < ix  = return (ix - sieveBits, j)
           | otherwise       = do
             p <- unsafeRead sieve ix
             when p (unsafeWrite sieve ix False)
-            tick stp off ((j+1) .&. J_MASK) (ix + stp*delta j + tau (off+j))
+            tick stp off ((j+1) .&. jMASK) (ix + stp*delta j + tau (off+j))
     treat 0
 
 -- | Sieve up to bound in one go.
@@ -262,20 +258,20 @@ sieveTo bound = arr
               | otherwise  = do
                 p <- unsafeRead ar ix
                 when p (unsafeWrite ar ix False)
-                tick stp off ((j+1) .&. J_MASK) (ix + stp*delta j + tau (off+j))
+                tick stp off ((j+1) .&. jMASK) (ix + stp*delta j + tau (off+j))
             sift ix
               | svbd < ix = return ar
               | otherwise = do
                 p <- unsafeRead ar ix
-                when p  (do let i = ix .&. J_MASK
-                                k = ix `shiftR` J_BITS
-                                !off = i `shiftL` J_BITS
+                when p  (do let i = ix .&. jMASK
+                                k = ix `shiftR` jBITS
+                                !off = i `shiftL` jBITS
                                 !stp = ix - i
                             tick stp off i (start k i))
                 sift (ix+1)
         sift 0
 
-growCache :: Integer -> Integer -> UArray Int CacheWord -> ST s (STUArray s Int CacheWord)
+growCache :: Integer -> Integer -> UArray Int Word64 -> ST s (STUArray s Int Word64)
 growCache offset plim old = do
     let (_,num) = bounds old
         (bt,ix) = idxPr plim
@@ -284,7 +280,7 @@ growCache offset plim old = do
     sieve <- sieveTo nlim       -- Implement SieveFromTo for this, it's pretty wasteful when nlim isn't
     (_,hi) <- getBounds sieve   -- very small anymore
     more <- countFromToWd start hi sieve
-    new <- unsafeNewArray_ (0,num+2*more) :: ST s (STUArray s Int CacheWord)
+    new <- unsafeNewArray_ (0,num+2*more) :: ST s (STUArray s Int Word64)
     let copy i
           | num < i   = return ()
           | otherwise = do
@@ -297,16 +293,16 @@ growCache offset plim old = do
             p <- unsafeRead sieve indx
             if p
               then do
-                let !i = indx .&. J_MASK
+                let !i = indx .&. jMASK
                     k :: Integer
-                    k = fromIntegral (indx `shiftR` J_BITS)
+                    k = fromIntegral (indx `shiftR` jBITS)
                     strt0 = ((k*(30*k + fromIntegral (2*rho i))
-                                + fromIntegral (byte i)) `shiftL` J_BITS)
+                                + fromIntegral (byte i)) `shiftL` jBITS)
                                     + fromIntegral (idx i)
                     strt1 = strt0 - offset
-                    !strt = fromIntegral strt1 .&. IX_MASK
-                    !skip = fromIntegral (strt1 `shiftR` IX_BITS)
-                    !ixes = fromIntegral indx `shiftL` IX_J_BITS .|. strt `shiftL` J_BITS .|. fromIntegral i
+                    !strt = fromIntegral strt1 .&. iXMASK
+                    !skip = fromIntegral (strt1 `shiftR` iXBITS)
+                    !ixes = fromIntegral indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. fromIntegral i
                 unsafeWrite new j skip
                 unsafeWrite new (j+1) ixes
                 fill (j+2) (indx+1)
@@ -320,8 +316,8 @@ growCache offset plim old = do
 countFromToWd :: Int -> Int -> STUArray s Int Bool -> ST s Int
 countFromToWd start end ba = do
     wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
-    let !sb = start `shiftR` WSHFT
-        !eb = end `shiftR` WSHFT
+    let !sb = start `shiftR` wSHFT
+        !eb = end `shiftR` wSHFT
         count !acc i
           | eb < i    = return acc
           | otherwise = do
@@ -350,17 +346,17 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
           sieve <- sieveTo plim
           (lo,hi) <- getBounds sieve
           pct <- countFromToWd lo hi sieve
-          new <- unsafeNewArray_ (0,2*pct-1) ::  ST s (STUArray s Int CacheWord)
+          new <- unsafeNewArray_ (0,2*pct-1) ::  ST s (STUArray s Int Word64)
           let fill j indx
                 | hi < indx = return new
                 | otherwise = do
                   isPr <- unsafeRead sieve indx
                   if isPr
                     then do
-                      let !i = indx .&. J_MASK
-                          !moff = i `shiftL` J_BITS
+                      let !i = indx .&. jMASK
+                          !moff = i `shiftL` jBITS
                           k :: Integer
-                          k = fromIntegral (indx `shiftR` J_BITS)
+                          k = fromIntegral (indx `shiftR` jBITS)
                           p = 30*k+fromIntegral (rho i)
                           q0 = (start-1) `quot` p
                           (skp0,q1) = q0 `quotRem` fromIntegral sieveRange
@@ -373,17 +369,17 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                           b2 = skp0*fromIntegral sieveBytes + fromIntegral b1
                           strt0 = ((k*(30*b2 + fromIntegral (rho r1))
                                         + b2 * fromIntegral (rho i)
-                                        + fromIntegral (mu (moff + r1))) `shiftL` J_BITS)
+                                        + fromIntegral (mu (moff + r1))) `shiftL` jBITS)
                                             + fromIntegral (nu (moff + r1))
                           strt1 = ((k*(30*k + fromIntegral (2*rho i))
-                                      + fromIntegral (byte i)) `shiftL` J_BITS)
+                                      + fromIntegral (byte i)) `shiftL` jBITS)
                                           + fromIntegral (idx i)
                           (strt2,r2)
                               | p < ssr   = (strt0 - bitOff,r1)
                               | otherwise = (strt1 - bitOff, i)
-                          !strt = fromIntegral strt2 .&. IX_MASK
-                          !skip = fromIntegral (strt2 `shiftR` IX_BITS)
-                          !ixes = fromIntegral indx `shiftL` IX_J_BITS .|. strt `shiftL` J_BITS .|. fromIntegral r2
+                          !strt = fromIntegral strt2 .&. iXMASK
+                          !skip = fromIntegral (strt2 `shiftR` iXBITS)
+                          !ixes = fromIntegral indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. fromIntegral r2
                       unsafeWrite new j skip
                       unsafeWrite new (j+1) ixes
                       fill (j+2) (indx+1)
