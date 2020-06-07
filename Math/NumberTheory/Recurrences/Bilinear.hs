@@ -12,23 +12,18 @@
 -- Top-level definitions in this module are polymorphic, so the results of computations are not retained in memory.
 -- Make them monomorphic to take advantages of memoization. Compare
 --
--- >>> :set +s
--- >>> binomial !! 1000 !! 1000 :: Integer
+-- >>> binomial !! 1000 !! 1000 :: Integer -- (0.01 secs, 1,385,512 bytes)
 -- 1
--- (0.01 secs, 1,385,512 bytes)
--- >>> binomial !! 1000 !! 1000 :: Integer
+-- >>> binomial !! 1000 !! 1000 :: Integer -- (0.01 secs, 1,381,616 bytes)
 -- 1
--- (0.01 secs, 1,381,616 bytes)
 --
 -- against
 --
 -- >>> let binomial' = binomial :: [[Integer]]
--- >>> binomial' !! 1000 !! 1000 :: Integer
+-- >>> binomial' !! 1000 !! 1000 :: Integer -- (0.01 secs, 1,381,696 bytes)
 -- 1
--- (0.01 secs, 1,381,696 bytes)
--- >>> binomial' !! 1000 !! 1000 :: Integer
+-- >>> binomial' !! 1000 !! 1000 :: Integer -- (0.01 secs, 391,152 bytes)
 -- 1
--- (0.01 secs, 391,152 bytes)
 
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -64,7 +59,7 @@ import Math.NumberTheory.Primes
 
 -- | Infinite zero-based table of binomial coefficients (also known as Pascal triangle).
 --
--- prop> binomial !! n !! k == n! / k! / (n - k)!
+-- > binomial !! n !! k == n! / k! / (n - k)!
 --
 -- Note that 'binomial' !! n !! k is asymptotically slower
 -- than 'binomialLine' n !! k,
@@ -81,7 +76,7 @@ binomial = iterate (\l -> zipWith plus (l ++ [zero]) (zero : l)) [one]
 
 -- | Pascal triangle, rotated by 45 degrees.
 --
--- prop> binomialRotated !! n !! k == (n + k)! / n! / k! == binomial !! (n + k) !! k
+-- > binomialRotated !! n !! k == (n + k)! / n! / k! == binomial !! (n + k) !! k
 --
 -- Note that 'binomialRotated' !! n !! k is asymptotically slower
 -- than 'binomialDiagonal' n !! k,
@@ -128,7 +123,7 @@ binomialDiagonal n = scanl'
 
 -- | Prime factors of a binomial coefficient.
 --
--- prop> binomialFactors n k == factorise (binomial !! n !! k)
+-- > binomialFactors n k == factorise (binomial !! n !! k)
 --
 -- >>> binomialFactors 10 4
 -- [(Prime 2,1),(Prime 3,1),(Prime 5,1),(Prime 7,1)]

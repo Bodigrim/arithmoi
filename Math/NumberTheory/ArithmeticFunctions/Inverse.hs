@@ -326,6 +326,7 @@ inverseJordan k point = invertFunction point (jordanA k) (invJordan k)
 --
 -- >>> import qualified Data.Set as S
 -- >>> import Data.Semigroup
+-- >>> :set -XFlexibleContexts
 -- >>> S.mapMonotonic getProduct (inverseSigma (S.singleton . Product) 120)
 -- fromList [54,56,87,95]
 --
@@ -366,8 +367,9 @@ inverseSigma = inverseSigmaK 1
 --
 -- >>> import qualified Data.Set as S
 -- >>> import Data.Semigroup
+-- >>> :set -XFlexibleContexts
 -- >>> S.mapMonotonic getProduct (inverseSigmaK 2 (S.singleton . Product) 850)
--- fromList [24, 26]
+-- fromList [24,26]
 --
 -- Similarly to 'inverseSigma', it is possible to count and sum preimages, or
 -- get the maximum/minimum preimage.

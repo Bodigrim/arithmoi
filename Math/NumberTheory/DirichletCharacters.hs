@@ -328,11 +328,9 @@ isPrincipal chi = characterNumber chi == 0
 -- reduced to \(a \bmod{d}\). Thus, the multiplicative function on \(\mathbb{Z}/d\mathbb{Z}\)
 -- induces a multiplicative function on \(\mathbb{Z}/n\mathbb{Z}\).
 --
--- >>> :set -XTypeApplications
+-- >>> :set -XTypeApplications -XDataKinds
 -- >>> chi = indexToChar 5 :: DirichletCharacter 45
--- >>> chi2 = induced @135 chi
--- >>> :t chi2
--- Maybe (DirichletCharacter 135)
+-- >>> chi2 = induced @135 chi :: Maybe (DirichletCharacter 135)
 induced :: forall n d. (KnownNat d, KnownNat n) => DirichletCharacter d -> Maybe (DirichletCharacter n)
 induced (Generated start) = if n `rem` d == 0
                             then Just (Generated (combine (snd $ mkTemplate n) start))

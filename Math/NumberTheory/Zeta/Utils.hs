@@ -15,7 +15,7 @@ module Math.NumberTheory.Zeta.Utils
 -- | Joins two lists element-by-element together into one, starting with the
 -- first one provided as argument.
 --
--- >>> take 10 $ intertwine [0, 2 ..] [1, 3 ..]
+-- >>> take 10 (intertwine [0, 2 ..] [1, 3 ..])
 -- [0,1,2,3,4,5,6,7,8,9]
 intertwine :: [a] -> [a] -> [a]
 intertwine [] ys = ys

@@ -22,7 +22,7 @@ module Math.NumberTheory.SmoothNumbers
   , smoothOver'
   ) where
 
-import Prelude hiding (div, mod, gcd)
+import Prelude hiding (div, mod, gcd, (+))
 import Data.Euclidean
 import Data.List (nub)
 import Data.Maybe

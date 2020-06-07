@@ -144,6 +144,7 @@ primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
 -- of form 4k + 1 using
 -- <http://www.ams.org/journals/mcom/1972-26-120/S0025-5718-1972-0314745-6/S0025-5718-1972-0314745-6.pdf Hermite-Serret algorithm>.
 --
+-- >>> import Math.NumberTheory.Primes (nextPrime)
 -- >>> findPrime (nextPrime 5)
 -- Prime 2+ι
 findPrime :: Prime Integer -> U.Prime GaussianInteger

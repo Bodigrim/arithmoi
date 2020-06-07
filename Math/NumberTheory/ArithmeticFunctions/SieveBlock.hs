@@ -113,7 +113,7 @@ runFunctionOverBlock (ArithmeticFunction f g) = (G.map g .) . sieveBlock SieveBl
 --
 -- And this is how to factorise all numbers in a block:
 --
--- >>> sieveBlock (SieveBlockConfig [] (\p k -> [(unPrime p, k)]) (++)) 2 10 :: Data.Vector.Vector Word
+-- >>> sieveBlock (SieveBlockConfig [] (\p k -> [(unPrime p, k)]) (++)) 2 10 :: Data.Vector.Vector [(Word, Word)]
 -- [[(2,1)],[(3,1)],[(2,2)],[(5,1)],[(2,1),(3,1)],[(7,1)],[(2,3)],[(3,2)],[(2,1),(5,1)],[(11,1)]]
 sieveBlock
   :: forall v a.

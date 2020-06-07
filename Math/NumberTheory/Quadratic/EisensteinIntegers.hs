@@ -172,6 +172,7 @@ divideByThree = go 0
 -- | Find an Eisenstein integer whose norm is the given prime number
 -- in the form @3k + 1@.
 --
+-- >>> import Math.NumberTheory.Primes (nextPrime)
 -- >>> findPrime (nextPrime 7)
 -- Prime 3+2*ω
 findPrime :: Prime Integer -> U.Prime EisensteinInteger

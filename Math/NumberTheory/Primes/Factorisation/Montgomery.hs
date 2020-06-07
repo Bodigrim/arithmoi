@@ -69,10 +69,7 @@ import Math.NumberTheory.Utils.FromIntegral
 --   an arbitrary manner from the bit-pattern of @n@.
 --
 -- __Warning:__ there are no guarantees of any particular
--- order of prime factors, do not expect them to be ascending. E. g.,
---
--- >>> factorise 10251562501
--- [(101701,1),(100801,1)]
+-- order of prime factors, do not expect them to be ascending.
 factorise :: Integral a => a -> [(a, Word)]
 factorise 0 = error "0 has no prime factorisation"
 factorise n' = map (first fromIntegral) sfs <> map (first fromInteger) rest
