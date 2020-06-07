@@ -20,16 +20,14 @@ eratosthenes (p, q) = sum (map unPrime [nextPrime p .. precPrime q])
 
 filterIsPrimeBench :: Benchmark
 filterIsPrimeBench = bgroup "filterIsPrime" $
-  map (\(x, y) -> bench (show (x, y)) $ nf filterIsPrime (x, x + y))
-  [ (10 ^ x, 10 ^ y)
+  [ bench (show (10^x, 10^y)) $ nf filterIsPrime (10^x, 10^x + 10^y)
   | x <- [5..8]
   , y <- [3..x-1]
   ]
 
 eratosthenesBench :: Benchmark
 eratosthenesBench = bgroup "eratosthenes" $
-  map (\(x, y) -> bench (show (x, y)) $ nf eratosthenes (x, x + y))
-  [ (10 ^ x, 10 ^ y)
+  [ bench (show (10^x, 10^y)) $ nf eratosthenes (10^x, 10^x + 10^y)
   | x <- [10..17]
   , y <- [6..x-1]
   , x == 10 || y == 7

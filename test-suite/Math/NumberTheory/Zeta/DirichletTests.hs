@@ -30,7 +30,7 @@ betas' = betas epsilon
 betasOddSpecialCase1 :: Assertion
 betasOddSpecialCase1
   = assertEqualUpToEps "beta(1) = pi/4" epsilon
-    (approximateValue $ betasOdd !! 0)
+    (approximateValue $ head betasOdd)
     (pi / 4)
 
 betasOddSpecialCase2 :: Assertion
@@ -63,20 +63,20 @@ betasOddProperty2 (NonNegative m)
 betasSpecialCase1 :: Assertion
 betasSpecialCase1
   = assertEqual "beta(0) = 1/2"
-    (betas' !! 0)
+    (head betas')
     (1 / 2)
 
 betasSpecialCase2 :: Assertion
 betasSpecialCase2
   = assertEqualUpToEps "beta(2) = 0.9159655" epsilon
     (betas' !! 2)
-    (0.9159655941772190150546035149323841107)
+    0.9159655941772190150546035149323841107
 
 betasSpecialCase3 :: Assertion
 betasSpecialCase3
   = assertEqualUpToEps "beta(4) = 0.9889445" epsilon
     (betas' !! 4)
-    (0.9889445517411053361084226332283778213)
+    0.9889445517411053361084226332283778213
 
 betasProperty1 :: Positive Int -> Bool
 betasProperty1 (Positive m)

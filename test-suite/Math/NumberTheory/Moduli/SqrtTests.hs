@@ -162,7 +162,7 @@ sqrtsModFactorisationProperty2 (AnySign n) (take 10 . map unwrapPP -> pes'@(map 
   = nubOrd ps /= sort ps || nubOrd rts == sort rts
   where
     ps = map fst pes
-    m = product $ map (\(p, e) -> p ^ e) pes
+    m = product $ map (uncurry (^)) pes
     rts = map (`mod` m) $ take 1000 $ sqrtsModFactorisation n pes'
 
 sqrtsModFactorisationProperty3 :: AnySign Integer -> [(Prime Integer, Power Word)] -> Bool
@@ -170,7 +170,7 @@ sqrtsModFactorisationProperty3 (AnySign n) (take 10 . map unwrapPP -> pes'@(map 
   = nubOrd ps /= sort ps || all (\rt -> rt >= 0 && rt < m) rts
   where
     ps = map fst pes
-    m = product $ map (\(p, e) -> p ^ e) pes
+    m = product $ map (uncurry (^)) pes
     rts = take 1000 $ sqrtsModFactorisation n pes'
 
 sqrtsModFactorisationSpecialCase1 :: Assertion

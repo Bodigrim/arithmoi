@@ -158,6 +158,6 @@ toPrimeIntegral (Prime a) = case unsignedWidth b of
 
 unsignedWidth :: Bits a => a -> Maybe Int
 unsignedWidth t
-  | isSigned t = (subtract 1) <$> bitSizeMaybe t
-  | otherwise  =                  bitSizeMaybe t
+  | isSigned t = subtract 1 <$> bitSizeMaybe t
+  | otherwise  =                bitSizeMaybe t
 {-# INLINE unsignedWidth #-}

@@ -22,9 +22,7 @@ import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.TestUtils
 
 (==>?) :: Maybe a -> (a -> Property) -> Property
-x ==>? f = case x of
-  Nothing -> discard
-  Just y  -> f y
+x ==>? f = maybe discard f x
 
 isValid :: KnownNat n => Point a24 n -> Property
 isValid p

@@ -38,7 +38,7 @@ partition' = (partition !!)
 -- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
 pentagonalNumbersProperty1 :: AnySign Int -> Bool
 pentagonalNumbersProperty1 (AnySign n)
-    | n == 0    = pents !! 0           == 0
+    | n == 0    = head pents           == 0
     | n > 0     = pents !! (2 * n - 1) == pent n
     | otherwise = pents !! (2 * abs n) == pent n
   where

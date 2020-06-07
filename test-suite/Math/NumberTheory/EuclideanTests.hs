@@ -45,7 +45,7 @@ splitIntoCoprimesProperty1
   -> Bool
 splitIntoCoprimesProperty1 fs' = factorback fs == factorback (unCoprimes $ splitIntoCoprimes fs)
   where
-    fs = map (id *** getPower) fs'
+    fs = map (second getPower) fs'
     factorback = abs . product . map (uncurry (^))
 
 splitIntoCoprimesProperty2
@@ -63,7 +63,7 @@ splitIntoCoprimesProperty3
   -> Bool
 splitIntoCoprimesProperty3 fs' = and [ coprime x y | (x : xs) <- tails fs, y <- xs ]
   where
-    fs = map fst $ unCoprimes $ splitIntoCoprimes $ map (id *** getPower) fs'
+    fs = map fst $ unCoprimes $ splitIntoCoprimes $ map (second getPower) fs'
 
 -- | Check that evaluation never freezes.
 splitIntoCoprimesProperty4
@@ -131,8 +131,8 @@ unionProperty1 xs ys
   =  sort (unCoprimes (splitIntoCoprimes (xs' <> ys')))
   == sort (unCoprimes (splitIntoCoprimes xs' <> splitIntoCoprimes ys'))
   where
-    xs' = map (id *** getPower) xs
-    ys' = map (id *** getPower) ys
+    xs' = map (second getPower) xs
+    ys' = map (second getPower) ys
 
 testSuite :: TestTree
 testSuite = testGroup "Euclidean"

@@ -292,7 +292,7 @@ nFreedomProperty3 :: Power Word -> Positive Int -> Bool
 nFreedomProperty3 (Power n) (Positive m) =
     let n' | n == maxBound = n
            | otherwise     = n + 1
-        zet = 1 / zetas 1e-14 !! (fromIntegral n') :: Double
+        zet = 1 / zetas 1e-14 !! fromIntegral n' :: Double
         m' = 100 * m
         nfree = fromIntegral m' /
                 fromIntegral (head (drop (m' - 1) $ nFrees n' :: [Integer]))

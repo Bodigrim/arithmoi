@@ -41,29 +41,29 @@ powModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
   = (powMod' b e1 m * powMod' b e2 m) `mod` m == powMod' b (e1 + e2) m
 
 -- | Specialized to trigger 'powModInt'.
-powModProperty_Int :: AnySign Int -> NonNegative Int -> Positive Int -> Bool
-powModProperty_Int (AnySign b) (NonNegative e) (Positive m) = powModInt b e m == fromInteger (powMod' (fromIntegral b) (fromIntegral e) (fromIntegral m))
+powModPropertyInt :: AnySign Int -> NonNegative Int -> Positive Int -> Bool
+powModPropertyInt (AnySign b) (NonNegative e) (Positive m) = powModInt b e m == fromInteger (powMod' (fromIntegral b) (fromIntegral e) (fromIntegral m))
 
 -- | Specialized to trigger 'powModWord'.
-powModProperty_Word :: AnySign Word -> NonNegative Word -> Positive Word -> Bool
-powModProperty_Word (AnySign b) (NonNegative e) (Positive m) = powModWord b e m == fromInteger (powMod' (fromIntegral b) (fromIntegral e) (fromIntegral m))
+powModPropertyWord :: AnySign Word -> NonNegative Word -> Positive Word -> Bool
+powModPropertyWord (AnySign b) (NonNegative e) (Positive m) = powModWord b e m == fromInteger (powMod' (fromIntegral b) (fromIntegral e) (fromIntegral m))
 
 -- | Specialized to trigger 'powModInteger'.
-powModProperty_Integer :: AnySign Integer -> NonNegative Integer -> Positive Integer -> Bool
-powModProperty_Integer (AnySign b) (NonNegative e) (Positive m) = powMod b e m == fromInteger (powMod' b (fromIntegral e) m)
+powModPropertyInteger :: AnySign Integer -> NonNegative Integer -> Positive Integer -> Bool
+powModPropertyInteger (AnySign b) (NonNegative e) (Positive m) = powMod b e m == fromInteger (powMod' b (fromIntegral e) m)
 
 -- | Specialized to trigger 'powModNatural'.
-powModProperty_Natural :: AnySign Natural -> NonNegative Natural -> Positive Natural -> Bool
-powModProperty_Natural (AnySign b) (NonNegative e) (Positive m) = powMod b e m == fromInteger (powMod' (fromIntegral b) e (fromIntegral m))
+powModPropertyNatural :: AnySign Natural -> NonNegative Natural -> Positive Natural -> Bool
+powModPropertyNatural (AnySign b) (NonNegative e) (Positive m) = powMod b e m == fromInteger (powMod' (fromIntegral b) e (fromIntegral m))
 
 -- | Large modulo m such that m^2 overflows.
-powModSpecialCase1_Int :: Assertion
-powModSpecialCase1_Int =
+powModSpecialCase1Int :: Assertion
+powModSpecialCase1Int =
   assertEqual "powModInt" (powModInt 3 101 (2^60-1)) 1018105167100379328
 
 -- | Large modulo m such that m^2 overflows.
-powModSpecialCase1_Word :: Assertion
-powModSpecialCase1_Word =
+powModSpecialCase1Word :: Assertion
+powModSpecialCase1Word =
   assertEqual "powModWord" (powModWord 3 101 (2^60-1)) 1018105167100379328
 
 testSuite :: TestTree
@@ -73,12 +73,12 @@ testSuite = testGroup "Modular"
     , testSmallAndQuick "multiplicative by base" powModProperty2
     , testSmallAndQuick "additive by exponent"   powModProperty3
 
-    , testSmallAndQuick "powModInt"              powModProperty_Int
-    , testSmallAndQuick "powModWord"             powModProperty_Word
-    , testSmallAndQuick "powModInteger"          powModProperty_Integer
-    , testSmallAndQuick "powModNatural"          powModProperty_Natural
+    , testSmallAndQuick "powModInt"              powModPropertyInt
+    , testSmallAndQuick "powModWord"             powModPropertyWord
+    , testSmallAndQuick "powModInteger"          powModPropertyInteger
+    , testSmallAndQuick "powModNatural"          powModPropertyNatural
     ] ++ if finiteBitSize (0 :: Word) /= 64 then [] else
-    [ testCase          "large modulo :: Int"    powModSpecialCase1_Int
-    , testCase          "large modulo :: Word"   powModSpecialCase1_Word
+    [ testCase          "large modulo :: Int"    powModSpecialCase1Int
+    , testCase          "large modulo :: Word"   powModSpecialCase1Word
     ]
   ]

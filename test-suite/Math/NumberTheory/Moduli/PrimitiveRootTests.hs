@@ -60,7 +60,7 @@ allUnique :: Ord a => [a] -> Bool
 allUnique = go S.empty
   where
     go _ []         = True
-    go acc (x : xs) = if x `S.member` acc then False else go (S.insert x acc) xs
+    go acc (x : xs) = not (x `S.member` acc) && go (S.insert x acc) xs
 
 isPrimitiveRoot'Property1
   :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)

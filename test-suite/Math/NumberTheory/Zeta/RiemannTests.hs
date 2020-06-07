@@ -27,7 +27,7 @@ epsilon = 1e-14
 zetasEvenSpecialCase1 :: Assertion
 zetasEvenSpecialCase1
   = assertEqual "zeta(0) = -1/2"
-    (approximateValue $ zetasEven !! 0)
+    (approximateValue $ head zetasEven)
     (-1 / 2)
 
 zetasEvenSpecialCase2 :: Assertion
