@@ -25,8 +25,8 @@ checkSolutions :: [SP.PrimeIntSet] -> [S.IntSet] -> Bool
 checkSolutions _ [] = True
 checkSolutions matrix (x:xs) = isZero && checkSolutions matrix xs
     where
-        isZero = combination == SP.empty
-        combination = S.foldr add SP.empty x
+        isZero = combination == mempty
+        combination = S.foldr add mempty x
         add columnIndex = xor (matrix !! columnIndex)
         xor u v = (u SP.\\ SP.unPrimeIntSet v) <> (v SP.\\ SP.unPrimeIntSet u)
 

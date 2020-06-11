@@ -41,7 +41,7 @@ quadraticSieve n b t = runST $ do
     let indexedFactorisations = V.toList (findSmoothNumbers sievingIntervalF)
         solutionBasis = gaussianElimination indexedFactorisations
     -- Checks thorugh all basis elements of kernel
-    pure $ trace (show (length solutionBasis)) $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n indexedFactorisations sol)) solutionBasis
+    pure $ trace (show (length solutionBasis)) $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n b indexedFactorisations sol)) solutionBasis
 
 generateInterval :: (Integer -> Int) -> Integer -> Int -> Int -> V.Vector (Int, SP.PrimeIntSet)
 -- Very bad way to take -1 into account
@@ -50,8 +50,9 @@ generateInterval f startingPoint dim b = V.map (\x -> (x, isNegative x)) vectorO
         vectorOfValues = V.generate dim (\i -> f (intToInteger i + startingPoint))
         isNegative j = case j < 0 of
             True  -> SP.singleton newPrime
-            False -> SP.empty
+            False -> mempty
         newPrime = nextPrime (b + 1)
+
 -- This algorithm takes the sievingInterval, the factorBase and the
 -- modularSquareRoots and divides by all the prime in the factor base
 -- storing the factorisations. The smooth numbers correspond to tuples
@@ -86,13 +87,10 @@ findSmoothNumbers = V.imapMaybe selectSmooth
 -- to a free variable). The second component is discarded of.
 gaussianElimination :: [(S.IntSet, SP.PrimeIntSet)] -> [S.IntSet]
 gaussianElimination [] = []
-gaussianElimination (p@(indices ,pivotFact) : xs)
-    | SP.null pivotFact = indices : gaussianElimination xs
-    | otherwise         = gaussianElimination newXs
+gaussianElimination (p@(indices ,pivotFact) : xs) = case SP.minView pivotFact of
+    Just (pivot, _) -> gaussianElimination (map (\q@(_, fact) -> if pivot `SP.member` fact then xor p q else q) xs )
+    Nothing         -> indices : gaussianElimination xs
     where
-        newXs = map change xs
-        change q@(_, fact) = if pivot `SP.member` fact then xor p q else q
-        pivot = SP.findMin pivotFact
         xor (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), (u SP.\\ SP.unPrimeIntSet v) <> (v SP.\\ SP.unPrimeIntSet u))
 
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
@@ -114,10 +112,12 @@ findFirstSquare n startingPoint = S.foldr construct 1
 -- the total number of times a given prime occurs in the selected factorisations.
 -- By construction, for any given prime, this number is even. From here, a
 -- square root is computed.
-findSecondSquare :: Integer -> [(S.IntSet, SP.PrimeIntSet)] -> S.IntSet -> Integer
-findSecondSquare n indexedFactorisations solution = I.foldrWithKey computeRoot 1 countPowers
+findSecondSquare :: Integer -> Int -> [(S.IntSet, SP.PrimeIntSet)] -> S.IntSet -> Integer
+findSecondSquare n b indexedFactorisations solution = I.foldrWithKey computeRoot 1 countPowers
     where
         computeRoot key power previous = (intToInteger key ^ (power `div` 2 :: Int) * previous) `mod` n
         countPowers = foldl count I.empty squares
-        count = SP.foldr (\key im -> I.insertWith (+) (unPrime key) (1 :: Int) im)
+        -- Do not count Prime representing -1
+        count = SP.foldr (\prime im -> if prime /= newPrime then I.insertWith (+) (unPrime prime) (1 :: Int) im else im)
         squares = fmap snd (filter (\(index, _) -> index `S.isSubsetOf` solution) indexedFactorisations)
+        newPrime = nextPrime (b + 1)
