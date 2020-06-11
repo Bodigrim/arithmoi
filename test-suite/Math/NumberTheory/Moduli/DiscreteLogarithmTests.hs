@@ -1,12 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module Math.NumberTheory.Moduli.DiscreteLogarithmTests
   ( testSuite
   ) where
 
-import Data.Maybe
 import Numeric.Natural
 import Test.Tasty
 import Data.Semigroup
@@ -22,7 +21,7 @@ import Math.NumberTheory.TestUtils
 discreteLogRange :: Positive Natural -> Integer -> Integer -> Bool
 discreteLogRange (Positive m) a b =
   case someNatVal m of
-    SomeNat (_ :: Proxy m) -> fromMaybe True $ do
+    SomeNat (_ :: Proxy m) -> (/= Just False) $ do
       cg <- cyclicGroup :: Maybe (CyclicGroup Integer m)
       a' <- isPrimitiveRoot cg (fromInteger a)
       b' <- isMultElement (fromInteger b)
@@ -32,7 +31,7 @@ discreteLogRange (Positive m) a b =
 discreteLogarithmProperty :: Positive Natural -> Integer -> Integer -> Bool
 discreteLogarithmProperty (Positive m) a b =
   case someNatVal m of
-    SomeNat (_ :: Proxy m) -> fromMaybe True $ do
+    SomeNat (_ :: Proxy m) -> (/= Just False) $ do
       cg <- cyclicGroup :: Maybe (CyclicGroup Integer m)
       a' <- isPrimitiveRoot cg (fromInteger a)
       b' <- isMultElement (fromInteger b)
@@ -42,7 +41,7 @@ discreteLogarithmProperty (Positive m) a b =
 discreteLogarithmProperty' :: Positive Natural -> Integer -> Natural -> Bool
 discreteLogarithmProperty' (Positive m) a k =
   case someNatVal m of
-    SomeNat (_ :: Proxy m) -> fromMaybe True $ do
+    SomeNat (_ :: Proxy m) -> (/= Just False) $ do
       cg <- cyclicGroup :: Maybe (CyclicGroup Integer m)
       a'' <- isPrimitiveRoot cg (fromInteger a)
       let a' = unPrimitiveRoot a''

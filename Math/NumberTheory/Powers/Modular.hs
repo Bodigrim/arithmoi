@@ -37,12 +37,12 @@ import Math.NumberTheory.Utils.FromIntegral
 -- need both to fit into machine word and to handle large moduli,
 -- take a look at 'powModInt' and 'powModWord'.
 --
--- >>> powMod 3 101 (2^60-1 :: Integer)
--- 1018105167100379328 -- correct
--- >>> powMod 3 101 (2^60-1 :: Int)
--- 1115647832265427613 -- incorrect due to overflow
--- >>> powModInt 3 101 (2^60-1 :: Int)
--- 1018105167100379328 -- correct
+-- >>> powMod 3 101 (2^60-1 :: Integer) -- correct
+-- 1018105167100379328
+-- >>> powMod 3 101 (2^60-1 :: Int) -- incorrect due to overflow
+-- 1115647832265427613
+-- >>> powModInt 3 101 (2^60-1 :: Int) -- correct
+-- 1018105167100379328
 powMod :: (Integral a, Integral b) => a -> b -> a -> a
 powMod x y m
   | m <= 0    = error "powModInt: non-positive modulo"

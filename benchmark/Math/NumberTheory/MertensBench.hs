@@ -1,6 +1,3 @@
-{-# LANGUAGE CPP        #-}
-{-# LANGUAGE LambdaCase #-}
-
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.MertensBench

@@ -105,7 +105,7 @@ instance NFData a => NFData (Some (SFactors a)) where
 --
 -- >>> :set -XDataKinds
 -- >>> sfactors :: SFactors Integer 13
--- SFactors {sfactorsFactors = [(Prime 13,1)]}
+-- SFactors {unSFactors = [(Prime 13,1)]}
 sfactors :: forall a m. (Ord a, UniqueFactorisation a, KnownNat m) => SFactors a m
 sfactors = if m == 0
   then error "sfactors: modulo must be positive"
@@ -118,7 +118,7 @@ sfactors = if m == 0
 --
 -- >>> import Math.NumberTheory.Primes
 -- >>> someSFactors (factorise 98)
--- SFactors {sfactorsFactors = [(Prime 2,1),(Prime 7,2)]}
+-- SFactors {unSFactors = [(Prime 2,1),(Prime 7,2)]}
 someSFactors :: (Ord a, Num a) => [(Prime a, Word)] -> Some (SFactors a)
 someSFactors
   = Some
@@ -193,14 +193,16 @@ instance NFData a => NFData (Some (CyclicGroup a)) where
 --
 -- >>> :set -XDataKinds
 -- >>> import Data.Maybe
--- >>> cyclicGroup :: CyclicGroup Integer 169
--- CGOddPrimePower' (Prime 13) 2
+-- >>> cyclicGroup :: Maybe (CyclicGroup Integer 169)
+-- Just (CGOddPrimePower' (Prime 13) 2)
 --
--- >>> sfactorsToCyclicGroup (fromModulo 4)
+-- >>> :set -XTypeOperators -XNoStarIsType
+-- >>> import GHC.TypeNats
+-- >>> sfactorsToCyclicGroup (sfactors :: SFactors Integer 4)
 -- Just CG4'
--- >>> sfactorsToCyclicGroup (fromModulo (2 * 13 ^ 3))
+-- >>> sfactorsToCyclicGroup (sfactors :: SFactors Integer (2 * 13 ^ 3))
 -- Just (CGDoubleOddPrimePower' (Prime 13) 3)
--- >>> sfactorsToCyclicGroup (fromModulo (4 * 13))
+-- >>> sfactorsToCyclicGroup (sfactors :: SFactors Integer  (4 * 13))
 -- Nothing
 cyclicGroup
   :: forall a m.
@@ -266,11 +268,13 @@ proofFromCyclicGroup = proofFromSFactors . cyclicGroupToSFactors
 -- | Check whether a multiplicative group of residues,
 -- characterized by its modulo, is cyclic and, if yes, return its form.
 --
--- >>> sfactorsToCyclicGroup (fromModulo 4)
+-- >>> :set -XTypeOperators -XNoStarIsType
+-- >>> import GHC.TypeNats
+-- >>> sfactorsToCyclicGroup (sfactors :: SFactors Integer 4)
 -- Just CG4'
--- >>> sfactorsToCyclicGroup (fromModulo (2 * 13 ^ 3))
+-- >>> sfactorsToCyclicGroup (sfactors :: SFactors Integer (2 * 13 ^ 3))
 -- Just (CGDoubleOddPrimePower' (Prime 13) 3)
--- >>> sfactorsToCyclicGroup (fromModulo (4 * 13))
+-- >>> sfactorsToCyclicGroup (sfactors :: SFactors Integer  (4 * 13))
 -- Nothing
 sfactorsToCyclicGroup :: (Eq a, Num a) => SFactors a m -> Maybe (CyclicGroup a m)
 sfactorsToCyclicGroup (SFactors fs) = case fs of
@@ -285,8 +289,8 @@ sfactorsToCyclicGroup (SFactors fs) = case fs of
 -- | Invert 'sfactorsToCyclicGroup'.
 --
 -- >>> import Data.Maybe
--- >>> cyclicGroupToSFactors (fromJust (sfactorsToCyclicGroup (fromModulo 4)))
--- SFactors {sfactorsModulo = 4, sfactorsFactors = [(Prime 2,2)]}
+-- >>> cyclicGroupToSFactors (fromJust (sfactorsToCyclicGroup (sfactors :: SFactors Integer 4)))
+-- SFactors {unSFactors = [(Prime 2,2)]}
 cyclicGroupToSFactors :: Num a => CyclicGroup a m -> SFactors a m
 cyclicGroupToSFactors = SFactors . \case
   CG2' -> [(Prime 2, 1)]

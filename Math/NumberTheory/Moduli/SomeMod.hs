@@ -39,6 +39,7 @@ import Numeric.Natural
 -- (1 `modulo` 5)
 -- >>> (2 `modulo` 10) * (4 `modulo` 15)
 -- (3 `modulo` 5)
+-- >>> import Data.Ratio
 -- >>> 2 `modulo` 10 + fromRational (3 % 7)
 -- (1 `modulo` 10)
 -- >>> 2 `modulo` 10 * fromRational (3 % 7)
@@ -170,10 +171,11 @@ instance Field SomeMod
 
 -- | Computes the inverse value, if it exists.
 --
--- >>> invertSomeMod (3 `modulo` 10)
--- Just (7 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- >>> invertSomeMod (3 `modulo` 10) -- because 3 * 7 = 1 :: Mod 10
+-- Just (7 `modulo` 10)
 -- >>> invertSomeMod (4 `modulo` 10)
 -- Nothing
+-- >>> import Data.Ratio
 -- >>> invertSomeMod (fromRational (2 % 5))
 -- Just 5 % 2
 invertSomeMod :: SomeMod -> Maybe SomeMod

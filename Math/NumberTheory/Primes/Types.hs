@@ -25,6 +25,9 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 
+-- $setup
+-- >>> import Math.NumberTheory.Primes (nextPrime, precPrime)
+
 -- | Wrapper for prime elements of @a@. It is supposed to be constructed
 -- by 'Math.NumberTheory.Primes.nextPrime' / 'Math.NumberTheory.Primes.precPrime'.
 -- and eliminated by 'unPrime'.
@@ -34,13 +37,14 @@ import qualified Data.Vector.Unboxed as U
 --
 -- *  Generate primes from the given interval:
 --
+--    >>> :set -XFlexibleContexts
 --    >>> [nextPrime 101 .. precPrime 130]
 --    [Prime 101,Prime 103,Prime 107,Prime 109,Prime 113,Prime 127]
 --
 -- *  Generate an infinite list of primes:
 --
---    >>> [nextPrime 101 ..]
---    [Prime 101,Prime 103,Prime 107,Prime 109,Prime 113,Prime 127...
+--    > [nextPrime 101 ..]
+--    > [Prime 101,Prime 103,Prime 107,Prime 109,Prime 113,Prime 127...
 --
 -- *  Generate primes from the given interval of form p = 6k+5:
 --
@@ -54,7 +58,7 @@ import qualified Data.Vector.Unboxed as U
 --
 -- *  Get previous prime:
 --
---    >>> prec (nextPrime 101)
+--    >>> pred (nextPrime 101)
 --    Prime 97
 --
 -- *  Count primes less than a given number (cf. 'Math.NumberTheory.Primes.Counting.approxPrimeCount'):
@@ -158,6 +162,6 @@ toPrimeIntegral (Prime a) = case unsignedWidth b of
 
 unsignedWidth :: Bits a => a -> Maybe Int
 unsignedWidth t
-  | isSigned t = (subtract 1) <$> bitSizeMaybe t
-  | otherwise  =                  bitSizeMaybe t
+  | isSigned t = subtract 1 <$> bitSizeMaybe t
+  | otherwise  =                bitSizeMaybe t
 {-# INLINE unsignedWidth #-}

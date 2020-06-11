@@ -8,7 +8,6 @@
 --
 
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -196,13 +195,8 @@ succValid :: KnownNat n => DirichletCharacter n -> Bool
 succValid = validChar . succ
 
 inducedValid :: forall d. KnownNat d => DirichletCharacter d -> Positive Natural -> Bool
-inducedValid chi (Positive k) =
-  case someNatVal (d*k) of
-    SomeNat (Proxy :: Proxy n) ->
-      case induced @n chi of
-        Just chi2 -> validChar chi2
-        Nothing -> False
-  where d = natVal @d Proxy
+inducedValid chi (Positive k) = case someNatVal (natVal @d Proxy * k) of
+  SomeNat (Proxy :: Proxy n) -> maybe False validChar (induced @n chi)
 
 jacobiValid :: Positive Natural -> Bool
 jacobiValid (Positive n) =

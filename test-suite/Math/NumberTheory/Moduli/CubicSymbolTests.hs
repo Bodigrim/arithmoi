@@ -17,7 +17,7 @@ import Math.NumberTheory.Moduli.CubicSymbol
 import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Primes
 import qualified Data.Euclidean as A
-import Data.List
+import Data.List (genericReplicate)
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif

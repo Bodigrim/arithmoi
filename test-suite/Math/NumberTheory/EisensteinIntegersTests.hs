@@ -48,7 +48,7 @@ absProperty z = isOrigin || (inFirstSextant && isAssociate)
 -- | Verify that @rem@ produces a remainder smaller than the divisor with
 -- regards to the Euclidean domain's function.
 remProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
-remProperty1 x y = (y == 0) || (E.norm $ x `rem` y) < (E.norm y)
+remProperty1 x y = (y == 0) || E.norm (x `rem` y) < E.norm y
 
 -- | Verify that @quot@ and @rem@ are what `quotRem` produces.
 quotRemProperty1 :: E.EisensteinInteger -> E.EisensteinInteger -> Bool
@@ -74,7 +74,7 @@ gcdEProperty1 z1 z2
 gcdEProperty2 :: E.EisensteinInteger -> E.EisensteinInteger -> E.EisensteinInteger -> Bool
 gcdEProperty2 z z1 z2
   = z == 0
-  || (gcd z1' z2') `rem` z == 0
+  || gcd z1' z2' `rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
@@ -99,7 +99,7 @@ euclideanDomainProperty1 e1 e2 = E.norm (e1 * e2) == E.norm e1 * E.norm e2
 -- | Checks that the numbers produced by @primes@ are actually Eisenstein
 -- primes.
 primesProperty1 :: Positive Int -> Bool
-primesProperty1 (Positive index) = all (isJust . isPrime . (unPrime :: Prime E.EisensteinInteger -> E.EisensteinInteger)) $ take index $ E.primes
+primesProperty1 (Positive index) = all (isJust . isPrime . (unPrime :: Prime E.EisensteinInteger -> E.EisensteinInteger)) $ take index E.primes
 
 -- | Checks that the infinite list of Eisenstein primes @primes@ is ordered
 -- by the numbers' norm.
@@ -113,7 +113,7 @@ primesProperty2 (Positive index) =
 -- sextant.
 primesProperty3 :: Positive Int -> Bool
 primesProperty3 (Positive index) =
-    all (\e -> abs (unPrime e) == (unPrime e :: E.EisensteinInteger)) $ take index $ E.primes
+    all (\e -> abs (unPrime e) == (unPrime e :: E.EisensteinInteger)) $ take index E.primes
 
 -- | An Eisenstein integer is either zero or associated (i.e. equal up to
 -- multiplication by a unit) to the product of its factors raised to their
@@ -140,7 +140,7 @@ factoriseSpecialCase1 = assertEqual "should be equal"
   (factorise (15 E.:+ 12))
 
 testSuite :: TestTree
-testSuite = testGroup "EisensteinIntegers" $
+testSuite = testGroup "EisensteinIntegers"
   [ testSmallAndQuick "forall z . z == signum z * abs z" signumAbsProperty
   , testSmallAndQuick "abs z rotates to the first sextant" absProperty
   , testGroup "Division"

@@ -7,7 +7,6 @@
 -- Probabilistic primality tests, Miller-Rabin and Baillie-PSW.
 
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -19,8 +18,6 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
   , isFermatPP
   , lucasTest
   ) where
-
-#include "MachDeps.h"
 
 import Data.Bits
 import Data.Mod
@@ -168,7 +165,7 @@ lucasTest n
 
 -- n odd positive, n > abs q, index odd
 testLucas :: Integer -> Integer -> Integer -> (Integer, Integer, Integer)
-testLucas n q (S# i#) = look (WORD_SIZE_IN_BITS - 2)
+testLucas n q (S# i#) = look (finiteBitSize (0 :: Word) - 2)
   where
     j = I# i#
     look k
@@ -191,14 +188,14 @@ testLucas n q (Jp# bn#) = test (s# -# 1#)
     s# = sizeofBigNat# bn#
     test j# = case indexBigNat# bn# j# of
                 0## -> test (j# -# 1#)
-                w# -> look (j# -# 1#) (W# w#) (WORD_SIZE_IN_BITS - 1)
+                w# -> look (j# -# 1#) (W# w#) (finiteBitSize (0 :: Word) - 1)
     look j# w i
       | testBit w i = go j# w (i - 1) 1 1 1 q
       | otherwise   = look j# w (i-1)
     go k# w i un un1 vn qn
       | i < 0       = if isTrue# (k# <# 0#)
                          then (un,vn,qn)
-                         else go (k# -# 1#) (W# (indexBigNat# bn# k#)) (WORD_SIZE_IN_BITS - 1) un un1 vn qn
+                         else go (k# -# 1#) (W# (indexBigNat# bn# k#)) (finiteBitSize (0 :: Word) - 1) un un1 vn qn
       | testBit w i = go k# w (i-1) u2n1 u2n2 v2n1 q2n1
       | otherwise   = go k# w (i-1) u2n u2n1 v2n q2n
         where

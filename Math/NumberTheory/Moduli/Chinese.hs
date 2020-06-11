@@ -31,9 +31,9 @@ import Math.NumberTheory.Moduli.SomeMod
 -- Moduli @m1@ and @m2@ are allowed to have common factors.
 --
 -- >>> chinese (1, 2) (2, 3)
--- Just 5
+-- Just (-1)
 -- >>> chinese (3, 4) (5, 6)
--- Just 11
+-- Just (-1)
 -- >>> chinese (3, 4) (2, 6)
 -- Nothing
 chinese :: forall a. (Eq a, Ring a, Euclidean a) => (a, a) -> (a, a) -> Maybe a
@@ -80,7 +80,7 @@ chineseWrap _ _ (InfMod r1) (InfMod r2)
 -- | Same as 'chinese', but operates on residues.
 --
 -- >>> :set -XDataKinds
--- >>> import Math.NumberTheory.Moduli.Class
+-- >>> import Data.Mod
 -- >>> (1 `modulo` 2) `chineseSomeMod` (2 `modulo` 3)
 -- Just (5 `modulo` 6)
 -- >>> (3 `modulo` 4) `chineseSomeMod` (5 `modulo` 6)

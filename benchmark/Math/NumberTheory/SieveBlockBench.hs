@@ -45,7 +45,7 @@ carmichaelBlockConfig :: SieveBlockConfig Word
 carmichaelBlockConfig = SieveBlockConfig
   { sbcEmpty                = 1
   -- There is a specialized 'gcd' for Word, but not 'lcm'.
-  , sbcAppend               = (\x y -> (x `quot` (gcd x y)) * y)
+  , sbcAppend               = \x y -> (x `quot` gcd x y) * y
   , sbcFunctionOnPrimePower = carmichaelHelper . unPrime
   }
 

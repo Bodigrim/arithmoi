@@ -30,7 +30,7 @@ binomialProperty1 :: NonNegative Int -> Bool
 binomialProperty1 (NonNegative i) = length (binomial @Integer !! i) == i + 1
 
 binomialProperty2 :: NonNegative Int -> Bool
-binomialProperty2 (NonNegative i) = binomial @Integer !! i !! 0 == 1
+binomialProperty2 (NonNegative i) = head (binomial @Integer !! i) == 1
 
 binomialProperty3 :: NonNegative Int -> Bool
 binomialProperty3 (NonNegative i) = binomial @Integer !! i !! i == 1
@@ -57,10 +57,10 @@ binomialProperty6 n m' = n > 100000 ||
     m = m' `mod` (n + 1)
 
 binomialRotatedProperty2 :: NonNegative Int -> Bool
-binomialRotatedProperty2 (NonNegative i) = binomialRotated @Integer !! i !! 0 == 1
+binomialRotatedProperty2 (NonNegative i) = head (binomialRotated @Integer !! i) == 1
 
 binomialRotatedProperty3 :: NonNegative Int -> Bool
-binomialRotatedProperty3 (NonNegative i) = binomialRotated @Integer !! 0 !! i == 1
+binomialRotatedProperty3 (NonNegative i) = head (binomialRotated @Integer) !! i == 1
 
 binomialRotatedProperty4 :: Positive Int -> Positive Int -> Bool
 binomialRotatedProperty4 (Positive i) (Positive j)
@@ -90,7 +90,7 @@ stirling1Property1 (NonNegative i) = length (stirling1 !! i) == i + 1
 
 stirling1Property2 :: NonNegative Int -> Bool
 stirling1Property2 (NonNegative i)
-  =  stirling1 !! i !! 0
+  =  head (stirling1 !! i)
   == if i == 0 then 1 else 0
 
 stirling1Property3 :: NonNegative Int -> Bool
@@ -108,7 +108,7 @@ stirling2Property1 (NonNegative i) = length (stirling2 !! i) == i + 1
 
 stirling2Property2 :: NonNegative Int -> Bool
 stirling2Property2 (NonNegative i)
-  =  stirling2 !! i !! 0
+  =  head (stirling2 !! i)
   == if i == 0 then 1 else 0
 
 stirling2Property3 :: NonNegative Int -> Bool
@@ -126,7 +126,7 @@ lahProperty1 (NonNegative i) = length (lah !! i) == i + 1
 
 lahProperty2 :: NonNegative Int -> Bool
 lahProperty2 (NonNegative i)
-  =  lah !! i !! 0
+  =  head (lah !! i)
   == product [1 .. i+1]
 
 lahProperty3 :: NonNegative Int -> Bool
@@ -142,7 +142,7 @@ eulerian1Property1 :: NonNegative Int -> Bool
 eulerian1Property1 (NonNegative i) = length (eulerian1 !! i) == i
 
 eulerian1Property2 :: Positive Int -> Bool
-eulerian1Property2 (Positive i) = eulerian1 !! i !! 0 == 1
+eulerian1Property2 (Positive i) = head (eulerian1 !! i) == 1
 
 eulerian1Property3 :: Positive Int -> Bool
 eulerian1Property3 (Positive i) = eulerian1 !! i !! (i - 1) == 1
@@ -151,15 +151,15 @@ eulerian1Property4 :: Positive Int -> Positive Int -> Bool
 eulerian1Property4 (Positive i) (Positive j)
   =  j >= i - 1
   || eulerian1 !! i !! j
-  == (toInteger $ i - j) * eulerian1 !! (i - 1) !! (j - 1)
-  +  (toInteger   j + 1) * eulerian1 !! (i - 1) !! j
+  == toInteger (i - j) * eulerian1 !! (i - 1) !! (j - 1)
+  +  (toInteger j + 1) * eulerian1 !! (i - 1) !! j
 
 eulerian2Property1 :: NonNegative Int -> Bool
 eulerian2Property1 (NonNegative i) = length (eulerian2 !! i) == i
 
 eulerian2Property2 :: Positive Int -> Bool
 eulerian2Property2 (Positive i)
-  =  eulerian2 !! i !! 0 == 1
+  = head (eulerian2 !! i) == 1
 
 eulerian2Property3 :: Positive Int -> Bool
 eulerian2Property3 (Positive i)
@@ -170,11 +170,11 @@ eulerian2Property4 :: Positive Int -> Positive Int -> Bool
 eulerian2Property4 (Positive i) (Positive j)
   =  j >= i - 1
   || eulerian2 !! i !! j
-  == (toInteger $ 2 * i - j - 1) * eulerian2 !! (i - 1) !! (j - 1)
+  == toInteger (2 * i - j - 1) * eulerian2 !! (i - 1) !! (j - 1)
   +  (toInteger j + 1) * eulerian2 !! (i - 1) !! j
 
 bernoulliSpecialCase1 :: Assertion
-bernoulliSpecialCase1 = assertEqual "B_0 = 1" (bernoulli !! 0) 1
+bernoulliSpecialCase1 = assertEqual "B_0 = 1" (head bernoulli) 1
 
 bernoulliSpecialCase2 :: Assertion
 bernoulliSpecialCase2 = assertEqual "B_1 = -1/2" (bernoulli !! 1) (- 1 % 2)
@@ -192,7 +192,7 @@ bernoulliProperty2 (NonNegative m)
   =  bernoulli !! m
   == (if m == 0 then 1 else 0)
   -  sum [ bernoulli !! k
-         * (binomial !! m !! k % (toInteger $ m - k + 1))
+         * (binomial !! m !! k % toInteger (m - k + 1))
          | k <- [0 .. m - 1]
          ]
 

@@ -7,9 +7,7 @@
 -- Tests for Math.NumberTheory.Moduli.Class
 --
 
-{-# LANGUAGE CPP             #-}
 {-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE ViewPatterns    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 

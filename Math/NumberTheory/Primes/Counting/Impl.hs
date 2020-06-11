@@ -7,7 +7,6 @@
 -- Number of primes not exceeding @n@, @&#960;(n)@, and @n@-th prime.
 --
 {-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -17,8 +16,6 @@ module Math.NumberTheory.Primes.Counting.Impl
     , primeCountMaxArg
     , nthPrime
     ) where
-
-#include "MachDeps.h"
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
     (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange)
@@ -413,21 +410,17 @@ cpGpAr = runSTUArray $ do
 -------------------------------------------------------------------------------
 -- Prime counting
 
-#if SIZEOF_HSWORD == 8
+rMASK :: Int
+rMASK = finiteBitSize (0 :: Word) - 1
 
-#define RMASK 63
-#define WSHFT 6
-#define TOPB 32
-#define TOPM 0xFFFFFFFF
+wSHFT :: (Bits a, Num a) => a
+wSHFT = if finiteBitSize (0 :: Word) == 64 then 6 else 5
 
-#else
+tOPB :: Int
+tOPB = finiteBitSize (0 :: Word) `shiftR` 1
 
-#define RMASK 31
-#define WSHFT 5
-#define TOPB 16
-#define TOPM 0xFFFF
-
-#endif
+tOPM :: (Bits a, Num a) => a
+tOPM = (1 `shiftL` tOPB) - 1
 
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
@@ -448,7 +441,7 @@ countToNth !n (PS v0 bs : more) = go n 0
           then go (k-bc) (i+1)
           else let j = bc - k
                    px = top w j bc
-               in v0 + toPrim (px + (i `shiftL` WSHFT))
+               in v0 + toPrim (px + (i `shiftL` wSHFT))
 
 -- count all set bits in a chunk, do it wordwise for speed.
 countAll :: PrimeSieve -> Int
@@ -465,7 +458,7 @@ countAll (PS _ bs) = go 0 0
 
 -- Find the j-th highest of bc set bits in the Word w.
 top :: Word -> Int -> Int -> Int
-top w j bc = go 0 TOPB TOPM bn w
+top w j bc = go 0 tOPB tOPM bn w
     where
       !bn = bc-j
       go !_ _ !_ !_ 0 = error "Too few bits set"
@@ -482,14 +475,14 @@ top w j bc = go 0 TOPB TOPM bn w
 countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
 countFromTo start end ba = do
     wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
-    let !sb = start `shiftR` WSHFT
-        !si = start .&. RMASK
-        !eb = end `shiftR` WSHFT
-        !ei = end .&. RMASK
+    let !sb = start `shiftR` wSHFT
+        !si = start .&. rMASK
+        !eb = end `shiftR` wSHFT
+        !ei = end .&. rMASK
         count !acc i
             | i == eb = do
                 w <- unsafeRead wa i
-                return (acc + popCount (w `shiftL` (RMASK - ei)))
+                return (acc + popCount (w `shiftL` (rMASK - ei)))
             | otherwise = do
                 w <- unsafeRead wa i
                 count (acc + popCount w) (i+1)
@@ -500,4 +493,4 @@ countFromTo start end ba = do
       else do
           w <- unsafeRead wa sb
           let !w1 = w `shiftR` si
-          return (popCount (w1 `shiftL` (RMASK - ei + si)))
+          return (popCount (w1 `shiftL` (rMASK - ei + si)))

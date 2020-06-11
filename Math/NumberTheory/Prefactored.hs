@@ -65,7 +65,7 @@ import Math.NumberTheory.Primes.Types
 -- >>> prefFactors $ totient (p^2 * q^3)
 -- Coprimes {unCoprimes = [(1000000000000000000000000000057,1),(41666666666666666666666666669,1),(2000000000000000000000000000071,2),(111111111111111111111111111115,1),(2,4),(3,3)]}
 -- >>> prefFactors $ totient $ totient (p^2 * q^3)
--- Coprimes {unCoprimes = [(39521,1),(6046667,1),(22222222222222222222222222223,1),(2000000000000000000000000000071,1),(361696272343,1),(85331809838489,1),(227098769,1),(199937,1),(5,3),(41666666666666666666666666669,1),(2,22),(3,8)]}
+-- Coprimes {unCoprimes = [(39521,1),(227098769,1),(22222222222222222222222222223,1),(2000000000000000000000000000071,1),(361696272343,1),(85331809838489,1),(6046667,1),(199937,1),(5,3),(41666666666666666666666666669,1),(2,22),(3,8)]}
 --
 -- Pairwise coprimality of factors is crucial, because it allows
 -- us to process them independently, possibly even
@@ -98,6 +98,13 @@ fromValue a = Prefactored a (singleton a 1)
 -- Prefactored {prefValue = 88045650000, prefFactors = Coprimes {unCoprimes = [(28,2),(33,3),(5,5)]}}
 fromFactors :: Semiring a => Coprimes a Word -> Prefactored a
 fromFactors as = Prefactored (getMul $ foldMap (\(a, k) -> Mul $ a ^ k) (unCoprimes as)) as
+
+instance (Eq a, GcdDomain a) => Semiring (Prefactored a) where
+  Prefactored v1 _ `plus` Prefactored v2 _
+    = fromValue (v1 `plus` v2)
+  Prefactored v1 f1 `times` Prefactored v2 f2
+    = Prefactored (v1 `times` v2) (f1 <> f2)
+  fromNatural n = fromValue (fromNatural n)
 
 instance (Eq a, Num a, GcdDomain a) => Num (Prefactored a) where
   Prefactored v1 _ + Prefactored v2 _

@@ -24,6 +24,7 @@ import Math.NumberTheory.Zeta.Utils   (intertwine, skipOdds)
 
 -- | Infinite sequence of exact values of Dirichlet beta-function at odd arguments, starting with @β(1)@.
 --
+-- >>> import Data.ExactPi
 -- >>> approximateValue (betasOdd !! 25) :: Double
 -- 0.9999999999999987
 -- >>> import Data.Number.Fixed

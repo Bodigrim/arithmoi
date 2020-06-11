@@ -70,7 +70,7 @@ findPrimeReference p =
     let c : _ = sqrtsModPrime (-1) p
         k  = integerSquareRoot (unPrime p)
         bs = [1 .. k]
-        asbs = map (\b' -> ((b' * c) `mod` (unPrime p), b')) bs
+        asbs = map (\b' -> ((b' * c) `mod` unPrime p, b')) bs
         (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
     in a :+ b
 
@@ -117,7 +117,7 @@ orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs
 numberOfPrimes :: Assertion
 numberOfPrimes = assertEqual "counting primes: OEIS A091100"
   [16,100,668,4928,38404,313752]
-  [4 * (length $ takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..6]]
+  [4 * length (takeWhile ((<= 10^n) . norm . unPrime) primes) | n <- [1..6]]
 
 -- | signum and abs should satisfy: z == signum z * abs z
 signumAbsProperty :: GaussianInteger -> Bool
@@ -135,7 +135,7 @@ absProperty z = isOrigin || (inFirstQuadrant && isAssociate)
 -- | Verify that @rem@ produces a remainder smaller than the divisor with
 -- regards to the Euclidean domain's function.
 remProperty :: GaussianInteger -> GaussianInteger -> Bool
-remProperty x y = (y == 0) || (norm $ x `rem` y) < (norm y)
+remProperty x y = (y == 0) || norm (x `rem` y) < norm y
 
 gcdGProperty1 :: GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty1 z1 z2
@@ -147,7 +147,7 @@ gcdGProperty1 z1 z2
 gcdGProperty2 :: GaussianInteger -> GaussianInteger -> GaussianInteger -> Bool
 gcdGProperty2 z z1 z2
   = z == 0
-  || (gcd z1' z2') `rem` z == 0
+  || gcd z1' z2' `rem` z == 0
   where
     z1' = z * z1
     z2' = z * z2
@@ -160,7 +160,7 @@ gcdGSpecialCase2 :: Assertion
 gcdGSpecialCase2 = assertEqual "gcdG" (0 :+ (-1)) $ gcd (0 :+ 3) (2 :+ 2)
 
 testSuite :: TestTree
-testSuite = testGroup "GaussianIntegers" $
+testSuite = testGroup "GaussianIntegers"
   [ testGroup "factorise" (
     [ testSmallAndQuick "factor back"       factoriseProperty1
     , testSmallAndQuick "powers are > 0"    factoriseProperty2
@@ -168,8 +168,7 @@ testSuite = testGroup "GaussianIntegers" $
     , testCase          "factorise 63:+36"  factoriseSpecialCase1
     ]
     ++
-    map (\x -> testCase "laziness" (factoriseSpecialCase2 x))
-      lazyCases)
+    map (testCase "laziness" . factoriseSpecialCase2) lazyCases)
 
   , testSmallAndQuick "findPrime'"               findPrimeProperty1
   , testSmallAndQuick "isPrime"                  isPrimeProperty

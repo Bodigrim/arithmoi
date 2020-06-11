@@ -64,8 +64,8 @@ symbolToNum = \case
 -- If arguments have a common factor, the result
 -- is 'Zero', otherwise it is 'MinusOne' or 'One'.
 --
--- >>> jacobi 1001 9911
--- Zero -- arguments have a common factor 11
+-- >>> jacobi 1001 9911 -- arguments have a common factor 11
+-- Zero
 -- >>> jacobi 1001 9907
 -- MinusOne
 {-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
