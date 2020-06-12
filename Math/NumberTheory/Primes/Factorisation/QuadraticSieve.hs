@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( quadraticSieve
   , gaussianElimination
@@ -21,8 +19,8 @@ import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Utils.FromIntegral
 
 -- 1 corresponds to False and -1 to True
-data SignedPrimeIntSet = SignedPrimeIntSet { sign :: Bool
-                                           , primeSet :: PS.PrimeIntSet
+data SignedPrimeIntSet = SignedPrimeIntSet { sign :: ! Bool
+                                           , primeSet :: ! PS.PrimeIntSet
                                            } deriving (Show)
 
 data BoolOrPrime = Bool Bool | PrimeInt (Prime Int)
@@ -42,7 +40,7 @@ member value signedPrimeSet = case value of
     PrimeInt p -> p `PS.member` primeSet signedPrimeSet
 
 xor :: SignedPrimeIntSet -> SignedPrimeIntSet -> SignedPrimeIntSet
-xor sp1 sp2 = SignedPrimeIntSet ((s1 && not s2) || (not s1 && s2)) ((p1 PS.\\ PS.unPrimeIntSet p2) <> (p2 PS.\\ PS.unPrimeIntSet p1))
+xor sp1 sp2 = SignedPrimeIntSet (s1 /= s2) ((p1 PS.\\ PS.unPrimeIntSet p2) <> (p2 PS.\\ PS.unPrimeIntSet p1))
     where
         s1 = sign sp1
         s2 = sign sp2
@@ -76,7 +74,6 @@ quadraticSieve n b t = runST $ do
     pure $ trace (show (length solutionBasis)) $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n unsignedFactorisations sol)) solutionBasis
 
 generateInterval :: (Integer -> Int) -> Integer -> Int -> V.Vector (Int, SignedPrimeIntSet)
--- Very bad way to take -1 into account
 generateInterval f startingPoint dim = V.map (\x -> (x, isNegative x)) vectorOfValues
     where
         vectorOfValues = V.generate dim (\i -> f (intToInteger i + startingPoint))
@@ -144,7 +141,9 @@ findFirstSquare n startingPoint = S.foldr construct 1
 findSecondSquare :: Integer -> [(S.IntSet, PS.PrimeIntSet)] -> S.IntSet -> Integer
 findSecondSquare n indexedFactorisations solution = I.foldrWithKey computeRoot 1 countPowers
     where
-        computeRoot key power previous = (intToInteger key ^ (power `div` 2 :: Int) * previous) `mod` n
+        computeRoot key power previous = case (odd power) of
+            True  -> error "Linear algebra issue"
+            False ->(intToInteger key ^ (power `div` 2 :: Int) * previous) `mod` n
         countPowers = foldl count I.empty squares
         -- Do not count Prime representing -1
         count = PS.foldr (\prime im -> I.insertWith (+) (unPrime prime) (1 :: Int) im)

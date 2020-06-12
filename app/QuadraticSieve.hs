@@ -1,4 +1,4 @@
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 
 main :: IO ()
-main = print $ quadraticSieve 14148943687120141751230853 3000000 6000000 
+main = print $ findFactor 14148943687120141751230853 (quadraticSieve 14148943687120141751230853 1000000 3000000)
