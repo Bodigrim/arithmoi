@@ -59,7 +59,7 @@ quadraticSieve n b t = runST $ do
         -- component is x^2 - n as x runs from the square root of n for a
         -- total of length t. The second component stores the factorisation
         -- modulo 2 as an IntSet.
-        sievingFunction = \j -> integerToInt (j ^ (2 :: Int) - n)
+        sievingFunction = \j -> j ^ (2 :: Int) - n
         startingPoint = squareRoot - intToInteger t `div` 2
         sievingInterval = generateInterval sievingFunction startingPoint t
     sievingIntervalM <- V.thaw sievingInterval
@@ -73,7 +73,7 @@ quadraticSieve n b t = runST $ do
     -- Checks thorugh all basis elements of kernel
     pure $ trace (show (length solutionBasis)) $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n unsignedFactorisations sol)) solutionBasis
 
-generateInterval :: (Integer -> Int) -> Integer -> Int -> V.Vector (Int, SignedPrimeIntSet)
+generateInterval :: (Integer -> Integer) -> Integer -> Int -> V.Vector (Integer, SignedPrimeIntSet)
 generateInterval f startingPoint dim = V.map (\x -> (x, isNegative x)) vectorOfValues
     where
         vectorOfValues = V.generate dim (\i -> f (intToInteger i + startingPoint))
@@ -83,7 +83,7 @@ generateInterval f startingPoint dim = V.map (\x -> (x, isNegative x)) vectorOfV
 -- modularSquareRoots and divides by all the prime in the factor base
 -- storing the factorisations. The smooth numbers correspond to tuples
 -- whose first component is 1 and whose second component is their factorisation.
-smoothSieveM :: MV.MVector s (Int, SignedPrimeIntSet) -> [Prime Int] -> Integer -> Integer -> ST s ()
+smoothSieveM :: MV.MVector s (Integer, SignedPrimeIntSet) -> [Prime Int] -> Integer -> Integer -> ST s ()
 smoothSieveM sievingIntervalM factorBase n startingPoint = do
     let t = MV.length sievingIntervalM
     forM_ factorBase $ \prime -> do
@@ -93,14 +93,14 @@ smoothSieveM sievingIntervalM factorBase n startingPoint = do
             -- let startingIndex = integerToInt ((intToInteger modularSquareRoot - squareRoot) `mod` (intToInteger . unPrime) prime)
             let startingIndex = integerToInt ((modularSquareRoot - startingPoint) `mod` (intToInteger . unPrime) prime)
             forM_ [startingIndex, startingIndex + unPrime prime..(t - 1)] $ \entry -> do
-                let change (y, set) = (y `div` unPrime prime, prime `insert` set)
+                let change (y, set) = (y `div` (intToInteger . unPrime) prime, prime `insert` set)
                 MV.modify sievingIntervalM change entry
 
 -- This function returns the smooth numbers together with their index. This
 -- is in order to retrieve later the value of x and x^2 - n. The value stored
 -- in the first component of the tuple is a set whose only component is
 -- the index of column before sieving.
-findSmoothNumbers :: V.Vector (Int, SignedPrimeIntSet) -> V.Vector (S.IntSet, SignedPrimeIntSet)
+findSmoothNumbers :: V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (S.IntSet, SignedPrimeIntSet)
 findSmoothNumbers = V.imapMaybe selectSmooth
     where
         selectSmooth index (residue, factorisation)
