@@ -8,3 +8,4 @@ dist-newstyle
 .tasty-rerun-log
 .swp
 .stack-work
+arithmoi-quadratic-sieve.prof
