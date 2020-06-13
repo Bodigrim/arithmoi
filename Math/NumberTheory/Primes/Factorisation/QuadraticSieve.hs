@@ -16,6 +16,7 @@ import qualified Math.NumberTheory.Primes.IntSet as PS
 import Control.Monad
 import Control.Monad.ST
 import Data.Maybe
+import Data.Bifunctor
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Moduli.Sqrt
@@ -71,7 +72,7 @@ findPairs n b t = runST $ do
   let
     indexedFactorisations = V.toList (findSmoothNumbers sievingIntervalF)
     solutionBasis = gaussianElimination indexedFactorisations
-    unsignedFactorisations = map (\(i, p) -> (i, primeSet p)) indexedFactorisations
+    unsignedFactorisations = map (second primeSet) indexedFactorisations
 
   pure $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n unsignedFactorisations sol)) solutionBasis
 
