@@ -21,7 +21,7 @@ module Math.NumberTheory.EuclideanTests
 import Prelude hiding (gcd)
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck as QC hiding (Positive(..))
+import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonZero(..))
 
 import Control.Arrow
 import Data.Bits

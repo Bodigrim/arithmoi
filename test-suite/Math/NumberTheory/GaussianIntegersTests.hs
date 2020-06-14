@@ -19,7 +19,7 @@ import Data.Euclidean
 import Data.List (groupBy, sort)
 import Data.Maybe (fromJust, mapMaybe)
 import Data.Proxy
-import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonNegative(..))
 import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.HUnit

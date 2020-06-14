@@ -29,8 +29,8 @@ import Data.Euclidean
 import Data.Functor.Classes
 import Data.Semiring (Semiring)
 
-import Test.Tasty.QuickCheck as QC hiding (Positive, NonNegative, generate, getNonNegative, getPositive)
-import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series)
+import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonNegative(..), NonZero(..))
+import Test.SmallCheck.Series (Positive(..), NonNegative(..), NonZero(..), Serial(..), Series)
 
 import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
@@ -55,7 +55,6 @@ instance Show1 AnySign where
 -------------------------------------------------------------------------------
 -- Positive from smallcheck
 
-deriving instance Functor Positive
 deriving instance Semiring a => Semiring (Positive a)
 deriving instance GcdDomain a => GcdDomain (Positive a)
 deriving instance Euclidean a => Euclidean (Positive a)
@@ -63,10 +62,6 @@ deriving instance Euclidean a => Euclidean (Positive a)
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (Positive a) where
   arbitrary = Positive <$> (arbitrary `suchThat` (> 0))
   shrink (Positive x) = Positive <$> filter (> 0) (shrink x)
-
-instance (Num a, Bounded a) => Bounded (Positive a) where
-  minBound = Positive 1
-  maxBound = Positive (maxBound :: a)
 
 instance Eq1 Positive where
   liftEq eq (Positive a) (Positive b) = a `eq` b
@@ -80,7 +75,6 @@ instance Show1 Positive where
 -------------------------------------------------------------------------------
 -- NonNegative from smallcheck
 
-deriving instance Functor NonNegative
 deriving instance Semiring a => Semiring (NonNegative a)
 deriving instance GcdDomain a => GcdDomain (NonNegative a)
 deriving instance Euclidean a => Euclidean (NonNegative a)
@@ -88,10 +82,6 @@ deriving instance Euclidean a => Euclidean (NonNegative a)
 instance (Num a, Ord a, Arbitrary a) => Arbitrary (NonNegative a) where
   arbitrary = NonNegative <$> (arbitrary `suchThat` (>= 0))
   shrink (NonNegative x) = NonNegative <$> filter (>= 0) (shrink x)
-
-instance (Num a, Bounded a) => Bounded (NonNegative a) where
-  minBound = NonNegative 0
-  maxBound = NonNegative (maxBound :: a)
 
 instance Eq1 NonNegative where
   liftEq eq (NonNegative a) (NonNegative b) = a `eq` b
@@ -103,14 +93,24 @@ instance Show1 NonNegative where
   liftShowsPrec shw _ p (NonNegative a) = shw p a
 
 -------------------------------------------------------------------------------
--- NonZero from QuickCheck
+-- NonZero from smallcheck
 
-instance (Monad m, Num a, Eq a, Serial m a) => Serial m (NonZero a) where
-  series = NonZero <$> series `suchThatSerial` (/= 0)
+deriving instance Semiring a => Semiring (NonZero a)
+deriving instance GcdDomain a => GcdDomain (NonZero a)
+deriving instance Euclidean a => Euclidean (NonZero a)
 
-instance (Eq a, Num a, Enum a, Bounded a) => Bounded (NonZero a) where
-  minBound = if minBound == (0 :: a) then NonZero (succ minBound) else NonZero minBound
-  maxBound = if maxBound == (0 :: a) then NonZero (pred maxBound) else NonZero maxBound
+instance (Num a, Ord a, Arbitrary a) => Arbitrary (NonZero a) where
+  arbitrary = NonZero <$> (arbitrary `suchThat` (/= 0))
+  shrink (NonZero x) = NonZero <$> filter (/= 0) (shrink x)
+
+instance Eq1 NonZero where
+  liftEq eq (NonZero a) (NonZero b) = a `eq` b
+
+instance Ord1 NonZero where
+  liftCompare cmp (NonZero a) (NonZero b) = a `cmp` b
+
+instance Show1 NonZero where
+  liftShowsPrec shw _ p (NonZero a) = shw p a
 
 -------------------------------------------------------------------------------
 -- Huge

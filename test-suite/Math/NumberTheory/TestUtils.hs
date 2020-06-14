@@ -49,11 +49,11 @@ module Math.NumberTheory.TestUtils
   ) where
 
 import Test.QuickCheck.Classes
-import Test.SmallCheck.Series (Positive(..), NonNegative(..), Serial(..), Series, generate, (\/), cons2)
+import Test.SmallCheck.Series (Positive(..), NonNegative(..), NonZero(..), Serial(..), Series, generate, (\/), cons2)
 import Test.Tasty
 import Test.Tasty.HUnit       (Assertion, assertBool)
 import Test.Tasty.SmallCheck as SC
-import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonNegative(..), NonZero(..), generate)
 
 import Data.Bits
 import Data.Euclidean
