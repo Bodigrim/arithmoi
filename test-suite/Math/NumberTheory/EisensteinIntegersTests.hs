@@ -17,7 +17,7 @@ import Prelude hiding (gcd, rem, quot, quotRem)
 import Data.Euclidean
 import Data.Maybe (fromJust, isJust)
 import Data.Proxy
-import Test.Tasty.QuickCheck as QC hiding (Positive, getPositive, NonNegative, generate, getNonNegative)
+import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonNegative(..))
 import Test.QuickCheck.Classes
 import Test.Tasty                                     (TestTree, testGroup)
 import Test.Tasty.HUnit                               (Assertion, assertEqual,
