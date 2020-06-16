@@ -1,3 +1,5 @@
 resolver: lts-16.0
 packages:
 - .
+extra-deps:
+- smallcheck-1.2.0
