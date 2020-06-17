@@ -8,6 +8,7 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import qualified Data.List as L
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import qualified Data.IntMap as I
@@ -45,16 +46,15 @@ member value (SignedPrimeIntSet s ps) = case value of
 xor :: SignedPrimeIntSet -> SignedPrimeIntSet -> SignedPrimeIntSet
 xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s1 /= s2) ((ps1 PS.\\ PS.unPrimeIntSet ps2) <> (ps2 PS.\\ PS.unPrimeIntSet ps1))
 
--- Given an odd positive composite Integer n and Int parametres b and t,
+-- Given an odd positive composite Integer n and Int parameters b and t,
 -- the Quadratic Sieve attempt to decompose n into smaller factors p and q.
 quadraticSieve :: Integer -> Int -> Int -> Integer
 quadraticSieve n b t = findFactor n $ findPairs n b t
 
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
-findFactor _ [] = error "Parametres are not large enough."
-findFactor n ((x, y) : otherPairs) = if factor == 1 || factor == n then findFactor n otherPairs else factor
-  where
-    factor = gcd (x - y) n
+findFactor n pairs = case L.find (\(x, y) -> gcd (x - y) n /= 1 && gcd (x - y) n /= n) pairs of
+  Just (x, y) -> gcd (x - y) n
+  Nothing     -> error "Parameters are not large enough."
 
 findPairs :: Integer -> Int -> Int -> [(Integer, Integer)]
 findPairs n b t = runST $ do
@@ -116,7 +116,7 @@ findSmoothNumbers = V.imapMaybe selectSmooth
 -- of the matrix as a list of IntSet.
 gaussianElimination :: [(S.IntSet, SignedPrimeIntSet)] -> [S.IntSet]
 gaussianElimination [] = []
-gaussianElimination (p@(indices ,pivotFact) : xs) = case nonZero pivotFact of
+gaussianElimination (p@(indices, pivotFact) : xs) = case nonZero pivotFact of
   Just pivot -> gaussianElimination (map (\q@(_, fact) -> if pivot `member` fact then add p q else q) xs)
   Nothing    -> indices : gaussianElimination xs
   where

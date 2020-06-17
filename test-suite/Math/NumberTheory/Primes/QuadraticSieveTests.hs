@@ -19,5 +19,5 @@ quadraticRelation (unPrime -> Large p, unPrime -> Large q)
 
 testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"
-  [  QC.testProperty "Successful Factorisations" quadraticRelation
+  [ QC.testProperty "Successful Factorisations" quadraticRelation
   ]
