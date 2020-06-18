@@ -28,7 +28,7 @@ data SignedPrimeIntSet = SignedPrimeIntSet
   , primeSet :: !PS.PrimeIntSet
   } deriving (Show)
 
-data BoolOrPrime = Bool Bool | PrimeInt (Prime Int)
+data BoolOrPrime = Bool !Bool | PrimeInt !(Prime Int)
 
 insert :: Prime Int -> SignedPrimeIntSet -> SignedPrimeIntSet
 insert prime (SignedPrimeIntSet s ps) = SignedPrimeIntSet s (prime `PS.insert` ps)
@@ -70,7 +70,9 @@ findPairs n b t = runST $ do
   sievingIntervalF <- V.unsafeFreeze sievingIntervalM
   -- Filter smooth numbers
   let
-    indexedFactorisations = V.toList (findSmoothNumbers sievingIntervalF)
+    indexedFactorisations' = V.toList (findSmoothNumbers sievingIntervalF)
+    onlyOnce = appearsOnlyOnce $ map (primeSet . snd) indexedFactorisations'
+    indexedFactorisations = filter (\(_, SignedPrimeIntSet _ xs) -> PS.disjoint xs onlyOnce) indexedFactorisations'
     solutionBasis = gaussianElimination indexedFactorisations
     unsignedFactorisations = map (second primeSet) indexedFactorisations
 
@@ -111,6 +113,13 @@ findSmoothNumbers = V.imapMaybe selectSmooth
     selectSmooth index (residue, factorisation)
       | residue == 1 = Just (S.singleton index, factorisation)
       | otherwise    = Nothing
+
+-- | Find all primes, which appear only once in the input list.
+appearsOnlyOnce :: [PS.PrimeIntSet] -> PS.PrimeIntSet
+appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
+  where
+    go (onlyOnce, atLeastOnce) x =
+      ((onlyOnce PS.\\ PS.unPrimeIntSet x) <> (x PS.\\ PS.unPrimeIntSet atLeastOnce), atLeastOnce <> x)
 
 -- This solves the linear equation. It returns a basis for the kernel
 -- of the matrix as a list of IntSet.
