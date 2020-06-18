@@ -45,9 +45,7 @@ module Math.NumberTheory.Primes.IntSet
   , size
   , isSubsetOf
   , isProperSubsetOf
-#if MIN_VERSION_containers(0,5,11)
   , disjoint
-#endif
   -- * Combine
   -- | Use 'Data.Semigroup.<>' for unions.
   , difference
@@ -179,6 +177,10 @@ isProperSubsetOf = coerce IS.isProperSubsetOf
 -- | Check whether two sets are disjoint.
 disjoint :: PrimeIntSet -> PrimeIntSet -> Bool
 disjoint = coerce IS.disjoint
+#else
+-- | Check whether two sets are disjoint.
+disjoint :: PrimeIntSet -> PrimeIntSet -> Bool
+disjoint (PrimeIntSet x) (PrimeIntSet y) = IS.null (IS.intersection x y)
 #endif
 
 -- | Difference between a set of primes and a set of integers.
