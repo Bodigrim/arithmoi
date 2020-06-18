@@ -70,9 +70,7 @@ findPairs n b t = runST $ do
   sievingIntervalF <- V.unsafeFreeze sievingIntervalM
   -- Filter smooth numbers
   let
-    indexedFactorisations' = V.toList (findSmoothNumbers sievingIntervalF)
-    onlyOnce = appearsOnlyOnce $ map (primeSet . snd) indexedFactorisations'
-    indexedFactorisations = filter (\(_, SignedPrimeIntSet _ xs) -> PS.disjoint xs onlyOnce) indexedFactorisations'
+    indexedFactorisations = removeRows $ V.toList (findSmoothNumbers sievingIntervalF)
     solutionBasis = gaussianElimination indexedFactorisations
     unsignedFactorisations = map (second primeSet) indexedFactorisations
 
@@ -120,6 +118,13 @@ appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
   where
     go (onlyOnce, atLeastOnce) x =
       ((onlyOnce PS.\\ PS.unPrimeIntSet x) <> (x PS.\\ PS.unPrimeIntSet atLeastOnce), atLeastOnce <> x)
+
+removeRows :: [(S.IntSet, SignedPrimeIntSet)] -> [(S.IntSet, SignedPrimeIntSet)]
+removeRows indexedFactorisations
+  | onlyOnce == mempty = indexedFactorisations
+  | otherwise          = removeRows $ filter (\(_, SignedPrimeIntSet _ xs) -> PS.disjoint xs onlyOnce) indexedFactorisations
+  where
+    onlyOnce = appearsOnlyOnce $ map (primeSet . snd) indexedFactorisations
 
 -- This solves the linear equation. It returns a basis for the kernel
 -- of the matrix as a list of IntSet.
