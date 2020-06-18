@@ -10,6 +10,8 @@
 
 {-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns  #-}
 
 module Math.NumberTheory.Moduli.Sqrt
@@ -29,13 +31,14 @@ import Data.Bits
 import Data.Constraint
 import Data.Maybe
 import Data.Mod
+import Data.Proxy
+import GHC.TypeNats (KnownNat, SomeNat(..), natVal, someNatVal)
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Moduli.Singleton
-import Math.NumberTheory.Powers.Modular (powMod)
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Utils (shiftToOddCount, splitOff, recipMod)
+import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | List all modular square roots.
@@ -118,7 +121,8 @@ sqrtsModPrime n (unPrime -> 2) = [n `mod` 2]
 sqrtsModPrime n (unPrime -> prime) = case jacobi n prime of
   MinusOne -> []
   Zero     -> [0]
-  One      -> let r = sqrtModP' (n `mod` prime) prime in [r, prime - r]
+  One      -> case someNatVal (fromInteger prime) of
+    SomeNat (_ :: Proxy p) -> let r = toInteger (unMod (sqrtModP' @p (fromInteger n))) in [r, prime - r]
 
 -------------------------------------------------------------------------------
 -- Internals
@@ -126,75 +130,82 @@ sqrtsModPrime n (unPrime -> prime) = case jacobi n prime of
 -- | @sqrtModP' square prime@ finds a square root of @square@ modulo
 --   prime. @prime@ /must/ be a (positive) prime, and @square@ /must/ be a positive
 --   quadratic residue modulo @prime@, i.e. @'jacobi square prime == 1@.
-sqrtModP' :: Integer -> Integer -> Integer
-sqrtModP' square prime
-    | prime == 2    = square
-    | rem4 prime == 3 = powMod square ((prime + 1) `quot` 4) prime
-    | square `mod` prime == prime - 1
-                    = sqrtOfMinusOne prime
-    | otherwise     = tonelliShanks square prime
+sqrtModP' :: KnownNat p => Mod p -> Mod p
+sqrtModP' square
+  | prime == 2         = square
+  | rem4 prime == 3    = square ^ ((prime + 1) `quot` 4)
+  | square == maxBound = sqrtOfMinusOne
+  | otherwise          = tonelliShanks square
+  where
+    prime = natVal square
 
 -- | @p@ must be of form @4k + 1@
-sqrtOfMinusOne :: Integer -> Integer
-sqrtOfMinusOne p
-  = head
-  $ filter (\n -> n /= 1 && n /= p - 1)
-  $ map (\n -> powMod n k p)
-    [2..p-2]
+sqrtOfMinusOne :: KnownNat p => Mod p
+sqrtOfMinusOne = res
   where
+    p = natVal res
     k = (p - 1) `quot` 4
+    res = head
+      $ dropWhile (\n -> n == 1 || n == maxBound)
+      $ map (^ k) [2 .. maxBound - 1]
 
 -- | @tonelliShanks square prime@ calculates a square root of @square@
 --   modulo @prime@, where @prime@ is a prime of the form @4*k + 1@ and
 --   @square@ is a positive quadratic residue modulo @prime@, using the
 --   Tonelli-Shanks algorithm.
-tonelliShanks :: Integer -> Integer -> Integer
-tonelliShanks square prime = loop rc t1 generator log2
+tonelliShanks :: forall p. KnownNat p => Mod p -> Mod p
+tonelliShanks square = loop rc t1 generator log2
   where
-    (wordToInt -> log2,q) = shiftToOddCount (prime-1)
-    nonSquare = findNonSquare prime
-    generator = powMod nonSquare q prime
-    rc = powMod square ((q+1) `quot` 2) prime
-    t1 = powMod square q prime
-    msqr x = (x*x) `rem` prime
-    msquare 0 x = x
-    msquare k x = msquare (k-1) (msqr x)
-    findPeriod per 1 = per
-    findPeriod per x = findPeriod (per+1) (msqr x)
+    prime = natVal square
+    (log2, q) = shiftToOddCount (prime - 1)
+    generator = findNonSquare ^ q
+    rc = square ^ ((q + 1) `quot` 2)
+    t1 = square ^ q
 
-    loop :: Integer -> Integer -> Integer -> Int -> Integer
+    msquare 0 x = x
+    msquare k x = msquare (k-1) (x * x)
+
+    findPeriod per 1 = per
+    findPeriod per x = findPeriod (per + 1) (x * x)
+
+    loop :: Mod p -> Mod p -> Mod p -> Word -> Mod p
     loop !r t c m
         | t == 1    = r
         | otherwise = loop nextR nextT nextC nextM
           where
             nextM = findPeriod 0 t
             b     = msquare (m - 1 - nextM) c
-            nextR = (r*b) `rem` prime
-            nextC = msqr b
-            nextT = (t*nextC) `rem` prime
+            nextR = r * b
+            nextC = b * b
+            nextT = t * nextC
 
 -- | prime must be odd, n must be coprime with prime
 sqrtModPP' :: Integer -> Integer -> Word -> Maybe Integer
 sqrtModPP' n prime expo = case jacobi n prime of
   MinusOne -> Nothing
   Zero     -> Nothing
-  One      -> fixup $ sqrtModP' (n `mod` prime) prime
+  One      -> case someNatVal (fromInteger prime) of
+    SomeNat (_ :: Proxy p) -> Just $ fixup $ sqrtModP' @p (fromInteger n)
   where
-    fixup r = let diff' = r*r-n
-              in if diff' == 0
-                   then Just r
-                   else case splitOff prime diff' of
-                          (e,q) | expo <= e -> Just r
-                                | otherwise -> fmap (\inv -> hoist inv r (q `mod` prime) (prime^e)) (recipMod (2*r) prime)
+    fixup :: KnownNat p => Mod p -> Integer
+    fixup r
+      | diff' == 0 = r'
+      | expo <= e  = r'
+      | otherwise  = hoist (recip (2 * r)) r' (fromInteger q) (prime^e)
+      where
+        r' = toInteger (unMod r)
+        diff' = r' * r' - n
+        (e, q) = splitOff prime diff'
 
+    hoist :: KnownNat p => Mod p -> Integer -> Mod p -> Integer -> Integer
     hoist inv root elim pp
-        | diff' == 0    = root'
-        | expo <= ex    = root'
-        | otherwise     = hoist inv root' (nelim `mod` prime) (prime^ex)
-          where
-            root' = (root + (inv*(prime-elim))*pp) `mod` (prime*pp)
-            diff' = root'*root' - n
-            (ex, nelim) = splitOff prime diff'
+      | diff' == 0    = root'
+      | expo <= ex    = root'
+      | otherwise     = hoist inv root' (fromInteger nelim) (prime ^ ex)
+        where
+          root' = root + toInteger (unMod (inv * negate elim)) * pp
+          diff' = root' * root' - n
+          (ex, nelim) = splitOff prime diff'
 
 -- dirty, dirty
 sqM2P :: Integer -> Word -> Maybe Integer
@@ -233,17 +244,17 @@ rem4 n = fromIntegral n .&. 3
 rem8 :: Integral a => a -> Int
 rem8 n = fromIntegral n .&. 7
 
-findNonSquare :: Integer -> Integer
-findNonSquare n
-    | rem8 n == 5 || rem8 n == 3 = 2
-    | otherwise = search candidates
-      where
-        -- It is enough to consider only prime candidates, but
-        -- the probability that the smallest non-residue is > 67
-        -- is small and 'jacobi' test is fast,
-        -- so we use [71..n] instead of filter isPrime [71..n].
-        candidates = 3:5:7:11:13:17:19:23:29:31:37:41:43:47:53:59:61:67:[71..n]
-        search (p:ps) = case jacobi p n of
-          MinusOne -> p
-          _        -> search ps
-        search _ = error "Should never have happened, prime list exhausted."
+findNonSquare :: KnownNat n => Mod n
+findNonSquare = res
+  where
+    n = natVal res
+    res
+      | rem8 n == 3 || rem8 n == 5 = 2
+      | otherwise = fromIntegral $ head $
+        dropWhile (\p -> jacobi p n /= MinusOne) candidates
+
+    -- It is enough to consider only prime candidates, but
+    -- the probability that the smallest non-residue is > 67
+    -- is small and 'jacobi' test is fast,
+    -- so we use [71..n] instead of filter isPrime [71..n].
+    candidates = 3:5:7:11:13:17:19:23:29:31:37:41:43:47:53:59:61:67:[71..n]
