@@ -144,7 +144,6 @@ test-suite arithmoi-tests
     Math.NumberTheory.Moduli.SingletonTests
     Math.NumberTheory.Moduli.SqrtTests
     Math.NumberTheory.MoebiusInversionTests
-    Math.NumberTheory.Powers.ModularTests
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests

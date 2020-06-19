@@ -10,6 +10,7 @@
 {-# LANGUAGE MagicHash #-}
 
 module Math.NumberTheory.Powers.Modular
+  {-# DEPRECATED "Use Data.Mod or Data.Mod.Word instead" #-}
   ( powMod
   , powModWord
   , powModInt

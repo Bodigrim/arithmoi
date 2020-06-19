@@ -19,8 +19,6 @@ import qualified Math.NumberTheory.Moduli.SqrtTests as ModuliSqrt
 
 import qualified Math.NumberTheory.MoebiusInversionTests as MoebiusInversion
 
-import qualified Math.NumberTheory.Powers.ModularTests as Modular
-
 import qualified Math.NumberTheory.PrefactoredTests as Prefactored
 
 import qualified Math.NumberTheory.PrimesTests as Primes
@@ -54,8 +52,7 @@ main = defaultMainWithRerun tests
 
 tests :: TestTree
 tests = testGroup "All"
-  [ Modular.testSuite
-  , Euclidean.testSuite
+  [ Euclidean.testSuite
   , testGroup "Recurrences"
     [ RecurrencesPentagonal.testSuite
     , RecurrencesLinear.testSuite
