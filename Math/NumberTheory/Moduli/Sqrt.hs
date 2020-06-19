@@ -68,10 +68,9 @@ sqrtsModFactorisation n pps = map fst $ foldl1 (liftM2 comb) cs
     cs :: [[(Integer, Integer)]]
     cs = zipWith (\l m -> map (, m) l) rs ms
 
-    comb t1@(_, m1) t2@(_, m2) = (if ch < 0 then ch + m else ch, m)
+    comb t1 t2 = (if ch < 0 then ch + m else ch, m)
       where
-        ch = fromJust $ chinese t1 t2
-        m = m1 * m2
+        (ch, m) = fromJust $ chinese t1 t2
 
 -- | List all square roots modulo the power of a prime.
 --
