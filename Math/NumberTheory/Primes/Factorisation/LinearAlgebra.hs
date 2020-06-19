@@ -2,7 +2,6 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   ( SBVector(..)
   , SBMatrix(..)
   , linearSolve
-  , firstStep
   ) where
 
 import Data.Semigroup ()
@@ -34,16 +33,32 @@ instance Semigroup SBMatrix where
 size :: SBMatrix -> Int
 size (SBMatrix m) = I.size m
 
+randomSublist :: [Int] -> Double -> Int -> [Int]
+randomSublist list sparsity gen = map (list !!) randomIndices
+  where
+    randomIndices = L.take numberElems (randomRs (0, l - 1) seed)
+    seed = mkStdGen gen
+    numberElems = floor $ sparsity * fromIntegral l
+    l = length list
+
+linearSolve :: SBMatrix -> [SBVector]
+linearSolve matrix@(SBMatrix m) = firstStep matrix z
+  where
+    -- Rows of z are indexed by the columns of matrix
+    z = SBVector (S.fromList $ randomSublist (I.keys m) 0.4 43081)
+
 -- The input is a matrix B and a random vector z
 firstStep :: SBMatrix -> SBVector -> [SBVector]
-firstStep m z = map (x `mult`) matrixPowers
+firstStep matrix z = map (x `mult`) matrixPowers
   where
-    matrixPowers = L.iterate (m `mult`) z
-    x = SBMatrix (I.singleton 1 (SBVector S.empty)) -- Random matrix of size 1 * (largest Prime)
+    matrixPowers = L.take (2 * size matrix) $ L.iterate (matrix `mult`) z
+    x = SBMatrix (foldr (\p acc -> I.insert p (SBVector (S.singleton 1)) acc) initialMap randomPrimes)
+     -- This should be replaced by factorBase = [nextPrime 2..precPrime b]
+    randomPrimes = randomSublist primes 0.4 19485
+    initialMap = I.fromList ([(p, SBVector S.empty) | p <- primes])
+    primes = [1..5]
 
-linearSolve :: SBMatrix -> Int -> [SBVector]
-linearSolve m t = [z]
-  where
-    seed = mkStdGen 68431698431
-    z = SBVector (S.fromList (L.take 100 (randomRs (0,t) seed)))
-    -- firstStep m z
+-- secondStep :: 
+
+
+-- let matrix = SBMatrix (I.fromList [(1, SBVector (S.fromList [1])), (2, SBVector (S.fromList [2])), (3, SBVector (S.fromList [3])), (4, SBVector (S.fromList [4])), (5, SBVector (S.fromList [5]))])
