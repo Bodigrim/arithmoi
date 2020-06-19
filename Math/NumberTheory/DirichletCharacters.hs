@@ -63,11 +63,13 @@ module Math.NumberTheory.DirichletCharacters
 import Control.Applicative                                 (liftA2)
 #endif
 import Data.Bits                                           (Bits(..))
+import Data.Constraint
 import Data.Foldable                                       (for_)
 import Data.Functor.Identity                               (Identity(..))
 import Data.Kind
 import Data.List                                           (mapAccumL, foldl', sort, find, unfoldr)
 import Data.Maybe                                          (mapMaybe, fromJust, fromMaybe)
+import Data.Mod
 #if MIN_VERSION_base(4,12,0)
 import Data.Monoid                                         (Ap(..))
 #endif
@@ -77,16 +79,14 @@ import Data.Semigroup                                      (Semigroup(..),Produc
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))
-import GHC.TypeNats                                        (Nat, SomeNat(..), natVal, someNatVal)
+import GHC.TypeNats                                        (KnownNat, Nat, SomeNat(..), natVal, someNatVal)
 import Numeric.Natural                                     (Natural)
 
 import Math.NumberTheory.ArithmeticFunctions               (totient)
 import Math.NumberTheory.Moduli.Chinese
-import Math.NumberTheory.Moduli.Class                      (KnownNat, Mod, getVal)
-import Math.NumberTheory.Moduli.Internal                   (isPrimitiveRoot', discreteLogarithmPP)
-import Math.NumberTheory.Moduli.Multiplicative             (MultMod(..), isMultElement)
-import Math.NumberTheory.Moduli.Singleton                  (Some(..), cyclicGroupFromFactors)
-import Math.NumberTheory.Powers.Modular                    (powMod)
+import Math.NumberTheory.Moduli.Internal                   (discreteLogarithmPP)
+import Math.NumberTheory.Moduli.Multiplicative
+import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise, nextPrime)
 import Math.NumberTheory.RootsOfUnity
 import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
@@ -138,29 +138,33 @@ instance Eq DirichletFactor where
   Two              == Two              = True
   _ == _ = False
 
--- | For primes, define the canonical primitive root as the smallest such. For prime powers \(p^k\),
--- either the smallest primitive root \(g\) mod \(p\) works, or \(g+p\) works.
+-- | For primes, define the canonical primitive root as the smallest such.
 generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
-generator p k
-  | k == 1 = modP
-  | otherwise = if powMod modP (p'-1) (p'*p') == 1 then modP + p' else modP
-  where p' = unPrime p
-        modP = case cyclicGroupFromFactors [(p,k)] of
-                 Just (Some cg) -> head $ filter (isPrimitiveRoot' cg) [2..p'-1]
-                 _ -> error "illegal"
+generator p k = case cyclicGroupFromFactors [(p, k)] of
+  Nothing -> error "illegal"
+  Just (Some cg)
+    | Sub Dict <- proofFromCyclicGroup cg ->
+      fromIntegral $ unMod $ multElement $ unPrimitiveRoot $ head $
+        mapMaybe (isPrimitiveRoot cg) [2..maxBound]
 
 -- | Implement the function \(\lambda\) from page 5 of
 -- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf
 lambda :: Integer -> Int -> Integer
-lambda x e = ((powMod x (2*modulus) largeMod - 1) `shiftR` (e+1)) .&. (modulus - 1)
-  where modulus = bit (e-2)
-        largeMod = bit (2*e - 1)
+lambda x e = ((xPower - 1) `shiftR` (e+1)) .&. (modulus - 1)
+  where
+    modulus  = 1 `shiftL` (e - 2)
+    largeMod = 1 `shiftL` (2 * e - 1)
+    xPower = case someNatVal largeMod of
+      SomeNat (_ :: Proxy largeMod) ->
+        toInteger (unMod (fromInteger x ^ (2 * modulus) :: Mod largeMod))
+
 
 -- | For elements of the multiplicative group \((\mathbb{Z}/n\mathbb{Z})^*\), a Dirichlet
 -- character evaluates to a root of unity.
 eval :: DirichletCharacter n -> MultMod n -> RootOfUnity
 eval (Generated ds) m = foldMap (evalFactor m') ds
-  where m' = getVal $ multElement m
+  where
+    m' = toInteger $ unMod $ multElement m
 
 -- | Evaluate each factor of the Dirichlet character.
 evalFactor :: Integer -> DirichletFactor -> RootOfUnity

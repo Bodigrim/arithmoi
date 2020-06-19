@@ -23,12 +23,10 @@ import GHC.TypeNats (SomeNat(..), someNatVal)
 import GHC.Integer.GMP.Internals
 import Numeric.Natural
 
-import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Equations
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Powers.Modular
 import Math.NumberTheory.Roots
 
 -- https://en.wikipedia.org/wiki/Primitive_root_modulo_n#Finding_primitive_roots
@@ -44,13 +42,16 @@ isPrimitiveRoot' cg r =
     CGOddPrimePower p k       -> oddPrimePowerTest (unPrime p) k r
     CGDoubleOddPrimePower p k -> doubleOddPrimePowerTest (unPrime p) k r
   where
-    oddPrimeTest p g              = let phi  = totient p
-                                        pows = map (\pk -> phi `quot` unPrime (fst pk)) (factorise phi)
-                                        exps = map (\x -> powMod g x p) pows
-                                     in g /= 0 && gcd g p == 1 && notElem 1 exps
     oddPrimePowerTest p 1 g       = oddPrimeTest p (g `mod` p)
-    oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && powMod g (p-1) (p*p) /= 1
+    oddPrimePowerTest p _ g       = oddPrimeTest p (g `mod` p) && case someNatVal (fromIntegral (p * p)) of
+      SomeNat (_ :: Proxy pp) -> fromIntegral g ^ (p - 1) /= (1 :: Mod pp)
+
     doubleOddPrimePowerTest p k g = odd g && oddPrimePowerTest p k g
+
+    oddPrimeTest p g = g /= 0 && gcd g p == 1 && case someNatVal (fromIntegral p) of
+      SomeNat (_ :: Proxy p) -> all (\x -> fromIntegral g ^ x /= (1 :: Mod p)) pows
+      where
+        pows = map (\(q, _) -> (p - 1) `quot` unPrime q) (factorise (p - 1))
 
 -- Implementation of Bach reduction (https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf)
 {-# INLINE discreteLogarithmPP #-}
