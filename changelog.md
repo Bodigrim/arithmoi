@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0.1
+
+### Changed
+
+* Switch to `smallcheck-1.2.0`.
+
 ## 0.11.0.0
 
 ### Added
