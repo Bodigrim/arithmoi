@@ -2,7 +2,7 @@
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( quadraticSieve
-  , findPairs
+  , findSquares
   ) where
 
 #if __GLASGOW_HASKELL__ < 803
@@ -46,8 +46,11 @@ member value (SignedPrimeIntSet s ps) = case value of
 xor :: SignedPrimeIntSet -> SignedPrimeIntSet -> SignedPrimeIntSet
 xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s1 /= s2) ((ps1 PS.\\ PS.unPrimeIntSet ps2) <> (ps2 PS.\\ PS.unPrimeIntSet ps1))
 
--- Given an odd positive composite Integer n and Int parameters b and t,
--- the Quadratic Sieve attempt to decompose n into smaller factors p and q.
+-- | Given an odd positive composite Integer @n@ and Int parameters @b@ and @t@,
+-- the Quadratic Sieve attempts to output @factor@, a factor of @n@. If it fails,
+-- it throws an exception. The parameter @b@ controls the size of the factor base.
+-- This consists of all the relevant primes which are less than or equal to @b@.
+-- The parameter @t@ controls the length of the sieving interval.
 quadraticSieve :: Integer -> Int -> Int -> Integer
 quadraticSieve n b t = findFactor n $ findPairs n b t
 
@@ -56,8 +59,10 @@ findFactor n pairs = case L.find (\(x, y) -> gcd (x - y) n /= 1 && gcd (x - y) n
   Just (x, y) -> gcd (x - y) n
   Nothing     -> error "Parameters are not large enough."
 
-findPairs :: Integer -> Int -> Int -> [(Integer, Integer)]
-findPairs n b t = runST $ do
+-- | This algorithm returns pairs from whose a factor of @n@ will later be inferred.
+-- It is exported only for testing.
+findSquares :: Integer -> Int -> Int -> [(Integer, Integer)]
+findSquares n b t = runST $ do
   let
     factorBase = [nextPrime 2..precPrime b]
     squareRoot = integerSquareRoot n
@@ -65,10 +70,8 @@ findPairs n b t = runST $ do
     startingPoint = squareRoot - intToInteger t `div` 2
     sievingInterval = generateInterval sievingFunction startingPoint t
   sievingIntervalM <- V.thaw sievingInterval
-  -- Perform sieving
   smoothSieveM sievingIntervalM factorBase n startingPoint
   sievingIntervalF <- V.unsafeFreeze sievingIntervalM
-  -- Filter smooth numbers
   let
     indexedFactorisations = removeRows $ V.toList (findSmoothNumbers sievingIntervalF)
     solutionBasis = gaussianElimination indexedFactorisations
@@ -76,20 +79,24 @@ findPairs n b t = runST $ do
 
   pure $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n unsignedFactorisations sol)) solutionBasis
 
--- Generating sieving interval. This consists of tuples whose first
--- component is x^2 - n as x runs from the square root of n for a
--- total of length t. The second component stores the factorisation
--- modulo 2 as an IntSet.
+-- This routine generates the sieving interval. It takes a function @f@,
+-- @startingPoint@, and a dimension @dim@. It returns tuples whose
+-- first component is @f@ applied to @x@, as @x@ runs from @startingPoint@
+-- for a toal length of @dim@. The second component stores the factorisation
+-- modulo 2 as an SignedPrimeIntSet. It is initialised to store whether the
+-- @x@ is positive and negative. Its factorisation is computed in the sieve.
 generateInterval :: (Integer -> Integer) -> Integer -> Int -> V.Vector (Integer, SignedPrimeIntSet)
 generateInterval f startingPoint dim = V.map (\x -> (x, isNegative x)) vectorOfValues
   where
     vectorOfValues = V.generate dim (\i -> f (intToInteger i + startingPoint))
     isNegative j = SignedPrimeIntSet (j < 0) mempty
 
--- This algorithm takes the sievingInterval and the factorBase. It divides by
--- all the primes in the factor base storing the factorisations. The smooth
--- numbers correspond to tuples whose first component is 1. The second component
--- is their factorisation.
+-- This algorithm takes @sievingIntervalM@, @factorBase@, the integer @n@ to be
+-- factored and the @startingPoint@. It divides by all the primes in
+-- @factorBase@ storing the factorisations of the numbers in the
+-- @sievingIntervalM@. When, a division occurs, the value in the interval is
+-- divided. At the end of the process, the smooth numbers correspond to tuples
+-- whose first component is 1. The second component is their factorisation.
 smoothSieveM :: MV.MVector s (Integer, SignedPrimeIntSet) -> [Prime Int] -> Integer -> Integer -> ST s ()
 smoothSieveM sievingIntervalM factorBase n startingPoint = do
   let t = MV.length sievingIntervalM
@@ -101,10 +108,10 @@ smoothSieveM sievingIntervalM factorBase n startingPoint = do
         let change (y, set) = (y `div` (intToInteger . unPrime) prime, prime `insert` set)
         MV.modify sievingIntervalM change entry
 
--- This function returns the smooth numbers together with their index. This
--- is in order to retrieve later the value of x and x^2 - n. The value stored
--- in the first component of the tuple is a set whose only component is
--- the index of column before sieving.
+-- This algorithm filters the @sievingIntervalF@ for smooth numbers. It returns
+-- the smooth numbers together with their index. This is needed in order to
+-- later retrieve the value of @x@ and therefore @f(x)@. This index is stored
+-- as a singleton IntSet to prepare the data for Gaussian elimination.
 findSmoothNumbers :: V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (S.IntSet, SignedPrimeIntSet)
 findSmoothNumbers = V.imapMaybe selectSmooth
   where
@@ -112,13 +119,15 @@ findSmoothNumbers = V.imapMaybe selectSmooth
       | residue == 1 = Just (S.singleton index, factorisation)
       | otherwise    = Nothing
 
--- | Find all primes, which appear only once in the input list.
+-- Find all primes, which appear only once in the input list.
 appearsOnlyOnce :: [PS.PrimeIntSet] -> PS.PrimeIntSet
 appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
   where
     go (onlyOnce, atLeastOnce) x =
       ((onlyOnce PS.\\ PS.unPrimeIntSet x) <> (x PS.\\ PS.unPrimeIntSet atLeastOnce), atLeastOnce <> x)
 
+-- Removes all columns of the matrix which contain primes appearing only once.
+-- These columns cannot be part of the solution.
 removeRows :: [(S.IntSet, SignedPrimeIntSet)] -> [(S.IntSet, SignedPrimeIntSet)]
 removeRows indexedFactorisations
   | onlyOnce == mempty = indexedFactorisations
@@ -136,9 +145,9 @@ gaussianElimination (p@(indices, pivotFact) : xs) = case nonZero pivotFact of
   where
     add (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), xor u v)
 
--- Given a solution, the value of x^2 - n is computed again. By contruction,
+-- Given a solution, the value of @f(x)@ is computed again. By contruction,
 -- the solution IntSet consists of values which correspond to columns in the
--- original sieving interval (before sieving).
+-- original sieving interval.
 findFirstSquare ::Integer -> Integer -> S.IntSet -> Integer
 findFirstSquare n startingPoint = S.foldr construct 1
   where
