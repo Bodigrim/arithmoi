@@ -52,7 +52,7 @@ xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s
 -- This consists of all the relevant primes which are less than or equal to @b@.
 -- The parameter @t@ controls the length of the sieving interval.
 quadraticSieve :: Integer -> Int -> Int -> Integer
-quadraticSieve n b t = findFactor n $ findPairs n b t
+quadraticSieve n b t = findFactor n $ findSquares n b t
 
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
 findFactor n pairs = case L.find (\(x, y) -> gcd (x - y) n /= 1 && gcd (x - y) n /= n) pairs of
