@@ -143,7 +143,7 @@ gaussianElimination (p@(indices, pivotFact) : xs) = case nonZero pivotFact of
   Just pivot -> gaussianElimination (map (\q@(_, fact) -> if pivot `member` fact then add p q else q) xs)
   Nothing    -> indices : gaussianElimination xs
   where
-    add (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), xor u v)
+    add (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), u `xor` v)
 
 -- Given a solution, the value of @f(x)@ is computed again. By construction,
 -- the solution IntSet consists of values which correspond to columns in the
