@@ -68,6 +68,7 @@ library
     Math.NumberTheory.Primes.Counting
     Math.NumberTheory.Primes.IntSet
     Math.NumberTheory.Primes.Testing
+    Math.NumberTheory.Primes.Factorisation.QuadraticSieve
     Math.NumberTheory.Quadratic.GaussianIntegers
     Math.NumberTheory.Quadratic.EisensteinIntegers
     Math.NumberTheory.Recurrences
@@ -147,6 +148,7 @@ test-suite arithmoi-tests
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests
+    Math.NumberTheory.Primes.QuadraticSieveTests
     Math.NumberTheory.Primes.SequenceTests
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests
@@ -215,3 +217,14 @@ benchmark arithmoi-sequence-model
   default-language: Haskell2010
   hs-source-dirs: app
   ghc-options: -Wall -Widentities -Wcompat
+
+executable arithmoi-quadratic-sieve
+  build-depends:
+    base,
+    arithmoi,
+    containers,
+    vector
+  main-is: QuadraticSieve.hs
+  default-language: Haskell2010
+  hs-source-dirs: app
+  ghc-options: -Wall -Widentities -Wcompat -rtsopts
