@@ -1,7 +1,8 @@
 module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   ( SBVector(..)
   , SBMatrix(..)
-  , testMatrix
+  , testMatrix1
+  , testMatrix2
   , mult
   , linear --linearSolve
   ) where
@@ -73,8 +74,10 @@ linear matrix@(SBMatrix m) = minPoly
   where
     z = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
     randomSequence = generateData matrix z
-    errorPoly = toF2Poly $ U.update (U.replicate (2 * (size matrix) + 1) (Bit False)) (U.singleton (2 * (size matrix), Bit True))
-    minPoly = snd $ gcdExt randomSequence errorPoly
+    dim = size matrix
+    -- Is this the best way to generate @errorPoly@?
+    errorPoly = toF2Poly $ U.update (U.replicate (2 * dim + 1) (Bit False)) (U.singleton (2 * dim, Bit True))
+    minPoly = berlekampMassey dim errorPoly randomSequence
 
 -- The input is a matrix B and a random vector z
 generateData :: SBMatrix -> SBVector -> F2Poly
@@ -88,7 +91,20 @@ generateData matrix z = toF2Poly $ traceShowId $ U.fromList $ reverse $ map (\v 
     -- This assumes rows are indexed in the same way as columns are.
     primes = [1..(size matrix)]
 
-testMatrix = SBMatrix (I.fromList [(1, SBVector (S.fromList [4,6])), (2, SBVector (S.fromList [1,3])), (3, SBVector (S.fromList [3,7,8])), (4, SBVector (S.fromList [2,4,7])), (5, SBVector (S.fromList [2])), (6, SBVector (S.fromList [5,8])), (7, SBVector (S.fromList [1,4,5])), (8, SBVector (S.fromList [3,7])), (9, SBVector (S.fromList [2,5,6])), (10, SBVector (S.fromList [1,8]))])
+berlekampMassey :: Int -> F2Poly -> F2Poly -> F2Poly
+berlekampMassey dim = go 1 0
+  where
+    -- Is there a better way to implement recursion in this situation?
+    go :: F2Poly -> F2Poly -> F2Poly ->F2Poly -> F2Poly
+    go oneBefore twoBefore a b
+      -- Better way to compute degree
+      | U.length (unF2Poly b) <= dim + 1 = oneBefore
+      | otherwise                      = go (twoBefore - oneBefore * q) oneBefore b r
+        where
+          (q, r) = quotRem a b
+
+testMatrix1 = SBMatrix (I.fromList [(1, SBVector (S.fromList [1,2])), (2, SBVector (S.fromList [2,3])), (3, SBVector (S.fromList [1,3]))])
+testMatrix2 = SBMatrix (I.fromList [(1, SBVector (S.fromList [4,6])), (2, SBVector (S.fromList [1,3])), (3, SBVector (S.fromList [3,7,8])), (4, SBVector (S.fromList [2,4,7])), (5, SBVector (S.fromList [2])), (6, SBVector (S.fromList [5,8])), (7, SBVector (S.fromList [1,4,5])), (8, SBVector (S.fromList [3,7])), (9, SBVector (S.fromList [2,5,6])), (10, SBVector (S.fromList [1,8]))])
 
 -- evaluate :: F2Poly -> SBMatrix -> SBMatrix
 -- evaluate (SBPolynomial x) matrix = foldr (\i acc -> (stimes i matrix) + acc) (SBMatrix I.empty) listOfIndices
