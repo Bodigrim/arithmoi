@@ -145,7 +145,7 @@ gaussianElimination (p@(indices, pivotFact) : xs) = case nonZero pivotFact of
   where
     add (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), xor u v)
 
--- Given a solution, the value of @f(x)@ is computed again. By contruction,
+-- Given a solution, the value of @f(x)@ is computed again. By construction,
 -- the solution IntSet consists of values which correspond to columns in the
 -- original sieving interval.
 findFirstSquare ::Integer -> Integer -> S.IntSet -> Integer
