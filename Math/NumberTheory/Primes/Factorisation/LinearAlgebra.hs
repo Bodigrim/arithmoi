@@ -1,22 +1,22 @@
 module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   ( SBVector(..)
   , SBMatrix(..)
-  , SBPolynomial(..)
   , testMatrix
   , mult
-  , linearSolve
+  , linear --linearSolve
   ) where
 
-import Prelude hiding (quotRem)
 import Data.Semigroup
 import System.Random
 import Debug.Trace
 import qualified Data.List as L
+import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as U
 import qualified Data.IntSet as S
 import qualified Data.IntMap as I
 import System.IO.Unsafe
 import GHC.Clock
-import Data.Euclidean
+import Data.Bit
 import qualified Data.Semiring as S
 
 -- Sparse Binary Vector
@@ -46,87 +46,39 @@ instance Num SBMatrix where
 instance Semigroup SBMatrix where
   (<>) = (*)
 
-
 size :: SBMatrix -> Int
 size (SBMatrix m) = I.size m
 
--- The first element of the list is the leading coefficient assumed
--- to be non-zero. 0 = False, 1 = True.
-newtype SBPolynomial = SBPolynomial
-  { polynomial :: [Bool]
-  } deriving (Show)
-
-instance Eq SBPolynomial where
-  (SBPolynomial x) == (SBPolynomial y) = (L.dropWhile (not . id) x) == (L.dropWhile (not . id) y)
-
-instance Num SBPolynomial where
-    (+) p@(SBPolynomial x) q@(SBPolynomial y)
-      | difference == 0 = SBPolynomial (zipWith (/=) x y)
-      | difference > 0  = p + (SBPolynomial (L.replicate difference (False) ++ y))
-      | difference < 0  = (SBPolynomial (L.replicate difference (False) ++ x)) + q
-      where
-        difference = length x - length y
-    -- Not very efficient
-    (*) (SBPolynomial []) _ = SBPolynomial []
-    (*) _ (SBPolynomial []) = SBPolynomial []
-    (*) (SBPolynomial (xh : xs)) (SBPolynomial y) = if xh then SBPolynomial (y ++ (L.replicate (length xs) False)) + nextLine else nextLine
-      where
-        nextLine = (SBPolynomial xs) * (SBPolynomial y)
-    negate = id
-
-instance S.Semiring SBPolynomial where
-    plus          = (+)
-    times         = (*)
-    zero          = SBPolynomial []
-    one           = SBPolynomial [True]
-
-instance S.Ring SBPolynomial where
-    negate = negate
-
-instance GcdDomain SBPolynomial
-
--- In repeating quotRem, the leading coefficient may be zero. This can create
--- confusion. Edge cases can be handled better.
-instance Euclidean SBPolynomial where
-  degree (SBPolynomial []) = fromIntegral (0 :: Int)
-  degree (SBPolynomial x) = fromIntegral $ length (L.dropWhile (not . id) x)
-  quotRem _ (SBPolynomial []) = error "Division by zero."
-  quotRem (SBPolynomial []) _ = (SBPolynomial [], SBPolynomial [])
-  quotRem p@(SBPolynomial x@(xh : xs)) q@(SBPolynomial y@(yh : ys))
-    | not yh              = quotRem p (SBPolynomial (L.dropWhile (not . id) y))
-    | length x < length y = (SBPolynomial [], SBPolynomial (L.dropWhile (not . id) x))
-    | otherwise           = (SBPolynomial (xh : polynomial (fst (quotRem rs q))), snd (quotRem rs q))
-    where
-      -- Is there a better way to achieve this?
-      rs = SBPolynomial (if xh then zipWith (/=) xs (ys ++ (repeat False)) else xs)
-
-evaluate :: SBPolynomial -> SBMatrix -> SBMatrix
-evaluate (SBPolynomial x) matrix = foldr (\i acc -> (stimes i matrix) + acc) (SBMatrix I.empty) listOfIndices
-  where
-    listOfIndices = map (\i -> (length x) - 1 - i) $ L.findIndices id x
-
 randomSublist :: [Int] -> StdGen -> [Int]
-randomSublist list gen = traceShowId $ fmap fst $ filter snd $ traceShowId $ zip list (randoms gen)
+randomSublist list gen = fmap fst $ filter snd $ zip list (randoms gen)
 
-linearSolve :: SBMatrix -> SBVector
-linearSolve matrix@(SBMatrix m) = findSolution $ almostZeroMatrix `mult` w
+-- linearSolve :: SBMatrix -> SBVector
+-- linearSolve matrix@(SBMatrix m) = findSolution $ almostZeroMatrix `mult` w
+--   where
+--     -- Rows of z are indexed by the columns of matrix
+--     z = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
+--     randomSequence = generateData matrix z
+--     -- The order of the arguments is exchanged
+--     minPoly = snd (gcdExt randomSequence (SBPolynomial (True : (L.replicate (2 * (size matrix)) False))))
+--     reducedMinPoly = SBPolynomial (L.dropWhileEnd (not . id) (polynomial minPoly))
+--     almostZeroMatrix = evaluate reducedMinPoly matrix
+--     w = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
+--     findSolution :: SBVector -> SBVector
+--     findSolution v
+--       | set (matrix `mult` v) == mempty = v
+--       | otherwise                       = findSolution $ matrix `mult` vList
+
+linear :: SBMatrix -> F2Poly
+linear matrix@(SBMatrix m) = minPoly
   where
-    -- Rows of z are indexed by the columns of matrix
     z = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
     randomSequence = generateData matrix z
-    -- The order of the arguments is exchanged
-    minPoly = snd (gcdExt randomSequence (SBPolynomial (True : (L.replicate (2 * (size matrix)) False))))
-    reducedMinPoly = SBPolynomial (L.dropWhileEnd (not . id) (polynomial minPoly))
-    almostZeroMatrix = evaluate reducedMinPoly matrix
-    w = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
-    findSolution :: SBVector -> SBVector
-    findSolution v
-      | set (matrix `mult` v) == mempty = v
-      | otherwise                       = findSolution $ matrix `mult` v
+    errorPoly = toF2Poly $ U.update (U.replicate (2 * (size matrix) + 1) (Bit False)) (U.singleton (2 * (size matrix), Bit True))
+    minPoly = snd $ gcdExt randomSequence errorPoly
 
 -- The input is a matrix B and a random vector z
-generateData :: SBMatrix -> SBVector -> SBPolynomial
-generateData matrix z = SBPolynomial (map (\v -> not $ S.null (set (x `mult` v))) matrixPowers)
+generateData :: SBMatrix -> SBVector -> F2Poly
+generateData matrix z = toF2Poly $ traceShowId $ U.fromList $ reverse $ map (\v -> Bit (not $ S.null (set (x `mult` v)))) matrixPowers
   where
     matrixPowers = L.take (2 * size matrix) $ L.iterate (matrix `mult`) z
     x = SBMatrix (foldr (\p acc -> I.insert p (SBVector (S.singleton 1)) acc) initialMap randomPrimes)
@@ -136,4 +88,9 @@ generateData matrix z = SBPolynomial (map (\v -> not $ S.null (set (x `mult` v))
     -- This assumes rows are indexed in the same way as columns are.
     primes = [1..(size matrix)]
 
-testMatrix = SBMatrix (I.fromList [(1, SBVector (S.fromList [1,2])), (2, SBVector (S.fromList [2,3])), (3, SBVector (S.fromList [1,3]))])
+testMatrix = SBMatrix (I.fromList [(1, SBVector (S.fromList [4,6])), (2, SBVector (S.fromList [1,3])), (3, SBVector (S.fromList [3,7,8])), (4, SBVector (S.fromList [2,4,7])), (5, SBVector (S.fromList [2])), (6, SBVector (S.fromList [5,8])), (7, SBVector (S.fromList [1,4,5])), (8, SBVector (S.fromList [3,7])), (9, SBVector (S.fromList [2,5,6])), (10, SBVector (S.fromList [1,8]))])
+
+-- evaluate :: F2Poly -> SBMatrix -> SBMatrix
+-- evaluate (SBPolynomial x) matrix = foldr (\i acc -> (stimes i matrix) + acc) (SBMatrix I.empty) listOfIndices
+--   where
+--     listOfIndices = map (\i -> (length x) - 1 - i) $ L.findIndices id x

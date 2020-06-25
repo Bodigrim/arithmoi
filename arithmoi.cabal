@@ -30,6 +30,7 @@ library
   build-depends:
     base >=4.10 && <5,
     array >=0.5 && <0.6,
+    bitvec,
     containers >=0.5.8 && <0.7,
     chimera >=0.3,
     constraints,
