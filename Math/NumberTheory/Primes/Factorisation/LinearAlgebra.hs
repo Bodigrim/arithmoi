@@ -40,6 +40,10 @@ size :: SBMatrix -> Int
 size (SBMatrix m) = I.size m
 
 linearSolve :: SBMatrix -> SBVector
+-- If (length singularities > 0), there is no guarantee that the algorithm is
+-- going to work. To have absolute certainty, one would need to check that the
+-- polynomial annihilates the sequence matrix ^ k `mult` z, however this seems
+-- expensive and, in my view, it is quicker to find another solution.
 linearSolve matrix@(SBMatrix m) = trace ("Is estimate of minimal polynomial good? " ++ show (length singularities > 0)) $ findSolution singularities almostZeroVector
   where
     z = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
@@ -52,8 +56,9 @@ linearSolve matrix@(SBMatrix m) = trace ("Is estimate of minimal polynomial good
     (singularities, reducedMinPoly) = L.break (== Bit True) (U.toList $ unF2Poly minPoly)
     -- If @singularities@ has positive length, then a generic w should work.
     -- It should be changed until one is reached.
-    w = SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
-    almostZeroVector = evaluate reducedMinPoly matrix w
+    almostZeroVector = evaluate matrix z reducedMinPoly
+    -- This can be made clearer. The solution is always found at the very last
+    -- iteration (when xs == []).
     findSolution :: [Bit] -> SBVector -> SBVector
     findSolution [] _ = error "Linear Algebra failed."
     findSolution (_ : xs) vector = if result == mempty then vector else findSolution xs result
@@ -91,17 +96,8 @@ berlekampMassey dim = go 1 0
 -- returns p(A)w. It assumes the first coefficient of p is non zero,
 -- in particular that it is non empty. This makes the implementation
 -- easier as there is no need to write the identity matrix.
-evaluate :: [Bit] -> SBMatrix -> SBVector -> SBVector
-evaluate polynomial matrix w = go (tail polynomial) w w
-  where
-    go :: [Bit] -> SBVector -> SBVector -> SBVector
-    go newPoly result previousVector = case null newPoly of
-      True  -> result
-      False -> go (tail nonZeroPart) newResult newVector
-      where
-        (zeroPart, nonZeroPart) = L.break (== Bit True) newPoly
-        newVector = foldl (\acc _ -> matrix `mult` acc) (matrix `mult` previousVector) zeroPart
-        newResult = result <> newVector
+evaluate :: SBMatrix -> SBVector -> [Bit] -> SBVector
+evaluate matrix w = foldr (\coeff acc -> (matrix `mult` acc) <> (if coeff == Bit True then w else mempty)) mempty
 
 -- Informal way of testing large matrices
 -- Input number of columns of matrix and sparsity coefficient
