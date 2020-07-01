@@ -43,27 +43,24 @@ size :: SBMatrix -> Int
 size (SBMatrix m) = I.size m
 
 linearSolve :: SBMatrix -> SBVector
-linearSolve matrix@(SBMatrix m) = linearSolveHelper 1 matrix randomVec
+linearSolve matrix = linearSolveHelper 1 matrix randomVectors
   where
-    -- Make sure z is not empty.
-    randomVec = traceShowId $ SBVector (S.fromList $ randomSublist (I.keys m) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
+    -- Make sure random vectors are not empty.
+    -- Make sure the rows have correct index
+    randomVectors = getRandomVectors [1..(size matrix - 1)] (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec)))
 
-linearSolveHelper :: F2Poly -> SBMatrix -> SBVector -> SBVector
-linearSolveHelper previousPoly matrix z
-  -- In this case, z is in the image of matrix. Bad! Start again.
-  | null singularities          = trace ("Bad z.") $ linearSolve matrix
-  -- In this case potentialMinPoly is not a good approximation to minPoly
-  -- but vec is a good random vector.
-  | potentialSolution == mempty = trace ("Bad x.") $ linearSolveHelper potentialMinPoly matrix z
+linearSolveHelper :: F2Poly -> SBMatrix -> [SBVector] -> SBVector
+linearSolveHelper previousPoly matrix (z : x : otherVecs)
+  | potentialSolution == mempty = trace ("Bad z: " ++ show z ++ "\nBad x: " ++ show x) $ linearSolveHelper 1 matrix otherVecs
   -- This is a good solution.
   | otherwise                   = potentialSolution
   where
     potentialSolution = findSolution singularities matrix almostZeroVector
     almostZeroVector = evaluate matrix z reducedMinPoly
-    (singularities, reducedMinPoly) = L.break (== Bit True) (U.toList $ unF2Poly potentialMinPoly)
+    (singularities, reducedMinPoly) = L.break (== Bit True) (U.toList $ unF2Poly candidateMinPoly)
     -- lowest common multiple of previousPoly and candidateMinPoly CHECK
-    potentialMinPoly = lcm previousPoly candidateMinPoly
-    candidateMinPoly = findCandidatePoly matrix z
+    -- potentialMinPoly = lcm previousPoly candidateMinPoly
+    candidateMinPoly = findCandidatePoly matrix z x
 
 findSolution :: [Bit] -> SBMatrix -> SBVector -> SBVector
 findSolution [] _ _ = mempty
@@ -78,10 +75,10 @@ findSolution (_ : xs) matrix vector = if result == mempty then vector else findS
 evaluate :: SBMatrix -> SBVector -> [Bit] -> SBVector
 evaluate matrix w = foldr (\coeff acc -> (matrix `mult` acc) <> (if coeff == Bit True then w else mempty)) mempty
 
-findCandidatePoly :: SBMatrix -> SBVector -> F2Poly
-findCandidatePoly matrix z = berlekampMassey dim errorPoly randomSequence
+findCandidatePoly :: SBMatrix -> SBVector -> SBVector -> F2Poly
+findCandidatePoly matrix z x = berlekampMassey dim errorPoly randomSequence
   where
-    randomSequence = generateData matrix z
+    randomSequence = generateData matrix z x
     errorPoly = fromInteger (1 `shiftL` (2*dim)) :: F2Poly
     dim = size matrix
 
@@ -98,23 +95,25 @@ berlekampMassey dim = go 1 0
           (q, r) = quotRem a b
 
 -- The input is a matrix B and a random vector z
-generateData :: SBMatrix -> SBVector -> F2Poly
-generateData matrix@(SBMatrix iMat) z = toF2Poly $ U.fromList $ reverse $ traceShowId $ map (x `dot`) matrixPowers
+generateData :: SBMatrix -> SBVector -> SBVector -> F2Poly
+generateData matrix z x = toF2Poly $ U.fromList $ reverse $ traceShowId $ map (x `dot`) matrixPowers
   where
     matrixPowers = L.take (2 * size matrix) $ L.iterate (matrix `mult`) z
     -- Make sure x is not empty.
-    x = traceShowId $ SBVector (S.fromList $ randomSublist (S.toList columns) (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))))
-    -- x = traceShowId $ SBMatrix (fst $ S.foldr choose (I.empty, gen) columns)
-    -- gen = mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))
-    columns = foldr (\vector acc -> set (vector) `S.union` acc) S.empty (I.elems iMat)
-    -- choose column (im, seed) = (if bool then mempty else I.insert column (SBVector (S.singleton 0)) im, nextSeed)
-    --   where
-    --     (bool, nextSeed) = random seed
-
+    -- Check matrix indices
     -- trace ("Size of x: " ++ (show ((I.foldr (\entry acc -> acc + (if entry == mempty then 0 else 1)) 0 ix) :: Int))) $
 
-randomSublist :: [Int] -> StdGen -> [Int]
-randomSublist list gen = fmap fst $ filter snd $ zip list (randoms gen)
+-- Infinite lists of random vectors
+getRandomVectors :: [Int] -> StdGen -> [SBVector]
+getRandomVectors rows gen = go randomEntries
+  where
+    randomEntries = zip (cycle rows) (randoms gen)
+    go :: [(Int, Bool)] -> [SBVector]
+    go list = newVector : go backOfList
+      where
+        newVector = SBVector (S.fromList listOfEntries)
+        listOfEntries = fmap fst $ filter snd frontOfList
+        (frontOfList, backOfList) = L.splitAt (length rows) list
 
 -- Informal way of testing large matrices
 -- Input number of columns of matrix and sparsity coefficient
@@ -123,10 +122,17 @@ testLinearSolver dim sparsity = S.toList . set $ linearSolve matrix
   where
     numberOfRows = dim - 1
     randomColumn :: StdGen -> [Int]
-    randomColumn gen = fmap fst $ filter (\(_, rDouble) -> rDouble < sparsity) $ zip [101..(100 + numberOfRows)] (randomRs (0, 1) gen)
-    listMatrix = map (\index -> (index, SBVector (S.fromList $ randomColumn (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec)))))) [1..dim]
+    randomColumn gen = fmap fst $ filter (\(_, rDouble) -> rDouble < sparsity) $ zip [1..numberOfRows] (randomRs (0, 1) gen)
+    listMatrix = snd $ L.mapAccumR choose (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec))) [1..dim]
+    choose :: StdGen -> Int -> (StdGen, (Int, SBVector))
+    choose seed index = (mkStdGen (fst (random seed)), (index, SBVector (S.fromList (randomColumn seed))))
     matrix = SBMatrix (I.fromList listMatrix)
     -- trace ("Number of on-zero entries: " ++ show (foldr (\vec acc -> acc + (S.size (set vec))) 0 (fmap snd listMatrix))) $
+
+-- 1) Correct random matrix
+-- 2) Correct random initial vectors
+-- 3) Think about matrix indices
+-- 4) Facilitate for monoids
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------------
