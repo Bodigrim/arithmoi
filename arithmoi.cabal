@@ -119,6 +119,7 @@ test-suite arithmoi-tests
     mod,
     QuickCheck >=2.10,
     quickcheck-classes >=0.6.3,
+    random >=1.0 && <1.2,
     semirings >=0.2,
     smallcheck >=1.2 && <1.3,
     tasty >=0.10,
@@ -152,6 +153,7 @@ test-suite arithmoi-tests
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests
+    Math.NumberTheory.Primes.LinearAlgebraTests
     Math.NumberTheory.Primes.QuadraticSieveTests
     Math.NumberTheory.Primes.SequenceTests
     Math.NumberTheory.Primes.SieveTests
