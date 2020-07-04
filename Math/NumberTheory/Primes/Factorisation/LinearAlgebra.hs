@@ -11,7 +11,7 @@ import qualified Data.List as L
 import qualified Data.IntSet as S
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
--- import Debug.Trace
+import Debug.Trace
 import Data.Semigroup()
 import System.Random
 import System.IO.Unsafe
@@ -45,8 +45,8 @@ size (SBMatrix m) = V.length m
 linearSolve :: SBMatrix -> SBVector
 linearSolve matrix = linearSolveHelper 1 matrix randomVectors 0 0
   where
-    -- Make sure random vectors are not empty.
-    randomVectors = getRandomVectors [0..(size matrix - 1)] (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec)))
+    -- Make sure random vectors are not empty. 0.05 is the sparsity of random vectors
+    randomVectors = getRandomVectors [0..(size matrix - 1)] 0.5 (mkStdGen (fromIntegral (unsafePerformIO getMonotonicTimeNSec)))
 
 linearSolveHelper :: F2Poly -> SBMatrix -> [SBVector] -> Int -> Int -> SBVector
 linearSolveHelper previousPoly matrix (z : x : otherVecs) counter totalCounter
@@ -54,7 +54,7 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter totalCounter
   | potentialSolution == mempty && counter <= 9 = linearSolveHelper potentialMinPoly matrix (z : otherVecs) (counter + 1) (totalCounter + 1)
   | potentialSolution == mempty && counter > 9  = linearSolveHelper 1 matrix otherVecs 0 (totalCounter + 1)
   -- This is a good solution.
-  | otherwise                   = potentialSolution
+  | otherwise                   = trace ("Counter: " ++ show counter ++ "\nTotal Counter: " ++ show totalCounter) potentialSolution
   where
     potentialSolution = findSolution singularities matrix almostZeroVector
     almostZeroVector = evaluate matrix z reducedMinPoly
@@ -107,15 +107,15 @@ generateData matrix z x = toF2Poly $ U.fromList $ reverse $ map (x `dot`) matrix
     -- trace ("Size of x: " ++ (show ((I.foldr (\entry acc -> acc + (if entry == mempty then 0 else 1)) 0 ix) :: Int))) $
 
 -- Infinite lists of random vectors
-getRandomVectors :: [Int] -> StdGen -> [SBVector]
-getRandomVectors rows gen = go randomEntries
+getRandomVectors :: [Int] -> Double -> StdGen -> [SBVector]
+getRandomVectors rows sparsity gen = go randomEntries
   where
-    randomEntries = zip (cycle rows) (randoms gen)
-    go :: [(Int, Bool)] -> [SBVector]
+    randomEntries = zip (cycle rows) (randomRs (0, 1) gen)
+    go :: [(Int, Double)] -> [SBVector]
     go list = newVector : go backOfList
       where
         newVector = SBVector (S.fromList listOfEntries)
-        listOfEntries = fmap fst $ filter snd frontOfList
+        listOfEntries = fmap fst $ filter (\(_, rDouble) -> rDouble < sparsity) frontOfList
         (frontOfList, backOfList) = L.splitAt (length rows) list
 
 -- Informal way of testing large matrices
@@ -127,20 +127,9 @@ testLinearSolver dim sparsity = mat `mult` sol == mempty
     mat = SBMatrix (V.fromList listOfColumns)
     -- -2 is arbitrary. It means that the number of rows is at most one less than
     -- the number of columns
-    listOfColumns = L.take dim $ getRandomColumns [0..(dim - 2)] sparsity $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
+    listOfColumns = L.take dim $ getRandomVectors [0..(dim - 2)] sparsity $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
 
-getRandomColumns :: [Int] -> Double -> StdGen -> [SBVector]
-getRandomColumns rows sparsity gen = go randomEntries
-  where
-    randomEntries = zip (cycle rows) (randomRs (0, 1) gen)
-    go :: [(Int, Double)] -> [SBVector]
-    go list = newVector : go backOfList
-      where
-        newVector = SBVector (S.fromList listOfEntries)
-        listOfEntries = fmap fst $ filter (\(_, rDouble) -> rDouble < sparsity) frontOfList
-        (frontOfList, backOfList) = L.splitAt (length rows) list
 
--- 1) Write proper code that always terminates
--- 2) Good implementation of vectors
--- 3) Other suggestions on GitHub
--- 4) More detailed performance analysis
+-- 1) Investigate rare cases where code does not terminates.
+-- 2) Implement dense matrices rather than sparse.
+-- 3) See if using direct computations in BerlekampMassey makes it faster.
