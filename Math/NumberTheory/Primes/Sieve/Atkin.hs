@@ -8,7 +8,6 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE MagicHash    #-}
 
 module Math.NumberTheory.Primes.Sieve.Atkin
   ( atkinPrimeList
@@ -131,7 +130,7 @@ traverseLatticePoints1 !sp vec (!x0, !y0) =
       $ head
       $ dropWhile (\(k, _) -> k < spLength sp)
       $ iterate forwardX
-      $ (k0, x0)
+        (k0, x0)
 
     -- Step 4
     adjustY (!k, !y)
@@ -177,7 +176,7 @@ traverseLatticePoints2 sp vec (x0, y0) =
       $ head
       $ dropWhile (\(k, _) -> k < spLength sp)
       $ iterate forwardX
-      $ (k0, x0)
+        (k0, x0)
 
     -- Step 4
     adjustY (!k, !y)

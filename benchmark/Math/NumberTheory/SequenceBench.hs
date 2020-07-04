@@ -38,8 +38,7 @@ eratosthenesBench = bgroup "eratosthenes" $
 
 atkinBench :: Benchmark
 atkinBench = bgroup "atkin" $
-  map (\(x, y) -> bench (show (x, y)) $ nf atkin (x, x + y))
-  [ (10 ^ x, 10 ^ y)
+  [ bench (show (10^x, 10^y)) $ nf atkin (10^x, 10^x + 10^y)
   | x <- [10..17]
   , y <- [6..x-1]
   , x == 10 || y == 7
