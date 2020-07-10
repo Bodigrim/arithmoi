@@ -32,7 +32,8 @@ cornacchiaPrimitive' d m =
 
 -- | Finds all primitive solutions (x,y) to the diophantine equation 
 -- |    x^2 + d*y^2 = m
--- | when 1 <= d < m. Given m is square free these are all the solutions
+-- | when 1 <= d < m.
+-- | Given m is square free these are all the positive integer solutions
 cornacchiaPrimitive :: Integer -> Integer -> [(Integer, Integer)]
 cornacchiaPrimitive d m
   | not (1 <= d && d < m) = error "pre-conditions not satisfied"
@@ -51,7 +52,8 @@ squareFactors = foldl squareProducts [1] . factorise
   squareProducts acc f = [ a * b | a <- acc, b <- squarePowers f ]
   squarePowers (p, a) = map (unPrime p ^) [0 .. wordToInt a `div` 2]
 
--- | Finds all solutions (x,y) to the diophantine equation 
+-- | Finds all positive integer solutions (x,y) to the
+-- | diophantine equation:
 -- |    x^2 + d*y^2 = m
 -- | when 1 <= d < m
 cornacchia :: Integer -> Integer -> [(Integer, Integer)]
