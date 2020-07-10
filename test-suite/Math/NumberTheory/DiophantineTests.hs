@@ -21,9 +21,9 @@ cornacchiaTest (Positive d) (Positive a) = all checkSoln (cornacchia d m)
   where m = d + a
         checkSoln (x, y) = x*x + d*y*y == m
 
--- Testing against a slower reference implementation
+-- Testing against a slower reference implementation on coprime inputs
 cornacchiaBruteForce :: Positive Integer -> Positive Integer -> Bool
-cornacchiaBruteForce (Positive d) (Positive a) = findSolutions [] 1 == sort (cornacchia d m)
+cornacchiaBruteForce (Positive d) (Positive a) = gcd d m /= 1 || findSolutions [] 1 == sort (cornacchia d m)
   where m = d + a
         -- Simple O(sqrt (m/d)) brute force by considering all possible y values
         findSolutions acc y

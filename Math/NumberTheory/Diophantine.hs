@@ -38,12 +38,16 @@ cornacchiaPrimitive :: Integer -> Integer -> [(Integer, Integer)]
 cornacchiaPrimitive d m
   | not (1 <= d && d < m) = error "pre-conditions not satisfied"
   | gRoot * gRoot /= g || not (1 <= d' && d' < m') = []
-  | otherwise = map (\(x, y) -> (gRoot * x, y)) (cornacchiaPrimitive' d' m')
+  -- If d=1 then the algorithm doesn't generate all pairs so fix accordingly
+  | d == 1    = concatMap genPairs solutions
+  | otherwise = solutions
  where
   g     = gcd d m
   gRoot = integerSquareRoot g
   d'    = d `div` g
   m'    = m `div` g
+  solutions = map (\(x, y) -> (gRoot * x, y)) (cornacchiaPrimitive' d' m')
+  genPairs (x,y) = if x == y then [(x,y)] else [(x,y),(y,x)]
 
 -- Find numbers whose square is a factor of the input
 squareFactors :: UniqueFactorisation a => a -> [a]
