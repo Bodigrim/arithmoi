@@ -22,6 +22,7 @@ import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Utils.FromIntegral
+import Unsafe.Coerce (unsafeCoerce)
 
 data SignedPrimeIntSet = SignedPrimeIntSet
   { sign :: !Bool
@@ -44,7 +45,7 @@ member value (SignedPrimeIntSet s ps) = case value of
   PrimeInt p -> p `PS.member` ps
 
 xor :: SignedPrimeIntSet -> SignedPrimeIntSet -> SignedPrimeIntSet
-xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s1 /= s2) ((ps1 PS.\\ PS.unPrimeIntSet ps2) <> (ps2 PS.\\ PS.unPrimeIntSet ps1))
+xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s1 /= s2) (ps1 `PS.symmetricDifference` ps2)
 
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@ and @t@,
 -- the Quadratic Sieve attempts to output @factor@, a factor of @n@. If it fails,
@@ -143,7 +144,8 @@ gaussianElimination (p@(indices, pivotFact) : xs) = case nonZero pivotFact of
   Just pivot -> gaussianElimination (map (\q@(_, fact) -> if pivot `member` fact then add p q else q) xs)
   Nothing    -> indices : gaussianElimination xs
   where
-    add (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), u `xor` v)
+    -- Temporary, until Data.IntSet.symmetricDifference is provided.
+    add (a, u) (b, v) = (unsafeCoerce PS.symmetricDifference a b, u `xor` v)
 
 -- Given a solution, the value of @f(x)@ is computed again. By construction,
 -- the solution IntSet consists of values which correspond to columns in the

@@ -12,6 +12,7 @@
 -- > import qualified Math.NumberTheory.Primes.IntSet as PrimeIntSet
 --
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -50,6 +51,7 @@ module Math.NumberTheory.Primes.IntSet
   -- | Use 'Data.Semigroup.<>' for unions.
   , difference
   , (\\)
+  , symmetricDifference
   , intersection
   -- * Filter
   , filter
@@ -73,16 +75,20 @@ module Math.NumberTheory.Primes.IntSet
   , toDescList
   ) where
 
-import Prelude (Eq, Ord, Show, Monoid, Bool, Maybe(..), Int, otherwise)
+import Prelude ((>), (/=), (==), (-), Eq, Ord, Show, Monoid, Bool, Maybe(..), Int, Word, otherwise)
 import Control.DeepSeq (NFData)
 import Data.Coerce (coerce)
 import Data.Data (Data)
+import Data.Function (on)
 import Data.IntSet (IntSet)
-import qualified Data.IntSet as IS
+import qualified Data.IntSet.Internal as IS
 import Data.Semigroup (Semigroup)
 import qualified GHC.Exts (IsList(..))
 
 import Math.NumberTheory.Primes.Types (Prime(..))
+import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
+import Data.Bits (Bits(..))
+import Utils.Containers.Internal.BitUtil (highestBitMask)
 
 -- | A set of 'Prime' integers.
 newtype PrimeIntSet = PrimeIntSet {
@@ -193,6 +199,10 @@ difference = coerce IS.difference
 
 infixl 9 \\{- -}
 
+-- | Symmetric difference of two sets of primes.
+symmetricDifference :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
+symmetricDifference = coerce symmDiff
+
 -- | Intersection of a set of primes and a set of integers.
 intersection :: PrimeIntSet -> IntSet -> PrimeIntSet
 intersection = coerce IS.intersection
@@ -263,3 +273,66 @@ toAscList = coerce IS.toAscList
 -- | Convert the set to a list of descending primes.
 toDescList :: PrimeIntSet -> [Prime Int]
 toDescList = coerce IS.toDescList
+
+-------------------------------------------------------------------------------
+-- IntSet helpers
+
+-- | Symmetric difference of two sets.
+-- Implementation is inspired by 'Data.IntSet.union'
+-- and 'Data.IntSet.difference'.
+symmDiff :: IntSet -> IntSet -> IntSet
+symmDiff t1 t2 = case t1 of
+  IS.Bin p1 m1 l1 r1 -> case t2 of
+    IS.Bin p2 m2 l2 r2
+      | shorter m1 m2 -> symmDiff1
+      | shorter m2 m1 -> symmDiff2
+      | p1 == p2      -> bin p1 m1 (symmDiff l1 l2) (symmDiff r1 r2)
+      | otherwise     -> link p1 t1 p2 t2
+      where
+        symmDiff1
+          | mask p2 m1 /= p1 = link p1 t1 p2 t2
+          | p2 .&. m1 == 0   = bin p1 m1 (symmDiff l1 t2) r1
+          | otherwise        = bin p1 m1 l1 (symmDiff r1 t2)
+        symmDiff2
+          | mask p1 m2 /= p2 = link p1 t1 p2 t2
+          | p1 .&. m2 == 0   = bin p2 m2 (symmDiff t1 l2) r2
+          | otherwise        = bin p2 m2 l2 (symmDiff t1 r2)
+    IS.Tip kx bm -> symmDiffBM kx bm t1
+    IS.Nil -> t1
+  IS.Tip kx bm -> symmDiffBM kx bm t2
+  IS.Nil -> t2
+
+shorter :: Int -> Int -> Bool
+shorter = (>) `on` intToWord
+
+symmDiffBM :: Int -> Word -> IntSet -> IntSet
+symmDiffBM !kx !bm t = case t of
+  IS.Bin p m l r
+    | mask kx m /= p -> link kx (IS.Tip kx bm) p t
+    | kx .&. m == 0  -> bin p m (symmDiffBM kx bm l) r
+    | otherwise      -> bin p m l (symmDiffBM kx bm r)
+  IS.Tip kx' bm'
+    | kx' == kx -> if bm' == bm then IS.Nil else IS.Tip kx (bm' `xor` bm)
+    | otherwise -> link kx (IS.Tip kx bm) kx' t
+  IS.Nil -> IS.Tip kx bm
+
+link :: Int -> IntSet -> Int -> IntSet -> IntSet
+link p1 t1 p2 t2
+  | p1 .&. m == 0 = IS.Bin p m t1 t2
+  | otherwise     = IS.Bin p m t2 t1
+  where
+    m = wordToInt (highestBitMask (intToWord p1 `xor` intToWord p2))
+    p = mask p1 m
+{-# INLINE link #-}
+
+bin :: Int -> Int -> IntSet -> IntSet -> IntSet
+bin p m l r = case r of
+  IS.Nil -> l
+  _ -> case l of
+    IS.Nil -> r
+    _ -> IS.Bin p m l r
+{-# INLINE bin #-}
+
+mask :: Int -> Int -> Int
+mask i m = i .&. (complement (m - 1) `xor` m)
+{-# INLINE mask #-}
