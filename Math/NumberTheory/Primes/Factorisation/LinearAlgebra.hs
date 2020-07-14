@@ -42,15 +42,30 @@ dot (SBVector v1) (SBVector v2) = Bit (even (S.size (v1 `S.intersection` v2)))
 -- Sparse Binary Matrix
 newtype SBMatrix = SBMatrix (V.Vector SBVector) deriving (Show)
 
+-- -- replacing IntSet by U.Vector Int
+-- newtype SBMatrix = SBMatrix (V.Vector (U.Vector Int))
+
+-- Use
+-- U.Vector Int for sparse binary vectors
+-- U.Vector Bit for dense  binary vectors
+
 mult :: SBMatrix -> SBVector -> SBVector
 mult m@(SBMatrix matrix) (SBVector vector) = runST $ do
   -- it would be better to cache maximal length somewhere
-  -- let len = getMax (fromJust (foldMap (fmap (Max . fst) . S.maxView . unSBVector) matrix)) + 1
-  vs <- MU.new $ size m
-  traverse_ (traverse_ (unsafeFlipBit vs) . S.toList . unSBVector . (matrix V.!)) (S.toList vector)
+  let len = getMax (fromJust (foldMap (fmap (Max . fst) . S.maxView . unSBVector) matrix)) + 1
+  -- vs <- MU.new (size m)
+  -- traceShowM (size m, len)
+  vs <- MU.new len
+  traverse_ (traverse_ (flipBit vs) . S.toList . unSBVector . (matrix V.!)) (S.toList vector)
   ws <- U.unsafeFreeze vs
   pure $ SBVector $ S.fromDistinctAscList $ listBits ws
 -- mult (SBMatrix matrix) (SBVector vector) = foldMap (matrix V.!) (S.toList vector)
+
+-- traverse_ = flip forM_ (S.toList vector) $ \column ->
+--
+-- forM_ (S.toList vector) $ \columnIndex ->
+--   forM_ (S.toList $ unSBVector (matrix V.! columnIndex)) $ \i ->
+--     unsafeFlipBit vs i
 
 size :: SBMatrix -> Int
 size (SBMatrix m) = V.length m
