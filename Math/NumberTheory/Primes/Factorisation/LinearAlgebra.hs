@@ -16,6 +16,7 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
 import qualified Data.List as L
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
+-- import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Control.Monad.ST
 import Debug.Trace
@@ -80,18 +81,18 @@ size :: SBMatrix -> Int
 size (SBMatrix m) = V.length m
 
 linearSolve :: SBMatrix -> DBVector
-linearSolve matrix = linearSolveHelper 1 matrix randomVectors 1 1
+linearSolve matrix = linearSolveHelper 1 matrix randomVectors 1
   where
-    -- Make sure random vectors are not empty. The floating point number is the sparsity of the random vectors
+    -- Make sure random vectors are not empty. The floating point number is the density of the random vectors
     randomVectors = getRandomDBVectors (size matrix) 0.5 $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
 
-linearSolveHelper :: F2Poly -> SBMatrix -> [DBVector] -> Int -> Int -> DBVector
-linearSolveHelper previousPoly matrix (z : x : otherVecs) counter totalCounter
-  | isNull potentialSolution && totalCounter > 100 = trace ("Fail: " ++ show matrix) $ error "Incorrect algorithm"
-  | isNull potentialSolution && counter <= 9       = trace ("Counter: " ++ show counter ++ "\nTotal Counter: " ++ show totalCounter) $ linearSolveHelper potentialMinPoly matrix (z : otherVecs) (counter + 1) (totalCounter + 1)
-  | isNull potentialSolution && counter > 9        = trace ("Counter: " ++ show counter ++ "\nTotal Counter: " ++ show totalCounter) $ linearSolveHelper 1 matrix otherVecs 1 (totalCounter + 1)
+linearSolveHelper :: F2Poly -> SBMatrix -> [DBVector] -> Int -> DBVector
+linearSolveHelper _ _ [] _ = error "No random vectors."
+linearSolveHelper previousPoly matrix (x : otherVecs) counter
+  | isNull potentialSolution && counter > 100 = trace ("Fail: " ++ show matrix) $ error "Incorrect algorithm."
+  | isNull potentialSolution                  = trace ("Counter: " ++ show counter) $ linearSolveHelper potentialMinPoly matrix otherVecs (counter + 1)
   -- This is a good solution.
-  | otherwise                                      = trace ("Counter: " ++ show counter ++ "\nTotal Counter: " ++ show totalCounter) $ potentialSolution
+  | otherwise                                 = trace ("Counter: " ++ show counter) $ potentialSolution
   where
     potentialSolution = findSolution singularities matrix almostZeroVector
     almostZeroVector = evaluate matrix z reducedMinPoly
@@ -99,6 +100,11 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter totalCounter
     -- lowest common multiple of previousPoly and candidateMinPoly
     potentialMinPoly = lcm previousPoly candidateMinPoly
     candidateMinPoly = findCandidatePoly matrix z x
+    -- z has to be picked outside of the image of the matrix.
+    -- This works only because we know that the last row of the matrix is zero.
+    -- To solve a general singular square matrix, this won't work.
+    -- To deal with general case, it is desirable to wirte both variants.
+    z = DBVector $ U.update (U.replicate (size matrix) (Bit False)) $ U.singleton (size matrix - 1, Bit True)
 
 findSolution :: [Bit] -> SBMatrix -> DBVector -> DBVector
 -- It is ideal to define a family of parameters indexed by the length of the vector.
