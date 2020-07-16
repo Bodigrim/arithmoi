@@ -43,7 +43,8 @@ library
     random >=1.0 && <1.3,
     transformers >=0.4 && <0.6,
     semirings >=0.5.2,
-    vector >=0.12
+    vector >=0.12,
+    vector-sized
   exposed-modules:
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Inverse

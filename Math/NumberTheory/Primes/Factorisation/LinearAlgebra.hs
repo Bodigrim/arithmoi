@@ -11,7 +11,6 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   , size
   , linearSolve
   , testLinearSolver
-  , getRandomSBVectors
   ) where
 
 import qualified Data.List as L
@@ -60,9 +59,7 @@ newtype SBMatrix = SBMatrix
 --   DBVector v1 <> DBVector v2 = DBVector $ zipBits xor v1 v2
 
 instance KnownNat k => Semigroup (DBVector k) where
-  DBVector v1 <> DBVector v2 = DBVector v
-    where
-      v = fromJust . SU.toSized $ zipBits xor (SU.fromSized v1) (SU.fromSized v2)
+  DBVector v1 <> DBVector v2 = DBVector $ SU.withVectorUnsafe (zipBits xor (SU.fromSized v1)) v2
 
 instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
@@ -120,8 +117,8 @@ linearSolve matrix = linearSolveHelper 1 matrix randomVectors 1
 linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix -> [DBVector k] -> Int -> DBVector k
 linearSolveHelper _ _ [] _ = error "No random vectors."
 linearSolveHelper previousPoly matrix (x : otherVecs) counter
-  | potentialSolution == mempty && counter > 100 = trace ("Fail: " ++ show matrix) error "Incorrect algorithm."
-  | potentialSolution == mempty                  = trace ("Counter: " ++ show counter) linearSolveHelper potentialMinPoly matrix otherVecs (counter + 1)
+--  | potentialSolution == mempty && counter > 100 = trace ("Fail: " ++ show matrix) error "Incorrect algorithm."
+  | potentialSolution == mempty                  = linearSolveHelper potentialMinPoly matrix otherVecs (counter + 1)
   -- This is a good solution.
   | otherwise                                    = trace ("Counter: " ++ show counter) potentialSolution
   where
@@ -187,7 +184,7 @@ getRandomDBVectors :: KnownNat k => Int -> Double -> StdGen -> [DBVector k]
 getRandomDBVectors numberOfColumns density gen = go $ randomRs (0, 1) gen
   where
     go :: KnownNat k => [Double] -> [DBVector k]
-    go list = newVector : go backOfList
+    go list = newVector `seq` newVector : go backOfList
       where
         newVector = DBVector $ fromJust $ SU.fromList $ map (\d -> Bit (d > density)) frontOfList
         (frontOfList, backOfList) = L.splitAt numberOfColumns list
@@ -201,7 +198,7 @@ testLinearSolver dim density = case someNatVal (fromIntegral dim) of
         mat = SBMatrix (V.fromList listOfColumns)
         -- -2 is arbitrary. It means that the number of rows is at most one less than
         -- the number of columns
-        listOfColumns = L.take dim $ getRandomSBVectors (dim - 1) density $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
+        listOfColumns = L.take dim $ getRandomSBVectors (dim - 5) density $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
 
 -- Infinite lists of random SBVectors. Only used for testing.
 getRandomSBVectors :: Int -> Double -> StdGen -> [SBVector]
@@ -209,7 +206,7 @@ getRandomSBVectors numberOfRows density gen = go randomEntries
   where
     randomEntries = zip (cycle [0..(numberOfRows - 1)]) (randomRs (0, 1) gen)
     go :: [(Int, Double)] -> [SBVector]
-    go list = newVector : go backOfList
+    go list = newVector `seq` newVector : go backOfList
       where
         newVector = SBVector (U.fromList listOfEntries)
         listOfEntries = fst <$> filter (\(_, rDouble) -> rDouble < density) frontOfList
