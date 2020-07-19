@@ -17,7 +17,7 @@ import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.TestUtils
 
 cornacchiaTest :: Positive Integer -> Positive Integer -> Bool
-cornacchiaTest (Positive d) (Positive a) = all checkSoln (cornacchia d m)
+cornacchiaTest (Positive d) (Positive a) = gcd d m /= 1 || all checkSoln (cornacchia d m)
   where m = d + a
         checkSoln (x, y) = x*x + d*y*y == m
 
