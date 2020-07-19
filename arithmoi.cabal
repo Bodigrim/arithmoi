@@ -51,6 +51,7 @@ library
     Math.NumberTheory.ArithmeticFunctions.Moebius
     Math.NumberTheory.ArithmeticFunctions.SieveBlock
     Math.NumberTheory.Curves.Montgomery
+    Math.NumberTheory.Diophantine
     Math.NumberTheory.DirichletCharacters
     Math.NumberTheory.Euclidean.Coprimes
     Math.NumberTheory.Moduli
@@ -131,6 +132,7 @@ test-suite arithmoi-tests
     Math.NumberTheory.ArithmeticFunctions.MertensTests
     Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
     Math.NumberTheory.CurvesTests
+    Math.NumberTheory.DiophantineTests
     Math.NumberTheory.DirichletCharactersTests
     Math.NumberTheory.EisensteinIntegersTests
     Math.NumberTheory.GaussianIntegersTests
