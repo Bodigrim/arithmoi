@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.SequenceBench
@@ -13,42 +15,33 @@ import Data.Maybe
 import Math.NumberTheory.Primes
 
 filterIsPrime :: (Integer, Integer) -> Integer
-filterIsPrime (p, q) = sum $ takeWhile (<= q) $ dropWhile (< p) $ filter (isJust . isPrime) (map toPrim [toIdx p .. toIdx q])
+filterIsPrime (p, q) = sum $ takeWhile (<= p + q) $ dropWhile (< p) $ filter (isJust . isPrime) (map toPrim [toIdx p .. toIdx (p + q)])
 
 eratosthenes :: (Integer, Integer) -> Integer
-eratosthenes (p, q) = sum (map unPrime [nextPrime p .. precPrime q])
+eratosthenes (p, q) = sum (map unPrime [nextPrime p .. precPrime (p + q)])
 
 atkin :: (Integer, Integer) -> Integer
-atkin (p, q) = toInteger $ sum $ atkinPrimeList $ atkinSieve (fromInteger p) (fromInteger $ q - p)
+atkin (p, q) = toInteger $ sum $ atkinPrimeList $ atkinSieve (fromInteger p) (fromInteger q)
 
 filterIsPrimeBench :: Benchmark
 filterIsPrimeBench = bgroup "filterIsPrime" $
-  [ bench (show (10^x, 10^y)) $ nf filterIsPrime (10^x, 10^x + 10^y)
+  [ bench (show (10^x, 10^y)) $ nf filterIsPrime (10^x, 10^x)
   | x <- [5..8]
   , y <- [3..x-1]
   ]
 
-eratosthenesBench :: Benchmark
-eratosthenesBench = bgroup "eratosthenes" $
-  [ bench (show (10^x, 10^y)) $ nf eratosthenes (10^x, 10^x + 10^y)
-  | x <- [10..17]
-  , y <- [6..x-1]
-  , x == 10 || y == 7
-  ]
-
-atkinBench :: Benchmark
-atkinBench = bgroup "atkin" $
-  [ bench (show (10^x, 10^y)) $ nf atkin (10^x, 10^x + 10^y)
-  | x <- [10..17]
-  , y <- [6..x-1]
-  , x == 10 || y == 7
+sieveBench :: Benchmark
+sieveBench = bgroup "sieve" $ concat
+  [ [ bench ("eratosthenes/" ++ show (10^x, 10^y)) $ nf eratosthenes (10^x, 10^y)
+    , bench ("atkin/"        ++ show (10^x, 10^y)) $ nf atkin        (10^x, 10^y)
+    ]
+  | (x, y) <- map (10,) [6..9] ++ map (,7) [10..16]
   ]
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Sequence"
-    [ filterIsPrimeBench
-    , eratosthenesBench
-    , atkinBench
+    [ sieveBench
+    , filterIsPrimeBench
     ]
 
 -------------------------------------------------------------------------------
