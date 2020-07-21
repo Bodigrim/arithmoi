@@ -1,4 +1,8 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( quadraticSieve
@@ -10,42 +14,35 @@ import Data.Semigroup
 #endif
 import qualified Data.List as L
 import qualified Data.Vector as V
+import qualified Data.Vector.Sized as SV
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Mutable as MV
 import qualified Data.IntMap as I
-import qualified Data.IntSet as S
 import qualified Math.NumberTheory.Primes.IntSet as PS
 import Control.Monad
 import Control.Monad.ST
 import Data.Maybe
+import Data.Bit
 import Data.Bifunctor
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Utils.FromIntegral
-import Unsafe.Coerce (unsafeCoerce)
+import Debug.Trace
+import Math.NumberTheory.Primes.Factorisation.LinearAlgebra
+import GHC.TypeNats hiding (Mod)
+import Data.Mod.Word
+import Data.Proxy
+import Data.Kind
 
 data SignedPrimeIntSet = SignedPrimeIntSet
   { sign :: !Bool
   , primeSet :: !PS.PrimeIntSet
   } deriving (Show)
 
-data BoolOrPrime = Bool !Bool | PrimeInt !(Prime Int)
-
 insert :: Prime Int -> SignedPrimeIntSet -> SignedPrimeIntSet
 insert prime (SignedPrimeIntSet s ps) = SignedPrimeIntSet s (prime `PS.insert` ps)
-
-nonZero :: SignedPrimeIntSet -> Maybe BoolOrPrime
-nonZero (SignedPrimeIntSet s ps) = case PS.minView ps of
-  Just (prime, _)  -> Just (PrimeInt prime)
-  Nothing          -> if s then Just (Bool True) else Nothing
-
-member :: BoolOrPrime -> SignedPrimeIntSet -> Bool
-member value (SignedPrimeIntSet s ps) = case value of
-  Bool b     -> s == b
-  PrimeInt p -> p `PS.member` ps
-
-xor :: SignedPrimeIntSet -> SignedPrimeIntSet -> SignedPrimeIntSet
-xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s1 /= s2) (ps1 `PS.symmetricDifference` ps2)
 
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@ and @t@,
 -- the Quadratic Sieve attempts to output @factor@, a factor of @n@. If it fails,
@@ -55,30 +52,31 @@ xor (SignedPrimeIntSet s1 ps1) (SignedPrimeIntSet s2 ps2) = SignedPrimeIntSet (s
 quadraticSieve :: Integer -> Int -> Int -> Integer
 quadraticSieve n b t = findFactor n $ findSquares n b t
 
-findFactor :: Integer -> [(Integer, Integer)] -> Integer
-findFactor n pairs = case L.find (\(x, y) -> gcd (x - y) n /= 1 && gcd (x - y) n /= n) pairs of
-  Just (x, y) -> gcd (x - y) n
-  Nothing     -> error "Parameters are not large enough."
+findFactor :: Integer -> (Integer, Integer) -> Integer
+findFactor n (x, y) = if factor /= 1 && factor /= n then factor else error "Try again."
+  where
+    factor =  gcd (x - y) n
 
 -- | This algorithm returns pairs from whose a factor of @n@ will later be inferred.
 -- It is exported only for testing.
-findSquares :: Integer -> Int -> Int -> [(Integer, Integer)]
+findSquares :: Integer -> Int -> Int -> (Integer, Integer)
 findSquares n b t = runST $ do
   let
     factorBase = [nextPrime 2..precPrime b]
     squareRoot = integerSquareRoot n
     sievingFunction j = j * j - n
     startingPoint = squareRoot - intToInteger t `div` 2
-    sievingInterval = generateInterval sievingFunction startingPoint t
+    sievingInterval = trace ("Interval: ") $ traceShowId $ generateInterval sievingFunction startingPoint t
   sievingIntervalM <- V.thaw sievingInterval
   smoothSieveM sievingIntervalM factorBase n startingPoint
   sievingIntervalF <- V.unsafeFreeze sievingIntervalM
   let
-    indexedFactorisations = removeRows $ V.toList (findSmoothNumbers sievingIntervalF)
-    solutionBasis = gaussianElimination indexedFactorisations
+    indexedFactorisations = removeRows $ trace ("Smooth Numbers: ") $ traceShowId $ V.toList (findSmoothNumbers sievingIntervalF)
+    solution = linearSolve' $ translate $ fmap snd indexedFactorisations
     unsignedFactorisations = map (second primeSet) indexedFactorisations
-
-  pure $ map (\sol -> (findFirstSquare n startingPoint sol, findSecondSquare n unsignedFactorisations sol)) solutionBasis
+    firstSquare = findFirstSquare n startingPoint (U.fromList (fmap fst indexedFactorisations)) solution
+    secondSquare = findSecondSquare n (V.fromList (fmap snd unsignedFactorisations)) solution
+  pure (firstSquare, secondSquare)
 
 -- This routine generates the sieving interval. It takes a function @f@,
 -- @startingPoint@, and a dimension @dim@. It returns tuples whose
@@ -113,11 +111,11 @@ smoothSieveM sievingIntervalM factorBase n startingPoint = do
 -- the smooth numbers together with their index. This is needed in order to
 -- later retrieve the value of @x@ and therefore @f(x)@. This index is stored
 -- as a singleton IntSet to prepare the data for Gaussian elimination.
-findSmoothNumbers :: V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (S.IntSet, SignedPrimeIntSet)
+findSmoothNumbers :: V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (Int, SignedPrimeIntSet)
 findSmoothNumbers = V.imapMaybe selectSmooth
   where
     selectSmooth index (residue, factorisation)
-      | residue == 1 = Just (S.singleton index, factorisation)
+      | residue == 1 = Just (index, factorisation)
       | otherwise    = Nothing
 
 -- Find all primes, which appear only once in the input list.
@@ -129,40 +127,76 @@ appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
-removeRows :: [(S.IntSet, SignedPrimeIntSet)] -> [(S.IntSet, SignedPrimeIntSet)]
+removeRows :: [(Int, SignedPrimeIntSet)] -> [(Int, SignedPrimeIntSet)]
 removeRows indexedFactorisations
   | onlyOnce == mempty = indexedFactorisations
   | otherwise          = removeRows $ filter (\(_, SignedPrimeIntSet _ xs) -> PS.disjoint xs onlyOnce) indexedFactorisations
   where
     onlyOnce = appearsOnlyOnce $ map (primeSet . snd) indexedFactorisations
 
--- This solves the linear equation. It returns a basis for the kernel
--- of the matrix as a list of IntSet.
-gaussianElimination :: [(S.IntSet, SignedPrimeIntSet)] -> [S.IntSet]
-gaussianElimination [] = []
-gaussianElimination (p@(indices, pivotFact) : xs) = case nonZero pivotFact of
-  Just pivot -> gaussianElimination (map (\q@(_, fact) -> if pivot `member` fact then add p q else q) xs)
-  Nothing    -> indices : gaussianElimination xs
-  where
-    -- Temporary, until Data.IntSet.symmetricDifference is provided.
-    add (a, u) (b, v) = (unsafeCoerce PS.symmetricDifference a b, u `xor` v)
-
 -- Given a solution, the value of @f(x)@ is computed again. By construction,
 -- the solution IntSet consists of values which correspond to columns in the
 -- original sieving interval.
-findFirstSquare ::Integer -> Integer -> S.IntSet -> Integer
-findFirstSquare n startingPoint = S.foldr construct 1
+findFirstSquare :: Integer -> Integer -> U.Vector Int -> SomeKnown DBVector -> Integer
+findFirstSquare n startingPoint startingIndices (SomeKnown solution) = foldr construct 1 solutionIndices
   where
-    construct index previous = ((intToInteger index + startingPoint) * previous) `mod` n
+    construct solutionIndex previous = ((intToInteger (startingIndices U.! solutionIndex) + startingPoint) * previous) `mod` n
+    solutionIndices = trace ("Linear Algebra: ") $ traceShowId $ listBits $ SU.fromSized $ unDBVector solution
 
 -- Finds the factorisations corresponding to the selected solutions and computes
 -- the total number of times a given prime occurs in the selected factorisations.
 -- By construction, for any given prime, this number is even. From here, a
 -- square root is computed.
-findSecondSquare :: Integer -> [(S.IntSet, PS.PrimeIntSet)] -> S.IntSet -> Integer
-findSecondSquare n indexedFactorisations solution = I.foldrWithKey computeRoot 1 countPowers
+findSecondSquare :: Integer -> V.Vector PS.PrimeIntSet -> SomeKnown DBVector -> Integer
+findSecondSquare n factorisations (SomeKnown solution) = I.foldrWithKey computeRoot 1 countPowers
   where
-    computeRoot key power previous = (intToInteger key ^ (power `div` 2 :: Int) * previous) `mod` n
+    computeRoot key power previous = (intToInteger key ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * previous) `mod` n
     countPowers = foldl count I.empty squares
     count = PS.foldr (\prime im -> I.insertWith (+) (unPrime prime) (1 :: Int) im)
-    squares = fmap snd (filter (\(index, _) -> index `S.isSubsetOf` solution) indexedFactorisations)
+    squares = map (factorisations V.!) $ listBits $ SU.fromSized $ unDBVector solution
+
+data SomeKnown (f :: Nat -> Type) where
+  SomeKnown :: KnownNat k => f k -> SomeKnown f
+
+translate :: [SignedPrimeIntSet] -> SomeKnown SBMatrix
+translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
+  where
+    translateHelper :: [SignedPrimeIntSet] -> Int -> SomeKnown SBMatrix
+    translateHelper columns dim = case someNatVal (fromIntegral dim) of
+      SomeNat (_ :: Proxy dim) -> let result :: SBMatrix dim = SBMatrix (fromJust (SV.fromList (map toIndices columns))) in
+        SomeKnown result
+          where
+            toIndices :: KnownNat dim => SignedPrimeIntSet -> SBVector dim
+            toIndices x = SBVector $ U.fromList $ map convert $ if sign x then 0 : primeTranslation else primeTranslation
+                  where
+                    convert :: Int -> Mod dim
+                    convert i = if i <= dim - 2 then fromIntegral i else error "Parameters are not large enough."
+                    primeTranslation :: [Int]
+                    primeTranslation = binarySearch (PS.toAscList (primeSet x)) $ indexPrimes columns
+
+-- linearSolve :: KnownNat k => SBMatrix k -> DBVector k
+linearSolve' :: SomeKnown SBMatrix -> SomeKnown DBVector
+linearSolve' (SomeKnown m) = SomeKnown (linearSolve m)
+
+indexPrimes :: [SignedPrimeIntSet] -> U.Vector (Prime Int)
+indexPrimes list = U.fromList . PS.toAscList $ go list
+  where
+    go :: [SignedPrimeIntSet] -> PS.PrimeIntSet
+    go [] = mempty
+    go (f : fs) = primeSet f <> go fs
+
+binarySearch :: (Eq a, Ord a, U.Unbox a) => [a] -> U.Vector a -> [Int]
+binarySearch list v = go 0 (len - 1) list v
+  where
+    len = U.length v
+    go :: (Eq a, Ord a, U.Unbox a) => Int -> Int -> [a] -> U.Vector a -> [Int]
+    go _ _ [] _ = []
+    go lowerIndex upperIndex allItems@(item : otherItems) vector
+      | item < entry  = go lowerIndex (currentIndex - 1) allItems vector
+      -- @(currentIndex + 1)@ makes sure no prime number index is 0
+      -- 0 is reserved for negative numbers
+      | item == entry = (currentIndex + 1) : (go (currentIndex + 1) len otherItems vector)
+      | item > entry  = go (currentIndex + 1) upperIndex allItems vector
+      where
+        entry = vector U.! currentIndex
+        currentIndex = (upperIndex + lowerIndex) `div` 2

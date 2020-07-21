@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
@@ -40,6 +41,9 @@ import qualified Data.IntSet as S
 -- Sparse Binary Vector
 newtype SBVector (k :: Nat) = SBVector { unSBVector :: U.Vector (Mod k) }
 
+-- data SomeSBVector where
+--   SomeSBVector :: KnownNat k => SBVector k -> SomeSBVector
+
 -- Dense Binary Vector
 newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
   deriving (Eq, Show)
@@ -68,7 +72,7 @@ index' = unsafeCoerce SV.index
 -- dot :: DBVector -> DBVector -> Bit
 -- dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) v1 v2
 
-dot :: DBVector k -> DBVector k -> Bit
+dot :: KnownNat k => DBVector k -> DBVector k -> Bit
 dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.fromSized v1) (SU.fromSized v2)
 
 mult :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k
