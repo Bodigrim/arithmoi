@@ -159,6 +159,7 @@ data SomeKnown (f :: Nat -> Type) where
   SomeKnown :: KnownNat k => f k -> SomeKnown f
 
 translate :: [SignedPrimeIntSet] -> SomeKnown SBMatrix
+translate [] = error "Parameters are not large enough."
 translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
   where
     translateHelper :: [SignedPrimeIntSet] -> Int -> SomeKnown SBMatrix
@@ -170,7 +171,7 @@ translate listOfFactorisations = translateHelper listOfFactorisations (length li
             toIndices x = SBVector $ U.fromList $ map convert $ if sign x then 0 : primeTranslation else primeTranslation
                   where
                     convert :: Int -> Mod dim
-                    convert i = if i <= dim - 2 then fromIntegral i else error "Parameters are not large enough."
+                    convert i = trace ("Number of columns: " ++ show dim ++ "\nRow number: " ++ show i) $ if i <= dim - 2 then fromIntegral i else error "Parameters are not large enough."
                     primeTranslation :: [Int]
                     primeTranslation = binarySearch (PS.toAscList (primeSet x)) $ indexPrimes columns
 
