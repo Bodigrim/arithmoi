@@ -66,7 +66,7 @@ findSquares n b t = runST $ do
     squareRoot = integerSquareRoot n
     sievingFunction j = j * j - n
     startingPoint = squareRoot - intToInteger t `div` 2
-    sievingInterval = trace ("Interval: ") $ traceShowId $ generateInterval sievingFunction startingPoint t
+    sievingInterval = trace ("Interval: ") $ generateInterval sievingFunction startingPoint t
   sievingIntervalM <- V.thaw sievingInterval
   smoothSieveM sievingIntervalM factorBase n startingPoint
   sievingIntervalF <- V.unsafeFreeze sievingIntervalM
@@ -85,10 +85,14 @@ findSquares n b t = runST $ do
 -- modulo 2 as an SignedPrimeIntSet. It is initialised to store whether the
 -- @x@ is positive and negative. Its factorisation is computed in the sieve.
 generateInterval :: (Integer -> Integer) -> Integer -> Int -> V.Vector (Integer, SignedPrimeIntSet)
-generateInterval f startingPoint dim = V.map (\x -> (x, isNegative x)) vectorOfValues
+generateInterval f startingPoint dim = V.generate dim go
   where
-    vectorOfValues = V.generate dim (\i -> f (intToInteger i + startingPoint))
     isNegative j = SignedPrimeIntSet (j < 0) mempty
+
+    go i = x `seq` sps `seq` (x, sps)
+      where
+        x = f (intToInteger i + startingPoint)
+        sps = isNegative x
 
 -- This algorithm takes @sievingIntervalM@, @factorBase@, the integer @n@ to be
 -- factored and the @startingPoint@. It divides by all the primes in
@@ -171,7 +175,7 @@ translate listOfFactorisations = translateHelper listOfFactorisations (length li
             toIndices x = SBVector $ U.fromList $ map convert $ if sign x then 0 : primeTranslation else primeTranslation
                   where
                     convert :: Int -> Mod dim
-                    convert i = trace ("Number of columns: " ++ show dim ++ "\nRow number: " ++ show i) $ if i <= dim - 2 then fromIntegral i else error "Parameters are not large enough."
+                    convert i = trace ("Number of columns: " ++ show dim ++ "\nRow number: " ++ show i) $ if i < dim - 1 then fromIntegral i else error "Parameters are not large enough."
                     primeTranslation :: [Int]
                     primeTranslation = binarySearch (PS.toAscList (primeSet x)) $ indexPrimes columns
 
@@ -192,12 +196,12 @@ binarySearch list v = go 0 (len - 1) list v
     len = U.length v
     go :: (Eq a, Ord a, U.Unbox a) => Int -> Int -> [a] -> U.Vector a -> [Int]
     go _ _ [] _ = []
-    go lowerIndex upperIndex allItems@(item : otherItems) vector
-      | item < entry  = go lowerIndex (currentIndex - 1) allItems vector
+    go lowerIndex upperIndex allItems@(item : otherItems) vector = case item `compare` entry of
+      LT -> go lowerIndex (currentIndex - 1) allItems vector
       -- @(currentIndex + 1)@ makes sure no prime number index is 0
       -- 0 is reserved for negative numbers
-      | item == entry = (currentIndex + 1) : (go (currentIndex + 1) len otherItems vector)
-      | item > entry  = go (currentIndex + 1) upperIndex allItems vector
+      EQ -> (currentIndex + 1) : (go (currentIndex + 1) len otherItems vector)
+      GT -> go (currentIndex + 1) upperIndex allItems vector
       where
         entry = vector U.! currentIndex
         currentIndex = (upperIndex + lowerIndex) `div` 2
