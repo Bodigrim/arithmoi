@@ -23,6 +23,7 @@ import qualified Math.NumberTheory.Primes.IntSet as PS
 import Control.Monad
 import Control.Monad.ST
 import Data.Maybe
+import Debug.Trace
 import Data.Bit
 import Data.Bifunctor
 import Math.NumberTheory.Roots
@@ -80,7 +81,7 @@ findSquares n b t = runST $ do
         smoothNumbers = previousFactorisations ++ indexedFactorisations
         matrix
           | isFatMatrix (fmap snd smoothNumbers) = smoothNumbers
-          | odd counter                          = goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
+          | odd counter                          = trace "+" $ goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
           | otherwise                            = goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
       pure matrix
 

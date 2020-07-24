@@ -22,7 +22,7 @@ import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Unboxed.Mutable as MU
 import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
 import Control.Monad.ST
-import Debug.Trace
+-- import Debug.Trace
 import Data.Semigroup()
 import System.Random
 import System.IO.Unsafe
@@ -109,7 +109,7 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
   -- Change vector z
   | potentialSolution == mempty && counter > 5  = linearSolveHelper 1 matrix otherVecs 1
   -- This is a good solution.
-  | otherwise                                    = trace ("Counter: " ++ show counter) potentialSolution
+  | otherwise                                    = potentialSolution
   where
     potentialSolution = findSolution singularities matrix almostZeroVector
     almostZeroVector = evaluate matrix z reducedMinPoly
