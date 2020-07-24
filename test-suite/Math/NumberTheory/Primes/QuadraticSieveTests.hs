@@ -13,7 +13,7 @@ import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 quadraticRelation :: (Prime (Large Int), Prime (Large Int)) -> Bool
 quadraticRelation (unPrime -> Large p, unPrime -> Large q)
   | p == q    = True
-  | otherwise = all checkQuadratic (findSquares (toInteger p * toInteger q) 1000 2000)
+  | otherwise = checkQuadratic (findSquares (toInteger p * toInteger q) 1000 2000)
     where
       checkQuadratic (x, y) = (x * x - y * y) `mod` (toInteger p * toInteger q) == 0
 
