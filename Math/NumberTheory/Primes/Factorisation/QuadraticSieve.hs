@@ -52,9 +52,9 @@ quadraticSieve n b t = findFactor n $ findSquares n b t
 
 findFactor :: Integer -> (Integer, Integer) -> Integer
 findFactor n (x, y)
-  | x ^ (2 :: Int) - y ^ (2 :: Int) `mod` n /= 0 = error "Flaw"
-  | factor /= 1 && factor /= n                   = factor
-  | otherwise                                    = error "Try again"
+  | (x ^ (2 :: Int) - y ^ (2 :: Int)) `mod` n /= 0 = error "Flaw"
+  | factor /= 1 && factor /= n                     = factor
+  | otherwise                                      = error "Try again"
   where
     factor =  gcd (x - y) n
 
@@ -68,22 +68,23 @@ findSquares n b t = runST $ do
     sievingFunction j = j * j - n
     startingPoint = squareRoot - intToInteger t `div` 2
 
-    goSieving :: Integer -> Int -> [(Integer, SignedPrimeIntSet)]
-    goSieving newStartingPoint counter = runST $ do
+    goSieving :: [(Integer, SignedPrimeIntSet)] ->Integer -> Int -> [(Integer, SignedPrimeIntSet)]
+    goSieving previousFactorisations newStartingPoint counter = runST $ do
       let
         sievingInterval = generateInterval sievingFunction newStartingPoint t
       sievingIntervalM <- V.thaw sievingInterval
       smoothSieveM sievingIntervalM factorBase n newStartingPoint
       sievingIntervalF <- V.unsafeFreeze sievingIntervalM
       let
-        indexedFactorisations = V.toList $ findSmoothNumbers startingPoint $ sievingIntervalF
+        indexedFactorisations = V.toList $ findSmoothNumbers newStartingPoint $ sievingIntervalF
+        smoothNumbers = previousFactorisations ++ indexedFactorisations
         matrix
-          | isFatMatrix (fmap snd indexedFactorisations) = indexedFactorisations
-          | odd counter                                  = indexedFactorisations ++ goSieving (newStartingPoint + intToInteger (counter * t)) (counter + 1)
-          | otherwise                                    = indexedFactorisations ++ goSieving (newStartingPoint - intToInteger (counter * t)) (counter + 1)
+          | isFatMatrix (fmap snd smoothNumbers) = smoothNumbers
+          | odd counter                          = goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
+          | otherwise                            = goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
       pure matrix
 
-    indexedSmoothNumbers = removeRows $ goSieving startingPoint 1
+    indexedSmoothNumbers = removeRows $ goSieving [] startingPoint 1
     solution = linearSolve' $ translate $ fmap snd indexedSmoothNumbers
     firstSquare = findFirstSquare n (V.fromList (fmap fst indexedSmoothNumbers)) solution
     secondSquare = findSecondSquare n (V.fromList (fmap (snd . (second primeSet)) indexedSmoothNumbers)) solution
@@ -98,11 +99,10 @@ findSquares n b t = runST $ do
 generateInterval :: (Integer -> Integer) -> Integer -> Int -> V.Vector (Integer, SignedPrimeIntSet)
 generateInterval f startingPoint dim = V.generate dim go
   where
-    isNegative j = SignedPrimeIntSet (j < 0) mempty
     go i = x `seq` sps `seq` (x, sps)
       where
         x = f (intToInteger i + startingPoint)
-        sps = isNegative x
+        sps = SignedPrimeIntSet (x < 0) mempty
 
 -- This algorithm takes @sievingIntervalM@, @factorBase@, the integer @n@ to be
 -- factored and the @startingPoint@. It divides by all the primes in
