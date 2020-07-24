@@ -9,11 +9,12 @@ import Test.Tasty.QuickCheck as QC
 import Math.NumberTheory.TestUtils ()
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
+import Debug.Trace
 
 quadraticRelation :: (Prime (Large Int), Prime (Large Int)) -> Bool
 quadraticRelation (unPrime -> Large p, unPrime -> Large q)
   | p == q    = True
-  | otherwise = checkQuadratic (findSquares (toInteger p * toInteger q) 1000 2000)
+  | otherwise = trace (show (p, q)) checkQuadratic (findSquares (toInteger p * toInteger q) 1000 2000)
     where
       checkQuadratic (x, y) = (x * x - y * y) `mod` (toInteger p * toInteger q) == 0
 
