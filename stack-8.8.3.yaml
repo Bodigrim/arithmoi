@@ -3,3 +3,4 @@ packages:
 - .
 extra-deps:
 - smallcheck-1.2.0
+- mod-0.1.2.0
