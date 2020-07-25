@@ -11,17 +11,17 @@ import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 import Debug.Trace
 
-quadraticRelation :: (Prime (Large Int), Prime (Large Int)) -> Bool
+findFactor :: (Prime (Large Int), Prime (Large Int)) -> Bool
 quadraticRelation (unPrime -> Large p, unPrime -> Large q)
   | p == q    = True
-  | otherwise = trace ("Primes: " ++ show (p, q)) $ checkQuadratic (findSquares (toInteger p * toInteger q) b (2*b))
+  | otherwise = trace ("Primes: " ++ show (p, q)) $ n `mod` factor == 0
     where
-      checkQuadratic (x, y) = (x * x - y * y) `mod` n == 0
+      factor = quadraticSieve n b (2*b)
       b = max 1000 $ floor l
-      l = exp . sqrt $ (log (fromInteger n)) * (log (log (fromInteger n))) :: Double 
+      l = exp . sqrt $ (log (fromInteger n)) * (log (log (fromInteger n))) :: Double
       n = toInteger p * toInteger q
 
 testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"
-  [ QC.testProperty "Successful Factorisations" quadraticRelation
+  [ QC.testProperty "Successful Factorisations" findFactor
   ]

@@ -6,7 +6,6 @@
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( quadraticSieve
-  , findSquares
   ) where
 
 #if __GLASGOW_HASKELL__ < 803
@@ -23,7 +22,6 @@ import qualified Math.NumberTheory.Primes.IntSet as PS
 import Control.Monad
 import Control.Monad.ST
 import Data.Maybe
--- import Debug.Trace
 import Data.Bit
 import Data.Bifunctor
 import Math.NumberTheory.Roots
@@ -49,20 +47,7 @@ insert prime (SignedPrimeIntSet s ps) = SignedPrimeIntSet s (prime `PS.insert` p
 -- This consists of all the relevant primes which are less than or equal to @b@.
 -- The parameter @t@ controls the length of the sieving interval.
 quadraticSieve :: Integer -> Int -> Int -> Integer
-quadraticSieve n b t = findFactor n $ findSquares n b t
-
-findFactor :: Integer -> (Integer, Integer) -> Integer
-findFactor n (x, y)
-  | (x ^ (2 :: Int) - y ^ (2 :: Int)) `mod` n /= 0 = error "Flaw"
-  | factor /= 1 && factor /= n                     = factor
-  | otherwise                                      = error "Try again"
-  where
-    factor =  gcd (x - y) n
-
--- | This algorithm returns pairs from whose a factor of @n@ will later be inferred.
--- It is exported only for testing.
-findSquares :: Integer -> Int -> Int -> (Integer, Integer)
-findSquares n b t = runST $ do
+quadraticSieve n b t = runST $ do
   let
     factorBase = [nextPrime 2..precPrime b]
     squareRoot = integerSquareRoot n
@@ -91,10 +76,19 @@ findSquares n b t = runST $ do
       pure matrix
 
     indexedSmoothNumbers = goSieving [] startingPoint 1
-    solution = linearSolve' $ translate $ fmap snd indexedSmoothNumbers
-    firstSquare = findFirstSquare n (V.fromList (fmap fst indexedSmoothNumbers)) solution
-    secondSquare = findSecondSquare n (V.fromList (fmap (snd . (second primeSet)) indexedSmoothNumbers)) solution
-  pure (firstSquare, secondSquare)
+
+    goSolving :: [(Integer, SignedPrimeIntSet)] -> Integer
+    goSolving sievingData
+      | factor /= 1 && factor /= n                                          = factor
+      | (firstSquare ^ (2 :: Int) - secondSquare ^ (2 :: Int)) `mod` n /= 0 = error "Algorithm incorrect."
+      | otherwise                                                           = goSolving sievingData
+      where
+        factor = gcd (firstSquare - secondSquare) n
+        firstSquare = findFirstSquare n (V.fromList (fmap fst sievingData)) solution
+        secondSquare = findSecondSquare n (V.fromList (fmap (snd . (second primeSet)) sievingData)) solution
+        solution = convertToList $ linearSolve' $ translate $ fmap snd sievingData
+
+  pure $ goSolving indexedSmoothNumbers
 
 -- This routine generates the sieving interval. It takes a function @f@,
 -- @startingPoint@, and a dimension @dim@. It returns tuples whose
@@ -157,26 +151,28 @@ removeRows indexedFactorisations
 -- Given a solution, the value of @f(x)@ is computed again. By construction,
 -- the solution IntSet consists of values which correspond to columns in the
 -- original sieving interval.
-findFirstSquare :: Integer -> V.Vector Integer -> SomeKnown DBVector -> Integer
-findFirstSquare n values (SomeKnown solution) = foldr construct 1 solutionIndices
+findFirstSquare :: Integer -> V.Vector Integer -> [Int] -> Integer
+findFirstSquare n values = foldr construct 1
   where
     construct solutionIndex previous = ((values V.! solutionIndex) * previous) `mod` n
-    solutionIndices = listBits $ SU.fromSized $ unDBVector solution
 
 -- Finds the factorisations corresponding to the selected solutions and computes
 -- the total number of times a given prime occurs in the selected factorisations.
 -- By construction, for any given prime, this number is even. From here, a
 -- square root is computed.
-findSecondSquare :: Integer -> V.Vector PS.PrimeIntSet -> SomeKnown DBVector -> Integer
-findSecondSquare n factorisations (SomeKnown solution) = I.foldrWithKey computeRoot 1 countPowers
+findSecondSquare :: Integer -> V.Vector PS.PrimeIntSet -> [Int] -> Integer
+findSecondSquare n factorisations solution = I.foldrWithKey computeRoot 1 countPowers
   where
     computeRoot key power previous = (intToInteger key ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * previous) `mod` n
     countPowers = foldl count I.empty squares
     count = PS.foldr (\prime im -> I.insertWith (+) (unPrime prime) (1 :: Int) im)
-    squares = map (factorisations V.!) $ listBits $ SU.fromSized $ unDBVector solution
+    squares = map (factorisations V.!) solution
 
 data SomeKnown (f :: Nat -> Type) where
   SomeKnown :: KnownNat k => f k -> SomeKnown f
+
+convertToList :: SomeKnown DBVector -> [Int]
+convertToList (SomeKnown solution) = listBits $ SU.fromSized $ unDBVector solution
 
 translate :: [SignedPrimeIntSet] -> SomeKnown SBMatrix
 translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
