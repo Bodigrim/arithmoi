@@ -14,9 +14,12 @@ import Debug.Trace
 quadraticRelation :: (Prime (Large Int), Prime (Large Int)) -> Bool
 quadraticRelation (unPrime -> Large p, unPrime -> Large q)
   | p == q    = True
-  | otherwise = trace (show (p, q)) checkQuadratic (findSquares (toInteger p * toInteger q) 1000 2000)
+  | otherwise = trace ("Primes: " ++ show (p, q)) $ checkQuadratic (findSquares (toInteger p * toInteger q) b (2*b))
     where
-      checkQuadratic (x, y) = (x * x - y * y) `mod` (toInteger p * toInteger q) == 0
+      checkQuadratic (x, y) = (x * x - y * y) `mod` n == 0
+      b = max 1000 $ floor l
+      l = exp . sqrt $ (log (fromInteger n)) * (log (log (fromInteger n))) :: Double 
+      n = toInteger p * toInteger q
 
 testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"
