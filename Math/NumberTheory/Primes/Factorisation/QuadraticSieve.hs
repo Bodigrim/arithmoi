@@ -31,7 +31,8 @@ import Math.NumberTheory.Primes
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Utils.FromIntegral
 import Math.NumberTheory.Primes.Factorisation.LinearAlgebra
-import GHC.TypeNats
+import GHC.TypeNats hiding (Mod)
+import Data.Mod.Word
 import Data.Proxy
 import Data.Kind
 
@@ -52,10 +53,7 @@ quadraticSieve :: Integer -> Int -> Int -> Integer
 quadraticSieve n b t = findFactor n $ findSquares n b t
 
 findFactor :: Integer -> (Integer, Integer) -> Integer
-findFactor n (x, y)
-  | (x ^ (2 :: Int) - y ^ (2 :: Int)) `mod` n /= 0 = error "Flaw"
-  | factor /= 1 && factor /= n                     = factor
-  | otherwise                                      = error "Try again"
+findFactor n (x, y) = if factor /= 1 && factor /= n then factor else error "Try again."
   where
     factor =  gcd (x - y) n
 
@@ -68,29 +66,16 @@ findSquares n b t = runST $ do
     squareRoot = integerSquareRoot n
     sievingFunction j = j * j - n
     startingPoint = squareRoot - intToInteger t `div` 2
-
-    goSieving :: [(Integer, SignedPrimeIntSet)] ->Integer -> Int -> [(Integer, SignedPrimeIntSet)]
-    goSieving previousFactorisations newStartingPoint counter = runST $ do
-      let
-        sievingInterval = generateInterval sievingFunction newStartingPoint t
-      sievingIntervalM <- V.thaw sievingInterval
-      smoothSieveM sievingIntervalM factorBase n newStartingPoint
-      sievingIntervalF <- V.unsafeFreeze sievingIntervalM
-      let
-        indexedFactorisations = V.toList $ findSmoothNumbers newStartingPoint $ sievingIntervalF
-        smoothNumbers = previousFactorisations ++ indexedFactorisations
-        matrix
-          | enoughSmoothNumbers < 0                = trace (show enoughSmoothNumbers) $ smoothNumbers
-          | enoughSmoothNumbers > 0 && odd counter = trace (show enoughSmoothNumbers) $ goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
-          | otherwise                              = trace (show enoughSmoothNumbers) $ goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
-          where
-            enoughSmoothNumbers = isFatMatrix (fmap snd smoothNumbers)
-      pure matrix
-
-    indexedSmoothNumbers = removeRows $ goSieving [] startingPoint 1
-    solution = linearSolve' $ translate $ fmap snd indexedSmoothNumbers
-    firstSquare = findFirstSquare n (V.fromList (fmap fst indexedSmoothNumbers)) solution
-    secondSquare = findSecondSquare n (V.fromList (fmap (snd . (second primeSet)) indexedSmoothNumbers)) solution
+    sievingInterval = generateInterval sievingFunction startingPoint t
+  sievingIntervalM <- V.thaw sievingInterval
+  smoothSieveM sievingIntervalM factorBase n startingPoint
+  sievingIntervalF <- V.unsafeFreeze sievingIntervalM
+  let
+    indexedFactorisations = removeRows $ V.toList (findSmoothNumbers sievingIntervalF)
+    solution = linearSolve' $ translate $ fmap snd indexedFactorisations
+    unsignedFactorisations = map (second primeSet) indexedFactorisations
+    firstSquare = findFirstSquare n startingPoint (U.fromList (fmap fst indexedFactorisations)) solution
+    secondSquare = findSecondSquare n (V.fromList (fmap snd unsignedFactorisations)) solution
   pure (firstSquare, secondSquare)
 
 -- This routine generates the sieving interval. It takes a function @f@,
@@ -128,11 +113,11 @@ smoothSieveM sievingIntervalM factorBase n startingPoint = do
 -- the smooth numbers together with their index. This is needed in order to
 -- later retrieve the value of @x@ and therefore @f(x)@. This index is stored
 -- as a singleton IntSet to prepare the data for Gaussian elimination.
-findSmoothNumbers :: Integer -> V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (Integer, SignedPrimeIntSet)
-findSmoothNumbers startingPoint = V.imapMaybe selectSmooth
+findSmoothNumbers :: V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (Int, SignedPrimeIntSet)
+findSmoothNumbers = V.imapMaybe selectSmooth
   where
     selectSmooth index (residue, factorisation)
-      | residue == 1 = Just (intToInteger index + startingPoint, factorisation)
+      | residue == 1 = Just (index, factorisation)
       | otherwise    = Nothing
 
 -- Find all primes, which appear only once in the input list.
@@ -144,7 +129,7 @@ appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
-removeRows :: [(Integer, SignedPrimeIntSet)] -> [(Integer, SignedPrimeIntSet)]
+removeRows :: [(Int, SignedPrimeIntSet)] -> [(Int, SignedPrimeIntSet)]
 removeRows indexedFactorisations
   | onlyOnce == mempty = indexedFactorisations
   | otherwise          = removeRows $ filter (\(_, SignedPrimeIntSet _ xs) -> PS.disjoint xs onlyOnce) indexedFactorisations
@@ -154,10 +139,10 @@ removeRows indexedFactorisations
 -- Given a solution, the value of @f(x)@ is computed again. By construction,
 -- the solution IntSet consists of values which correspond to columns in the
 -- original sieving interval.
-findFirstSquare :: Integer -> V.Vector Integer -> SomeKnown DBVector -> Integer
-findFirstSquare n values (SomeKnown solution) = foldr construct 1 solutionIndices
+findFirstSquare :: Integer -> Integer -> U.Vector Int -> SomeKnown DBVector -> Integer
+findFirstSquare n startingPoint startingIndices (SomeKnown solution) = foldr construct 1 solutionIndices
   where
-    construct solutionIndex previous = ((values V.! solutionIndex) * previous) `mod` n
+    construct solutionIndex previous = ((intToInteger (startingIndices U.! solutionIndex) + startingPoint) * previous) `mod` n
     solutionIndices = listBits $ SU.fromSized $ unDBVector solution
 
 -- Finds the factorisations corresponding to the selected solutions and computes
@@ -175,21 +160,20 @@ findSecondSquare n factorisations (SomeKnown solution) = I.foldrWithKey computeR
 data SomeKnown (f :: Nat -> Type) where
   SomeKnown :: KnownNat k => f k -> SomeKnown f
 
-isFatMatrix :: [SignedPrimeIntSet] -> Int
--- Also takes the sign into account.
-isFatMatrix mat = PS.size (foldr (\col acc -> acc <> primeSet col) mempty mat) - (length mat - 1)
-
 translate :: [SignedPrimeIntSet] -> SomeKnown SBMatrix
+translate [] = error "Parameters are not large enough."
 translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
   where
     translateHelper :: [SignedPrimeIntSet] -> Int -> SomeKnown SBMatrix
-    translateHelper columns dim = case someNatVal (fromIntegral dim) of
+    translateHelper columns dim = trace (show (U.length (indexPrimes columns), length columns)) $ case someNatVal (fromIntegral dim) of
       SomeNat (_ :: Proxy dim) -> let result :: SBMatrix dim = SBMatrix (fromJust (SV.fromList (map toIndices columns))) in
         SomeKnown result
           where
             toIndices :: KnownNat dim => SignedPrimeIntSet -> SBVector dim
-            toIndices x = SBVector $ U.fromList $ map fromIntegral $ if sign x then 0 : primeTranslation else primeTranslation
+            toIndices x = SBVector $ U.fromList $ map convert $ if sign x then 0 : primeTranslation else primeTranslation
                   where
+                    convert :: Int -> Mod dim
+                    convert i = if i < dim - 1 then fromIntegral i else error "Parameters are not large enough."
                     primeTranslation :: [Int]
                     primeTranslation = binarySearch (PS.toAscList (primeSet x)) $ indexPrimes columns
 
