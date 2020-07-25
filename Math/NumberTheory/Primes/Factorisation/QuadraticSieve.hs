@@ -62,11 +62,10 @@ quadraticSieve n b t = runST $ do
       smoothSieveM sievingIntervalM factorBase n newStartingPoint
       sievingIntervalF <- V.unsafeFreeze sievingIntervalM
       let
-        indexedFactorisations = V.toList $ findSmoothNumbers newStartingPoint $ sievingIntervalF
-        smoothNumbers = previousFactorisations ++ indexedFactorisations
-        suitableSmoothNumbers = removeRows $ smoothNumbers
+        smoothNumbers = previousFactorisations ++ V.toList (findSmoothNumbers newStartingPoint sievingIntervalF)
+        suitableSmoothNumbers = removeRows smoothNumbers
         matrix
-        -- Also takes the sign into account.
+          -- Also takes the sign into account.
           | numberOfPrimes < length mat - 1 = suitableSmoothNumbers -- trace (show (numberOfPrimes, length mat, counter)) $ suitableSmoothNumbers
           | odd counter                     = goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
           | otherwise                       = goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
@@ -81,11 +80,11 @@ quadraticSieve n b t = runST $ do
     goSolving sievingData
       | factor /= 1 && factor /= n                                          = factor
       | (firstSquare ^ (2 :: Int) - secondSquare ^ (2 :: Int)) `mod` n /= 0 = error "Algorithm incorrect."
-      | otherwise                                                           = goSolving sievingData
+      | otherwise                                                           = 1 -- goSolving sievingData
       where
         factor = gcd (firstSquare - secondSquare) n
         firstSquare = findFirstSquare n (V.fromList (fmap fst sievingData)) solution
-        secondSquare = findSecondSquare n (V.fromList (fmap (snd . (second primeSet)) sievingData)) solution
+        secondSquare = findSecondSquare n (V.fromList (fmap (snd . second primeSet) sievingData)) solution
         solution = convertToList $ linearSolve' $ translate $ fmap snd sievingData
 
   pure $ goSolving indexedSmoothNumbers
@@ -96,12 +95,12 @@ quadraticSieve n b t = runST $ do
 -- for a toal length of @dim@. The second component stores the factorisation
 -- modulo 2 as an SignedPrimeIntSet. It is initialised to store whether the
 -- @x@ is positive and negative. Its factorisation is computed in the sieve.
-generateInterval :: (Integer -> Integer) -> Integer -> Int -> V.Vector (Integer, SignedPrimeIntSet)
+generateInterval :: (Integer -> Integer) -> Integer -> Int -> V.Vector (Double, SignedPrimeIntSet)
 generateInterval f startingPoint dim = V.generate dim go
   where
     go i = x `seq` sps `seq` (x, sps)
       where
-        x = f (intToInteger i + startingPoint)
+        x = log . fromIntegral $ f (intToInteger i + startingPoint)
         sps = SignedPrimeIntSet (x < 0) mempty
 
 -- This algorithm takes @sievingIntervalM@, @factorBase@, the integer @n@ to be
@@ -110,7 +109,7 @@ generateInterval f startingPoint dim = V.generate dim go
 -- @sievingIntervalM@. When, a division occurs, the value in the interval is
 -- divided. At the end of the process, the smooth numbers correspond to tuples
 -- whose first component is 1. The second component is their factorisation.
-smoothSieveM :: MV.MVector s (Integer, SignedPrimeIntSet) -> [Prime Int] -> Integer -> Integer -> ST s ()
+smoothSieveM :: MV.MVector s (Double, SignedPrimeIntSet) -> [Prime Int] -> Integer -> Integer -> ST s ()
 smoothSieveM sievingIntervalM factorBase n startingPoint = do
   let t = MV.length sievingIntervalM
   forM_ factorBase $ \prime -> do
@@ -118,19 +117,20 @@ smoothSieveM sievingIntervalM factorBase n startingPoint = do
     forM_ modularSquareRoots $ \modularSquareRoot -> do
       let startingIndex = integerToInt ((modularSquareRoot - startingPoint) `mod` (intToInteger . unPrime) prime)
       forM_ [startingIndex, startingIndex + unPrime prime..(t - 1)] $ \entry -> do
-        let change (y, set) = (y `div` (intToInteger . unPrime) prime, prime `insert` set)
+        let change (y, set) = (y - (log . fromIntegral . unPrime) prime, prime `insert` set)
         MV.modify sievingIntervalM change entry
 
 -- This algorithm filters the @sievingIntervalF@ for smooth numbers. It returns
 -- the smooth numbers together with their index. This is needed in order to
 -- later retrieve the value of @x@ and therefore @f(x)@. This index is stored
 -- as a singleton IntSet to prepare the data for Gaussian elimination.
-findSmoothNumbers :: Integer -> V.Vector (Integer, SignedPrimeIntSet) -> V.Vector (Integer, SignedPrimeIntSet)
+findSmoothNumbers :: Integer -> V.Vector (Double, SignedPrimeIntSet) -> V.Vector (Integer, SignedPrimeIntSet)
 findSmoothNumbers startingPoint = V.imapMaybe selectSmooth
   where
-    selectSmooth index (residue, factorisation)
-      | residue == 1 = Just (intToInteger index + startingPoint, factorisation)
-      | otherwise    = Nothing
+    selectSmooth index (logResidue, factorisation)
+      -- 0.6 should be accurate enough as it is slightly less that log 2
+      | logResidue < 0.6 = Just (intToInteger index + startingPoint, factorisation)
+      | otherwise        = Nothing
 
 -- Find all primes, which appear only once in the input list.
 appearsOnlyOnce :: [PS.PrimeIntSet] -> PS.PrimeIntSet
@@ -188,7 +188,6 @@ translate listOfFactorisations = translateHelper listOfFactorisations (length li
                     primeTranslation :: [Int]
                     primeTranslation = binarySearch (PS.toAscList (primeSet x)) $ indexPrimes columns
 
--- linearSolve :: KnownNat k => SBMatrix k -> DBVector k
 linearSolve' :: SomeKnown SBMatrix -> SomeKnown DBVector
 linearSolve' (SomeKnown m) = SomeKnown (linearSolve m)
 
@@ -196,8 +195,7 @@ indexPrimes :: [SignedPrimeIntSet] -> U.Vector (Prime Int)
 indexPrimes list = U.fromList . PS.toAscList $ go list
   where
     go :: [SignedPrimeIntSet] -> PS.PrimeIntSet
-    go [] = mempty
-    go (f : fs) = primeSet f <> go fs
+    go = foldr ((<>) . primeSet) mempty
 
 binarySearch :: (Eq a, Ord a, U.Unbox a) => [a] -> U.Vector a -> [Int]
 binarySearch list v = go 0 (len - 1) list v
@@ -209,7 +207,7 @@ binarySearch list v = go 0 (len - 1) list v
       LT -> go lowerIndex (currentIndex - 1) allItems vector
       -- @(currentIndex + 1)@ makes sure no prime number index is 0
       -- 0 is reserved for negative numbers
-      EQ -> (currentIndex + 1) : (go (currentIndex + 1) len otherItems vector)
+      EQ -> (currentIndex + 1) : go (currentIndex + 1) len otherItems vector
       GT -> go (currentIndex + 1) upperIndex allItems vector
       where
         entry = vector U.! currentIndex

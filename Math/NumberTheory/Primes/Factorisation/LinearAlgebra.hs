@@ -11,8 +11,6 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   , mult
   , size
   , linearSolve
-  , testLinearSolver
-  , testGauss
   ) where
 
 import qualified Data.List as L
@@ -22,11 +20,10 @@ import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Unboxed.Mutable as MU
 import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
 import Control.Monad.ST
--- import Debug.Trace
 import Data.Semigroup()
 import System.Random
 import System.IO.Unsafe
-import GHC.Clock
+import System.CPUTime
 import Data.Bit
 import Data.Bits
 import Data.Foldable
@@ -34,15 +31,9 @@ import GHC.TypeNats hiding (Mod)
 import Data.Mod.Word
 import Unsafe.Coerce
 import Data.Maybe
-import Data.Proxy
-
-import qualified Data.IntSet as S
 
 -- Sparse Binary Vector
 newtype SBVector (k :: Nat) = SBVector { unSBVector :: U.Vector (Mod k) }
-
--- data SomeSBVector where
---   SomeSBVector :: KnownNat k => SBVector k -> SomeSBVector
 
 -- Dense Binary Vector
 newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
@@ -66,12 +57,6 @@ flipBit' = unsafeCoerce (unsafeFlipBit :: MU.MVector s Bit -> Int -> ST s ())
 index' :: KnownNat k => SBMatrix k -> Mod k -> SBVector k
 index' = unsafeCoerce SV.index
 
--- isNull :: DBVector -> Bool
--- isNull (DBVector v) = null $ listBits v
-
--- dot :: DBVector -> DBVector -> Bit
--- dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) v1 v2
-
 dot :: KnownNat k => DBVector k -> DBVector k -> Bit
 dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.fromSized v1) (SU.fromSized v2)
 
@@ -82,14 +67,6 @@ mult matrix vector = runST $ do
   ws <- SU.unsafeFreeze vs
   pure $ DBVector ws
 
--- -- traverse_ = flip forM_ (S.toList vector) $ \column ->
--- --
--- -- forM_ (S.toList vector) $ \columnIndex ->
--- --   forM_ (S.toList $ unSBVector (matrix V.! columnIndex)) $ \i ->
--- --     unsafeFlipBit vs i
-
--- traverse_ (traverse_ (unsafeFlipBit vs) . S.toList . unSBVector . (matrix V.!)) (S.toList vector)
-
 size :: KnownNat k => SBMatrix k -> Int
 size (SBMatrix m) = SV.length m
 
@@ -98,11 +75,11 @@ linearSolve matrix = linearSolveHelper 1 matrix randomVectors 1
   where
 
     -- The floating point number is the density of the random vectors
-    randomVectors = getRandomDBVectors (size matrix) 0.1 $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
+    randomVectors = getRandomDBVectors (size matrix) 0.1 $ mkStdGen $ fromIntegral $ unsafePerformIO getCPUTime
 
 linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix k -> [DBVector k] -> Int -> DBVector k
 linearSolveHelper _ _ [] _ = error "Not enough random vectors"
-linearSolveHelper _ _ (_ : []) _ = error "Not enough random vectors"
+linearSolveHelper _ _ [_] _ = error "Not enough random vectors"
 linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
 --  | potentialSolution == mempty && counter > 100 = error "Incorrect algorithm." --trace ("Fail: " ++ show matrix)
   | potentialSolution == mempty && counter <= 5 = linearSolveHelper potentialMinPoly matrix (z : otherVecs) (counter + 1)
@@ -177,54 +154,3 @@ getRandomDBVectors numberOfColumns density gen = go $ randomRs (0, 1) gen
       where
         newVector = DBVector $ fromJust $ SU.fromList $ map (\d -> Bit (d > density)) frontOfList
         (frontOfList, backOfList) = L.splitAt numberOfColumns list
-
--- Input number of columns of matrix and sparsity coefficient. It returns a random matrix.
-testLinearSolver :: Int -> Double -> Bool
-testLinearSolver dim density = case someNatVal (fromIntegral dim) of
-  SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve mat in
-    mat `mult` sol == mempty
-      where
-        mat = SBMatrix $ fromJust $ SV.fromList listOfColumns
-        -- -2 is arbitrary. It means that the number of rows is at most one less than
-        -- the number of columns
-        listOfColumns = L.take dim $ getRandomSBVectors (dim - 2) density $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
-
-getRandomSBVectors :: KnownNat k => Int -> Double -> StdGen -> [SBVector k]
-getRandomSBVectors numberOfRows density gen = go randomEntries
-  where
-    randomEntries = map (< density) $ randomRs (0, 1) gen
-    go :: KnownNat k => [Bool] -> [SBVector k]
-    go list = newVector `seq` (newVector : go backOfList)
-      where
-        newVector = SBVector (U.fromList listOfEntries)
-        listOfEntries = map fst $ filter snd $ zip [minBound..maxBound] frontOfList
-        (frontOfList, backOfList) = L.splitAt numberOfRows list
-
-
---------------------------------------------------------------------------------
-
-testGauss :: Int -> Double -> Bool
-testGauss dim density = sol /= S.empty
-  where
-    sol = gaussianElimination mat
-    mat = map (\(a, b) -> (S.singleton a, b)) $ zip [0..] listOfColumns
-    listOfColumns = L.take dim $ getRandomIntSets (dim - 2) density $ mkStdGen $ fromIntegral $ unsafePerformIO getMonotonicTimeNSec
-
-gaussianElimination :: [(S.IntSet, S.IntSet)] -> S.IntSet
-gaussianElimination [] = S.empty
-gaussianElimination (p@(indices, pivotFact) : xs) = case S.minView pivotFact of
-  Just (pivot, _) -> gaussianElimination $ map (\q@(_, fact) -> if pivot `S.member` fact then add p q else q) xs
-  Nothing    -> indices
-  where
-    add (a, u) (b, v) = ((a S.\\ b) <> (b S.\\ a), (u S.\\ v) <> (v S.\\ u))
-
-getRandomIntSets :: Int -> Double -> StdGen -> [S.IntSet]
-getRandomIntSets numberOfRows density gen = go randomEntries
-  where
-    randomEntries = map (< density) $ randomRs (0, 1) gen
-    go :: [Bool] -> [S.IntSet]
-    go list = newVector `seq` (newVector : go backOfList)
-      where
-        newVector = S.fromList listOfEntries
-        listOfEntries = map fst $ filter snd $ zip [0..] frontOfList
-        (frontOfList, backOfList) = L.splitAt numberOfRows list
