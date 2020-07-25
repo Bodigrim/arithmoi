@@ -80,9 +80,11 @@ findSquares n b t = runST $ do
         indexedFactorisations = V.toList $ findSmoothNumbers newStartingPoint $ sievingIntervalF
         smoothNumbers = previousFactorisations ++ indexedFactorisations
         matrix
-          | isFatMatrix (fmap snd smoothNumbers) = smoothNumbers
-          | odd counter                          = trace "+" $ goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
-          | otherwise                            = goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
+          | enoughSmoothNumbers < 0                = trace (show enoughSmoothNumbers) $ smoothNumbers
+          | enoughSmoothNumbers > 0 && odd counter = trace (show enoughSmoothNumbers) $ goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
+          | otherwise                              = trace (show enoughSmoothNumbers) $ goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
+          where
+            enoughSmoothNumbers = isFatMatrix (fmap snd smoothNumbers)
       pure matrix
 
     indexedSmoothNumbers = removeRows $ goSieving [] startingPoint 1
@@ -173,9 +175,9 @@ findSecondSquare n factorisations (SomeKnown solution) = I.foldrWithKey computeR
 data SomeKnown (f :: Nat -> Type) where
   SomeKnown :: KnownNat k => f k -> SomeKnown f
 
-isFatMatrix :: [SignedPrimeIntSet] -> Bool
+isFatMatrix :: [SignedPrimeIntSet] -> Int
 -- Also takes the sign into account.
-isFatMatrix mat = PS.size (foldr (\col acc -> acc <> primeSet col) mempty mat) < length mat - 1
+isFatMatrix mat = PS.size (foldr (\col acc -> acc <> primeSet col) mempty mat) - (length mat - 1)
 
 translate :: [SignedPrimeIntSet] -> SomeKnown SBMatrix
 translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
