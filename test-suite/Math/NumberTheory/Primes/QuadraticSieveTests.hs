@@ -9,12 +9,11 @@ import Test.Tasty.QuickCheck as QC
 import Math.NumberTheory.TestUtils ()
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
-import Debug.Trace
 
 findFactor :: (Prime (Large Int), Prime (Large Int)) -> Bool
 findFactor (unPrime -> Large p, unPrime -> Large q)
   | p == q    = True
-  | otherwise = trace ("Primes: " ++ show (p, q)) $ n `mod` factor == 0
+  | otherwise = n `mod` factor == 0
     where
       factor = quadraticSieve n b (2*b)
       b = max 1000 $ floor l

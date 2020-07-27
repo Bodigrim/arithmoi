@@ -9,7 +9,6 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   , SBMatrix(..)
   , dot
   , mult
-  , size
   , linearSolve
   ) where
 
@@ -22,12 +21,12 @@ import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
 import Control.Monad.ST
 import Data.Semigroup()
 import System.Random
-import System.IO.Unsafe
-import System.CPUTime
 import Data.Bit
 import Data.Bits
 import Data.Foldable
 import GHC.TypeNats hiding (Mod)
+import Data.Proxy
+import GHC.Natural
 import Data.Mod.Word
 import Unsafe.Coerce
 import Data.Maybe
@@ -63,19 +62,16 @@ dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.from
 mult :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k
 mult matrix vector = runST $ do
   vs <- SMU.new
-  traverse_ (traverse_ (flipBit' vs) . U.toList . unSBVector . (matrix `index'`)) $ listBits' vector
+  traverse_ (U.mapM_ (flipBit' vs) . unSBVector . (matrix `index'`)) $ listBits' vector
   ws <- SU.unsafeFreeze vs
   pure $ DBVector ws
 
-size :: KnownNat k => SBMatrix k -> Int
-size (SBMatrix m) = SV.length m
-
-linearSolve :: KnownNat k => SBMatrix k -> DBVector k
-linearSolve matrix = linearSolveHelper 1 matrix randomVectors 1
+linearSolve :: KnownNat k => Int -> SBMatrix k -> DBVector k
+linearSolve seed matrix = linearSolveHelper 1 matrix randomVectors 1
   where
 
     -- The floating point number is the density of the random vectors
-    randomVectors = getRandomDBVectors (size matrix) 0.1 $ mkStdGen $ fromIntegral $ unsafePerformIO getCPUTime
+    randomVectors = getRandomDBVectors 0.1 $ mkStdGen seed
 
 linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix k -> [DBVector k] -> Int -> DBVector k
 linearSolveHelper _ _ [] _ = error "Not enough random vectors"
@@ -90,7 +86,7 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
   where
     potentialSolution = findSolution singularities matrix almostZeroVector
     almostZeroVector = evaluate matrix z reducedMinPoly
-    (singularities, reducedMinPoly) = L.break (== Bit True) (U.toList $ unF2Poly potentialMinPoly)
+    (singularities, reducedMinPoly) = L.break unBit (U.toList $ unF2Poly potentialMinPoly)
     -- lowest common multiple of previousPoly and candidateMinPoly
     potentialMinPoly = lcm previousPoly candidateMinPoly
     candidateMinPoly = findCandidatePoly matrix z x
@@ -125,7 +121,7 @@ findCandidatePoly matrix z x = berlekampMassey dim errorPoly randomSequence
   where
     randomSequence = generateData matrix z x
     errorPoly = fromInteger (1 `shiftL` (2 * dim)) :: F2Poly
-    dim = size matrix
+    dim = naturalToInt $ natVal matrix
 
 berlekampMassey :: Int -> F2Poly -> F2Poly -> F2Poly
 berlekampMassey dim = go 1 0
@@ -143,12 +139,14 @@ berlekampMassey dim = go 1 0
 generateData :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k -> F2Poly
 generateData matrix z x = toF2Poly $ U.fromList $ reverse $ map (x `dot`) matrixPowers
   where
-    matrixPowers = L.take (2 * size matrix) $ L.iterate (matrix `mult`) z
+    matrixPowers = L.take (((*2) . naturalToInt . natVal) matrix) $ L.iterate (matrix `mult`) z
 
 -- Infinite lists of random DBVectors.
-getRandomDBVectors :: KnownNat k => Int -> Double -> StdGen -> [DBVector k]
-getRandomDBVectors numberOfColumns density gen = go $ randomRs (0, 1) gen
+getRandomDBVectors :: forall k. KnownNat k => Double -> StdGen -> [DBVector k]
+getRandomDBVectors density gen = go $ randomRs (0, 1) gen
   where
+    numberOfColumns = naturalToInt $ natVal (Proxy :: Proxy k)
+
     go :: KnownNat k => [Double] -> [DBVector k]
     go list = newVector `seq` newVector : go backOfList
       where
