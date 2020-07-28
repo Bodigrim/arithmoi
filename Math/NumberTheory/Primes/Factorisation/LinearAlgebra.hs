@@ -69,7 +69,6 @@ mult matrix vector = runST $ do
 linearSolve :: KnownNat k => Int -> SBMatrix k -> DBVector k
 linearSolve seed matrix = linearSolveHelper 1 matrix randomVectors 1
   where
-
     -- The floating point number is the density of the random vectors
     randomVectors = getRandomDBVectors 0.1 $ mkStdGen seed
 
