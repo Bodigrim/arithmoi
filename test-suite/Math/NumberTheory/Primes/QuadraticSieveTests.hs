@@ -10,7 +10,9 @@ import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 
 checkQuadratic :: Large Int -> Large Int -> Bool
 checkQuadratic (Large i) (Large j)
+  -- Quadratic Sieve does not work in these cases.
   | p == 2 || q == 2 || p == q = True
+  -- The value of @b@ is too low for sieving to be successful.
   | n < 100000                 = True
   | otherwise                  = (firstSquare ^ (2 :: Int) - secondSquare ^ (2 :: Int)) `mod` n == 0
     where
