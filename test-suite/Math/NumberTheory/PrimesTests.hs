@@ -7,7 +7,9 @@
 -- Tests for Math.NumberTheory.Primes
 --
 
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -17,6 +19,9 @@ module Math.NumberTheory.PrimesTests
 
 import Test.Tasty
 
+import Data.Bits
+import Data.Int
+import Data.Proxy
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
@@ -42,8 +47,17 @@ symmetricDifferenceProperty xs ys = z1 == z2
     z1 = (x PS.\\ PS.unPrimeIntSet y) <> (y PS.\\ PS.unPrimeIntSet x)
     z2 = PS.symmetricDifference x y
 
+toPrimeIntegralTest :: forall a b. (Bits a, Integral a, Bits b, Integral b) => Proxy a -> Prime b -> Bool
+toPrimeIntegralTest _ p =
+  toIntegralSized (unPrime p) == (fmap unPrime (toPrimeIntegral p) :: Maybe a)
+
 testSuite :: TestTree
 testSuite = testGroup "Primes"
   [ testSmallAndQuick "primesSum"   primesSumProperty
   , testSmallAndQuick "symmetricDifference" symmetricDifferenceProperty
+  , testGroup "toPrimeIntegral"
+    [ testSmallAndQuick "Int -> Integer" $ toPrimeIntegralTest @Integer @Int     Proxy
+    , testSmallAndQuick "Int -> Int8"    $ toPrimeIntegralTest @Int8    @Int     Proxy
+    , testSmallAndQuick "Integer -> Int" $ toPrimeIntegralTest @Int     @Integer Proxy
+    ]
   ]

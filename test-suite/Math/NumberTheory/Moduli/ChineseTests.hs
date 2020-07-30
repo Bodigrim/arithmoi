@@ -19,8 +19,8 @@ import Math.NumberTheory.TestUtils
 chineseProperty :: Integer -> Positive Integer -> Integer -> Positive Integer -> Bool
 chineseProperty n1 (Positive m1) n2 (Positive m2) = not compatible ||
   case chinese (n1, m1) (n2, m2) of
-    Nothing -> False
-    Just (n, m) -> (n - n1) `rem` m1 == 0 && (n - n2) `rem` m2 == 0 && m == lcm m1 m2
+    Nothing -> not compatible
+    Just (n, m) -> compatible && (n - n1) `rem` m1 == 0 && (n - n2) `rem` m2 == 0 && m == lcm m1 m2
   where
     g = gcd m1 m2
     compatible = (n1 - n2) `rem` g == 0
