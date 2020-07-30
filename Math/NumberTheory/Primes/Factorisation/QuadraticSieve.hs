@@ -6,6 +6,7 @@
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( quadraticSieve
+  , findSquares
   ) where
 
 #if __GLASGOW_HASKELL__ < 803
@@ -41,13 +42,24 @@ data SignedPrimeIntSet = SignedPrimeIntSet
 insert :: Prime Int -> SignedPrimeIntSet -> SignedPrimeIntSet
 insert prime (SignedPrimeIntSet s ps) = SignedPrimeIntSet s (prime `PS.insert` ps)
 
+quadraticSieve :: Integer -> Int -> Int -> Integer
+quadraticSieve n b t = findFactor n $ findSquares n b t
+
+findFactor :: Integer -> [(Integer, Integer)] -> Integer
+findFactor _ [] = error "Quadratic Sieve failed."
+findFactor n ((x, y) : otherSquares)
+  | factor /= 1 || factor /= n = factor
+  | otherwise                  = findFactor n otherSquares
+  where
+    factor = gcd (x - y) n
+
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@ and @t@,
 -- the Quadratic Sieve attempts to output @factor@, a factor of @n@. If it fails,
 -- it throws an exception. The parameter @b@ controls the size of the factor base.
 -- This consists of all the relevant primes which are less than or equal to @b@.
 -- The parameter @t@ controls the length of the sieving interval.
-quadraticSieve :: Integer -> Int -> Int -> Integer
-quadraticSieve n b t = runST $ do
+findSquares :: Integer -> Int -> Int -> [(Integer, Integer)]
+findSquares n b t = runST $ do
   let
     factorBase = [nextPrime 2..precPrime b]
     squareRoot = integerSquareRoot n
@@ -76,13 +88,9 @@ quadraticSieve n b t = runST $ do
 
     indexedSmoothNumbers = goSieving [] startingPoint 1
 
-    goSolving :: Int -> [(Integer, SignedPrimeIntSet)] -> Integer
-    goSolving seed sievingData
-      | factor /= 1 && factor /= n                                          = factor
-      | (firstSquare ^ (2 :: Int) - secondSquare ^ (2 :: Int)) `mod` n /= 0 = error "Algorithm incorrect."
-      | otherwise                                                           = 1 -- goSolving (seed + 1) sievingData
+    goSolving :: Int -> [(Integer, SignedPrimeIntSet)] -> [(Integer, Integer)]
+    goSolving seed sievingData = (firstSquare, secondSquare) : goSolving (seed + 1) sievingData
       where
-        factor = gcd (firstSquare - secondSquare) n
         firstSquare = findFirstSquare n (V.fromList (fmap fst sievingData)) solution
         secondSquare = findSecondSquare n (V.fromList (fmap (snd . second primeSet) sievingData)) solution
         solution = convertToList $ linearSolve' seed $ translate $ fmap snd sievingData
@@ -162,7 +170,7 @@ findFirstSquare n values = foldr construct 1
 findSecondSquare :: Integer -> V.Vector PS.PrimeIntSet -> [Int] -> Integer
 findSecondSquare n factorisations solution = I.foldrWithKey computeRoot 1 countPowers
   where
-    computeRoot key power previous = (intToInteger key ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * previous) `mod` n
+    computeRoot key power previous = (intToInteger key ^ (power `div` 2 :: Int) * previous) `mod` n
     countPowers = foldl count I.empty squares
     count = PS.foldr (\prime im -> I.insertWith (+) (unPrime prime) (1 :: Int) im)
     squares = map (factorisations V.!) solution

@@ -28,7 +28,7 @@ import System.Random
 import Data.Bit
 import Data.Bits
 import Data.Foldable
-import GHC.TypeNats hiding (Mod)
+import GHC.TypeNats (Nat, KnownNat, natVal)
 import Data.Proxy
 import Data.Mod.Word
 import Unsafe.Coerce
@@ -49,6 +49,7 @@ instance KnownNat k => Semigroup (DBVector k) where
 
 instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
+  mappend = (<>)
 
 listBits' :: KnownNat k => DBVector k -> [Mod k]
 listBits' = unsafeCoerce listBits
@@ -140,7 +141,7 @@ berlekampMassey dim = go 1 0
 generateData :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k -> F2Poly
 generateData matrix z x = toF2Poly $ U.fromList $ reverse $ map (x `dot`) matrixPowers
   where
-    matrixPowers = L.take (((*2) . naturalToInt . natVal) matrix) $ L.iterate (matrix `mult`) z
+    matrixPowers = take (((*2) . naturalToInt . natVal) matrix) $ L.iterate (matrix `mult`) z
 
 -- Infinite lists of random DBVectors.
 getRandomDBVectors :: forall k. KnownNat k => Double -> StdGen -> [DBVector k]
