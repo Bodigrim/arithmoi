@@ -10,15 +10,18 @@ import Math.NumberTheory.TestUtils ()
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 
-findFactor :: (Prime (Large Int), Prime (Large Int)) -> Bool
-findFactor (unPrime -> Large p, unPrime -> Large q)
-  | p == q    = True
-  | otherwise = n `mod` factor == 0
+findFactor :: Large Int -> Large Int -> Bool
+findFactor (Large i) (Large j)
+  | p == 2 || q == 2 || p == q = True
+  | n < 100000                 = True
+  | otherwise                  = n `mod` factor == 0
     where
-      factor = quadraticSieve n b (2*b)
-      b = max 1000 $ floor l
+      factor = quadraticSieve n b b
+      b = max 20 $ floor l
       l = exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double
       n = toInteger p * toInteger q
+      p = unPrime . nextPrime $ i `mod` 100000000
+      q = unPrime . nextPrime $ j `mod` 100000000
 
 testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"

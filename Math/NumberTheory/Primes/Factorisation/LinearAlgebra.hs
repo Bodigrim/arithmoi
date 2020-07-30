@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
@@ -12,21 +13,23 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   , linearSolve
   ) where
 
+#if __GLASGOW_HASKELL__ < 803
+import Data.Semigroup
+#endif
 import qualified Data.List as L
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Sized as SV
 import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Unboxed.Mutable as MU
 import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
+import Math.NumberTheory.Utils.FromIntegral
 import Control.Monad.ST
-import Data.Semigroup()
 import System.Random
 import Data.Bit
 import Data.Bits
 import Data.Foldable
 import GHC.TypeNats hiding (Mod)
 import Data.Proxy
-import GHC.Natural
 import Data.Mod.Word
 import Unsafe.Coerce
 import Data.Maybe
@@ -76,7 +79,6 @@ linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix k -> [DBVector k] -> Int -
 linearSolveHelper _ _ [] _ = error "Not enough random vectors"
 linearSolveHelper _ _ [_] _ = error "Not enough random vectors"
 linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
---  | potentialSolution == mempty && counter > 100 = error "Incorrect algorithm." --trace ("Fail: " ++ show matrix)
   | potentialSolution == mempty && counter <= 5 = linearSolveHelper potentialMinPoly matrix (z : otherVecs) (counter + 1)
   -- Change vector z
   | potentialSolution == mempty && counter > 5  = linearSolveHelper 1 matrix otherVecs 1
@@ -149,5 +151,5 @@ getRandomDBVectors density gen = go $ randomRs (0, 1) gen
     go :: KnownNat k => [Double] -> [DBVector k]
     go list = newVector `seq` newVector : go backOfList
       where
-        newVector = DBVector $ fromJust $ SU.fromList $ map (\d -> Bit (d > density)) frontOfList
+        newVector = DBVector $ fromJust $ SU.fromList $ map (\d -> Bit (d < density)) frontOfList
         (frontOfList, backOfList) = L.splitAt numberOfColumns list

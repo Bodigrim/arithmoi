@@ -23,7 +23,7 @@ testLinear dim = dim < 2 || testLinearSolver dim 0.4
 -- Input number of columns of matrix and sparsity coefficient. It returns a random matrix.
 testLinearSolver :: Int -> Double -> Bool
 testLinearSolver dim density = case someNatVal (fromIntegral dim) of
-  SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve mat in
+  SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve dim mat in
     mat `mult` sol == mempty
       where
         mat = SBMatrix $ fromJust $ SV.fromList listOfColumns
@@ -43,6 +43,6 @@ getRandomSBVectors numberOfRows density gen = go randomEntries
         (frontOfList, backOfList) = L.splitAt numberOfRows list
 
 testSuite :: TestTree
-testSuite = testGroup "QuadraticSieve"
+testSuite = testGroup "Linear Algebra"
   [ testSmallAndQuick "LinearSolver" testLinear
   ]

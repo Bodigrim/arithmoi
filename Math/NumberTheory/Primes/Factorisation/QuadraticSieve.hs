@@ -32,7 +32,6 @@ import Math.NumberTheory.Primes.Factorisation.LinearAlgebra
 import GHC.TypeNats
 import Data.Proxy
 import Data.Kind
-import Debug.Trace
 
 data SignedPrimeIntSet = SignedPrimeIntSet
   { sign :: !Bool
@@ -67,9 +66,9 @@ quadraticSieve n b t = runST $ do
         suitableSmoothNumbers = removeRows smoothNumbers
         matrix
           -- Also takes the sign into account.
-          | numberOfPrimes < length mat - 1 = trace (show (numberOfPrimes, length mat, counter)) $ suitableSmoothNumbers -- trace (show (numberOfPrimes, length mat, counter)) $ suitableSmoothNumbers
-          | odd counter                     = trace (show (numberOfPrimes, length mat, counter)) $ goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
-          | otherwise                       = trace (show (numberOfPrimes, length mat, counter)) $ goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
+          | numberOfPrimes < length mat - 1 = suitableSmoothNumbers
+          | odd counter                     = goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
+          | otherwise                       = goSieving smoothNumbers (newStartingPoint - intToInteger (counter * t)) (counter + 1)
           where
             numberOfPrimes = PS.size (foldr (\col acc -> acc <> primeSet col) mempty mat)
             mat = fmap snd suitableSmoothNumbers
@@ -81,7 +80,7 @@ quadraticSieve n b t = runST $ do
     goSolving seed sievingData
       | factor /= 1 && factor /= n                                          = factor
       | (firstSquare ^ (2 :: Int) - secondSquare ^ (2 :: Int)) `mod` n /= 0 = error "Algorithm incorrect."
-      | otherwise                                                           = goSolving (seed + 1) sievingData
+      | otherwise                                                           = 1 -- goSolving (seed + 1) sievingData
       where
         factor = gcd (firstSquare - secondSquare) n
         firstSquare = findFirstSquare n (V.fromList (fmap fst sievingData)) solution
@@ -185,8 +184,8 @@ translate listOfFactorisations = translateHelper listOfFactorisations (length li
             toIndices :: KnownNat dim => SignedPrimeIntSet -> SBVector dim
             toIndices x = SBVector $ U.fromList $ map fromIntegral $ if sign x then 0 : primeTranslation else primeTranslation
                   where
-                    primeTranslation = binarySearch (PS.toAscList (primeSet x)) $ indexedPrimes
-                    indexedPrimes = U.fromList . PS.toAscList $ foldMap primeSet $ columns
+                    primeTranslation = binarySearch (PS.toAscList (primeSet x)) indexedPrimes
+                    indexedPrimes = U.fromList . PS.toAscList $ foldMap primeSet columns
 
 linearSolve' :: Int -> SomeKnown SBMatrix -> SomeKnown DBVector
 linearSolve' seed (SomeKnown m) = SomeKnown (linearSolve seed m)
