@@ -31,11 +31,12 @@ import Control.Monad.ST
 import GHC.TypeNats
 import Data.Proxy
 import Data.Kind
+import System.Random
+import System.IO.Unsafe
+import System.CPUTime
 import Data.Maybe
 import Data.Bit
 import Data.Bifunctor
-
-import Debug.Trace
 
 -- This datatype stores factorisations of numbers. Its @sign@ describes the
 -- sign of the number (True = Negative and False = Non-negative) and @primeSet@
@@ -100,15 +101,17 @@ findSquares n b t = runST $ do
       pure matrix
 
     indexedSmoothNumbers = goSieving [] startingPoint 1
+    initialSeed = mkStdGen $ fromIntegral $ unsafePerformIO getCPUTime
 
-    goSolving :: Int -> [(Integer, SignedPrimeIntSet)] -> [(Integer, Integer)]
-    goSolving seed sievingData = trace "+" $ firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) sievingData
+    goSolving :: StdGen -> [(Integer, SignedPrimeIntSet)] -> [(Integer, Integer)]
+    goSolving seed sievingData = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving nextSeed sievingData
       where
         firstSquare = findFirstSquare n (V.fromList (fmap fst sievingData)) solution
         secondSquare = findSecondSquare n (V.fromList (fmap (snd . second primeSet) sievingData)) solution
         solution = convertToList $ linearSolve' seed $ translate $ fmap snd sievingData
+        nextSeed = snd . next $ seed
 
-  pure $ goSolving (integerToInt n) indexedSmoothNumbers
+  pure $ goSolving initialSeed indexedSmoothNumbers
 
 -- This routine generates the sieving interval. It takes a function @f@,
 -- @startingPoint@, and a dimension @dim@. It returns tuples whose
@@ -208,7 +211,7 @@ binarySearch list v = go 0 (len - 1) list v
 data SomeKnown (f :: Nat -> Type) where
   SomeKnown :: KnownNat k => f k -> SomeKnown f
 
-linearSolve' :: Int -> SomeKnown SBMatrix -> SomeKnown DBVector
+linearSolve' :: StdGen -> SomeKnown SBMatrix -> SomeKnown DBVector
 linearSolve' seed (SomeKnown m) = SomeKnown (linearSolve seed m)
 
 convertToList :: SomeKnown DBVector -> [Int]

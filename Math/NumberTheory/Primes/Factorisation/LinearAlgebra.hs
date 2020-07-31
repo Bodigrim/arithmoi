@@ -54,15 +54,6 @@ instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
   mappend = (<>)
 
-listBits' :: KnownNat k => DBVector k -> [Mod k]
-listBits' = unsafeCoerce listBits
-
-flipBit' :: KnownNat k => SMU.MVector k s Bit -> Mod k -> ST s ()
-flipBit' = unsafeCoerce (unsafeFlipBit :: MU.MVector s Bit -> Int -> ST s ())
-
-index' :: KnownNat k => SBMatrix k -> Mod k -> SBVector k
-index' = unsafeCoerce SV.index
-
 -- | Dot product of two dense Binary Vectors of the same size.
 dot :: KnownNat k => DBVector k -> DBVector k -> Bit
 dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.fromSized v1) (SU.fromSized v2)
@@ -75,13 +66,22 @@ mult matrix vector = runST $ do
   ws <- SU.unsafeFreeze vs
   pure $ DBVector ws
 
+listBits' :: KnownNat k => DBVector k -> [Mod k]
+listBits' = unsafeCoerce listBits
+
+flipBit' :: KnownNat k => SMU.MVector k s Bit -> Mod k -> ST s ()
+flipBit' = unsafeCoerce (unsafeFlipBit :: MU.MVector s Bit -> Int -> ST s ())
+
+index' :: KnownNat k => SBMatrix k -> Mod k -> SBVector k
+index' = unsafeCoerce SV.index
+
 -- | It takes a random seed and a square singular matrix and it returns an
 -- elemnent of its kernel. It does not check if the matrix is singular.
-linearSolve :: KnownNat k => Int -> SBMatrix k -> DBVector k
+linearSolve :: KnownNat k => StdGen -> SBMatrix k -> DBVector k
 linearSolve seed matrix = linearSolveHelper 1 matrix randomVectors 1
   where
     -- The floating point number is the density of the random vectors.
-    randomVectors = getRandomDBVectors 0.4 $ mkStdGen seed
+    randomVectors = getRandomDBVectors 0.1 seed
 
 linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix k -> [DBVector k] -> Int -> DBVector k
 linearSolveHelper _ _ [] _ = error "Not enough random vectors"
