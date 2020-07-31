@@ -24,13 +24,14 @@ testLinear dim = dim < 2 || testLinearSolver dim 0.4
 -- Input number of columns of matrix and density coefficient. It returns a random matrix.
 testLinearSolver :: Int -> Double -> Bool
 testLinearSolver dim density = case someNatVal (fromIntegral dim) of
-  SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve dim mat in
+  SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve seed mat in
     mat `mult` sol == mempty
       where
         mat = SBMatrix $ fromJust $ SV.fromList listOfColumns
         -- Choosing @(dim - 2)@ below implies that the number of rows is at most one less than
         -- the number of columns. This ensures the matrix is singular.
-        listOfColumns = L.take dim $ getRandomSBVectors (dim - 2) density $ mkStdGen $ fromIntegral $ unsafePerformIO getCPUTime
+        listOfColumns = L.take dim $ getRandomSBVectors (dim - 2) density seed
+        seed = mkStdGen $ fromIntegral $ unsafePerformIO getCPUTime
 
 -- Infinite lists of random SBVectors.
 getRandomSBVectors :: KnownNat k => Int -> Double -> StdGen -> [SBVector k]
