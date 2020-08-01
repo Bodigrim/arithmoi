@@ -89,7 +89,7 @@ findSquares n b t = runST $ do
         suitableSmoothNumbers = S.toList . S.fromList . removeRows $ smoothNumbers
         matrix
           -- Here @+1@ takes into account of the further constraint given
-          -- by the negative  numbers.
+          -- by the negative numbers.
           | numberOfPrimes + 1 < length mat = suitableSmoothNumbers
           -- If the counter is odd the sieve moves one block to the right.
           | odd counter                     = goSieving smoothNumbers (newStartingPoint + intToInteger (counter * t)) (counter + 1)
