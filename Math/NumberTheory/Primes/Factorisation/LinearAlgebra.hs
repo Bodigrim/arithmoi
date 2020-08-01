@@ -94,7 +94,7 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
   -- in the image of the matrix. This changes @z@.
   | potentialSolution == mempty && counter > 5  = linearSolveHelper 1 matrix otherVecs 1
   -- This is a good solution.
-  | otherwise                                    = potentialSolution
+  | otherwise                                   = potentialSolution
   where
     potentialSolution = findSolution singularities matrix almostZeroVector
     almostZeroVector = evaluate matrix z reducedMinPoly

@@ -12,7 +12,6 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
-import qualified Data.Set as S
 import qualified Data.List as L
 import qualified Data.IntMap as I
 import qualified Data.Vector as V
@@ -86,7 +85,7 @@ findSquares n b t = runST $ do
       let
         smoothNumbers = previousFactorisations ++ V.toList (findSmoothNumbers newStartingPoint sievingIntervalF)
         -- Removes duplicates.
-        suitableSmoothNumbers = S.toList . S.fromList . removeRows $ smoothNumbers
+        suitableSmoothNumbers = removeRows $ smoothNumbers
         matrix
           -- Here @+1@ takes into account of the further constraint given
           -- by the negative numbers.
