@@ -84,8 +84,7 @@ findSquares n b t = runST $ do
       sievingIntervalF <- V.unsafeFreeze sievingIntervalM
       let
         smoothNumbers = previousFactorisations ++ V.toList (findSmoothNumbers newStartingPoint sievingIntervalF)
-        -- Removes duplicates.
-        suitableSmoothNumbers = removeRows $ smoothNumbers
+        suitableSmoothNumbers = removeRows smoothNumbers
         matrix
           -- Here @+1@ takes into account of the further constraint given
           -- by the negative numbers.
