@@ -17,10 +17,10 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
 import Data.Semigroup
 #endif
 import qualified Data.List as L
+import qualified Data.Vector as V
 import qualified Data.Vector.Sized as SV
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Sized as SU
-import qualified Data.Vector.Unboxed.Mutable as MU
 import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
 import qualified Data.Vector.Generic.Sized.Internal as GSI
 import qualified Data.Vector.Generic.Mutable.Sized.Internal as GMSI
@@ -31,7 +31,6 @@ import Data.Proxy
 import System.Random
 import Data.Foldable
 import Data.Mod.Word
-import Unsafe.Coerce
 import Data.Maybe
 import Data.Bit
 import Data.Bits
@@ -64,20 +63,20 @@ dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.from
 mult :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k
 mult matrix vector = runST $ do
   vs <- SMU.new
-  traverse_ (U.mapM_ (flipBit' vs) . unSBVector . (matrix `index'`)) $ listBits' vector
+  traverse_ (U.mapM_ (flipBit' vs . wordToInt . unMod) . unSBVector . (matrix `index'`)) $ listBits' vector
   ws <- SU.unsafeFreeze vs
   pure $ DBVector ws
 
-listBits' :: KnownNat k => DBVector k -> [Mod k]
-listBits' = unsafeCoerce listBits
+listBits' :: KnownNat k => DBVector k -> [Int]
+listBits' (DBVector (GSI.Vector v)) = listBits v
 
-flipBit' :: KnownNat k => SMU.MVector k s Bit -> Mod k -> ST s ()
-flipBit' = unsafeCoerce (unsafeFlipBit :: MU.MVector s Bit -> Int -> ST s ())
+flipBit' :: KnownNat k => SMU.MVector k s Bit -> Int -> ST s ()
+flipBit' (GMSI.MVector v) = unsafeFlipBit v
 
-index' :: KnownNat k => SBMatrix k -> Mod k -> SBVector k
-index' = unsafeCoerce SV.index
+index' :: KnownNat k => SBMatrix k -> Int -> SBVector k
+index' (SBMatrix (GSI.Vector v)) = V.unsafeIndex v
 
-intVal :: KnownNat k => SBMatrix k -> Int
+intVal :: KnownNat k => a k -> Int
 intVal = naturalToInt . natVal
 
 -- | It takes a random seed and a square singular matrix and it returns an
@@ -91,21 +90,23 @@ linearSolve seed matrix = linearSolveHelper 1 matrix randomVectors 1
 linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix k -> [DBVector k] -> Int -> DBVector k
 linearSolveHelper _ _ [] _ = error "Not enough random vectors"
 linearSolveHelper _ _ [_] _ = error "Not enough random vectors"
-linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
-  -- If the algorithm does not find a solution, try another random vector @x@.
-  | potentialSolution == mempty && counter <= 5 = linearSolveHelper potentialMinPoly matrix (z : otherVecs) (counter + 1)
-  -- If the algorithm does not find a solution after five iterations,
-  -- most likely (>90%), it means that it picked a bad random vector @z@
-  -- in the image of the matrix. This changes @z@.
-  | potentialSolution == mempty && counter > 5  = linearSolveHelper 1 matrix otherVecs 1
+linearSolveHelper previousPoly matrix (z : x : otherVecs) counter = case potentialSolution of
   -- This is a good solution.
-  | otherwise                                   = potentialSolution
+  Just solution -> solution
+  Nothing
+    -- If the algorithm does not find a solution, try another random vector @x@.
+    | counter <= 5 -> linearSolveHelper potentialMinPoly matrix (z : otherVecs) (counter + 1)
+    -- If the algorithm does not find a solution after five iterations,
+    -- most likely (>90%), it means that it picked a bad random vector @z@
+    -- in the image of the matrix. This changes @z@.
+    | otherwise    -> linearSolveHelper 1 matrix otherVecs 1
   where
-    potentialSolution = findSolution (length singularities) matrix almostZeroVector
-    almostZeroVector = evaluate matrix z $ toF2Poly . U.fromList $ reducedMinPoly
-    (singularities, reducedMinPoly) = L.break unBit (U.toList $ unF2Poly potentialMinPoly)
+    potentialSolution = findSolution countOfSingularities matrix almostZeroVector
+    almostZeroVector = evaluate matrix z $ toF2Poly $ U.drop countOfSingularities vectorMinPoly
+    countOfSingularities = fromMaybe (U.length vectorMinPoly) $ bitIndex (Bit True) vectorMinPoly
     -- Information gathered from the previous random vector @x@ is used in
     -- the subsequent iteration.
+    vectorMinPoly = unF2Poly potentialMinPoly
     potentialMinPoly = lcm previousPoly candidateMinPoly
     candidateMinPoly = findCandidatePoly matrix z x
 
@@ -113,7 +114,7 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
 getRandomDBVectors :: forall k. KnownNat k => Double -> StdGen -> [DBVector k]
 getRandomDBVectors density gen = go $ randomRs (0, 1) gen
   where
-    numberOfColumns = naturalToInt $ natVal (Proxy :: Proxy k)
+    numberOfColumns = intVal (Proxy :: Proxy k)
     go :: KnownNat k => [Double] -> [DBVector k]
     go list = newVector `seq` newVector : go backOfList
       where
@@ -149,13 +150,10 @@ findCandidatePoly matrix z x = berlekampMassey dim errorPoly randomSequence
 -- This routine takes a polynomial @p@, a @matrix@ and a vector @w@ and
 -- returns @p(A)w@.
 evaluate :: KnownNat k => SBMatrix k -> DBVector k -> F2Poly -> DBVector k
-evaluate matrix w poly = foldr (\coeff acc -> (matrix `mult` acc) <> (if unBit coeff then w else mempty)) mempty $ U.toList . unF2Poly $ poly
+evaluate matrix w poly = U.foldr (\coeff acc -> (matrix `mult` acc) <> (if unBit coeff then w else mempty)) mempty $ unF2Poly poly
 
 -- Tries to infer a solution. If it does not succeed, it returns an empty solution.
-findSolution :: KnownNat k => Int -> SBMatrix k -> DBVector k -> DBVector k
-findSolution len matrix vector
-  | len == 0         = mempty
-  | result == mempty = vector
-  | otherwise        = findSolution (len - 1) matrix result
+findSolution :: KnownNat k => Int -> SBMatrix k -> DBVector k -> Maybe (DBVector k)
+findSolution len matrix vector = fmap fst $ listToMaybe $ filter ((== mempty) . snd) $ zip vectors (tail vectors)
   where
-    result = matrix `mult` vector
+    vectors = take (len + 1) $ L.iterate (matrix `mult`) vector
