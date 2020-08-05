@@ -22,6 +22,8 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Unboxed.Mutable as MU
 import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
+import qualified Data.Vector.Generic.Sized.Internal as GSI
+import qualified Data.Vector.Generic.Mutable.Sized.Internal as GMSI
 import Math.NumberTheory.Utils.FromIntegral
 import Control.Monad.ST
 import GHC.TypeNats (Nat, KnownNat, natVal)
@@ -75,13 +77,16 @@ flipBit' = unsafeCoerce (unsafeFlipBit :: MU.MVector s Bit -> Int -> ST s ())
 index' :: KnownNat k => SBMatrix k -> Mod k -> SBVector k
 index' = unsafeCoerce SV.index
 
+intVal :: KnownNat k => SBMatrix k -> Int
+intVal = naturalToInt . natVal
+
 -- | It takes a random seed and a square singular matrix and it returns an
 -- elemnent of its kernel. It does not check if the matrix is singular.
-linearSolve :: KnownNat k => StdGen -> SBMatrix k -> DBVector k
+linearSolve :: KnownNat k => Int -> SBMatrix k -> DBVector k
 linearSolve seed matrix = linearSolveHelper 1 matrix randomVectors 1
   where
     -- The floating point number is the density of the random vectors.
-    randomVectors = getRandomDBVectors 0.1 seed
+    randomVectors = getRandomDBVectors 0.5 $ mkStdGen seed
 
 linearSolveHelper :: KnownNat k => F2Poly -> SBMatrix k -> [DBVector k] -> Int -> DBVector k
 linearSolveHelper _ _ [] _ = error "Not enough random vectors"
@@ -96,8 +101,8 @@ linearSolveHelper previousPoly matrix (z : x : otherVecs) counter
   -- This is a good solution.
   | otherwise                                   = potentialSolution
   where
-    potentialSolution = findSolution singularities matrix almostZeroVector
-    almostZeroVector = evaluate matrix z reducedMinPoly
+    potentialSolution = findSolution (length singularities) matrix almostZeroVector
+    almostZeroVector = evaluate matrix z $ toF2Poly . U.fromList $ reducedMinPoly
     (singularities, reducedMinPoly) = L.break unBit (U.toList $ unF2Poly potentialMinPoly)
     -- Information gathered from the previous random vector @x@ is used in
     -- the subsequent iteration.
@@ -120,7 +125,7 @@ getRandomDBVectors density gen = go $ randomRs (0, 1) gen
 generateData :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k -> F2Poly
 generateData matrix z x = toF2Poly $ U.fromList $ reverse $ map (x `dot`) matrixPowers
   where
-    matrixPowers = take (((*2) . naturalToInt . natVal) matrix) $ L.iterate (matrix `mult`) z
+    matrixPowers = take (((*2) . intVal) matrix) $ L.iterate (matrix `mult`) z
 
 -- This routine finds the generating polynomial of the random sequence computed
 -- in @generateData@.
@@ -130,7 +135,6 @@ berlekampMassey dim = go 1 0
     go :: F2Poly -> F2Poly -> F2Poly ->F2Poly -> F2Poly
     go oneBefore twoBefore a b
       | U.length (unF2Poly b) <= dim = oneBefore
-      -- Updated value is given by @twoBefore - oneBefore * q@
       | otherwise                    = go (twoBefore - oneBefore * q) oneBefore b r
         where
           (q, r) = quotRem a b
@@ -140,18 +144,18 @@ findCandidatePoly matrix z x = berlekampMassey dim errorPoly randomSequence
   where
     randomSequence = generateData matrix z x
     errorPoly = fromInteger (1 `shiftL` (2 * dim)) :: F2Poly
-    dim = naturalToInt $ natVal matrix
+    dim = intVal matrix
 
 -- This routine takes a polynomial @p@, a @matrix@ and a vector @w@ and
 -- returns @p(A)w@.
-evaluate :: KnownNat k => SBMatrix k -> DBVector k -> [Bit] -> DBVector k
-evaluate matrix w = foldr (\coeff acc -> (matrix `mult` acc) <> (if unBit coeff then w else mempty)) mempty
+evaluate :: KnownNat k => SBMatrix k -> DBVector k -> F2Poly -> DBVector k
+evaluate matrix w poly = foldr (\coeff acc -> (matrix `mult` acc) <> (if unBit coeff then w else mempty)) mempty $ U.toList . unF2Poly $ poly
 
 -- Tries to infer a solution. If it does not succeed, it returns an empty solution.
-findSolution :: KnownNat k => [Bit] -> SBMatrix k -> DBVector k -> DBVector k
-findSolution [] _ _ = mempty
-findSolution (_ : xs) matrix vector
+findSolution :: KnownNat k => Int -> SBMatrix k -> DBVector k -> DBVector k
+findSolution len matrix vector
+  | len == 0         = mempty
   | result == mempty = vector
-  | otherwise        = findSolution xs matrix result
+  | otherwise        = findSolution (len - 1) matrix result
   where
     result = matrix `mult` vector
