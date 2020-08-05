@@ -9,3 +9,5 @@ dist-newstyle
 .swp
 .stack-work
 *.prof
+*.hp
+*.svg
