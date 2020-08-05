@@ -154,6 +154,6 @@ evaluate matrix w poly = U.foldr (\coeff acc -> (matrix `mult` acc) <> (if unBit
 
 -- Tries to infer a solution. If it does not succeed, it returns an empty solution.
 findSolution :: KnownNat k => Int -> SBMatrix k -> DBVector k -> Maybe (DBVector k)
-findSolution len matrix vector = fmap fst $ listToMaybe $ filter ((== mempty) . snd) $ zip vectors (tail vectors)
+findSolution len matrix vector = fmap fst $ find ((== mempty) . snd) (zip vectors (tail vectors))
   where
     vectors = take (len + 1) $ L.iterate (matrix `mult`) vector
