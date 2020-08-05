@@ -24,7 +24,7 @@ testLinear dim = dim < 2 || testLinearSolver dim 0.4
 -- Input number of columns of matrix and density coefficient. It returns a random matrix.
 testLinearSolver :: Int -> Double -> Bool
 testLinearSolver dim density = case someNatVal (fromIntegral dim) of
-  -- Here @dim@ works as a random seed.
+  -- Here @dim@ acts as a random seed.
   SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve dim mat in
     mat `mult` sol == mempty
       where
