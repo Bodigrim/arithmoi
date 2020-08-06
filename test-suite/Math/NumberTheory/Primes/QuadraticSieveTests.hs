@@ -16,9 +16,9 @@ checkQuadratic (Large i) (Large j)
   | n < 100000                 = True
   | otherwise                  = (firstSquare ^ (2 :: Int) - secondSquare ^ (2 :: Int)) `mod` n == 0
     where
-      (firstSquare, secondSquare) = head $ findSquares n b b
-      b = floor l
-      l = exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double
+      (firstSquare, secondSquare) = trace ("Number: " ++ show n) $ head $ findSquares n t t 3
+      t = floor l
+      l = (*10) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double
       n = toInteger p * toInteger q
       p = unPrime . nextPrime $ i `mod` 100000000
       q = unPrime . nextPrime $ j `mod` 100000000
