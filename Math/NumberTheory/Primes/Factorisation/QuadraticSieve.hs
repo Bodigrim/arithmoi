@@ -173,7 +173,7 @@ smoothSieveM sievingIntervalM base a b c m =
             Just inverseOfA -> map (\root -> (wordToInt . unMod) (fromIntegral m + fromInteger (- b + root) * inverseOfA :: Mod primePower)) squareRootsOfPower
             Nothing         -> case invertMod (fromInteger (2 * b) :: Mod primePower) of
               -- Temporary fix. If power > 2, something better has to be found.
-              Just inverseOf2B -> if power > 2 then [] else [(wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower)]
+              Just inverseOf2B -> [(wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower) | not (power > 2)]
               -- For this to be true 2 cannot be a factor of a.
               -- Better to ouput @unPrime prime@ as a factor.
               Nothing          -> error ("Found an illegal factor: " ++ show prime)
