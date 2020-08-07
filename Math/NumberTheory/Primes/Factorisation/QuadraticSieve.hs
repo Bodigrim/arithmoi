@@ -33,6 +33,7 @@ import Data.Kind
 import Data.Foldable
 import Data.Maybe
 import Data.Bit
+import Data.Bifunctor
 import Debug.Trace
 
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@, @t@ and
@@ -68,7 +69,7 @@ findSquares n t m k = runST $ do
     a = foldr (\(p, i) acc -> acc * unPrime p ^ i) 1 decompositionOfA
     valuesOfB = filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
     valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
-    mappingFunctions = map (\ (b, c) x -> a * x * x + 2 * b * x + c) $ zip valuesOfB valuesOfC
+    mappingFunctions = zipWith (curry (\ (b, c) x -> a * x * x + 2 * b * x + c)) valuesOfB valuesOfC
     squareRoots = map (findSquareRoots n m) factorBase
 
     goSieving :: [(Integer, I.IntMap Int)] -> [Integer -> Integer] -> [Integer] -> [Integer] -> [(Integer, I.IntMap Int)]
@@ -101,7 +102,7 @@ findSquares n t m k = runST $ do
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
         -- Add factorisation of a and
-        squaresData = map ((\ (int, im) -> (int, I.unionWith (+) (I.fromList (zip (map unPrime listOfFactors) (repeat 2))) im)) . (usefulSievingData !!)) solution
+        squaresData = map (second (I.unionWith (+) (I.fromList (zip (map unPrime listOfFactors) (repeat 2)))) . (usefulSievingData !!)) solution
         solution = convertToList $ linearSolve' seed $ translate $ fmap (convertToSet . snd) usefulSievingData
         usefulSievingData = removeRows sievingData
 
@@ -172,7 +173,7 @@ smoothSieveM sievingIntervalM base a b c m =
             Just inverseOfA -> map (\root -> (wordToInt . unMod) (fromIntegral m + fromInteger (- b + root) * inverseOfA :: Mod primePower)) squareRootsOfPower
             Nothing         -> case invertMod (fromInteger (2 * b) :: Mod primePower) of
               -- Temporary fix. If power > 2, something better has to be found.
-              Just inverseOf2B -> if power > 2 then [] else (wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower) : []
+              Just inverseOf2B -> if power > 2 then [] else [(wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower)]
               -- For this to be true 2 cannot be a factor of a.
               -- Better to ouput @unPrime prime@ as a factor.
               Nothing          -> error ("Found an illegal factor: " ++ show prime)
@@ -197,7 +198,7 @@ findSmoothNumbers m a b = V.imapMaybe selectSmooth
 removeRows :: [(Integer, I.IntMap Int)] -> [(Integer, I.IntMap Int)]
 removeRows indexedFactorisations
   | onlyOnce == mempty = indexedFactorisations
-  | otherwise          = removeRows $ filter (\(_, im) -> S.disjoint (convertToSet im) onlyOnce) indexedFactorisations
+  | otherwise          = removeRows $ filter (\(_, im) -> S.null (S.intersection (convertToSet im) onlyOnce)) indexedFactorisations
   where
     onlyOnce = appearsOnlyOnce $ map (convertToSet . snd) indexedFactorisations
 
