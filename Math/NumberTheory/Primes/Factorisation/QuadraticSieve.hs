@@ -77,22 +77,22 @@ findSquares n t m k = runST $ do
     goSieving _ _ _ [] = trace ("Parameters are not large enough: " ++ show (n, t, m, k)) [] --error "Parameters are not large enough."
     goSieving previousFactorisations (f : fs) (b : bs) (c : cs) = runST $ do
       let
-        sievingInterval = trace ("a: " ++ show a ++ "\nb: " ++ show b ++ "\nc: " ++ show c ++ "\nm: " ++ show m) $ generateInterval f m
+        sievingInterval = generateInterval f m -- trace ("a: " ++ show a ++ "\nb: " ++ show b ++ "\nc: " ++ show c ++ "\nm: " ++ show m) $
       sievingIntervalM <- V.thaw sievingInterval
-      smoothSieveM sievingIntervalM (zip factorBase squareRoots) a b m
+      smoothSieveM sievingIntervalM (zip factorBase squareRoots) a b c m
       sievingIntervalF <- V.unsafeFreeze sievingIntervalM
       let
         smoothNumbers = previousFactorisations ++ V.toList (findSmoothNumbers m a b sievingIntervalF)-- Consider removing duplicates
         matrixSmoothNumbers
           -- Also takes the sign into account.
-          | numberOfConstraints < length mat = trace (show (numberOfConstraints, length mat)) smoothNumbers
-          | otherwise                        = trace (show (numberOfConstraints, length mat)) $ goSieving smoothNumbers fs bs cs
+          | numberOfConstraints < length mat = smoothNumbers -- trace (show (numberOfConstraints, length mat))
+          | otherwise                        = goSieving smoothNumbers fs bs cs -- trace (show (numberOfConstraints, length mat)) $
           where
             numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
             mat = fmap snd smoothNumbers
       pure matrixSmoothNumbers
 
-    indexedSmoothNumbers = trace ("Factor Base: " ++ show (length (filter (\x -> head x /= []) squareRoots))) $ goSieving [] mappingFunctions valuesOfB valuesOfC
+    indexedSmoothNumbers = goSieving [] mappingFunctions valuesOfB valuesOfC-- trace ("Factor Base: " ++ show (length (filter (\x -> head x /= []) squareRoots))) $
 
     goSolving :: Int -> [(Integer, I.IntMap Int)] -> [(Integer, Integer)]
     goSolving _ [] = [(0,0)] -- Only to facilitate testing
@@ -133,9 +133,9 @@ findSquareRoots n m = go 1
     go :: Word -> Prime Int -> [[Integer]]
     go power prime
       | unPrime prime ^ power > 2 * m + 1 = []
-      -- If roots == [], no further roots will be found so this can be optimised.
-      -- Nonetheless, it may e important for all to have the same length.
-      | null roots                        = []
+      -- If @null roots@, no further roots will be found so this can be optimised.
+      -- Nonetheless, it may be important for all to have the same length.
+      | null roots                        = [[], []]
       | otherwise                         = roots : go (power + 1) prime
       where
         roots = sqrtsModFactorisation n [((fromJust . toPrimeIntegral) prime, power)]
@@ -160,8 +160,8 @@ generateInterval f m = V.generate (2 * m + 1) go
 -- @sievingIntervalM@. When, a division occurs, the value in the interval is
 -- divided. At the end of the process, the smooth numbers correspond to tuples
 -- whose first component is 1. The second component is their factorisation.
-smoothSieveM :: MV.MVector s (Integer, I.IntMap Int) -> [(Prime Int, [[Integer]])] -> Integer -> Integer -> Int -> ST s ()
-smoothSieveM sievingIntervalM base a b m =
+smoothSieveM :: MV.MVector s (Integer, I.IntMap Int) -> [(Prime Int, [[Integer]])] -> Integer -> Integer -> Integer -> Int -> ST s ()
+smoothSieveM sievingIntervalM base a b c m =
   forM_ base $ \(prime, roots) ->
     -- After this bound there is no certainty that at least one elemnt in the sieve will be divisible. It may however be worth increasing.
     -- Consider filtering indices here with (takeWhile (\r -> (unPrime prime) ^ r <=  2 * m + 1) [1,2..]). Somehow, it does not terminate.
@@ -170,13 +170,12 @@ smoothSieveM sievingIntervalM base a b m =
         let
           startingIndices = case invertMod (fromInteger a :: Mod primePower) of
             Just inverseOfA -> map (\root -> (wordToInt . unMod) (fromIntegral m + fromInteger (- b + root) * inverseOfA :: Mod primePower)) squareRootsOfPower
-            Nothing         -> []
-              --                   case invertMod (fromInteger (2 * b) :: Mod primePower) of
-              -- -- Temporary fix. If power > 2, something better has to be found.
-              -- Just inverseOf2B -> if power > 2 then [] else (wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower) : []
-              -- -- For this to be true 2 cannot be a factor of a.
-              -- -- Better to ouput @unPrime prime@ as a factor.
-              -- Nothing          -> error ("Found an illegal factor: " ++ show prime)
+            Nothing         -> case invertMod (fromInteger (2 * b) :: Mod primePower) of
+              -- Temporary fix. If power > 2, something better has to be found.
+              Just inverseOf2B -> if power > 2 then [] else (wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower) : []
+              -- For this to be true 2 cannot be a factor of a.
+              -- Better to ouput @unPrime prime@ as a factor.
+              Nothing          -> error ("Found an illegal factor: " ++ show prime)
         forM_ startingIndices $ \startingIndex -> do
           let change (y, im) = (y `div` (intToInteger . unPrime) prime, I.insert (unPrime prime) power im)
           forM_ [startingIndex, startingIndex + (unPrime prime ^ power)..(2 * m)] $ \entry ->
