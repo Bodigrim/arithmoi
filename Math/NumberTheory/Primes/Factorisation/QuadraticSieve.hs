@@ -20,14 +20,15 @@ import qualified Data.Vector.Sized as SV
 import qualified Data.Vector.Mutable as MV
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Sized as SU
+import qualified Data.Mod as M
+import qualified Data.Mod.Word as MW
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Utils.FromIntegral
 import Math.NumberTheory.Primes.Factorisation.LinearAlgebra
 import Control.Monad
 import Control.Monad.ST
-import Data.Mod.Word
-import GHC.TypeNats hiding (Mod)
+import GHC.TypeNats
 import Data.Proxy
 import Data.Kind
 import Data.Foldable
@@ -36,6 +37,7 @@ import Data.Bit
 import Data.Bifunctor
 import Debug.Trace
 
+import Math.NumberTheory.Roots
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@, @t@ and
 -- @k@, the Quadratic Sieve attempts to output @factor@, a factor of @n@. The
 -- parameter @b@ controls the size of the factor base. This consists of all
@@ -48,9 +50,9 @@ quadraticSieve n t m k = findFactor n $ findSquares n t m k
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
 findFactor _ [] = error "Quadratic Sieve failed."
 findFactor n ((x, y) : otherSquares)
-  | factor /= 1 && factor /= n = factor
-  | x * x - y * y `mod` n /= 0 = error "Algorithm incorrect."
-  | otherwise                  = findFactor n otherSquares
+  | factor /= 1 && factor /= n   = factor
+  | (x * x - y * y) `mod` n /= 0 = error ("Algorithm incorrect." ++ show (x, y))
+  | otherwise                    = findFactor n otherSquares
   where
     factor = gcd (x - y) n
 
@@ -63,11 +65,11 @@ findSquares n t m k = runST $ do
   let
     factorBase = [nextPrime 2..precPrime t]
     -- Make sure rootOfA is an Int
-    rootOfA = ((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double
+    rootOfA = traceShowId $ ((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double
     listOfFactors = generatePrimes n rootOfA k
     decompositionOfA = zip (map (fromJust . toPrimeIntegral) listOfFactors) (repeat 2)
     a = foldr (\(p, i) acc -> acc * unPrime p ^ i) 1 decompositionOfA
-    valuesOfB = filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
+    valuesOfB = trace (show ((fromInteger (integerSquareRoot (2*n))) / (fromInteger (a * fromIntegral m)) :: Double)) $ filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
     valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
     mappingFunctions = zipWith (curry (\ (b, c) x -> a * x * x + 2 * b * x + c)) valuesOfB valuesOfC
     squareRoots = map (findSquareRoots n m) factorBase
@@ -86,8 +88,8 @@ findSquares n t m k = runST $ do
         smoothNumbers = previousFactorisations ++ V.toList (findSmoothNumbers m a b sievingIntervalF)-- Consider removing duplicates
         matrixSmoothNumbers
           -- Also takes the sign into account.
-          | numberOfConstraints < length mat = smoothNumbers -- trace (show (numberOfConstraints, length mat))
-          | otherwise                        = goSieving smoothNumbers fs bs cs -- trace (show (numberOfConstraints, length mat)) $
+          | numberOfConstraints < length mat = trace (show (length mat, numberOfConstraints)) $ smoothNumbers -- trace (show (numberOfConstraints, length mat))
+          | otherwise                        = trace (show (length mat, numberOfConstraints)) $ goSieving smoothNumbers fs bs cs -- trace (show (numberOfConstraints, length mat)) $
           where
             numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
             mat = fmap snd smoothNumbers
@@ -111,9 +113,9 @@ findSquares n t m k = runST $ do
 generatePrimes :: Integer -> Double -> Int -> [Prime Int]
 generatePrimes n midPoint len = lowerPrimes ++ higherPrimes
   where
-    higherPrimes = take (len - length lowerPrimes) $ filter positiveResidue $ generatePrimesForwards $ floor midPoint
+    higherPrimes = take (len - length lowerPrimes) $ filter positiveResidue $ generatePrimesForwards $ floor midPoint + 1
     -- The length of @lowerPrimes@ may not be @len `div` 2@
-    lowerPrimes = take (len `div` 2) $ filter positiveResidue $ generatePrimesBackwards $ floor midPoint - 1
+    lowerPrimes = take (len `div` 2) $ filter positiveResidue $ generatePrimesBackwards $ floor midPoint
     positiveResidue p = jacobi n ((intToInteger . unPrime) p) == One
 
 generatePrimesForwards :: Int -> [Prime Int]
@@ -169,17 +171,18 @@ smoothSieveM sievingIntervalM base a b c m =
     forM_ (zip roots [1,2..]) $ \(squareRootsOfPower, power) -> case someNatVal (intToNatural (unPrime prime ^ power)) of
       SomeNat (Proxy :: Proxy primePower) -> do
         let
-          startingIndices = case invertMod (fromInteger a :: Mod primePower) of
-            Just inverseOfA -> map (\root -> (wordToInt . unMod) (fromIntegral m + fromInteger (- b + root) * inverseOfA :: Mod primePower)) squareRootsOfPower
-            Nothing         -> case invertMod (fromInteger (2 * b) :: Mod primePower) of
+          startingIndices = case MW.invertMod (fromInteger a :: MW.Mod primePower) of
+            Just inverseOfA -> map (\root -> (wordToInt . MW.unMod) (fromIntegral m + fromInteger (- b + root) * inverseOfA :: MW.Mod primePower)) squareRootsOfPower
+            Nothing         -> case MW.invertMod (fromInteger (2 * b) :: MW.Mod primePower) of
               -- Temporary fix. If power > 2, something better has to be found.
-              Just inverseOf2B -> [(wordToInt . unMod) (fromIntegral m - fromInteger c * inverseOf2B :: Mod primePower) | power <= 2]
+              Just inverseOf2B -> [(wordToInt . MW.unMod) (fromIntegral m - fromInteger c * inverseOf2B :: MW.Mod primePower) | power <= 2]
               -- For this to be true 2 cannot be a factor of a.
               -- Better to ouput @unPrime prime@ as a factor.
               Nothing          -> error ("Found an illegal factor: " ++ show prime)
         forM_ startingIndices $ \startingIndex -> do
           let change (y, im) = (y `div` (intToInteger . unPrime) prime, I.insert (unPrime prime) power im)
           forM_ [startingIndex, startingIndex + (unPrime prime ^ power)..(2 * m)] $ \entry ->
+            -- let change (y, im) = (if y `mod` (intToInteger . unPrime) prime == 0 then y `div` (intToInteger . unPrime) prime else error ("Sieve fail: " ++ show (prime, power, entry)), I.insert (unPrime prime) power im)
             MV.modify sievingIntervalM change entry
 
 -- This algorithm filters @sievingIntervalF@ for smooth numbers. It returns
@@ -264,7 +267,9 @@ convertToList (SomeKnown solution) = listBits $ SU.fromSized $ unDBVector soluti
 -- component of the tuple.
 -- Consider using Mod for clarity.
 findFirstSquare :: Integer -> [Integer] -> Integer
-findFirstSquare n = foldr (\x acc -> (x * acc) `mod` n) 1
+findFirstSquare n squaresData = case someNatVal (integerToNatural n) of
+  SomeNat (Proxy :: Proxy n) ->
+    naturalToInteger . M.unMod $ foldr (\x acc -> (fromInteger x :: M.Mod n) * acc) (1 :: M.Mod n) squaresData
 
 -- Finds the factorisations corresponding to the selected solutions and computes
 -- the total number of times a given prime occurs in the selected factorisations.
@@ -272,6 +277,10 @@ findFirstSquare n = foldr (\x acc -> (x * acc) `mod` n) 1
 -- square root is computed.
 -- Use Mod.
 findSecondSquare :: Integer -> [I.IntMap Int] -> Integer
-findSecondSquare n factorisations = I.foldrWithKey computeRoot 1 $ I.unionsWith (+) factorisations
-  where
-    computeRoot key power acc = (intToInteger key ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * acc) `mod` n
+findSecondSquare n factorisations = case someNatVal (integerToNatural n) of
+  SomeNat (Proxy :: Proxy n) ->
+    -- I would like to move part of this line further down but the compiler cannot deduce what n is.
+    naturalToInteger . M.unMod $ I.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $ I.unionsWith (+) factorisations
+  -- where
+  --   computeRoot :: KnownNat n => Int -> Int -> M.Mod n -> M.Mod n
+  --   computeRoot key power acc = (fromInteger (fromIntegral key) :: M.Mod n) ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * acc
