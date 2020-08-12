@@ -7,6 +7,7 @@ import Test.Tasty.QuickCheck as QC
 import Math.NumberTheory.TestUtils ()
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
+import Debug.Trace
 
 checkQuadratic :: Large Int -> Large Int -> Bool
 checkQuadratic (Large i) (Large j)
