@@ -184,10 +184,12 @@ findLogSmoothNumbers primeDivisors m a b sievedInterval = fmap fromJust $ filter
     (pivotIndex, pivotFac) = fromJust pivotFactorisation
     pivotFacMap = I.fromAscList $ map transform pivotFac
     transform (p, expo) = (integerToInt p, wordToInt expo)
+    -- Only temporary
+    ima = I.fromAscList $ map (\(p, expo) -> ((integerToInt . unPrime) p, wordToInt expo)) $ factorise a
     findSquareData (index, fac)
       | null fac                        = Just (a * intToInteger (index - m) + b, facMap)
       | (fst . last) fac < highestPrime = Just (a * intToInteger (index - m) + b, facMap)
-      | (fst . last) fac == largePrime  = Just ((a * intToInteger (index - m) + b) * (a * intToInteger (pivotIndex - m) + b), I.unionWith (+) facMap pivotFacMap)
+      | (fst . last) fac == largePrime  = Just ((a * intToInteger (index - m) + b) * (a * intToInteger (pivotIndex - m) + b), I.unionsWith (+) [ima, facMap, pivotFacMap])
       | otherwise                       = Nothing
       where
         facMap = I.fromAscList $ map transform fac
@@ -205,7 +207,7 @@ findLogSmoothNumbers primeDivisors m a b sievedInterval = fmap fromJust $ filter
     factorisations = V.toList $ V.imapMaybe factoriseIfSmooth sievedInterval
     -- Remembers index for later
     -- 18 is roughly log2 t. Should be raised for large prime variation
-    factoriseIfSmooth index (value, logResidue) = case logResidue < 22 of
+    factoriseIfSmooth index (value, logResidue) = case logResidue < 18 of
       True  -> Just (index, if value < 0 then (-1,1) : preFac else preFac)
       False -> Nothing
       where
