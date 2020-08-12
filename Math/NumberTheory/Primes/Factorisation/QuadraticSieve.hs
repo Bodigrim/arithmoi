@@ -89,7 +89,7 @@ findSquares n t m k = runST $ do
       smoothLogSieveM sievingLogIntervalM (zip factorBase squareRoots) a b c m
       sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
       let
-        newSmoothNumbers = V.toList $ findLogSmoothNumbers primeDivisors m a b $ V.zip sievingInterval sievedLogInterval
+        newSmoothNumbers = findLogSmoothNumbers primeDivisors m a b $ V.zip sievingInterval sievedLogInterval
         smoothNumbers = previousSmoothNumbers ++ newSmoothNumbers
         matrixSmoothNumbers
           -- Also takes the sign into account.
@@ -178,8 +178,8 @@ smoothLogSieveM sievingIntervalM base a b c m =
 -- This algorithm filters @sievingIntervalF@ for smooth numbers. It returns
 -- the smooth numbers together with their @index@ and @startingPoint@.
 -- This is needed in order to later compute @firstSquare@.
-findLogSmoothNumbers :: [Prime Int] -> Int -> Integer -> Integer -> V.Vector (Integer, Int) -> V.Vector (Integer, I.IntMap Int)
-findLogSmoothNumbers primeDivisors m a b sievedInterval = V.mapMaybe findSquareData factorisationData
+findLogSmoothNumbers :: [Prime Int] -> Int -> Integer -> Integer -> V.Vector (Integer, Int) -> [(Integer, I.IntMap Int)]
+findLogSmoothNumbers primeDivisors m a b sievedInterval = fmap fromJust $ filter isJust $ map findSquareData factorisationData
   where
     (pivotIndex, pivotFac) = fromJust pivotFactorisation
     pivotFacMap = I.fromAscList $ map transform pivotFac
@@ -195,17 +195,17 @@ findLogSmoothNumbers primeDivisors m a b sievedInterval = V.mapMaybe findSquareD
     factorisationData = case pivotFactorisation of
       Just pFac -> L.delete pFac factorisations
       Nothing   -> factorisations
-    pivotFactorisation = L.find ((== largePrime) fst . last . snd) factorisations
-    largePrime = if snd largePrimeData > 1 then fst largePrimeData else 0
-    largePrimeData = I.foldr (\key value (accKey, accValue) -> if value > accValue then (key, value) else (accKey, accValue)) (0,0) largePrimes
+    pivotFactorisation = L.find ((== largePrime) . fst . last . snd) factorisations
+    largePrime = trace ("Large prime: " ++ show largePrimeData) $ intToInteger $ if snd largePrimeData >= 2 then fst largePrimeData else 0
+    largePrimeData = I.foldrWithKey (\key value (accKey, accValue) -> if value > accValue then (key, value) else (accKey, accValue)) (0,0) largePrimes
     largePrimes :: I.IntMap Int
         -- @last@ is inefficient
     largePrimes = findLargePrimes highestPrime $ fmap (fst . last . snd) factorisations
     factorisations :: [(Int, [(Integer, Word)])]
-    factorisations = V.imapMaybe factoriseIfSmooth sievedInterval
+    factorisations = V.toList $ V.imapMaybe factoriseIfSmooth sievedInterval
     -- Remembers index for later
     -- 18 is roughly log2 t. Should be raised for large prime variation
-    factoriseIfSmooth index (value, logResidue) = case logResidue < 18 of
+    factoriseIfSmooth index (value, logResidue) = case logResidue < 22 of
       True  -> Just (index, if value < 0 then (-1,1) : preFac else preFac)
       False -> Nothing
       where
@@ -215,12 +215,12 @@ findLogSmoothNumbers primeDivisors m a b sievedInterval = V.mapMaybe findSquareD
     integerBase = map (intToInteger . unPrime) primeDivisors
 
 -- Make sure that t^2 is an Int
-findLargePrimes :: Int -> [(Integer, Word)] -> I.IntMap Int
+findLargePrimes :: Integer -> [Integer] -> I.IntMap Int
 findLargePrimes _ [] = mempty
 findLargePrimes highestPrime (highFactor : otherhighFactors)
-  | highFactor > highestPrime * highestPrime        = findLargePrimes highestPrime otherhighFactors
-  | highFactor > highestPrime && isPrime highFactor = I.insertWith (+) highFactor 1 $ findLargePrimes highestPrime otherhighFactors
-  | otherwise                                       = findLargePrimes highestPrime otherhighFactors
+  | highFactor > highestPrime * highestPrime                   = findLargePrimes highestPrime otherhighFactors
+  | highFactor > highestPrime && (isJust . isPrime) highFactor = I.insertWith (+) (integerToInt highFactor) 1 $ findLargePrimes highestPrime otherhighFactors
+  | otherwise                                                  = findLargePrimes highestPrime otherhighFactors
   where
 
 -- Removes all columns of the matrix which contain primes appearing only once.
@@ -305,7 +305,7 @@ findSecondSquare :: Integer -> [I.IntMap Int] -> Integer
 findSecondSquare n factorisations = case someNatVal (integerToNatural n) of
   SomeNat (Proxy :: Proxy n) ->
     -- I would like to move part of this line further down but the compiler cannot deduce what n is.
-    naturalToInteger . M.unMod $ I.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $ I.unionsWith (+) factorisations
+    naturalToInteger . M.unMod $ I.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (if power `mod` 2 == 0 then (power `div` 2 :: Int) else error "Wrong second square") * acc) (1 :: M.Mod n) $ I.unionsWith (+) factorisations
   -- where
   --   computeRoot :: KnownNat n => Int -> Int -> M.Mod n -> M.Mod n
   --   computeRoot key power acc = (fromInteger (fromIntegral key) :: M.Mod n) ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * acc
