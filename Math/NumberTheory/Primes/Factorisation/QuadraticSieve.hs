@@ -5,7 +5,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
-  ( quadraticSieve
+  ( QuadraticSieveConfig(..)
+  , quadraticSieve
+  , quadraticSieveManual
   , findSquares
   ) where
 
@@ -22,6 +24,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Mod as M
 import qualified Data.Mod.Word as MW
+import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Logarithms
 import Math.NumberTheory.Moduli.Sqrt
@@ -39,15 +42,44 @@ import Data.Bit
 import Data.Bifunctor
 import Debug.Trace
 
-import Math.NumberTheory.Roots
+data QuadraticSieveConfig = QuadraticSieveConfig
+  { qscFactorBase :: Int
+  , qscSievingInterval :: Int
+  , qscNumberOfBlocks :: Int
+  , qscSmoothThreshold :: Int
+  }
+
+autoConfig :: Integer -> QuadraticSieveConfig
+autoConfig n = QuadraticSieveConfig t m k h
+  where
+    -- + 4 for large prime variation
+    h = intLog2 t -- + 4
+    k
+      | l <= 15   = 1
+      | l <= 25   = 2
+      | l <= 35   = 3
+      | l <= 45   = 4
+      | l <= 55   = 5
+      | otherwise = 6
+    m = 3 * t `div` 2
+    t
+      | l <= 5    = floor (exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 8    = integerToInt (integerSquareRoot n)
+      | otherwise = floor ((*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+    -- number of digits of n
+    l = integerLog10 n
+
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@, @t@ and
 -- @k@, the Quadratic Sieve attempts to output @factor@, a factor of @n@. The
 -- parameter @b@ controls the size of the factor base. This consists of all
 -- the relevant primes which are less than or equal to @b@. The parameter @t@
 -- controls the length of the sieving interval. The parameter @k@ controls the
 -- maximum number of blocks for the sieve to go through (@2 ^ (k - 1)@).
-quadraticSieve :: Integer -> Int -> Int -> Int -> Integer
-quadraticSieve n t m k = findFactor n $ findSquares n t m k
+quadraticSieve :: Integer -> Integer
+quadraticSieve n = quadraticSieveManual n $ autoConfig n
+
+quadraticSieveManual :: Integer -> QuadraticSieveConfig -> Integer
+quadraticSieveManual n qsc = findFactor n $ findSquares n qsc
 
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
 findFactor _ [] = error "Parameters are not large enough."
@@ -61,45 +93,57 @@ findFactor n ((x, y) : otherSquares)
 -- This routine outputs an infinite list of tuples @(x, y)@ such that
 -- @x ^ 2 - y ^ 2 `mod` n = 0@. A factorisation can be infered from this data
 -- in at least a half of the cases.
-findSquares :: Integer -> Int -> Int -> Int -> [(Integer, Integer)]
+findSquares :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
 -- k indicates maximum number of sieve blocks to go thorugh 2 ^ (k - 1)
-findSquares n t m k = runST $ do
+findSquares n qsc = runST $ do
   let
+    t = qscFactorBase qsc
+    m = qscSievingInterval qsc
+    k = qscNumberOfBlocks qsc
+    h = qscSmoothThreshold qsc
     factorBase = [nextPrime 2..precPrime t]
     -- Make sure rootOfA is an Int
     rootOfA = ((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double
-    listOfFactors = trace ("Root of a: " ++ show rootOfA) $ generatePrimes n rootOfA k
-    decompositionOfA = zip (map (fromJust . toPrimeIntegral) listOfFactors) (repeat 2)
-    a = foldr (\(p, i) acc -> acc * unPrime p ^ i) 1 decompositionOfA
-    valuesOfB = trace ("Ratio: " ++ show ((fromInteger (a * fromIntegral m) :: Double) / (fromInteger (integerSquareRoot (2*n))))) $ filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
-    valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
-    mappingFunctions = zipWith (curry (\ (b, c) x -> a * x * x + 2 * b * x + c)) valuesOfB valuesOfC
-    squareRoots = map ((sqrtsModPrime n) . fromJust . toPrimeIntegral) factorBase
+    -- Classical quadratic sieve if rootOfA < 5
+    -- listOfFactors = constructA n k
+    listOfFactors = trace ("Root of a: " ++ show rootOfA) $ if rootOfA < 5 then [] else generatePrimes n rootOfA k
+    initialDecompositionOfA = zip (map (fromJust . toPrimeIntegral) listOfFactors) (repeat 2)
 
-    goSieving :: [(Integer, I.IntMap Int)] -> [Integer -> Integer] -> [Integer] -> [Integer] -> [(Integer, I.IntMap Int)]
-    goSieving _ [] _ _ = trace ("Parameters are not large enough: " ++ show (n, t, m, k)) [] --error "Parameters are not large enough."
-    goSieving _ _ [] _ = trace ("Parameters are not large enough: " ++ show (n, t, m, k)) [] --error "Parameters are not large enough."
-    goSieving _ _ _ [] = trace ("Parameters are not large enough: " ++ show (n, t, m, k)) [] --error "Parameters are not large enough."
-    goSieving previousSmoothNumbers (f : fs) (b : bs) (c : cs) = runST $ do
-      let
-        (sievingInterval, sievingLogInterval) = V.unzip $ generateLogInterval f m -- trace ("a: " ++ show a ++ "\nb: " ++ show b ++ "\nc: " ++ show c ++ "\nm: " ++ show m) $
-      sievingLogIntervalM <- V.thaw sievingLogInterval
-      smoothLogSieveM sievingLogIntervalM (zip factorBase squareRoots) a b c m
-      sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
-      let
-        newSmoothNumbers = V.toList $ findLogSmoothNumbers t m a b $ V.zip sievingInterval sievedLogInterval
-        smoothNumbers = previousSmoothNumbers ++ newSmoothNumbers
-        matrixSmoothNumbers
-          -- Also takes the sign into account.
-          | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ smoothNumbers
-          | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSieving smoothNumbers fs bs cs
+    goSieving :: [(Integer, I.IntMap Int)] -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
+    goSieving previousDiffSmoothNumbers decompositionOfA = goSelfInitSieving previousDiffSmoothNumbers $ zip valuesOfB valuesOfC
+      where
+        a = factorBack decompositionOfA
+        valuesOfB = trace ("Ratio: " ++ show ((fromInteger (a * fromIntegral m) :: Double) / fromInteger (integerSquareRoot (2*n)))) $ filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
+        valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
+        squareRoots = map (sqrtsModPrime n . fromJust . toPrimeIntegral) factorBase
+
+        goSelfInitSieving :: [(Integer, I.IntMap Int)] -> [(Integer, Integer)] -> [(Integer, I.IntMap Int)]
+        goSelfInitSieving previousSmoothNumbers [] = goSieving previousSmoothNumbers nextDecompositionOfA
           where
-            numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
-            mat = trace ("Log filtering: " ++ show (V.length (V.filter (< 22) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
-      pure matrixSmoothNumbers
+            -- This line has to be changed
+            nextDecompositionOfA = decompositionOfA
 
-    sievingData = trace ("Size of Factor Base: " ++ show (length (filter (\x -> (not . null) x) squareRoots))) $removeRows $ goSieving [] mappingFunctions valuesOfB valuesOfC
-    matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ fmap (convertToSet . snd) sievingData
+        goSelfInitSieving previousSmoothNumbers ((b, c) : otherCoeffs) = runST $ do
+          let
+            f x = a * x * x + 2 * b * x + c
+            (sievingInterval, sievingLogInterval) = V.unzip $ generateLogInterval f m
+          sievingLogIntervalM <- V.thaw sievingLogInterval
+          smoothLogSieveM sievingLogIntervalM (zip factorBase squareRoots) a b c m
+          sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
+          let
+            newSmoothNumbers = V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
+            smoothNumbers = previousSmoothNumbers ++ newSmoothNumbers
+            matrixSmoothNumbers
+              -- Minimise length of matrix
+              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 30) smoothNumbers
+              | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSelfInitSieving smoothNumbers otherCoeffs
+              where
+                numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
+                mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
+          pure matrixSmoothNumbers
+
+    sievingData = removeRows $ goSieving [] initialDecompositionOfA
+    matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ traceShowId $ fmap (convertToSet . snd) sievingData
 
     goSolving :: Int -> [(Integer, Integer)]
     goSolving seed = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1)
@@ -107,11 +151,10 @@ findSquares n t m k = runST $ do
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
         -- Add factorisation of a
-        squaresData = map (second (I.unionWith (+) (I.fromList (zip (map unPrime listOfFactors) (repeat 2)))) . (sievingData !!)) solution
-        solution = convertToList $ linearSolve' seed matrix
+        squaresData = map (sievingData !!) solution
+        solution = traceShowId $ convertToList $ linearSolve' seed matrix
 
-  -- There is a chance the algorithm gets stuck.
-  pure $ if null sievingData then [] else goSolving (integerToInt n)
+  pure $ goSolving (integerToInt n)
 
 generatePrimes :: Integer -> Double -> Int -> [Prime Int]
 generatePrimes n midPoint len = lowerPrimes ++ higherPrimes
@@ -125,7 +168,7 @@ generatePrimesForwards :: Int -> [Prime Int]
 generatePrimesForwards from
   -- 2 cannot be a factor of a
   | from <= 2 = generatePrimesForwards 3
-  | otherwise = [nextPrime from..]
+  | otherwise = [nextPrime (max 3 from)..]
 
 generatePrimesBackwards :: Int -> [Prime Int]
 generatePrimesBackwards to
@@ -168,29 +211,32 @@ smoothLogSieveM sievingIntervalM base a b c m =
             -- Better to ouput @unPrime prime@ as a factor.
             Nothing          -> error ("Found an illegal factor: " ++ show prime)
       forM_ startingIndices $ \startingIndex -> do
-        let change y = y - ((intLog2 . unPrime) prime)
-        forM_ [startingIndex, startingIndex + (unPrime prime)..(2 * m)] $ \entry ->
-          -- let change (y, im) = (if y `mod` (intToInteger . unPrime) prime == 0 then y `div` (intToInteger . unPrime) prime else error ("Sieve fail: " ++ show (prime, power, entry)), I.insert (unPrime prime) power im)
+        let change y = y - (intLog2 . unPrime) prime
+        forM_ [startingIndex, startingIndex + unPrime prime..(2 * m)] $ \entry ->
           MV.modify sievingIntervalM change entry
 
 -- This algorithm filters @sievingIntervalF@ for smooth numbers. It returns
 -- the smooth numbers together with their @index@ and @startingPoint@.
 -- This is needed in order to later compute @firstSquare@.
-findLogSmoothNumbers :: Int -> Int -> Integer -> Integer -> V.Vector (Integer, Int) -> V.Vector (Integer, I.IntMap Int)
-findLogSmoothNumbers t m a b = V.imapMaybe selectSmooth
+findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector (Integer, Int) -> V.Vector (Integer, I.IntMap Int)
+findLogSmoothNumbers factorBase m h decompositionOfA b = V.imapMaybe selectSmooth
   where
-    -- Adjust fudge factor to taste
-    selectSmooth index (value, logResidue) = case logResidue < 22 of
+    a = factorBack decompositionOfA
+    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
+    highestPrime = intToInteger . unPrime . last $ factorBase
+    selectSmooth index (value, logResidue) = case logResidue < h of
       True
         -- Cannot use factorisation instead of listFactorisation since its rightmost value need not be an int.
-        | null listFactorisation || (fst . last) listFactorisation <= intToInteger t -> Just (a * intToInteger (index - m) + b, factorisation)
-        | otherwise                                                                  -> Nothing
-      False                                                                          -> Nothing
+        | null listFactorisation                         -> Just (a * intToInteger (index - m) + b, factorisation)
+        | (fst . last) listFactorisation <= highestPrime -> Just (a * intToInteger (index - m) + b, factorisation)
+        | otherwise                                      -> Nothing
+      False -> Nothing
       where
-        factorisation = if value < 0 then I.insert (-1) 1 preFac else preFac
-        preFac = I.fromAscList $ map (\(p, e) -> (integerToInt p, wordToInt e)) listFactorisation
+        factorisation = I.unionWith (+) intMapA $ if value < 0 then I.insert (-1) 1 preFac else preFac
+        preFac = I.fromAscList $ map (bimap integerToInt wordToInt) listFactorisation
         -- Maybe there is a better way to use @trialDivision@
-        listFactorisation = trialDivisionTo (intToInteger t) value
+        listFactorisation = trialDivisionWith (map (intToInteger . unPrime )factorBase) value
+
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
@@ -210,7 +256,7 @@ appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
       ((onlyOnce S.\\ x) <> (x S.\\ atLeastOnce), atLeastOnce <> x)
 
 convertToSet :: I.IntMap Int -> S.IntSet
-convertToSet = I.foldrWithKey (\key pow set -> if odd pow then key `S.insert` set else set) mempty
+convertToSet = I.keysSet . (I.filter odd)
 
 -- This routine translates the list of smooth factorisations into a matrix.
 -- The prime numbers need to mapped to ints based on their order (Prime 2 -> 1,
@@ -275,6 +321,3 @@ findSecondSquare n factorisations = case someNatVal (integerToNatural n) of
   SomeNat (Proxy :: Proxy n) ->
     -- I would like to move part of this line further down but the compiler cannot deduce what n is.
     naturalToInteger . M.unMod $ I.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $ I.unionsWith (+) factorisations
-  -- where
-  --   computeRoot :: KnownNat n => Int -> Int -> M.Mod n -> M.Mod n
-  --   computeRoot key power acc = (fromInteger (fromIntegral key) :: M.Mod n) ^ (if even power then (power `div` 2 :: Int) else error "Wrong second square") * acc

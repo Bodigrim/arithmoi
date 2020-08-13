@@ -11,8 +11,12 @@ import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 --       -- 1000000000100000000000000000074000000005700000000000000000969
 
 main :: IO ()
-main = print $ quadraticSieve n t (7 * t `div` 3) 4
+main = print $ quadraticSieveManual n qsc
   where
+    qsc = QuadraticSieveConfig t m k h
+    h = 22
+    k = 4
+    m = (7 * t `div` 3)
     t = floor b
     b = (*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double
     n = 820239374043355485537790987979115484333
