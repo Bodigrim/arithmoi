@@ -14,6 +14,7 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import qualified Data.Set as SS
 import qualified Data.List as L
 import qualified Data.IntMap as I
 import qualified Data.IntSet as S
@@ -64,8 +65,13 @@ autoConfig n = QuadraticSieveConfig t m k h
     m = 3 * t `div` 2
     t
       | l <= 5    = floor (exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
-      | l <= 8    = integerToInt (integerSquareRoot n)
-      | otherwise = floor ((*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 8    = integerToInt $ integerSquareRoot n
+      | l <= 15   = floor ((*25) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 20   = floor ((*20) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 25   = floor ((*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 30   = floor ((*10) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 35   = floor ((*5) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | otherwise = floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
     -- number of digits of n
     l = integerLog10 n
 
@@ -132,7 +138,7 @@ findSquares n qsc = runST $ do
           sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
           let
             newSmoothNumbers = V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
-            smoothNumbers = previousSmoothNumbers ++ newSmoothNumbers
+            smoothNumbers = SS.toList . SS.fromList $ previousSmoothNumbers ++ newSmoothNumbers
             matrixSmoothNumbers
               -- Minimise length of matrix
               | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 30) smoothNumbers
@@ -143,7 +149,7 @@ findSquares n qsc = runST $ do
           pure matrixSmoothNumbers
 
     sievingData = removeRows $ goSieving [] initialDecompositionOfA
-    matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ traceShowId $ fmap (convertToSet . snd) sievingData
+    matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ fmap (convertToSet . snd) sievingData
 
     goSolving :: Int -> [(Integer, Integer)]
     goSolving seed = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1)
@@ -152,7 +158,7 @@ findSquares n qsc = runST $ do
         secondSquare = findSecondSquare n (fmap snd squaresData)
         -- Add factorisation of a
         squaresData = map (sievingData !!) solution
-        solution = traceShowId $ convertToList $ linearSolve' seed matrix
+        solution = convertToList $ linearSolve' seed matrix
 
   pure $ goSolving (integerToInt n)
 
@@ -256,7 +262,7 @@ appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
       ((onlyOnce S.\\ x) <> (x S.\\ atLeastOnce), atLeastOnce <> x)
 
 convertToSet :: I.IntMap Int -> S.IntSet
-convertToSet = I.keysSet . (I.filter odd)
+convertToSet = I.keysSet . I.filter odd
 
 -- This routine translates the list of smooth factorisations into a matrix.
 -- The prime numbers need to mapped to ints based on their order (Prime 2 -> 1,

@@ -38,5 +38,3 @@ testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"
   [ QC.testProperty "Successful Factorisations" checkQuadratic
   ]
-
--- PROBLEM: quadraticSieve 7861113423267527
