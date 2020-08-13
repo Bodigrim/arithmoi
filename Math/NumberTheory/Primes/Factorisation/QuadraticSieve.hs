@@ -97,7 +97,7 @@ findSquares n t m k = runST $ do
           | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSieving smoothNumbers fs bs cs
           where
             numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
-            mat = trace ("Log filtering: " ++ show (V.length (V.filter (< 18) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
+            mat = trace ("Log filtering: " ++ show (V.length (V.filter (< 22) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
       pure matrixSmoothNumbers
 
     sievingData = trace ("Size of Factor Base: " ++ show (length primeDivisors)) $ removeRows $ goSieving [] mappingFunctions valuesOfB valuesOfC
@@ -206,8 +206,8 @@ findLogSmoothNumbers primeDivisors m a b sievedInterval = fmap fromJust $ filter
     factorisations :: [(Int, [(Integer, Word)])]
     factorisations = V.toList $ V.imapMaybe factoriseIfSmooth sievedInterval
     -- Remembers index for later
-    -- 18 is roughly log2 t. Should be raised for large prime variation
-    factoriseIfSmooth index (value, logResidue) = case logResidue < 18 of
+    -- The fudge factor is roughly log2 t. Should be raised for large prime variation
+    factoriseIfSmooth index (value, logResidue) = case logResidue < 22 of
       True  -> Just (index, if value < 0 then (-1,1) : preFac else preFac)
       False -> Nothing
       where
