@@ -182,14 +182,14 @@ findLogSmoothNumbers :: [Prime Int] -> Int -> Integer -> Integer -> V.Vector (In
 findLogSmoothNumbers primeDivisors m a b sievedInterval = fmap fromJust $ filter isJust $ map findSquareData factorisationData
   where
     (pivotIndex, pivotFac) = fromJust pivotFactorisation
-    pivotFacMap = I.fromAscList $ map transform pivotFac
+    pivotFacMap = I.unionWith (+) ima $ I.fromAscList $ map transform pivotFac
     transform (p, expo) = (integerToInt p, wordToInt expo)
     -- Only temporary
     ima = I.fromAscList $ map (\(p, expo) -> ((integerToInt . unPrime) p, wordToInt expo)) $ factorise a
     findSquareData (index, fac)
       | null fac                        = Just (a * intToInteger (index - m) + b, facMap)
       | (fst . last) fac < highestPrime = Just (a * intToInteger (index - m) + b, facMap)
-      | (fst . last) fac == largePrime  = Just ((a * intToInteger (index - m) + b) * (a * intToInteger (pivotIndex - m) + b), I.unionsWith (+) [ima, facMap, pivotFacMap])
+      | (fst . last) fac == largePrime  = Just ((a * intToInteger (index - m) + b) * (a * intToInteger (pivotIndex - m) + b), I.unionWith (+) facMap pivotFacMap)
       | otherwise                       = Nothing
       where
         facMap = I.fromAscList $ map transform fac
