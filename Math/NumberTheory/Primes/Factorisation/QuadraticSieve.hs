@@ -163,7 +163,7 @@ findSquares n qsc = runST $ do
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
         -- Add factorisation of a
-        squaresData = trace (show solution) $ map (sievingData !!) solution
+        squaresData = map (sievingData !!) solution
         solution = convertToList $ linearSolve' seed matrix
 
   pure $ goSolving (integerToInt n)
