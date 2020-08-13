@@ -41,7 +41,13 @@ import Data.Foldable
 import Data.Maybe
 import Data.Bit
 import Data.Bifunctor
-import Debug.Trace
+import qualified Debug.Trace
+
+trace :: String -> a -> a
+trace = if debug then Debug.Trace.trace else const id
+
+debug :: Bool
+debug = True
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -54,24 +60,24 @@ autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
     -- + 4 for large prime variation
-    h = intLog2 t -- + 4
+    h = intLog2 t + 1
     k
-      | l <= 15   = 1
-      | l <= 25   = 2
-      | l <= 35   = 3
-      | l <= 45   = 4
-      | l <= 55   = 5
+      | l <= 20   = 1
+      | l <= 30   = 2
+      | l <= 40   = 3
+      | l <= 50   = 4
+      | l <= 60   = 5
       | otherwise = 6
     m = 3 * t `div` 2
     t
       | l <= 5    = floor (exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
       | l <= 8    = integerToInt $ integerSquareRoot n
-      | l <= 15   = floor ((*25) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
-      | l <= 20   = floor ((*20) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
-      | l <= 25   = floor ((*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
-      | l <= 30   = floor ((*10) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
-      | l <= 35   = floor ((*5) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
-      | otherwise = floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 20   = floor ((*32) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 25   = floor ((*25) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 30   = floor ((*20) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 35   = floor ((*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | l <= 40   = floor ((*10) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | otherwise = floor ((*5) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
     -- number of digits of n
     l = integerLog10 n
 
@@ -141,7 +147,7 @@ findSquares n qsc = runST $ do
             smoothNumbers = SS.toList . SS.fromList $ previousSmoothNumbers ++ newSmoothNumbers
             matrixSmoothNumbers
               -- Minimise length of matrix
-              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 30) smoothNumbers
+              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 10) smoothNumbers
               | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSelfInitSieving smoothNumbers otherCoeffs
               where
                 numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
@@ -157,7 +163,7 @@ findSquares n qsc = runST $ do
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
         -- Add factorisation of a
-        squaresData = map (sievingData !!) solution
+        squaresData = trace (show solution) $ map (sievingData !!) solution
         solution = convertToList $ linearSolve' seed matrix
 
   pure $ goSolving (integerToInt n)
