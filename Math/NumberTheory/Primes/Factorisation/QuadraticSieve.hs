@@ -95,10 +95,10 @@ findSquares n t m k = runST $ do
           | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSieving smoothNumbers fs bs cs
           where
             numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
-            mat = trace ("Log filtering: " ++ show (V.length (V.filter (< 18) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
+            mat = trace ("Log filtering: " ++ show (V.length (V.filter (< 22) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
       pure matrixSmoothNumbers
 
-    sievingData = trace ("Size of Factor Base: " ++ show (length (filter (\x -> (not . null) x) squareRoots))) $removeRows $ goSieving [] mappingFunctions valuesOfB valuesOfC 
+    sievingData = trace ("Size of Factor Base: " ++ show (length (filter (\x -> (not . null) x) squareRoots))) $removeRows $ goSieving [] mappingFunctions valuesOfB valuesOfC
     matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ fmap (convertToSet . snd) sievingData
 
     goSolving :: Int -> [(Integer, Integer)]
@@ -180,7 +180,7 @@ findLogSmoothNumbers :: Int -> Int -> Integer -> Integer -> V.Vector (Integer, I
 findLogSmoothNumbers t m a b = V.imapMaybe selectSmooth
   where
     -- Adjust fudge factor to taste
-    selectSmooth index (value, logResidue) = case logResidue < 18 of
+    selectSmooth index (value, logResidue) = case logResidue < 22 of
       True
         -- Cannot use factorisation instead of listFactorisation since its rightmost value need not be an int.
         | null listFactorisation || (fst . last) listFactorisation <= intToInteger t -> Just (a * intToInteger (index - m) + b, factorisation)
