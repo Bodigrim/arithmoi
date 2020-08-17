@@ -8,6 +8,7 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   ( SBVector(..)
   , DBVector(..)
   , SBMatrix(..)
+  , intVal
   , dot
   , mult
   , linearSolve
@@ -55,6 +56,9 @@ instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
   mappend = (<>)
 
+intVal :: KnownNat k => a k -> Int
+intVal = naturalToInt . natVal
+
 -- | Dot product of two dense Binary Vectors of the same size.
 dot :: KnownNat k => DBVector k -> DBVector k -> Bit
 dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.fromSized v1) (SU.fromSized v2)
@@ -75,9 +79,6 @@ flipBit' (GMSI.MVector v) = unsafeFlipBit v
 
 index' :: KnownNat k => SBMatrix k -> Int -> SBVector k
 index' (SBMatrix (GSI.Vector v)) = V.unsafeIndex v
-
-intVal :: KnownNat k => a k -> Int
-intVal = naturalToInt . natVal
 
 -- | It takes a random seed and a square singular matrix and it returns an
 -- elemnent of its kernel. It does not check if the matrix is singular.
