@@ -22,8 +22,8 @@ checkQuadratic (Large i) (Large j)
   where
     factor = trace ("Number: " ++ show n) $ quadraticSieve n
     n = p * q
-    p = toInteger . unPrime . nextPrime $ i `mod` 100000000
-    q = toInteger . unPrime . nextPrime $ j `mod` 100000000
+    p = toInteger . unPrime . nextPrime $ i --`mod` 100000000
+    q = toInteger . unPrime . nextPrime $ j --`mod` 100000000
 
 testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"

@@ -47,7 +47,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = False
+debug = True
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -66,7 +66,7 @@ autoConfig n = QuadraticSieveConfig t m k h
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = (50 - l) * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | otherwise = (max (40 - l) 1) * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
     -- number of digits of n
     l = integerLog10 n
 
@@ -150,15 +150,17 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
     sievingData = removeRows $ goSieving [] initialDecompositionOfA
     matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ fmap (convertToSet . snd) sievingData
 
-    goSolving :: Int -> [(Integer, Integer)]
-    goSolving seed = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1)
+    goSolving :: Int -> Int -> [(Integer, Integer)]
+    goSolving seed counter
+      | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
+      | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * k * k) k h
       where
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
         squaresData = map (sievingData !!) solution
         solution = convertToList $ linearSolve' seed matrix
 
-  pure $ goSolving (integerToInt n)
+  pure $ goSolving (integerToInt n) 0
 
 generatePrimes :: Integer -> Integer -> Int -> [Prime Integer]
 generatePrimes n midPoint len = lowerPrimes ++ higherPrimes
@@ -301,7 +303,7 @@ linearSolve' :: Int -> SomeKnown SBMatrix -> SomeKnown DBVector
 linearSolve' seed (SomeKnown m) = SomeKnown (linearSolve seed m)
 
 convertToList :: SomeKnown DBVector -> [Int]
-convertToList (SomeKnown solution) = listBits $ SU.fromSized $ unDBVector solution
+convertToList (SomeKnown solution) = listBits . SU.fromSized . unDBVector $ solution
 
 -- Given a solution, it computes the product of the numbers in the first
 -- component of the tuple.

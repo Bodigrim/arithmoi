@@ -27,7 +27,7 @@ import qualified Data.Vector.Generic.Sized.Internal as GSI
 import qualified Data.Vector.Generic.Mutable.Sized.Internal as GMSI
 import Math.NumberTheory.Utils.FromIntegral
 import Control.Monad.ST
-import GHC.TypeNats (Nat, KnownNat, natVal)
+import GHC.TypeNats hiding (Mod) --(Nat, KnownNat, SomeNat, natVal)
 import Data.Proxy
 import System.Random
 import Data.Foldable
@@ -41,11 +41,17 @@ newtype SBVector (k :: Nat) = SBVector { unSBVector :: U.Vector (Mod k) }
 
 -- | Dense Binary Vector of size @k@.
 newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Sparse Binary square Matrix of size @k@. It is formed of columns
 -- of sparse binary vectors.
 newtype SBMatrix (k :: Nat) = SBMatrix { unSBMatrix :: SV.Vector k (SBVector k) }
+
+-- data SomeKnown (f :: Nat -> Type) where
+--   SomeKnown :: KnownNat k => f k -> SomeKnown f
+
+instance KnownNat k => Show (SBVector k) where
+  show (SBVector sbVec) = show $ U.map (wordToInt . unMod) sbVec
 
 -- | Addition of two dense Binary Vectors.
 instance KnownNat k => Semigroup (DBVector k) where
@@ -55,6 +61,9 @@ instance KnownNat k => Semigroup (DBVector k) where
 instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
   mappend = (<>)
+
+instance KnownNat k => Show (SBMatrix k) where
+  show (SBMatrix mat) = show $ SV.toList mat
 
 intVal :: KnownNat k => a k -> Int
 intVal = naturalToInt . natVal
@@ -70,6 +79,15 @@ mult matrix vector = runST $ do
   traverse_ (U.mapM_ (flipBit' vs . wordToInt . unMod) . unSBVector . (matrix `index'`)) $ listBits' vector
   ws <- SU.unsafeFreeze vs
   pure $ DBVector ws
+
+-- fromList :: [[Int]] -> SomeKnown SBMatrix
+-- fromList list = case someNatVal (fromIntegral (length list)) of
+--   SomeKnown (Proxy :: Proxy k) -> mat
+--   where
+--     mat = (SBMatrix $ fromJust . SV.fromList $ listOfVectors) :: SomeKnown SBMatrix
+--     listOfVectors = map toSBVector list
+--     toSBVector :: KnownNat k => [Int] -> SBVector k
+--     toSBVector vec = (SBVector $ U.fromList $ map fromIntegral vec)
 
 listBits' :: KnownNat k => DBVector k -> [Int]
 listBits' (DBVector (GSI.Vector v)) = listBits v
