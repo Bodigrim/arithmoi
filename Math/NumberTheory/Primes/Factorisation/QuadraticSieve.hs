@@ -41,14 +41,13 @@ import Data.Foldable
 import Data.Maybe
 import Data.Bit
 import Data.Bifunctor
-import Debug.Trace
--- import qualified Debug.Trace
---
--- trace :: String -> a -> a
--- trace = if debug then Debug.Trace.trace else const id
---
--- debug :: Bool
--- debug = True
+import qualified Debug.Trace
+
+trace :: String -> a -> a
+trace = if debug then Debug.Trace.trace else const id
+
+debug :: Bool
+debug = False
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -67,7 +66,7 @@ autoConfig n = QuadraticSieveConfig t m k h
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = (50 - l) * floor (sqrt . exp . sqrt $ log (fromInteger x) * log (log (fromInteger x)) :: Double)
+      | otherwise = (50 - l) * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
     -- number of digits of n
     l = integerLog10 n
 
