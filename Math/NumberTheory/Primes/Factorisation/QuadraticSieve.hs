@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
@@ -26,6 +25,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Mod as M
 import qualified Data.Mod.Word as MW
+import Math.NumberTheory.Utils
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Logarithms
@@ -37,7 +37,6 @@ import Control.Monad
 import Control.Monad.ST
 import GHC.TypeNats
 import Data.Proxy
-import Data.Kind
 import Data.Foldable
 import Data.Maybe
 import Data.Bit
@@ -48,12 +47,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = True
-
-isPrimeInt :: Prime Integer -> Maybe (Prime Integer)
-isPrimeInt x = (fromJust . toPrimeIntegral) <$> primeInt
-  where
-    primeInt = toPrimeIntegral x :: Maybe (Prime Int)
+debug = False
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -72,9 +66,10 @@ autoConfig n = QuadraticSieveConfig t m k h
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = max (40 - l) 1 * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | otherwise = max (40 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
+    le = fromIntegral l * log 10
 
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@, @t@ and
 -- @k@, the Quadratic Sieve attempts to output @factor@, a factor of @n@. The
@@ -103,14 +98,11 @@ findSquares :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
 -- k indicates maximum number of sieve blocks to go through 2 ^ (k - 1)
 findSquares n (QuadraticSieveConfig t m k h) = runST $ do
   let
-    factorBase = filter (\p -> unPrime p == 2 || jacobi n ((intToInteger . unPrime) p) == One) [nextPrime 2..precPrime t]
-    -- Make sure rootOfA is an Int
+    factorBase = filter (isResidue n) [nextPrime 2..precPrime t]
     rootOfA
       | k <= 0    = 1
-      | otherwise = floor (((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double)
-    -- Classical quadratic sieve if rootOfA < 5
-    -- Replace with better way to check whether all primes are less than the largest Prime Int
-    factorsOfA = fromMaybe (error "Parameters are not large enough.") $ sequence $ map isPrimeInt $ generatePrimes n rootOfA k
+      | otherwise = integerRoot (4 * k) ((2 * n) `div` (intToInteger m ^ (2 :: Int)))
+    factorsOfA = fromMaybe (error "Parameters are not large enough.") $ mapM isPrimeInt $ generatePrimes n rootOfA k
     initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ zip factorsOfA (repeat 2)
 
     goSieving :: [(Integer, I.IntMap Int)] -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
@@ -155,7 +147,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           pure matrixSmoothNumbers
 
     sievingData = removeRows $ goSieving [] initialDecompositionOfA
-    matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ fmap (convertToSet . snd) sievingData
+    matrix = translate $ fmap (convertToSet . snd) sievingData
 
     goSolving :: Int -> Int -> [(Integer, Integer)]
     goSolving seed counter
@@ -165,9 +157,9 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
         squaresData = map (sievingData !!) solution
-        solution = convertToList $ linearSolve' seed matrix
+        solution = withSomeKnown (convertToList . linearSolve seed) matrix
 
-  pure $ goSolving (integerToInt n) 0
+  pure $ trace ("Size of Matrix: " ++ show (withSomeKnown intVal matrix)) $ goSolving (integerToInt n) 0
 
 generatePrimes :: Integer -> Integer -> Int -> [Prime Integer]
 generatePrimes n midPoint len
@@ -187,6 +179,14 @@ generatePrimesBackwards to
   -- 2 cannot be a factor of a
   | to <= 2   = []
   | otherwise = precPrime to : generatePrimesBackwards (unPrime (precPrime to) - 1)
+
+isPrimeInt :: Prime Integer -> Maybe (Prime Integer)
+isPrimeInt x = fromJust . toPrimeIntegral <$> primeInt
+  where
+    primeInt = toPrimeIntegral x :: Maybe (Prime Int)
+
+isResidue :: Integer -> Prime Int -> Bool
+isResidue n p = (unPrime p == 2) || jacobi n ((intToInteger . unPrime) p) == One
 
 -- This routine generates the sieving interval. It takes a function @f@,
 -- @startingPoint@, and a dimension @dim@. It returns tuples whose
@@ -246,7 +246,7 @@ findLogSmoothNumbers factorBase m h decompositionOfA b = V.imapMaybe selectSmoot
         factorisation = I.unionWith (+) intMapA $ if value < 0 then I.insert (-1) 1 preFac else preFac
         preFac = I.fromAscList $ map (bimap integerToInt wordToInt) listFactorisation
         -- Maybe there is a better way to use @trialDivision@
-        listFactorisation = trialDivisionWith (map (intToInteger . unPrime )factorBase) value
+        listFactorisation = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
 
 
 -- Removes all columns of the matrix which contain primes appearing only once.
@@ -304,15 +304,8 @@ binarySearch list v = go 0 (len - 1) list v
         entry = vector U.! currentIndex
         currentIndex = (upperIndex + lowerIndex) `div` 2
 
--- This datatype facilitates calling @linearSolve@.
-data SomeKnown (f :: Nat -> Type) where
-  SomeKnown :: KnownNat k => f k -> SomeKnown f
-
-linearSolve' :: Int -> SomeKnown SBMatrix -> SomeKnown DBVector
-linearSolve' seed (SomeKnown m) = SomeKnown (linearSolve seed m)
-
-convertToList :: SomeKnown DBVector -> [Int]
-convertToList (SomeKnown solution) = listBits . SU.fromSized . unDBVector $ solution
+convertToList :: KnownNat k => DBVector k -> [Int]
+convertToList = listBits . SU.fromSized . unDBVector
 
 -- Given a solution, it computes the product of the numbers in the first
 -- component of the tuple.

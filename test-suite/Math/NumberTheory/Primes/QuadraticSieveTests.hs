@@ -13,7 +13,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = True
+debug = False
 
 checkSquares :: Large Int -> Large Int -> Bool
 checkSquares (Large i) (Large j)

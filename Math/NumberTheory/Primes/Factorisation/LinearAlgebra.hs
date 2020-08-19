@@ -8,9 +8,9 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   ( SBVector(..)
   , DBVector(..)
   , SBMatrix(..)
-  , intVal
   , dot
   , mult
+  , fromList
   , linearSolve
   ) where
 
@@ -25,19 +25,20 @@ import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Vector.Unboxed.Mutable.Sized as SMU
 import qualified Data.Vector.Generic.Sized.Internal as GSI
 import qualified Data.Vector.Generic.Mutable.Sized.Internal as GMSI
+import qualified Data.Mod.Word as MW
+import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
 import Control.Monad.ST
-import GHC.TypeNats hiding (Mod) --(Nat, KnownNat, SomeNat, natVal)
+import GHC.TypeNats
 import Data.Proxy
 import System.Random
 import Data.Foldable
-import Data.Mod.Word
 import Data.Maybe
 import Data.Bit
 import Data.Bits
 
 -- | Sparse Binary Vector of size @k.
-newtype SBVector (k :: Nat) = SBVector { unSBVector :: U.Vector (Mod k) }
+newtype SBVector (k :: Nat) = SBVector { unSBVector :: U.Vector (MW.Mod k) }
 
 -- | Dense Binary Vector of size @k@.
 newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
@@ -47,11 +48,8 @@ newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
 -- of sparse binary vectors.
 newtype SBMatrix (k :: Nat) = SBMatrix { unSBMatrix :: SV.Vector k (SBVector k) }
 
--- data SomeKnown (f :: Nat -> Type) where
---   SomeKnown :: KnownNat k => f k -> SomeKnown f
-
 instance KnownNat k => Show (SBVector k) where
-  show (SBVector sbVec) = show $ U.map (wordToInt . unMod) sbVec
+  show (SBVector sbVec) = show $ U.map (wordToInt . MW.unMod) sbVec
 
 -- | Addition of two dense Binary Vectors.
 instance KnownNat k => Semigroup (DBVector k) where
@@ -65,9 +63,6 @@ instance KnownNat k => Monoid (DBVector k) where
 instance KnownNat k => Show (SBMatrix k) where
   show (SBMatrix mat) = show $ SV.toList mat
 
-intVal :: KnownNat k => a k -> Int
-intVal = naturalToInt . natVal
-
 -- | Dot product of two dense Binary Vectors of the same size.
 dot :: KnownNat k => DBVector k -> DBVector k -> Bit
 dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.fromSized v1) (SU.fromSized v2)
@@ -76,18 +71,20 @@ dot (DBVector v1) (DBVector v2) = Bit $ odd . countBits $ zipBits (.&.) (SU.from
 mult :: KnownNat k => SBMatrix k -> DBVector k -> DBVector k
 mult matrix vector = runST $ do
   vs <- SMU.new
-  traverse_ (U.mapM_ (flipBit' vs . wordToInt . unMod) . unSBVector . (matrix `index'`)) $ listBits' vector
+  traverse_ (U.mapM_ (flipBit' vs . wordToInt . MW.unMod) . unSBVector . (matrix `index'`)) $ listBits' vector
   ws <- SU.unsafeFreeze vs
   pure $ DBVector ws
 
--- fromList :: [[Int]] -> SomeKnown SBMatrix
--- fromList list = case someNatVal (fromIntegral (length list)) of
---   SomeKnown (Proxy :: Proxy k) -> mat
---   where
---     mat = (SBMatrix $ fromJust . SV.fromList $ listOfVectors) :: SomeKnown SBMatrix
---     listOfVectors = map toSBVector list
---     toSBVector :: KnownNat k => [Int] -> SBVector k
---     toSBVector vec = (SBVector $ U.fromList $ map fromIntegral vec)
+fromList :: [[Int]] -> SomeKnown SBMatrix
+fromList columns = case someNatVal (fromIntegral (length columns)) of
+  SomeNat (Proxy :: Proxy k) -> SomeKnown (mat :: SBMatrix k)
+  where
+    mat :: KnownNat k => SBMatrix k
+    mat = SBMatrix $ fromJust . SV.fromList $ listOfVectors
+    listOfVectors :: KnownNat k => [SBVector k]
+    listOfVectors = map toSBVector columns
+    toSBVector :: KnownNat k => [Int] -> SBVector k
+    toSBVector vec = SBVector $ U.fromList $ map fromIntegral vec
 
 listBits' :: KnownNat k => DBVector k -> [Int]
 listBits' (DBVector (GSI.Vector v)) = listBits v
