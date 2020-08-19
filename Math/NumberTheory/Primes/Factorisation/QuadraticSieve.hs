@@ -8,6 +8,7 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   ( QuadraticSieveConfig(..)
   , quadraticSieve
   , quadraticSieveManual
+  , autoConfig
   , findSquares
   ) where
 
@@ -49,6 +50,11 @@ trace = if debug then Debug.Trace.trace else const id
 debug :: Bool
 debug = True
 
+isPrimeInt :: Prime Integer -> Maybe (Prime Integer)
+isPrimeInt x = (fromJust . toPrimeIntegral) <$> primeInt
+  where
+    primeInt = toPrimeIntegral x :: Maybe (Prime Int)
+
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
   , qscSievingInterval :: Int
@@ -61,12 +67,12 @@ autoConfig n = QuadraticSieveConfig t m k h
   where
     -- + 4 for large prime variation
     h = intLog2 t + 1
-    k = max 1 (l `div` 10)
+    k = max 0 (l `div` 10)
     m = 3 * t `div` 2
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = (max (40 - l) 1) * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | otherwise = max (40 - l) 1 * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
     -- number of digits of n
     l = integerLog10 n
 
@@ -85,7 +91,6 @@ quadraticSieveManual n qsc = findFactor n $ findSquares n qsc
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
 findFactor _ [] = error "Parameters are not large enough."
 findFactor n ((x, y) : otherSquares)
-  | (x * x - y * y) `mod` n /= 0 = error ("Algorithm incorrect." ++ show (x, y))
   | factor /= 1 && factor /= n   = factor
   | otherwise                    = findFactor n otherSquares
   where
@@ -95,16 +100,18 @@ findFactor n ((x, y) : otherSquares)
 -- @x ^ 2 - y ^ 2 `mod` n = 0@. A factorisation can be infered from this data
 -- in at least a half of the cases.
 findSquares :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
--- k indicates maximum number of sieve blocks to go thorugh 2 ^ (k - 1)
+-- k indicates maximum number of sieve blocks to go through 2 ^ (k - 1)
 findSquares n (QuadraticSieveConfig t m k h) = runST $ do
   let
     factorBase = filter (\p -> unPrime p == 2 || jacobi n ((intToInteger . unPrime) p) == One) [nextPrime 2..precPrime t]
     -- Make sure rootOfA is an Int
-    rootOfA = floor (((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double)
+    rootOfA
+      | k <= 0    = 1
+      | otherwise = floor (((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double)
     -- Classical quadratic sieve if rootOfA < 5
     -- Replace with better way to check whether all primes are less than the largest Prime Int
-    factorsOfA = if rootOfA < 5 then [] else generatePrimes n rootOfA k
-    initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ zip (if all ((< 9223372036854775784) . unPrime) factorsOfA then factorsOfA else error "Parameters are not large enough.") (repeat 2)
+    factorsOfA = fromMaybe (error "Parameters are not large enough.") $ sequence $ map isPrimeInt $ generatePrimes n rootOfA k
+    initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ zip factorsOfA (repeat 2)
 
     goSieving :: [(Integer, I.IntMap Int)] -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
     goSieving previousDiffSmoothNumbers decompositionOfA = goSelfInitSieving previousDiffSmoothNumbers $ zip valuesOfB valuesOfC
@@ -123,7 +130,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
               | null decompositionOfA = zip (generatePrimes n 1 1) [2]
               | otherwise             = (nextFactor, 2) : L.delete lowestPrime decompositionOfA
               where
-                nextFactor = if unPrime nextPotentialFactor < 9223372036854775784 then nextPotentialFactor else error "Parameters are not large enough."
+                nextFactor = fromMaybe (error "Parameters are not large enough.") (isPrimeInt nextPotentialFactor)
                 nextPotentialFactor = head $ generatePrimes n highestPrime 1
                 highestPrime = unPrime . fst . maximum $ decompositionOfA
                 lowestPrime = minimum decompositionOfA
@@ -140,7 +147,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
             smoothNumbers = SS.toList . SS.fromList $ previousSmoothNumbers ++ newSmoothNumbers
             matrixSmoothNumbers
               -- Minimise length of matrix
-              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 5*k) smoothNumbers
+              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 5 * (k + 1)) smoothNumbers
               | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSelfInitSieving smoothNumbers otherCoeffs
               where
                 numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
@@ -153,7 +160,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
     goSolving :: Int -> Int -> [(Integer, Integer)]
     goSolving seed counter
       | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
-      | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * k * k) k h
+      | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * (k + 1) * (k + 1)) k h
       where
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
@@ -163,7 +170,9 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
   pure $ goSolving (integerToInt n) 0
 
 generatePrimes :: Integer -> Integer -> Int -> [Prime Integer]
-generatePrimes n midPoint len = lowerPrimes ++ higherPrimes
+generatePrimes n midPoint len
+  | len <= 0  = []
+  | otherwise = lowerPrimes ++ higherPrimes
   where
     higherPrimes = take (len - length lowerPrimes) $ filter positiveResidue $ generatePrimesForwards $ midPoint + 1
     -- The length of @lowerPrimes@ may not be @len `div` 2@

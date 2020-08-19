@@ -15,7 +15,13 @@ import GHC.TypeNats
 import Data.Proxy
 import Data.Maybe
 import System.Random
-import Debug.Trace
+import qualified Debug.Trace
+
+trace :: String -> a -> a
+trace = if debug then Debug.Trace.trace else const id
+
+debug :: Bool
+debug = False
 
 -- The floating point number is the density of the matrix.
 testLinear :: Int -> Int -> Int ->  Bool
