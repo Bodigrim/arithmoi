@@ -49,7 +49,7 @@ newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
 newtype SBMatrix (k :: Nat) = SBMatrix { unSBMatrix :: SV.Vector k (SBVector k) }
 
 instance KnownNat k => Show (SBVector k) where
-  show (SBVector sbVec) = show $ U.map (wordToInt . MW.unMod) sbVec
+  show (SBVector sbVec) = show $ U.map MW.unMod sbVec
 
 -- | Addition of two dense Binary Vectors.
 instance KnownNat k => Semigroup (DBVector k) where
@@ -59,9 +59,6 @@ instance KnownNat k => Semigroup (DBVector k) where
 instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
   mappend = (<>)
-
-instance KnownNat k => Show (SBMatrix k) where
-  show (SBMatrix mat) = show $ SV.toList mat
 
 -- | Dot product of two dense Binary Vectors of the same size.
 dot :: KnownNat k => DBVector k -> DBVector k -> Bit

@@ -28,7 +28,7 @@ testLinear (Positive dim') seedSol seedMat = let dim = dim' + 6 in case someNatV
 --   SomeNat (_ :: Proxy dim) -> numberOfSols > 1
 --     where
 --       numberOfSols = trace ("Matrix: " ++ show mat) $ (S.size . S.fromList) solutions
---       solutions = map (`linearSolve` mat) [0..24]
+--       solutions = map (`linearSolve` mat) $ take 25 $ [0..]
 --       mat :: SBMatrix dim = getRandomMatrix dim (mkStdGen seedMat) 0.3
 
 getRandomMatrix :: KnownNat k => Int -> StdGen -> Double -> SBMatrix k
@@ -53,5 +53,5 @@ getRandomSBVectors numberOfRows density gen = go randomEntries
 testSuite :: TestTree
 testSuite = testGroup "Linear Algebra"
   [ testSmallAndQuick "LinearSolver" testLinear
-  --, testSmallAndQuick "Variation of Solutions" testVariation
+  , testSmallAndQuick "Variation of Solutions" testVariation
   ]

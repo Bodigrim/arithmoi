@@ -43,6 +43,7 @@ import Data.Euclidean
 import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
 import GHC.Integer.GMP.Internals
+import qualified Math.NumberTheory.Utils.FromIntegral as UT
 import GHC.Natural
 import GHC.TypeNats
 
@@ -220,4 +221,4 @@ withSomeKnown :: (forall k. KnownNat k => f k -> a) -> SomeKnown f -> a
 withSomeKnown f (SomeKnown x) = f x
 
 intVal :: KnownNat k => a k -> Int
-intVal = naturalToInt . natVal
+intVal = UT.naturalToInt . natVal

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
@@ -14,7 +15,7 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
-import qualified Data.Set as SS
+import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.IntMap as I
 import qualified Data.IntSet as S
@@ -102,10 +103,10 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
     rootOfA
       | k <= 0    = 1
       | otherwise = integerRoot (4 * k) ((2 * n) `div` (intToInteger m ^ (2 :: Int)))
-    factorsOfA = fromMaybe (error "Parameters are not large enough.") $ mapM isPrimeInt $ generatePrimes n rootOfA k
-    initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ zip factorsOfA (repeat 2)
+    factorsOfA = map isPrimeInt $ generatePrimes n rootOfA k
+    initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ map (,2) factorsOfA
 
-    goSieving :: [(Integer, I.IntMap Int)] -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
+    goSieving :: M.Map Integer (I.IntMap Int) -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
     goSieving previousDiffSmoothNumbers decompositionOfA = goSelfInitSieving previousDiffSmoothNumbers $ zip valuesOfB valuesOfC
       where
         a = factorBack decompositionOfA
@@ -114,16 +115,15 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
         valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
         squareRoots = map (sqrtsModPrime n . fromJust . toPrimeIntegral) factorBase
 
-        goSelfInitSieving :: [(Integer, I.IntMap Int)] -> [(Integer, Integer)] -> [(Integer, I.IntMap Int)]
+        goSelfInitSieving :: M.Map Integer (I.IntMap Int) -> [(Integer, Integer)] -> [(Integer, I.IntMap Int)]
         goSelfInitSieving previousSmoothNumbers [] = goSieving previousSmoothNumbers nextDecompositionOfA
           where
             -- Must check that int does not overflow
             nextDecompositionOfA
-              | null decompositionOfA = zip (generatePrimes n 1 1) [2]
-              | otherwise             = (nextFactor, 2) : L.delete lowestPrime decompositionOfA
+              | null decompositionOfA = map ((, 2) . isPrimeInt) (generatePrimes n 1 1)
+              | otherwise             = (isPrimeInt nextFactor, 2) : L.delete lowestPrime decompositionOfA
               where
-                nextFactor = fromMaybe (error "Parameters are not large enough.") (isPrimeInt nextPotentialFactor)
-                nextPotentialFactor = head $ generatePrimes n highestPrime 1
+                nextFactor = head $ generatePrimes n highestPrime 1
                 highestPrime = unPrime . fst . maximum $ decompositionOfA
                 lowestPrime = minimum decompositionOfA
 
@@ -135,18 +135,19 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           smoothLogSieveM sievingLogIntervalM (zip factorBase squareRoots) a b c m
           sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
           let
-            newSmoothNumbers = V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
-            smoothNumbers = SS.toList . SS.fromList $ previousSmoothNumbers ++ newSmoothNumbers
+            newSmoothNumbers = M.fromList . V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
+            smoothNumbers :: M.Map Integer (I.IntMap Int)
+            smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               -- Minimise length of matrix
-              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 5 * (k + 1)) smoothNumbers
+              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSelfInitSieving smoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
-                mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
+                numberOfConstraints = S.size $ foldMap I.keysSet mat
+                mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
-    sievingData = removeRows $ goSieving [] initialDecompositionOfA
+    sievingData = removeRows $ goSieving mempty initialDecompositionOfA
     matrix = translate $ fmap (convertToSet . snd) sievingData
 
     goSolving :: Int -> Int -> [(Integer, Integer)]
@@ -180,13 +181,15 @@ generatePrimesBackwards to
   | to <= 2   = []
   | otherwise = precPrime to : generatePrimesBackwards (unPrime (precPrime to) - 1)
 
-isPrimeInt :: Prime Integer -> Maybe (Prime Integer)
-isPrimeInt x = fromJust . toPrimeIntegral <$> primeInt
+isPrimeInt :: Prime Integer -> Prime Integer
+isPrimeInt x = fromJust . toPrimeIntegral $ primeInt
   where
-    primeInt = toPrimeIntegral x :: Maybe (Prime Int)
+    primeInt = fromMaybe (error "Parameters are not large enough.") (toPrimeIntegral x :: Maybe (Prime Int))
 
 isResidue :: Integer -> Prime Int -> Bool
-isResidue n p = (unPrime p == 2) || jacobi n ((intToInteger . unPrime) p) == One
+isResidue n p = (unPrime p == 2) || jacobi resN (unPrime p) == One
+  where
+    resN = integerToInt $ n `mod` (intToInteger . unPrime) p
 
 -- This routine generates the sieving interval. It takes a function @f@,
 -- @startingPoint@, and a dimension @dim@. It returns tuples whose
@@ -199,7 +202,7 @@ generateLogInterval f m = V.generate (2 * m + 1) go
   where
     go i = x `seq` v `seq` (x, v)
       where
-        -- Must check that conversion is safe
+        -- x == 0 only if n is a square number. This throws an exception to do with log.
         v = integerLog2 . abs $ x
         x = f $ intToInteger $ i - m
 
