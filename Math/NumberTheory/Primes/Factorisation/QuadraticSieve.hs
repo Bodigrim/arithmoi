@@ -251,7 +251,7 @@ findLogSmoothNumbers factorBase m h decompositionOfA b sievedInterval = fromJust
     pivotFactorisation = L.find ((== largePrime) . fst . maximum . snd) factorisations
     largePrime = trace ("Large prime: " ++ show largePrimeData) $ intToInteger $ if snd largePrimeData >= 2 then fst largePrimeData else 0
     largePrimeData = I.foldrWithKey (\key value (accKey, accValue) -> if value > accValue then (key, value) else (accKey, accValue)) (0,0) largePrimes
-    largePrimes = findLargePrimes highestPrime $ fmap (fst . maximum . snd) factorisations
+    largePrimes = if null factorisations then error "factorisations null" else findLargePrimes highestPrime $ fmap (fst . maximum . snd) factorisations
     factorisations :: [(Int, [(Integer, Word)])]
     factorisations = V.toList $ V.imapMaybe factoriseIfSmooth sievedInterval
     a = factorBack decompositionOfA
@@ -265,7 +265,7 @@ findLogSmoothNumbers factorBase m h decompositionOfA b sievedInterval = fromJust
         -- Maybe there is a better way to use @trialDivision@
         preFac = trialDivisionWith integerBase value
 
-    highestPrime = maximum integerBase
+    highestPrime = if null integerBase then error "integerBase null" else maximum integerBase
     integerBase = map (intToInteger . unPrime) factorBase
 
 -- Make sure that t^2 is an Int
