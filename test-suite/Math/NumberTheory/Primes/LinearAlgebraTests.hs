@@ -53,5 +53,5 @@ getRandomSBVectors numberOfRows density gen = go randomEntries
 testSuite :: TestTree
 testSuite = testGroup "Linear Algebra"
   [ testSmallAndQuick "LinearSolver" testLinear
-  , testSmallAndQuick "Variation of Solutions" testVariation
+  --, testSmallAndQuick "Variation of Solutions" testVariation
   ]
