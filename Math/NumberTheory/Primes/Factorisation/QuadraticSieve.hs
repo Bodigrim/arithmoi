@@ -61,7 +61,6 @@ data QuadraticSieveConfig = QuadraticSieveConfig
 autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
-    -- + 4 for large prime variation
     h = intLog2 t + 3
     k = max 0 (l `div` 10)
     m = 3 * t `div` 2
@@ -143,7 +142,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
               | numberOfConstraints < length mat = take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldMap convertToSet mat
+                numberOfConstraints = S.size $ foldMap I.keysSet mat
                 mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
@@ -275,7 +274,7 @@ findLargePrimes highestPrime (factors : otherFactors)
     I.insertWith (+) ((unPrime . fromJust) highestFactor) 1 $ findLargePrimes highestPrime otherFactors
   | otherwise                                                     = findLargePrimes highestPrime otherFactors
   where
-    highestFactor = maybe Nothing isPrime (toIntegralSized (maximum (1 : factors)) :: Maybe Int)
+    highestFactor = isPrime =<< (toIntegralSized (maximum (1 : factors)) :: Maybe Int)
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
