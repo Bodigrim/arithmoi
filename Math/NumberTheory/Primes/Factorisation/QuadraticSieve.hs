@@ -155,8 +155,9 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
       | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
       | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * (k + 1) * (k + 1)) k h
       where
-        firstSquare = findFirstSquare n (fmap fst squaresData)
-        secondSquare = findSecondSquare n (fmap snd squaresData)
+        firstSquare = findFirstSquare n firstSquareData
+        secondSquare = findSecondSquare n secondSquareData
+        (firstSquareData, secondSquareData) = unzip squaresData
         squaresData = map (sievingData !!) solution
         solution = withSomeKnown (convertToList . linearSolve seed) matrix
 

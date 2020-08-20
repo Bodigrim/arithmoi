@@ -47,7 +47,8 @@ newtype DBVector (k :: Nat) = DBVector { unDBVector :: SU.Vector k Bit }
 -- | Sparse Binary square Matrix of size @k@. It is formed of columns
 -- of sparse binary vectors.
 newtype SBMatrix (k :: Nat) = SBMatrix { unSBMatrix :: SV.Vector k (SBVector k) }
-
+  deriving (Show)
+  
 instance KnownNat k => Show (SBVector k) where
   show (SBVector sbVec) = show $ U.map MW.unMod sbVec
 
