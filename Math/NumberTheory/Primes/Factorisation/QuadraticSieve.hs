@@ -41,6 +41,7 @@ import Data.Proxy
 import Data.Foldable
 import Data.Maybe
 import Data.Bit
+import Data.Bits
 import Data.Bifunctor
 import qualified Debug.Trace
 
@@ -48,7 +49,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = True
+debug = False
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -233,67 +234,48 @@ smoothLogSieveM sievingIntervalM base a b c m =
 -- the smooth numbers together with their @index@ and @startingPoint@.
 -- This is needed in order to later compute @firstSquare@.
 findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector (Integer, Int) -> [(Integer, I.IntMap Int)]
-findLogSmoothNumbers factorBase m h decompositionOfA b sievedInterval = fromJust <$> (filter isJust $ map findSquareData factorisationData)
+findLogSmoothNumbers factorBase m h decompositionOfA b sievedInterval = fromJust <$> filter isJust (map findSquareData factorisationData)
   where
     findSquareData (index, fac)
-      | null fac                           = Just (a * intToInteger (index - m) + b, facMap)
-      | (fst . maximum) fac < highestPrime = Just (a * intToInteger (index - m) + b, facMap)
-      | (fst . maximum) fac == largePrime  = Just ((a * intToInteger (index - m) + b) * (a * intToInteger (pivotIndex - m) + b), I.unionWith (+) facMap pivotFacMap)
-      | otherwise                          = Nothing
+      | null fac                                                    = Just (a * intToInteger (index - m) + b, facMap)
+      | (fst . maximum) fac < (intToInteger . unPrime) highestPrime = Just (a * intToInteger (index - m) + b, facMap)
+      | Just ((fst . maximum) fac) == largePrime                    = Just ((a * intToInteger (index - m) + b) * (a * intToInteger (pivotIndex - m) + b), I.unionWith (+) facMap pivotFacMap)
+      | otherwise                                                   = Nothing
       where
         facMap = I.unionWith (+) intMapA $ I.fromAscList $ map (bimap integerToInt wordToInt) fac
 
-
     pivotFacMap = I.unionWith (+) intMapA $ I.fromAscList $ map (bimap integerToInt wordToInt) pivotFac
     (pivotIndex, pivotFac) = fromJust pivotFactorisation
-    -- There should be an inbuilt function for this
+    a = factorBack decompositionOfA
+    intMapA = I.fromList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
     factorisationData = case pivotFactorisation of
       Just pFac -> L.delete pFac factorisations
       Nothing   -> factorisations
-    pivotFactorisation = L.find ((== largePrime) . fst . maximum . snd) factorisations
-    largePrime = trace ("Large prime: " ++ show largePrimeData) $ intToInteger $ if snd largePrimeData >= 2 then fst largePrimeData else 0
-    largePrimeData = I.foldrWithKey (\key value (accKey, accValue) -> if value > accValue then (key, value) else (accKey, accValue)) (0,0) largePrimes
-    largePrimes = if null factorisations then error "factorisations null" else findLargePrimes highestPrime $ fmap (fst . maximum . snd) factorisations
+
+    pivotFactorisation :: Maybe (Int, [(Integer, Word)])
+    pivotFactorisation = if isJust largePrime then L.find ((fromJust largePrime `elem`) . fmap fst . snd) factorisations else Nothing
+    largePrime = trace ("Large prime: " ++ show largePrimeData) $
+      intToInteger <$> (if snd largePrimeData < 2 then Nothing else Just (fst largePrimeData))
+    largePrimeData = I.foldrWithKey (\key value (accKey, accValue) -> if value > accValue then (key, value) else (accKey, accValue)) (1,0) largePrimes
+    largePrimes = findLargePrimes highestPrime $ fmap (fmap fst . snd) factorisations
+    highestPrime = maximum factorBase
     factorisations :: [(Int, [(Integer, Word)])]
     factorisations = V.toList $ V.imapMaybe factoriseIfSmooth sievedInterval
-    a = factorBack decompositionOfA
-    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
     -- Remembers index for later
-    -- The fudge factor is roughly log2 t. Should be raised for large prime variation
-    factoriseIfSmooth index (value, logResidue) = case logResidue < h of
-      True  -> Just (index, if value < 0 then (-1,1) : preFac else preFac)
-      False -> Nothing
+    factoriseIfSmooth index (value, logResidue) =
+      if logResidue < h then Just (index, if value < 0 then (-1, 1) : preFac else preFac) else Nothing
       where
-        -- Maybe there is a better way to use @trialDivision@
-        preFac = trialDivisionWith integerBase value
-
-    highestPrime = if null integerBase then error "integerBase null" else maximum integerBase
-    integerBase = map (intToInteger . unPrime) factorBase
+        preFac = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
 
 -- Make sure that t^2 is an Int
-findLargePrimes :: Integer -> [Integer] -> I.IntMap Int
+findLargePrimes :: Prime Int -> [[Integer]] -> I.IntMap Int
 findLargePrimes _ [] = mempty
-findLargePrimes highestPrime (highFactor : otherhighFactors)
-  | highFactor > highestPrime * highestPrime                   = findLargePrimes highestPrime otherhighFactors
-  | highFactor > highestPrime && (isJust . isPrime) highFactor = I.insertWith (+) (integerToInt highFactor) 1 $ findLargePrimes highestPrime otherhighFactors
-  | otherwise                                                  = findLargePrimes highestPrime otherhighFactors
-
--- findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector (Integer, Int) -> V.Vector (Integer, I.IntMap Int)
--- findLogSmoothNumbers factorBase m h decompositionOfA b = V.imapMaybe selectSmooth
---   where
---     a = factorBack decompositionOfA
---     intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
---     highestPrime = intToInteger . unPrime . maximum $ factorBase
---     selectSmooth index (value, logResidue) = case logResidue < h of
---       True
---         -- Cannot use factorisation instead of listFactorisation since its rightmost value need not be an int.
---         | null listFactorisation || (fst . maximum) listFactorisation <= highestPrime -> Just (a * intToInteger (index - m) + b, factorisation)
---         | otherwise                                                                   -> Nothing
---       False -> Nothing
---       where
---         factorisation = I.unionWith (+) intMapA $ if value < 0 then I.insert (-1) 1 preFac else preFac
---         preFac = I.fromAscList $ map (bimap integerToInt wordToInt) listFactorisation
---         listFactorisation = trialDivisionWith (map (intToInteger . unPrime ) factorBase) value
+findLargePrimes highestPrime (factors : otherFactors)
+  | isJust highestFactor && fromJust highestFactor > highestPrime =
+    I.insertWith (+) ((unPrime . fromJust) highestFactor) 1 $ findLargePrimes highestPrime otherFactors
+  | otherwise                                                     = findLargePrimes highestPrime otherFactors
+  where
+    highestFactor = maybe Nothing isPrime (toIntegralSized (maximum (1 : factors)) :: Maybe Int)
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
