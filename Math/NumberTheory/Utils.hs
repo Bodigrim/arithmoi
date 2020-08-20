@@ -7,12 +7,17 @@
 -- Some utilities, mostly for bit twiddling.
 --
 
-{-# LANGUAGE BangPatterns  #-}
-{-# LANGUAGE MagicHash     #-}
-{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE BangPatterns   #-}
+{-# LANGUAGE MagicHash      #-}
+{-# LANGUAGE UnboxedTuples  #-}
+{-# LANGUAGE RankNTypes     #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE GADTs          #-}
 
 module Math.NumberTheory.Utils
-    ( shiftToOddCount
+    ( SomeKnown(..)
+    , shiftToOddCount
     , shiftToOdd
     , shiftToOdd#
     , shiftToOddCount#
@@ -26,6 +31,8 @@ module Math.NumberTheory.Utils
 
     , toWheel30
     , fromWheel30
+    , withSomeKnown
+    , intVal
     ) where
 
 import Prelude hiding (mod, quotRem)
@@ -36,7 +43,9 @@ import Data.Euclidean
 import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
 import GHC.Integer.GMP.Internals
+import qualified Math.NumberTheory.Utils.FromIntegral as UT
 import GHC.Natural
+import GHC.TypeNats
 
 -- | Remove factors of @2@ and count them. If
 --   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
@@ -203,3 +212,13 @@ toWheel30 i = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
 fromWheel30 :: (Num a, Bits a) => a -> a
 fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)
               + ((i `shiftL` 1 - i `shiftR` 1) .&. 2)
+
+-------------------------------------------------------------------------------
+data SomeKnown (f :: Nat -> Type) where
+  SomeKnown :: KnownNat k => f k -> SomeKnown f
+
+withSomeKnown :: (forall k. KnownNat k => f k -> a) -> SomeKnown f -> a
+withSomeKnown f (SomeKnown x) = f x
+
+intVal :: KnownNat k => a k -> Int
+intVal = UT.naturalToInt . natVal

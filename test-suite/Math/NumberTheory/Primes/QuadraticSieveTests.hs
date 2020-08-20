@@ -13,7 +13,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = True
+debug = False
 
 checkSquares :: Large Int -> Large Int -> Bool
 checkSquares (Large i) (Large j)
@@ -22,8 +22,8 @@ checkSquares (Large i) (Large j)
   where
     (x, y) = trace ("Number: " ++ show n) $ head $ findSquares n $ autoConfig n
     n = p * q
-    p = toInteger . unPrime . nextPrime $ i `mod` 100000000
-    q = toInteger . unPrime . nextPrime $ j `mod` 100000000
+    p = toInteger . unPrime . nextPrime $ i
+    q = toInteger . unPrime . nextPrime $ j
 
 checkQuadratic :: Large Int -> Large Int -> Bool
 checkQuadratic (Large i) (Large j)

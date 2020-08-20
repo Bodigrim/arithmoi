@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
@@ -15,7 +15,7 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
-import qualified Data.Set as SS
+import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Data.IntMap as I
 import qualified Data.IntSet as S
@@ -26,6 +26,7 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Sized as SU
 import qualified Data.Mod as M
 import qualified Data.Mod.Word as MW
+import Math.NumberTheory.Utils
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Logarithms
@@ -37,7 +38,6 @@ import Control.Monad
 import Control.Monad.ST
 import GHC.TypeNats
 import Data.Proxy
-import Data.Kind
 import Data.Foldable
 import Data.Maybe
 import Data.Bit
@@ -48,12 +48,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = True
-
-isPrimeInt :: Prime Integer -> Maybe (Prime Integer)
-isPrimeInt x = (fromJust . toPrimeIntegral) <$> primeInt
-  where
-    primeInt = toPrimeIntegral x :: Maybe (Prime Int)
+debug = False
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -72,9 +67,10 @@ autoConfig n = QuadraticSieveConfig t m k h
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = max (40 - l) 1 * floor (sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
+      | otherwise = max (40 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
+    le = fromIntegral l * log 10
 
 -- | Given an odd positive composite Integer @n@ and Int parameters @b@, @t@ and
 -- @k@, the Quadratic Sieve attempts to output @factor@, a factor of @n@. The
@@ -103,17 +99,14 @@ findSquares :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
 -- k indicates maximum number of sieve blocks to go through 2 ^ (k - 1)
 findSquares n (QuadraticSieveConfig t m k h) = runST $ do
   let
-    factorBase = filter (\p -> unPrime p == 2 || jacobi n ((intToInteger . unPrime) p) == One) [nextPrime 2..precPrime t]
-    -- Make sure rootOfA is an Int
+    factorBase = filter (isResidue n) [nextPrime 2..precPrime t]
     rootOfA
       | k <= 0    = 1
-      | otherwise = floor (((2 * fromInteger n) ** (1 / (4 * fromIntegral k))) / (fromIntegral m ** (1 / (2 * fromIntegral k))) :: Double)
-    -- Classical quadratic sieve if rootOfA < 5
-    -- Replace with better way to check whether all primes are less than the largest Prime Int
-    factorsOfA = fromMaybe (error "Parameters are not large enough.") $ sequence $ map isPrimeInt $ generatePrimes n rootOfA k
-    initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ zip factorsOfA (repeat 2)
+      | otherwise = integerRoot (4 * k) ((2 * n) `div` (intToInteger m ^ (2 :: Int)))
+    factorsOfA = map isPrimeInt $ generatePrimes n rootOfA k
+    initialDecompositionOfA = trace ("Root of a: " ++ show rootOfA) $ map (,2) factorsOfA
 
-    goSieving :: [(Integer, I.IntMap Int)] -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
+    goSieving :: M.Map Integer (I.IntMap Int) -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
     goSieving previousDiffSmoothNumbers decompositionOfA = goSelfInitSieving previousDiffSmoothNumbers $ zip valuesOfB valuesOfC
       where
         a = factorBack decompositionOfA
@@ -122,16 +115,15 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
         valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
         squareRoots = map (sqrtsModPrime n . fromJust . toPrimeIntegral) factorBase
 
-        goSelfInitSieving :: [(Integer, I.IntMap Int)] -> [(Integer, Integer)] -> [(Integer, I.IntMap Int)]
+        goSelfInitSieving :: M.Map Integer (I.IntMap Int) -> [(Integer, Integer)] -> [(Integer, I.IntMap Int)]
         goSelfInitSieving previousSmoothNumbers [] = goSieving previousSmoothNumbers nextDecompositionOfA
           where
             -- Must check that int does not overflow
             nextDecompositionOfA
-              | null decompositionOfA = zip (generatePrimes n 1 1) [2]
-              | otherwise             = (nextFactor, 2) : L.delete lowestPrime decompositionOfA
+              | null decompositionOfA = map ((, 2) . isPrimeInt) (generatePrimes n 1 1)
+              | otherwise             = (isPrimeInt nextFactor, 2) : L.delete lowestPrime decompositionOfA
               where
-                nextFactor = fromMaybe (error "Parameters are not large enough.") (isPrimeInt nextPotentialFactor)
-                nextPotentialFactor = head $ generatePrimes n highestPrime 1
+                nextFactor = head $ generatePrimes n highestPrime 1
                 highestPrime = unPrime . fst . maximum $ decompositionOfA
                 lowestPrime = minimum decompositionOfA
 
@@ -143,31 +135,33 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           smoothLogSieveM sievingLogIntervalM (zip factorBase squareRoots) a b c m
           sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
           let
-            newSmoothNumbers = findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
-            smoothNumbers = SS.toList . SS.fromList $ previousSmoothNumbers ++ newSmoothNumbers
+            newSmoothNumbers = M.fromList . V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
+            smoothNumbers :: M.Map Integer (I.IntMap Int)
+            smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               -- Minimise length of matrix
-              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 5 * (k + 1)) smoothNumbers
+              | numberOfConstraints < length mat = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) $ goSelfInitSieving smoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldr (\col acc -> acc <> I.keysSet col) mempty mat
-                mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), length newSmoothNumbers)) $ fmap snd smoothNumbers
+                numberOfConstraints = S.size $ foldMap I.keysSet mat
+                mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
-    sievingData = removeRows $ goSieving [] initialDecompositionOfA
-    matrix = trace ("Size of Matrix: " ++ show (length sievingData)) $ translate $ fmap (convertToSet . snd) sievingData
+    sievingData = removeRows $ goSieving mempty initialDecompositionOfA
+    matrix = translate $ fmap (convertToSet . snd) sievingData
 
     goSolving :: Int -> Int -> [(Integer, Integer)]
     goSolving seed counter
       | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
       | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * (k + 1) * (k + 1)) k h
       where
-        firstSquare = findFirstSquare n (fmap fst squaresData)
-        secondSquare = findSecondSquare n (fmap snd squaresData)
+        firstSquare = findFirstSquare n firstSquareData
+        secondSquare = findSecondSquare n secondSquareData
+        (firstSquareData, secondSquareData) = unzip squaresData
         squaresData = map (sievingData !!) solution
-        solution = convertToList $ linearSolve' seed matrix
+        solution = withSomeKnown (convertToList . linearSolve seed) matrix
 
-  pure $ goSolving (integerToInt n) 0
+  pure $ trace ("Size of Matrix: " ++ show (withSomeKnown intVal matrix)) $ goSolving (integerToInt n) 0
 
 generatePrimes :: Integer -> Integer -> Int -> [Prime Integer]
 generatePrimes n midPoint len
@@ -188,6 +182,16 @@ generatePrimesBackwards to
   | to <= 2   = []
   | otherwise = precPrime to : generatePrimesBackwards (unPrime (precPrime to) - 1)
 
+isPrimeInt :: Prime Integer -> Prime Integer
+isPrimeInt x = fromJust . toPrimeIntegral $ primeInt
+  where
+    primeInt = fromMaybe (error "Parameters are not large enough.") (toPrimeIntegral x :: Maybe (Prime Int))
+
+isResidue :: Integer -> Prime Int -> Bool
+isResidue n p = (unPrime p == 2) || jacobi resN (unPrime p) == One
+  where
+    resN = integerToInt $ n `mod` (intToInteger . unPrime) p
+
 -- This routine generates the sieving interval. It takes a function @f@,
 -- @startingPoint@, and a dimension @dim@. It returns tuples whose
 -- first component is @f@ applied to @x@, as @x@ runs from @startingPoint@
@@ -199,7 +203,7 @@ generateLogInterval f m = V.generate (2 * m + 1) go
   where
     go i = x `seq` v `seq` (x, v)
       where
-        -- Must check that conversion is safe
+        -- x == 0 only if n is a square number. This throws an exception to do with log.
         v = integerLog2 . abs $ x
         x = f $ intToInteger $ i - m
 
@@ -348,15 +352,8 @@ binarySearch list v = go 0 (len - 1) list v
         entry = vector U.! currentIndex
         currentIndex = (upperIndex + lowerIndex) `div` 2
 
--- This datatype facilitates calling @linearSolve@.
-data SomeKnown (f :: Nat -> Type) where
-  SomeKnown :: KnownNat k => f k -> SomeKnown f
-
-linearSolve' :: Int -> SomeKnown SBMatrix -> SomeKnown DBVector
-linearSolve' seed (SomeKnown m) = SomeKnown (linearSolve seed m)
-
-convertToList :: SomeKnown DBVector -> [Int]
-convertToList (SomeKnown solution) = listBits . SU.fromSized . unDBVector $ solution
+convertToList :: KnownNat k => DBVector k -> [Int]
+convertToList = listBits . SU.fromSized . unDBVector
 
 -- Given a solution, it computes the product of the numbers in the first
 -- component of the tuple.
