@@ -140,13 +140,6 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
             smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               | trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) False = undefined
-=======
-            newSmoothNumbers = M.fromList . V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
-            smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
-            matrixSmoothNumbers
-              | trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) False = undefined
-              -- Minimise length of matrix
->>>>>>> log_sieve
               | numberOfConstraints < length mat = take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
