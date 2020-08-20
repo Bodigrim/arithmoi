@@ -4,7 +4,7 @@ module Math.NumberTheory.Primes.QuadraticSieveTests
 
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import Math.NumberTheory.TestUtils ()
+import Math.NumberTheory.TestUtils
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
 import qualified Debug.Trace
@@ -25,8 +25,18 @@ checkSquares (Large i) (Large j)
     p = toInteger . unPrime . nextPrime $ i
     q = toInteger . unPrime . nextPrime $ j
 
-checkQuadratic :: Large Int -> Large Int -> Bool
-checkQuadratic (Large i) (Large j)
+checkSmallFactor :: Int -> Int -> Bool
+checkSmallFactor i j
+  | p == 2 || q == 2 || p == q = True
+  | otherwise                  = n `mod` factor == 0
+  where
+    factor = trace ("Number: " ++ show n) $ quadraticSieve n
+    n = p * q
+    p = toInteger . unPrime . nextPrime $ i
+    q = toInteger . unPrime . nextPrime $ j
+
+checkFactor :: Large Int -> Large Int -> Bool
+checkFactor (Large i) (Large j)
   | p == 2 || q == 2 || p == q = True
   | otherwise                  = n `mod` factor == 0
   where
@@ -38,5 +48,6 @@ checkQuadratic (Large i) (Large j)
 testSuite :: TestTree
 testSuite = testGroup "QuadraticSieve"
   [ QC.testProperty "Squares Property" checkSquares
-  , QC.testProperty "Successful Factorisations" checkQuadratic
+  , testSmallAndQuick "Small Factorisations" checkSmallFactor
+  , QC.testProperty "Factorisations" checkFactor
   ]

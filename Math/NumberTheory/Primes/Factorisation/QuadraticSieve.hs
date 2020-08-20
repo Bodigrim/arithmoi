@@ -135,14 +135,22 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           smoothLogSieveM sievingLogIntervalM (zip factorBase squareRoots) a b c m
           sievedLogInterval <- V.unsafeFreeze sievingLogIntervalM
           let
+<<<<<<< HEAD
             newSmoothNumbers = M.fromList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
             smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               | trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) False = undefined
+=======
+            newSmoothNumbers = M.fromList . V.toList $ findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval sievedLogInterval
+            smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
+            matrixSmoothNumbers
+              | trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) False = undefined
+              -- Minimise length of matrix
+>>>>>>> log_sieve
               | numberOfConstraints < length mat = take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldMap I.keysSet mat
+                numberOfConstraints = S.size $ foldMap convertToSet mat
                 mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
@@ -154,9 +162,8 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
       | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
       | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * (k + 1) * (k + 1)) k h
       where
-        firstSquare = findFirstSquare n firstSquareData
-        secondSquare = findSecondSquare n secondSquareData
-        (firstSquareData, secondSquareData) = unzip squaresData
+        firstSquare = findFirstSquare n (fmap fst squaresData)
+        secondSquare = findSecondSquare n (fmap snd squaresData)
         squaresData = map (sievingData !!) solution
         solution = withSomeKnown (convertToList . linearSolve seed) matrix
 
