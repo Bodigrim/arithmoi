@@ -142,7 +142,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
               | numberOfConstraints < length mat = take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldMap I.keysSet mat
+                numberOfConstraints = S.size $ foldMap convertToSet mat
                 mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
