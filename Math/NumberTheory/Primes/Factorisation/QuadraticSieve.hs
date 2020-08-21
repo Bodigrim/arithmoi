@@ -49,7 +49,7 @@ trace :: String -> a -> a
 trace = if debug then Debug.Trace.trace else const id
 
 debug :: Bool
-debug = True
+debug = False
 
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
@@ -61,13 +61,13 @@ data QuadraticSieveConfig = QuadraticSieveConfig
 autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
-    h = intLog2 t + 3
+    h = intLog2 t + 4
     k = max 0 (l `div` 10)
     m = 3 * t `div` 2
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = max (45 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
+      | otherwise = max (42 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
     le = fromIntegral l * log 10
@@ -142,7 +142,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
               | numberOfConstraints < length mat = take (numberOfConstraints + 4 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldMap I.keysSet mat
+                numberOfConstraints = S.size $ foldMap convertToSet mat
                 mat = trace ("Log filtering: " ++ show (V.length (V.filter (<= h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
@@ -260,7 +260,7 @@ findLogSmoothNumbers factorBase m h decompositionOfA b sievedInterval = fromJust
         Just prime -> Just ((index, fullFac), prime)
         Nothing    -> Nothing
       where
-        maybePrime = isPrime =<< (toIntegralSized (maximum (1 : (fmap fst preFac))) :: Maybe Int)
+        maybePrime = isPrime =<< (toIntegralSized (maximum (1 : fmap fst preFac)) :: Maybe Int)
         fullFac = if value < 0 then (-1, 1) : preFac else preFac
         preFac = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
 
