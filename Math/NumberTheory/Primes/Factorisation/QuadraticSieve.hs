@@ -67,7 +67,7 @@ autoConfig n = QuadraticSieveConfig t m k h
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = max (40 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
+      | otherwise = max (45 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
     le = fromIntegral l * log 10
@@ -139,11 +139,11 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
             smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               | trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) False = undefined
-              | numberOfConstraints < length mat = take (numberOfConstraints + 5 * (k + 1)) $ M.assocs smoothNumbers
+              | numberOfConstraints < length mat = take (numberOfConstraints + 4 * (k + 1)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
                 numberOfConstraints = S.size $ foldMap I.keysSet mat
-                mat = trace ("Log filtering: " ++ show (V.length (V.filter (< h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
+                mat = trace ("Log filtering: " ++ show (V.length (V.filter (<= h) sievedLogInterval), M.size newSmoothNumbers)) $ M.elems smoothNumbers
           pure matrixSmoothNumbers
 
     sievingData = removeRows $ goSieving mempty initialDecompositionOfA
@@ -239,7 +239,7 @@ findLogSmoothNumbers factorBase m h decompositionOfA b = V.imapMaybe selectSmoot
     a = factorBack decompositionOfA
     intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
     highestPrime = intToInteger . unPrime . maximum $ factorBase
-    selectSmooth index (value, logResidue) = case logResidue < h of
+    selectSmooth index (value, logResidue) = case logResidue <= h of
       True
         -- Cannot use factorisation instead of listFactorisation since its rightmost value need not be an int.
         | null listFactorisation || (fst . maximum) listFactorisation <= highestPrime -> Just (a * intToInteger (index - m) + b, factorisation)
