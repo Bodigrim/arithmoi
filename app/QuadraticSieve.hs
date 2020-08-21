@@ -4,7 +4,7 @@ main :: IO ()
 main = print $ quadraticSieveManual n qsc
   where
     qsc = QuadraticSieveConfig t m k h
-    h = 19
+    h = 18
     k = 2
     m = 3 * t `div` 2
     t = floor ((*15) . sqrt . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double)
