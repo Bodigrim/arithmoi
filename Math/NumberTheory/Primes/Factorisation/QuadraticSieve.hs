@@ -5,7 +5,7 @@
 -- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
 --
 -- <https://en.wikipedia.org/wiki/Quadratic_sieve Quadratic Sieve> algorithm
--- employing multiple polynomials and large prime variation.
+-- employing multiple polynomials.
 
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
@@ -90,7 +90,7 @@ autoConfig n = QuadraticSieveConfig t m k h
     k = max 0 (l `div` 10)
     m = 3 * t `div` 2
     t
-      | l < 4    = integerToInt n `div` 2
+      | l < 4    = integerToInt n `div` 3
       | l < 8    = integerToInt $ integerSquareRoot n
       | otherwise = max (41 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
@@ -127,7 +127,7 @@ findFactor n ((x, y) : otherSquares)
 -- | This routine outputs an infinite list of tuples @(x, y)@ such that
 -- @(x ^ 2 - y ^ 2) `mod` n = 0@. A factorisation can be infered from this data
 -- in at least a half of the cases. The algorithm employs multiple polynomials
--- with self-initialisation, approximate log sieving and the large prime variation.
+-- with self-initialisation and approximate log sieving.
 -- The algorithm has four steps:
 -- 1. Data Initialisation: a factor base and respective roots are computed.
 -- 2. Data Collection: sieving is performed to find enough smooth numbers.
@@ -193,8 +193,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           sievedLogInterval <- U.unsafeFreeze sievingLogIntervalM
           let
             -- This removes duplicates. This is an issue only when trying to factor small numbers.
-            newSmoothNumbers = M.fromList . V.toList $
-              findLogSmoothNumbers factorBase m h decompositionOfA b $ V.zip sievingInterval (U.convert sievedLogInterval :: V.Vector Int)
+            newSmoothNumbers = findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval
             smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               -- This traces the number of smooth numbers and primes found in the previous sieving block.
@@ -285,8 +284,9 @@ smoothLogSieveM sievingIntervalM factorBaseWithSquareRoots a b c m =
 -- This routine takes the @sievedInterval@ as input, it first filters for smooth numbers
 -- using the given threshold and then checks which of the filtered numbers are smooth
 -- by computing their factorisation by trial division.
-findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector (Integer, Int) -> V.Vector (Integer, I.IntMap Int)
-findLogSmoothNumbers factorBase m h decompositionOfA b = V.imapMaybe selectSmooth
+findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector Integer -> U.Vector Int -> M.Map Integer (I.IntMap Int)
+findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval =
+  M.fromList . V.toList $ V.imapMaybe selectSmooth (V.zip sievingInterval (U.convert sievedLogInterval :: V.Vector Int))
   where
     -- This routine selects the smooth number and maybe retuns a tuple whose
     -- first and second components are the data needed to compute the first
