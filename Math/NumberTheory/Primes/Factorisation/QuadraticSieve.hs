@@ -61,13 +61,13 @@ data QuadraticSieveConfig = QuadraticSieveConfig
 autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
-    h = intLog2 t + 4
+    h = intLog2 t + 6
     k = max 0 (l `div` 10)
-    m = 3 * t `div` 2
+    m = t
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
-      | otherwise = max (42 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
+      | otherwise = max (41 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
     le = fromIntegral l * log 10
@@ -139,7 +139,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
             smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
             matrixSmoothNumbers
               | trace ("Matrix dimension: " ++ show (numberOfConstraints, length mat)) False = undefined
-              | numberOfConstraints < length mat = take (numberOfConstraints + 4 * (k + 1)) $ M.assocs smoothNumbers
+              | numberOfConstraints < length mat = take (numberOfConstraints + 3 * (k + 2)) $ M.assocs smoothNumbers
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
                 numberOfConstraints = S.size $ foldMap convertToSet mat
@@ -152,7 +152,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
     goSolving :: Int -> Int -> [(Integer, Integer)]
     goSolving seed counter
       | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
-      | otherwise   = findSquares n $ QuadraticSieveConfig t (m + 100 * (k + 1) * (k + 1)) k h
+      | otherwise   = findSquares n $ QuadraticSieveConfig (t + 50 * (k + 1)) (m + 50 * (k + 1) * (k + 1)) k h
       where
         firstSquare = findFirstSquare n (fmap fst squaresData)
         secondSquare = findSecondSquare n (fmap snd squaresData)
