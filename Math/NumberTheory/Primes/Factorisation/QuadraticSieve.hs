@@ -286,18 +286,19 @@ smoothLogSieveM sievingIntervalM factorBaseWithSquareRoots a b c m =
 -- by computing their factorisation by trial division.
 findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector Integer -> U.Vector Int -> M.Map Integer (I.IntMap Int)
 findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval =
-  M.fromList . V.toList $ V.imapMaybe selectSmooth (V.zip sievingInterval (U.convert sievedLogInterval :: V.Vector Int))
+  M.fromList . V.toList $ V.imapMaybe selectSmooth sievingInterval
   where
     -- This routine selects the smooth number and maybe retuns a tuple whose
     -- first and second components are the data needed to compute the first
     -- and second square respectively.
-    selectSmooth index (value, logResidue) = case logResidue <= h of
+    selectSmooth index value = case logResidue <= h of
       True
         -- This is a smooth number. @listFactorisation@ is used since the remainder
         | null listFactorisation || (fst . maximum) listFactorisation <= highestPrime -> Just (a * intToInteger (index - m) + b, factorisation)
         | otherwise                                                                   -> Nothing
       False -> Nothing
       where
+        logResidue = sievedLogInterval U.! index
         factorisation = I.unionWith (+) intMapA $ if value < 0 then I.insert (-1) 1 preFac else preFac
         preFac = I.fromAscList $ map (bimap integerToInt wordToInt) listFactorisation
         -- This performs trial division with prime numbers in the @factorBase@. It returns
