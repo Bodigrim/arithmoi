@@ -214,6 +214,8 @@ fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)
               + ((i `shiftL` 1 - i `shiftR` 1) .&. 2)
 
 -------------------------------------------------------------------------------
+-- Helpers for dealing with data types parametrised by natural numbers.
+
 data SomeKnown (f :: Nat -> Type) where
   SomeKnown :: KnownNat k => f k -> SomeKnown f
 
