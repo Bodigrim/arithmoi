@@ -23,7 +23,7 @@ trace = if debug then Debug.Trace.trace else const id
 
 -- This variable can be set to @True@ to print the integers being tested.
 debug :: Bool
-debug = False
+debug = True
 
 -- This test checks whether the pair of integers @(x, y)@ produced in @findSquares@
 -- satisfies @(x ^ 2 - y ^ 2) `mod` n = 0@. It is better to test for speed using
