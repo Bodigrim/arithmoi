@@ -5,7 +5,7 @@ main :: IO ()
 main = print $ quadraticSieveManual n qsc
   where
     qsc = QuadraticSieveConfig t m k h
-    h = 18
+    h = 19
     k = 2
     m = t + 900
     t = 12 * floor (exp (sqrt (le * log le) / 2) :: Double)

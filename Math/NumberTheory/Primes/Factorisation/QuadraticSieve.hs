@@ -5,7 +5,7 @@
 -- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
 --
 -- <https://en.wikipedia.org/wiki/Quadratic_sieve Quadratic Sieve> algorithm
--- employing multiple polynomials.
+-- employing multiple polynomials and large prime variation.
 
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
@@ -48,6 +48,7 @@ import GHC.TypeNats
 import Data.Proxy
 import Data.Foldable
 import Data.Maybe
+import Data.Bits
 import Data.Bifunctor
 import qualified Debug.Trace
 
@@ -86,11 +87,11 @@ data QuadraticSieveConfig = QuadraticSieveConfig
 autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
-    h = intLog2 t + 3
+    h = intLog2 t + 6
     k = max 0 (l `div` 10)
     m = 3 * t `div` 2
     t
-      | l < 4    = integerToInt n `div` 3
+      | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
       | otherwise = max (41 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
@@ -127,7 +128,7 @@ findFactor n ((x, y) : otherSquares)
 -- | This routine outputs an infinite list of tuples @(x, y)@ such that
 -- @(x ^ 2 - y ^ 2) `mod` n = 0@. A factorisation can be infered from this data
 -- in at least a half of the cases. The algorithm employs multiple polynomials
--- with self-initialisation and approximate log sieving.
+-- with self-initialisation, approximate log sieving and the large prime variation.
 -- The algorithm has four steps:
 -- 1. Data Initialisation: a factor base and respective roots are computed.
 -- 2. Data Collection: sieving is performed to find enough smooth numbers.
@@ -283,33 +284,76 @@ smoothLogSieveM sievingIntervalM factorBaseWithSquareRoots a b c m =
 
 -- This routine takes the @sievedInterval@ as input, it first filters for smooth numbers
 -- using the given threshold and then checks which of the filtered numbers are smooth
--- by computing their factorisation by trial division.
+-- by computing their factorisation by trial division. It also adds extra smooth numbers
+-- whenever there are numbers which are almost smooth except one large prime.
 findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector Integer -> U.Vector Int -> M.Map Integer (I.IntMap Int)
 findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval =
-  M.fromList . V.toList $ V.imapMaybe selectSmooth sievingInterval
+  M.fromList $ fromJust <$> filter isJust (map findSquareData processedSieve)
   where
-    -- This routine selects the smooth number and maybe retuns a tuple whose
-    -- first and second components are the data needed to compute the first
-    -- and second square respectively.
-    selectSmooth index value = case logResidue <= h of
-      True
-        -- This is a smooth number. @listFactorisation@ is used since the remainder
-        | null listFactorisation || (fst . maximum) listFactorisation <= highestPrime -> Just (a * intToInteger (index - m) + b, factorisation)
-        | otherwise                                                                   -> Nothing
-      False -> Nothing
+    -- This routine takes the @sievedInterval@ and maybe returns a tuple whose
+    -- components are needed to compute @firstSquare@ and @secondSquare@
+    -- respectively.
+    findSquareData datum@((ind, fac), highFactor)
+      -- The number is smooth
+      | highFactor <= highestPrime              = Just (complete ind, facMap)
+      -- The pivot factorisation is not included in the smooth numbers.
+      | Just datum == pivotFactorisation        = Nothing
+      -- These are the almost smooth numbers. Note that one multiplies these by
+      -- by the @pivotFactorisation@. This ensures that the @largePrime@ always
+      -- shows up with even exponent and does not increase @numberOfConstraints@.
+      | Just (unPrime highFactor) == largePrime = Just (complete ind * complete pivotIndex, I.unionWith (+) facMap pivotFacMap)
+      -- These numbers are not smooth.
+      | otherwise                               = Nothing
+      where
+        facMap = I.unionWith (+) intMapA $ I.fromAscList $ map (bimap integerToInt wordToInt) fac
+        pivotFacMap = I.unionWith (+) intMapA $ I.fromAscList $ map (bimap integerToInt wordToInt) pivotFac
+        ((pivotIndex, pivotFac), _) = fromJust pivotFactorisation
+
+    complete i = a * intToInteger (i - m) + b
+    a = factorBack decompositionOfA
+    -- This is the factorisation of @a@
+    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
+    pivotFactorisation = if isJust largePrime
+      then L.find ((== fromJust largePrime) . unPrime . snd) processedSieve
+        else Nothing
+    largePrime = trace ("Large Prime Data: " ++ show largePrimeData) $
+      fst <$> largePrimeData
+    -- Finds the prime number that occurs the most times.
+    largePrimeData = foldr greaterThan1 Nothing $ I.assocs allLargePrimes
+    greaterThan1 (p, k) acc = if Just k > max (Just 1) (fmap snd acc) then Just (p, k) else acc
+    allLargePrimes = findLargePrimes $ fmap snd processedSieve
+    -- Creates a map whose keys are prime numbers and whose values are the times
+    -- they occur in the factorisations.
+    findLargePrimes :: [Prime Int] -> I.IntMap Int
+    findLargePrimes [] = mempty
+    findLargePrimes (highestFactor : otherFactors)
+      | highestFactor > highestPrime = I.insertWith (+) (unPrime highestFactor) 1 $ findLargePrimes otherFactors
+      | otherwise                    = findLargePrimes otherFactors
+    -- @factorBase@ is known not to be empty.
+    highestPrime = maximum factorBase
+    processedSieve :: [((Int, [(Integer, Word)]), Prime Int)]
+    processedSieve = V.toList $ V.imapMaybe filterAndAddHighestPrime sievingInterval
+    -- Filters by the threshold and stores the remaining factor in their
+    -- factorisations if this prime.
+    filterAndAddHighestPrime :: Int -> Integer -> Maybe ((Int, [(Integer, Word)]), Prime Int)
+    filterAndAddHighestPrime index value
+      | logResidue > h       = Nothing
+      | otherwise            = case maybePrime of
+        Just prime -> Just ((index, fullFac), prime)
+        Nothing    -> Nothing
       where
         logResidue = sievedLogInterval U.! index
-        factorisation = I.unionWith (+) intMapA $ if value < 0 then I.insert (-1) 1 preFac else preFac
-        preFac = I.fromAscList $ map (bimap integerToInt wordToInt) listFactorisation
+        -- The maximum in @preFac@ is the number that is left after dividing by
+        -- all the primes in @factorBase@. Note that @preFac@ is empty whenever
+        -- @value = 1@ hence the need to prepend @1@.
+        maybePrime = isPrime =<< (toIntegralSized (maximum (1 : fmap fst preFac)) :: Maybe Int)
+        -- Add negative factor.
+        fullFac = if value < 0 then (-1, 1) : preFac else preFac
         -- This performs trial division with prime numbers in the @factorBase@. It returns
         -- the factorisation with respect to the primes in the @factorBase@ and it appends
         -- the remainder of the number after all the divisions ifthis is larger than one.
         -- Note that this is in ascending order since the remainder cannot be smaller than @highestPrime@.
-        listFactorisation = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
-
-    a = factorBack decompositionOfA
-    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
-    highestPrime = intToInteger . unPrime . maximum $ factorBase
+        preFac = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
