@@ -58,7 +58,7 @@ trace = if tuning then Debug.Trace.trace else const id
 -- This variable can be set to @True@ when tuning the parameters. It prints
 -- information about the sieving and solving processes.
 tuning :: Bool
-tuning = False
+tuning = True
 
 -- | This data type is used to configure running ot the quadratic sieve. It
 -- comprises four parameters.
@@ -92,8 +92,8 @@ autoConfig n = QuadraticSieveConfig t m k h
     k = max 0 (l `div` 10)
     m = t
     t
-      | l < 4    = integerToInt n `div` 2
-      | l < 8    = integerToInt $ integerSquareRoot n
+      | l < 3     = integerToInt $ n `div` 2 
+      | l < 8     = integerToInt $ integerSquareRoot n
       | otherwise = max (41 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
@@ -203,7 +203,7 @@ findSquares n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show
               | trace ("Smooth Numbers: " ++ show (length mat) ++ "\nPrimes: " ++ show numberOfConstraints) False = undefined
               -- Enough smooth numbers are found. Not too many smooth numbers are
               -- taken to ensure the dimension of the matrix is not too large.
-              | numberOfConstraints < length mat = take (numberOfConstraints + 3 * (k + 2)) $ M.assocs smoothNumbers
+              | numberOfConstraints < length mat = take (numberOfConstraints + 2 * (k + 2)) $ M.assocs smoothNumbers
               -- More smooth numbers are needed.
               | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
               where
