@@ -1,8 +1,14 @@
 import Math.NumberTheory.Primes.Factorisation.QuadraticSieve
+import Math.NumberTheory.Logarithms
 
 main :: IO ()
-main = print $ quadraticSieve n b (2*b)
+main = print $ quadraticSieveManual n qsc
   where
-    b = floor l
-    l = (*0.11) . exp . sqrt $ log (fromInteger n) * log (log (fromInteger n)) :: Double
+    qsc = QuadraticSieveConfig t m k h
+    h = 18
+    k = 2
+    m = t + 900
+    t = 12 * floor (exp (sqrt (le * log le) / 2) :: Double)
+    l = integerLog10 n
+    le = fromIntegral l * log 10
     n = 313171213163547737474104867123

@@ -11,3 +11,5 @@ dist-newstyle
 *.prof
 *.hp
 *.svg
+*.profiterole.html
+*.profiterole.txt

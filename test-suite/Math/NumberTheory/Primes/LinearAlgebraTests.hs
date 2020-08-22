@@ -1,3 +1,12 @@
+-- |
+-- Module:      Math.NumberTheory.Primes.LinearAlgebraTests
+-- Copyright:   (c) 2020 Federico Bongiorno
+-- Licence:     MIT
+-- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
+--
+-- Tests for Math.NumberTheory.Primes.Factorisation.LinearAlgebra
+--
+
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Primes.LinearAlgebraTests
@@ -14,27 +23,44 @@ import GHC.TypeNats
 import Data.Proxy
 import Data.Maybe
 import System.Random
-import System.IO.Unsafe
-import System.CPUTime
+-- import qualified Data.Set as S
+-- import Debug.Trace
 
--- The floating point number is the density of the matrix.
-testLinear :: Int -> Bool
-testLinear dim = dim < 2 || testLinearSolver dim 0.4
+-- This test checks if the vector computed in @linearSolve@ is non-empty and
+-- is a solution of the matrix.
+testLinear :: Positive Int -> Int ->  Bool
+testLinear (Positive dim') seedMat = let dim = dim' + 6 in case someNatVal (fromIntegral dim) of
+  SomeNat (Proxy :: Proxy dim) -> mat `mult` solution == mempty && solution /= mempty
+    where
+      -- 0 is the random seed.
+      solution = linearSolve 0 mat
+      -- The floating point number is the density of the matrix.
+      mat :: SBMatrix dim = getRandomMatrix dim (mkStdGen seedMat) 0.3
 
--- Input number of columns of matrix and density coefficient. It returns a random matrix.
-testLinearSolver :: Int -> Double -> Bool
-testLinearSolver dim density = case someNatVal (fromIntegral dim) of
-  -- Here @dim@ acts as a random seed.
-  SomeNat (_ :: Proxy dim) -> let sol :: DBVector dim = linearSolve dim mat in
-    mat `mult` sol == mempty
-      where
-        mat = SBMatrix $ fromJust $ SV.fromList listOfColumns
-        -- Choosing @(dim - 2)@ below implies that the number of rows is at most one less than
-        -- the number of columns. This ensures the matrix is singular.
-        listOfColumns = L.take dim $ getRandomSBVectors (dim - 2) density seed
-        seed = mkStdGen $ fromIntegral $ unsafePerformIO getCPUTime
+-- This test checks whether @linearSolve@ finds different solutions when inputting
+-- different random seeds. This is desirable property when using @linearSolve@
+-- in the context of integer factorisation. As it stands, the test fails. More
+-- precisely, in 10% of the cases, it only finds one solution in 25 attempts.
+-- To test, uncomment the two lines importing files at the top, uncomment
+-- the test below and uncomment the line at the bottom in the @testSuite@.
 
--- Infinite lists of random SBVectors.
+-- testVariation :: Positive Int -> Int -> Bool
+-- testVariation (Positive dim') seedMat = let dim = dim' + 6 in case someNatVal (fromIntegral dim) of
+--   SomeNat (Proxy :: Proxy dim) -> numberOfSols > 1
+--     where
+--       numberOfSols = trace ("Matrix: " ++ show mat) $ (S.size . S.fromList) solutions
+--       solutions = map (`linearSolve` mat) $ take 25 $ [0..]
+--       mat :: SBMatrix dim = getRandomMatrix dim (mkStdGen seedMat) 0.3
+
+-- Generates a random matrix.
+getRandomMatrix :: KnownNat k => Int -> StdGen -> Double -> SBMatrix k
+getRandomMatrix dim seedMat density = SBMatrix $ fromJust . SV.fromList $ listOfColumns
+    where
+      -- Choosing @(dim - 5)@ implies that the number of rows is five less than
+      -- the number of columns. This ensures the matrix is singular.
+      listOfColumns = L.take dim $ getRandomSBVectors (dim - 5) density seedMat
+
+-- Infinite lists of random SBVectors to be used as columns of the random matrix.
 getRandomSBVectors :: KnownNat k => Int -> Double -> StdGen -> [SBVector k]
 getRandomSBVectors numberOfRows density gen = go randomEntries
   where
@@ -49,4 +75,5 @@ getRandomSBVectors numberOfRows density gen = go randomEntries
 testSuite :: TestTree
 testSuite = testGroup "Linear Algebra"
   [ testSmallAndQuick "LinearSolver" testLinear
+  --, testSmallAndQuick "Variation of Solutions" testVariation
   ]
