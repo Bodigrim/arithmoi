@@ -79,17 +79,18 @@ data QuadraticSieveConfig = QuadraticSieveConfig
   , qscSievingInterval :: Int
   , qscNumberOfBlocks :: Int
   , qscSmoothThreshold :: Int
-  }
+  } deriving (Show)
 
 -- | Given an integer @n@ to factor, this routine produces a configuaration
 -- to run the quadratic sieve with. Significantly better results may be
 -- obtained by tuning the algorithm manually.
+-- RETUNE PARAMETERS
 autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
     h = intLog2 t + 6
     k = max 0 (l `div` 10)
-    m = 3 * t `div` 2
+    m = t
     t
       | l < 4    = integerToInt n `div` 2
       | l < 8    = integerToInt $ integerSquareRoot n
@@ -135,7 +136,7 @@ findFactor n ((x, y) : otherSquares)
 -- 3. Data Processing: a linear algebra routine is called to find dependencies.
 -- 4. Factor Inference: a factor is inferred from the processed data.
 findSquares :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
-findSquares n (QuadraticSieveConfig t m k h) = runST $ do
+findSquares n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show qsc) $ runST $ do
   let
     -- 1. In the first part of the algorithm, the data is initialised.
     initialFactorBase = if t < 3 then error "Math.NumberTheory.Primes.Factorisation.QuadraticSieve: Parameters are not large enough."
@@ -165,6 +166,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
         valuesOfB = trace ("Ratio: " ++ show ((fromInteger (a * fromIntegral m) :: Double) / fromInteger (integerSquareRoot (2*n)))) $
           -- Only one root is picked since they produce equivalent data.
           filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
+        -- @c@ is chosen so that @b ^ 2 - a * c = n@.
         valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
 
         -- Multiple polynomials are used with the same leading coefficient.
@@ -212,7 +214,7 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           pure matrixSmoothNumbers
 
     -- Removes columns which could never be part of a solution.
-    sievingData = removeRows $ goSieving mempty initialDecompositionOfA
+    sievingData = removeColumns 0 $ goSieving mempty initialDecompositionOfA
     matrix = translate $ fmap (convertToSet . snd) sievingData
 
     -- 3. In the third part of the algorithm, the linear algebra routine is called
@@ -286,83 +288,53 @@ smoothLogSieveM sievingIntervalM factorBaseWithSquareRoots a b c m =
 -- using the given threshold and then checks which of the filtered numbers are smooth
 -- by computing their factorisation by trial division. It also adds extra smooth numbers
 -- whenever there are numbers which are almost smooth except one large prime.
+-- ADD COMMENTS ABOUT RELATION BETWEEN FIRST AND SECOND SQUARE
+-- EXPLAIN REMOVE COLUMNS
 findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector Integer -> U.Vector Int -> M.Map Integer (I.IntMap Int)
 findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval =
-  M.fromList $ fromJust <$> filter isJust (map findSquareData processedSieve)
+  M.fromList . removeColumns highestPrime . V.toList $ V.imapMaybe filterAndAddHighestPrime sievingInterval
   where
-    -- This routine takes the @sievedInterval@ and maybe returns a tuple whose
-    -- components are needed to compute @firstSquare@ and @secondSquare@
-    -- respectively.
-    findSquareData datum@((ind, fac), highFactor)
-      -- The number is smooth
-      | highFactor <= highestPrime              = Just (complete ind, facMap)
-      -- The pivot factorisation is not included in the smooth numbers.
-      | Just datum == pivotFactorisation        = Nothing
-      -- These are the almost smooth numbers. Note that one multiplies these by
-      -- by the @pivotFactorisation@. This ensures that the @largePrime@ always
-      -- shows up with even exponent and does not increase @numberOfConstraints@.
-      | Just (unPrime highFactor) == largePrime = Just (complete ind * complete pivotIndex, I.unionWith (+) facMap pivotFacMap)
-      -- These numbers are not smooth.
-      | otherwise                               = Nothing
-      where
-        facMap = I.unionWith (+) intMapA $ I.fromAscList $ map (bimap integerToInt wordToInt) fac
-        pivotFacMap = I.unionWith (+) intMapA $ I.fromAscList $ map (bimap integerToInt wordToInt) pivotFac
-        ((pivotIndex, pivotFac), _) = fromJust pivotFactorisation
-
-    complete i = a * intToInteger (i - m) + b
-    a = factorBack decompositionOfA
-    -- This is the factorisation of @a@
-    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
-    pivotFactorisation = if isJust largePrime
-      then L.find ((== fromJust largePrime) . unPrime . snd) processedSieve
-        else Nothing
-    largePrime = trace ("Large Prime Data: " ++ show largePrimeData) $
-      fst <$> largePrimeData
-    -- Finds the prime number that occurs the most times.
-    largePrimeData = foldr greaterThan1 Nothing $ I.assocs allLargePrimes
-    greaterThan1 (p, k) acc = if Just k > max (Just 1) (fmap snd acc) then Just (p, k) else acc
-    allLargePrimes = findLargePrimes $ fmap snd processedSieve
-    -- Creates a map whose keys are prime numbers and whose values are the times
-    -- they occur in the factorisations.
-    findLargePrimes :: [Prime Int] -> I.IntMap Int
-    findLargePrimes [] = mempty
-    findLargePrimes (highestFactor : otherFactors)
-      | highestFactor > highestPrime = I.insertWith (+) (unPrime highestFactor) 1 $ findLargePrimes otherFactors
-      | otherwise                    = findLargePrimes otherFactors
-    -- @factorBase@ is known not to be empty.
-    highestPrime = maximum factorBase
-    processedSieve :: [((Int, [(Integer, Word)]), Prime Int)]
-    processedSieve = V.toList $ V.imapMaybe filterAndAddHighestPrime sievingInterval
+    highestPrime = unPrime $ maximum factorBase
     -- Filters by the threshold and stores the remaining factor in their
     -- factorisations if this prime.
-    filterAndAddHighestPrime :: Int -> Integer -> Maybe ((Int, [(Integer, Word)]), Prime Int)
+    filterAndAddHighestPrime :: Int -> Integer -> Maybe (Integer, I.IntMap Int)
     filterAndAddHighestPrime index value
       | logResidue > h       = Nothing
-      | otherwise            = case maybePrime of
-        Just prime -> Just ((index, fullFac), prime)
-        Nothing    -> Nothing
+      | isNothing maybePrime = Nothing
+      | otherwise            = Just (complete index, I.unionWith (+) intMapA facMap)
       where
         logResidue = sievedLogInterval U.! index
         -- The maximum in @preFac@ is the number that is left after dividing by
         -- all the primes in @factorBase@. Note that @preFac@ is empty whenever
         -- @value = 1@ hence the need to prepend @1@.
         maybePrime = isPrime =<< (toIntegralSized (maximum (1 : fmap fst preFac)) :: Maybe Int)
+        -- CONVERSION IS SAFE
+        facMap = I.fromAscList $ map (bimap integerToInt wordToInt) fullFac
         -- Add negative factor.
         fullFac = if value < 0 then (-1, 1) : preFac else preFac
-        -- This performs trial division with prime numbers in the @factorBase@. It returns
-        -- the factorisation with respect to the primes in the @factorBase@ and it appends
-        -- the remainder of the number after all the divisions ifthis is larger than one.
-        -- Note that this is in ascending order since the remainder cannot be smaller than @highestPrime@.
+        -- This performs trial division with prime numbers in the @factorBase@.
+        -- It returns the factorisation with respect to the primes in the
+        -- @factorBase@ and it appends the remainder of the number after all the
+        -- divisions ifthis is larger than one. Note that this is in ascending
+        -- order since the remainder cannot be smaller than @highestPrime@.
         preFac = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
+
+    complete i = a * intToInteger (i - m) + b
+    a = factorBack decompositionOfA
+    -- This is the factorisation of @a@
+    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
 
 -- Removes all columns of the matrix which contain primes appearing only once.
 -- These columns cannot be part of the solution.
-removeRows :: [(Integer, I.IntMap Int)] -> [(Integer, I.IntMap Int)]
-removeRows indexedFactorisations
+-- EXPLAIN FUNCTION
+removeColumns :: Int -> [(Integer, I.IntMap Int)] -> [(Integer, I.IntMap Int)]
+removeColumns lowerBound indexedFactorisations
   | onlyOnce == mempty = indexedFactorisations
-  | otherwise          = removeRows $ filter (\(_, im) -> S.null (S.intersection (convertToSet im) onlyOnce)) indexedFactorisations
+  | otherwise          = removeColumns lowerBound $
+    filter (\(_, im) -> S.null (S.intersection (convertToSet im) onlyOnce)) indexedFactorisations
   where
-    onlyOnce = appearsOnlyOnce $ map (convertToSet . snd) indexedFactorisations
+    -- This can be made more efficient
+    onlyOnce = S.filter (> lowerBound) . appearsOnlyOnce $ map (convertToSet . snd) indexedFactorisations
 
 -- This routine finds all primes, which appear only once in the input list.
 appearsOnlyOnce :: [S.IntSet] -> S.IntSet
