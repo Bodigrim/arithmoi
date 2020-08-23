@@ -23,9 +23,9 @@ trace = if debug then Debug.Trace.trace else const id
 
 -- This variable can be set to @True@ to print the integers being tested.
 debug :: Bool
-debug = False
+debug = True
 
--- This test checks whether the pair of integers @(x, y)@ produced in @findSquares@
+-- This test checks whether the pair of integers @(x, y)@ produced in @findRoots@
 -- satisfies @(x ^ 2 - y ^ 2) `mod` n = 0@. It is better to test for speed using
 -- this routine.
 checkSquares :: Large Int -> Large Int -> Bool
@@ -33,7 +33,7 @@ checkSquares (Large i) (Large j)
   | p == 2 || q == 2 || p == q = True
   | otherwise                  = (x * x - y * y) `mod` n == 0
   where
-    (x, y) = trace ("Number: " ++ show n) $ head $ findSquares n $ autoConfig n
+    (x, y) = trace ("Number: " ++ show n) $ head $ findRoots n $ autoConfig n
     n = p * q
     p = toInteger . unPrime . nextPrime $ i
     q = toInteger . unPrime . nextPrime $ j
