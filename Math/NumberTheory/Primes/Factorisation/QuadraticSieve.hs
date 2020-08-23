@@ -338,7 +338,7 @@ removeColumns lowerBound smoothData
     onlyOnce = IS.filter (> lowerBound) . appearsOnlyOnce $ M.map setOddPowers smoothData
 
 -- This routine finds all primes, which appear only once in the input map.
-appearsOnlyOnce :: M.Map Integer (IS.IntSet) -> IS.IntSet
+appearsOnlyOnce :: M.Map Integer IS.IntSet -> IS.IntSet
 appearsOnlyOnce = fst . M.foldl' go (mempty, mempty)
   where
     go (onlyOnce, atLeastOnce) x =
