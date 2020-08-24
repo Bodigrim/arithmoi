@@ -18,7 +18,7 @@ description:
   powers (integer roots and tests, modular exponentiation).
 category:      Math, Algorithms, Number Theory
 author:        Andrew Lelechenko, Daniel Fischer
-tested-with:   GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.3 GHC ==8.10.1
+tested-with:   GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.3 GHC ==8.10.2
 extra-source-files:
   changelog.md
 
@@ -130,7 +130,9 @@ test-suite arithmoi-tests
     tasty-smallcheck >=0.8 && <0.9,
     transformers >=0.5,
     vector,
-    vector-sized
+    vector-sized,
+    -- Below are doctest dependencies
+    numbers
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsTests
     Math.NumberTheory.ArithmeticFunctions.InverseTests
