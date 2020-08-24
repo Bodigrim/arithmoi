@@ -194,7 +194,7 @@ findRoots n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show q
           sievedLogInterval <- U.unsafeFreeze sievingLogIntervalM
           let
             newSmoothNumbers = findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval
-            currentSmoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
+            currentSmoothNumbers = previousSmoothNumbers <> newSmoothNumbers
             smoothNumbers
               -- This traces the number of smooth numbers and primes found in the previous sieving block.
               | trace ("Smooth Numbers: " ++ show (M.size currentSmoothNumbers) ++ "\nPrimes: " ++ show numberOfConstraints) False = undefined
@@ -202,7 +202,7 @@ findRoots n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show q
               -- taken to ensure the dimension of the matrix is not too large.
               | numberOfConstraints < M.size currentSmoothNumbers = M.take (numberOfConstraints + 5 * (k + 1)) currentSmoothNumbers
               -- More smooth numbers are needed.
-              | otherwise                        = goSelfInitSieving currentSmoothNumbers otherCoeffs
+              | otherwise                                         = goSelfInitSieving currentSmoothNumbers otherCoeffs
               where
                 -- The tracing prints how many numbers satisfy the given threshold and how many of them are actually smoooth.
                 numberOfConstraints = trace ("Log Filtering: " ++ show (U.length (U.filter (<= h) sievedLogInterval)) ++ " -> " ++ show (M.size newSmoothNumbers)) $
@@ -211,7 +211,7 @@ findRoots n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show q
           pure $ removeColumns 0 smoothNumbers
 
     sievingData = goSieving mempty initialDecompositionOfA
-    matrix = translate . M.elems $ M.map setOddPowers sievingData
+    matrix = translate . map setOddPowers $ M.elems sievingData
 
     -- 3. In the third part of the algorithm, the linear algebra routine is called
     goSolving :: Int -> Int -> [(Integer, Integer)]
@@ -333,7 +333,7 @@ findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLog
 removeColumns :: Int -> M.Map Integer (IM.IntMap Int) -> M.Map Integer (IM.IntMap Int)
 removeColumns lowerBound smoothData
   | onlyOnce == mempty = smoothData
-  | otherwise          = removeColumns lowerBound $ M.filter (IS.null . IS.intersection onlyOnce . setOddPowers) smoothData
+  | otherwise          = removeColumns lowerBound $ M.filter (disjoint onlyOnce . setOddPowers) smoothData
   where
     onlyOnce = IS.filter (> lowerBound) . appearsOnlyOnce $ M.map setOddPowers smoothData
 
@@ -343,6 +343,15 @@ appearsOnlyOnce = fst . M.foldl' go (mempty, mempty)
   where
     go (onlyOnce, atLeastOnce) x =
       ((onlyOnce IS.\\ x) <> (x IS.\\ atLeastOnce), atLeastOnce <> x)
+
+#if MIN_VERSION_containers(0,5,11)
+disjoint :: IS.IntSet -> IS.IntSet -> Bool
+disjoint = IS.disjoint
+#else
+
+disjoint :: IS.IntSet -> IS.IntSet -> Bool
+disjoint x y = IS.null (IS.intersection x y)
+#endif
 
 setOddPowers :: IM.IntMap Int -> IS.IntSet
 setOddPowers = IM.keysSet . IM.filter odd
