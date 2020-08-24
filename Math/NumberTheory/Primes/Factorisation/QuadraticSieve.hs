@@ -5,7 +5,7 @@
 -- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
 --
 -- <https://en.wikipedia.org/wiki/Quadratic_sieve Quadratic Sieve> algorithm
--- employing multiple polynomials.
+-- employing multiple polynomials and large prime variation.
 
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
@@ -18,16 +18,15 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   , quadraticSieve
   , quadraticSieveManual
   , autoConfig
-  , findSquares
+  , findRoots
   ) where
 
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
 import qualified Data.Map as M
-import qualified Data.List as L
-import qualified Data.IntMap as I
-import qualified Data.IntSet as S
+import qualified Data.IntMap as IM
+import qualified Data.IntSet as IS
 import qualified Data.Vector as V
 import qualified Data.Vector.Sized as SV
 import qualified Data.Vector.Unboxed as U
@@ -48,13 +47,14 @@ import GHC.TypeNats
 import Data.Proxy
 import Data.Foldable
 import Data.Maybe
+import Data.Bits
 import Data.Bifunctor
 import qualified Debug.Trace
 
 trace :: String -> a -> a
 trace = if tuning then Debug.Trace.trace else const id
 
--- This variable can be set to @True@ when tuning the parameters. It prints
+-- This variable can be set to @True@ when tuning parameters. It prints
 -- information about the sieving and solving processes.
 tuning :: Bool
 tuning = False
@@ -64,77 +64,78 @@ tuning = False
 -- 1. @qscFactorBase@ controls the size of the factor base. More precisely the
 -- factor base consists of all primes up to the given bound such that @n@, the
 -- integer to be factored, is a square modulo @p@.
--- 2. @qscSievingInterval@ controls the length of the sieving interval.
--- The length is twice this number plus one.
+-- 2. @qscSievingInterval@ controls the length of the sieving interval. This is
+-- given by @[i | i <- [-qscSievingInterval..qscSievingInterval]]@.
 -- 3. @qscNumberOfBlocks@ controls the number of sieving blocks to run with a
--- given initialisation. Inputting @0@ results in running the standard quadratic
--- sieve. Inputting a greater number results in running the multiple polynomials
--- variant. In this case, the number of blocks employed given an initialisation
--- is @2 ^ qscNumberOfBlocks - 1@.
--- 4. @qscSmoothThreshold@ is the threshold to select smooth numbers. This is
--- needed since the sieving is approximate.
+-- fixed initialisation. Inputting @0@ results in running the standard quadratic
+-- sieve. Inputting a larger number results in running the multiple polynomials
+-- variant. In this case, the number of blocks employed with a fixed
+--  initialisation is @2 ^ qscNumberOfBlocks - 1@.
+-- 4. @qscSmoothThreshold@ is the threshold to select smooth numbers. After
+-- approximate log sieving, the values which are smaller than the threshold are
+-- checked for smoothness.
 data QuadraticSieveConfig = QuadraticSieveConfig
   { qscFactorBase :: Int
   , qscSievingInterval :: Int
   , qscNumberOfBlocks :: Int
   , qscSmoothThreshold :: Int
-  }
+  } deriving (Show)
 
 -- | Given an integer @n@ to factor, this routine produces a configuaration
--- to run the quadratic sieve with. Significantly better results may be
+-- to run the quadratic sieve. Significantly better results may be
 -- obtained by tuning the algorithm manually.
 autoConfig :: Integer -> QuadraticSieveConfig
 autoConfig n = QuadraticSieveConfig t m k h
   where
-    h = intLog2 t + 3
+    h = intLog2 t + 4
     k = max 0 (l `div` 10)
-    m = 3 * t `div` 2
+    m = t
     t
-      | l < 4    = integerToInt n `div` 3
-      | l < 8    = integerToInt $ integerSquareRoot n
+      | l < 3     = integerToInt $ n `div` 2
+      | l < 8     = integerToInt $ integerSquareRoot n
       | otherwise = max (41 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
     le = fromIntegral l * log 10
 
 -- | Given an odd positive composite Integer @n@, @quadraticSieve@ outputs a
--- factor of @n@. The conditions are not checked.
+-- factor of @n@. These conditions are not checked.
 --
 -- >>> quadraticSieve 15
--- 3
+-- 5
 quadraticSieve :: Integer -> Integer
 quadraticSieve n = quadraticSieveManual n $ autoConfig n
 
--- | In this variant of the algorithm, a manual configuration is given as
--- additional input.
+-- | This is a more general version of the algorithm where the user can input
+--  a manual configuration.
 --
 -- >>> quadraticSieveManual 15 $ QuadraticSieveConfig 0 0 0 0
 -- Exception: Math.NumberTheory.Primes.Factorisation.QuadraticSieve: Parameters are not large enough.
 quadraticSieveManual :: Integer -> QuadraticSieveConfig -> Integer
-quadraticSieveManual n qsc = findFactor n $ findSquares n qsc
+quadraticSieveManual n qsc = findFactor n $ findRoots n qsc
 
 -- This routine attempts to infer a factorisation from a pair of numbers
 -- @(x, y)@ such that @(x ^ 2 - y ^ 2) `mod` n = 0@. If it fails, it calls
 -- the linear algebra routine again to provide another pair.
 findFactor :: Integer -> [(Integer, Integer)] -> Integer
 findFactor _ [] = error "Math.NumberTheory.Primes.Factorisation.QuadraticSieve: Parameters are not large enough."
-findFactor n ((x, y) : otherSquares)
+findFactor n ((x, y) : otherRoots)
   | factor /= 1 && factor /= n   = factor
-  | otherwise                    = findFactor n otherSquares
+  | otherwise                    = findFactor n otherRoots
   where
     factor = gcd (x - y) n
 
 -- | This routine outputs an infinite list of tuples @(x, y)@ such that
 -- @(x ^ 2 - y ^ 2) `mod` n = 0@. A factorisation can be infered from this data
 -- in at least a half of the cases. The algorithm employs multiple polynomials
--- with self-initialisation and approximate log sieving.
+-- with self-initialisation, approximate log sieving and the large prime variation.
 -- The algorithm has four steps:
 -- 1. Data Initialisation: a factor base and respective roots are computed.
 -- 2. Data Collection: sieving is performed to find enough smooth numbers.
 -- 3. Data Processing: a linear algebra routine is called to find dependencies.
 -- 4. Factor Inference: a factor is inferred from the processed data.
-findSquares :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
-findSquares n (QuadraticSieveConfig t m k h) = runST $ do
+findRoots :: Integer -> QuadraticSieveConfig -> [(Integer, Integer)]
+findRoots n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show qsc) $ runST $ do
   let
     -- 1. In the first part of the algorithm, the data is initialised.
     initialFactorBase = if t < 3 then error "Math.NumberTheory.Primes.Factorisation.QuadraticSieve: Parameters are not large enough."
@@ -154,20 +155,20 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
       map isPrimeInt $ generatePrimes n kRootOfA k
     initialDecompositionOfA = map (,2) factorsOfA
 
-    -- 2. In the second part of the algorithm, enough smooth numbers are found.
-    goSieving :: M.Map Integer (I.IntMap Int) -> [(Prime Integer, Word)] -> [(Integer, I.IntMap Int)]
+    -- 2. In the second part of the algorithm, the goal is to find enough smooth numbers.
+    goSieving :: M.Map Integer (IM.IntMap Int) -> [(Prime Integer, Word)] -> M.Map Integer (IM.IntMap Int)
     goSieving previousDiffSmoothNumbers decompositionOfA = goSelfInitSieving previousDiffSmoothNumbers $ zip valuesOfB valuesOfC
       where
-        -- Initialisation of @a@ and related data.
         a = factorBack decompositionOfA
         -- The @Ratio@ traced below needs to be close to @1@ for maximal efficiency.
         valuesOfB = trace ("Ratio: " ++ show ((fromInteger (a * fromIntegral m) :: Double) / fromInteger (integerSquareRoot (2*n)))) $
           -- Only one root is picked since they produce equivalent data.
           filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
+        -- @b@ and @c@ are chosen so that @b ^ 2 - a * c = n@.
         valuesOfC = map (\x -> (x * x - n) `div` a) valuesOfB
 
         -- Multiple polynomials are used with the same leading coefficient.
-        goSelfInitSieving :: M.Map Integer (I.IntMap Int) -> [(Integer, Integer)] -> [(Integer, I.IntMap Int)]
+        goSelfInitSieving :: M.Map Integer (IM.IntMap Int) -> [(Integer, Integer)] -> M.Map Integer (IM.IntMap Int)
         -- If there are no more polynomials, then choose a different @a@.
         goSelfInitSieving previousSmoothNumbers [] = goSieving previousSmoothNumbers nextDecompositionOfA
           where
@@ -192,41 +193,39 @@ findSquares n (QuadraticSieveConfig t m k h) = runST $ do
           smoothLogSieveM sievingLogIntervalM factorBaseWithSquareRoots a b c m
           sievedLogInterval <- U.unsafeFreeze sievingLogIntervalM
           let
-            -- This removes duplicates. This is an issue only when trying to factor small numbers.
             newSmoothNumbers = findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval
-            smoothNumbers = previousSmoothNumbers `M.union` newSmoothNumbers
-            matrixSmoothNumbers
+            currentSmoothNumbers = previousSmoothNumbers <> newSmoothNumbers
+            smoothNumbers
               -- This traces the number of smooth numbers and primes found in the previous sieving block.
-              | trace ("Smooth Numbers: " ++ show (length mat) ++ "\nPrimes: " ++ show numberOfConstraints) False = undefined
+              | trace ("Smooth Numbers: " ++ show (M.size currentSmoothNumbers) ++ "\nPrimes: " ++ show numberOfConstraints) False = undefined
               -- Enough smooth numbers are found. Not too many smooth numbers are
               -- taken to ensure the dimension of the matrix is not too large.
-              | numberOfConstraints < length mat = take (numberOfConstraints + 3 * (k + 2)) $ M.assocs smoothNumbers
+              | numberOfConstraints < M.size currentSmoothNumbers = M.take (numberOfConstraints + 5 * (k + 1)) currentSmoothNumbers
               -- More smooth numbers are needed.
-              | otherwise                        = goSelfInitSieving smoothNumbers otherCoeffs
+              | otherwise                                         = goSelfInitSieving currentSmoothNumbers otherCoeffs
               where
-                numberOfConstraints = S.size $ foldMap convertToSet mat
                 -- The tracing prints how many numbers satisfy the given threshold and how many of them are actually smoooth.
-                mat = trace ("Log Filtering: " ++ show (U.length (U.filter (<= h) sievedLogInterval)) ++ " -> " ++ show (M.size newSmoothNumbers)) $
-                  M.elems smoothNumbers
-          pure matrixSmoothNumbers
+                numberOfConstraints = trace ("Log Filtering: " ++ show (U.length (U.filter (<= h) sievedLogInterval)) ++ " -> " ++ show (M.size newSmoothNumbers)) $
+                  IS.size $ foldMap setOddPowers currentSmoothNumbers
+          -- Removes columns which could never be part of a solution.
+          pure $ removeColumns 0 smoothNumbers
 
-    -- Removes columns which could never be part of a solution.
-    sievingData = removeRows $ goSieving mempty initialDecompositionOfA
-    matrix = translate $ fmap (convertToSet . snd) sievingData
+    sievingData = goSieving mempty initialDecompositionOfA
+    matrix = translate . map setOddPowers $ M.elems sievingData
 
     -- 3. In the third part of the algorithm, the linear algebra routine is called
     goSolving :: Int -> Int -> [(Integer, Integer)]
     goSolving seed counter
       -- Solve the matrix with a different seed.
-      | counter < 5 = firstSquare `seq` secondSquare `seq` (firstSquare, secondSquare) : goSolving (seed + 1) (counter + 1)
+      | counter < 5 = firstRoot `seq` secondRoot `seq` (firstRoot, secondRoot) : goSolving (seed + 1) (counter + 1)
       -- In this case, the solutions output by @linearSolve@ are probably identical.
       -- Start again with different parameters.
-      | otherwise   = findSquares n $ QuadraticSieveConfig (t + 50 * (k + 1)) (m + 50 * (k + 1) * (k + 1)) k h
+      | otherwise   = findRoots n $ QuadraticSieveConfig (t + 10 * (k + 1)) (m + 50 * (k + 1) * (k + 1)) k h
       where
-        -- 4. In the final part, the two squares are inferred.
-        firstSquare = findFirstSquare n (fmap fst squaresData)
-        secondSquare = findSecondSquare n (fmap snd squaresData)
-        squaresData = map (sievingData !!) solution
+        -- 4. In the final part, the two roots are inferred.
+        firstRoot = findFirstRoot n (fmap fst rootsData)
+        secondRoot = findSecondRoot n (fmap snd rootsData)
+        rootsData = map (`M.elemAt` sievingData) solution
         solution = withSomeKnown (convertToList . linearSolve seed) matrix
 
   -- Prints the size of the matrix.
@@ -240,7 +239,7 @@ generatePrimes n midPoint len
   | otherwise = lowerPrimes ++ higherPrimes
   where
     higherPrimes = take (len - length lowerPrimes) $ filter positiveResidue $ generatePrimesForwards $ midPoint + 1
-    -- The length of @lowerPrimes@ may not be @len `div` 2@
+    -- The length of @lowerPrimes@ may be smaller than @len `div` 2@
     lowerPrimes = take (len `div` 2) $ filter positiveResidue $ generatePrimesBackwards midPoint
     positiveResidue p = jacobi n (unPrime p) == One
 
@@ -253,7 +252,7 @@ generatePrimesBackwards to
   | to <= 2   = []
   | otherwise = precPrime to : generatePrimesBackwards (unPrime (precPrime to) - 1)
 
--- Checks if the primes picked for the factorisation of @a@ are small enough.
+-- Checks if a prime picked for the factorisation of @a@ is small enough.
 isPrimeInt :: Prime Integer -> Prime Integer
 isPrimeInt x = fromJust . toPrimeIntegral $ primeInt
   where
@@ -261,7 +260,7 @@ isPrimeInt x = fromJust . toPrimeIntegral $ primeInt
       (toPrimeIntegral x :: Maybe (Prime Int))
 
 -- This routine takes @sievingIntervalM@, and performs log division by all the
--- primes in the @factorBase@. When, a division occurs, the logarithm of the
+-- primes in the @factorBase@. When a division occurs, the logarithm of the
 -- prime is subtracted from the value in the interval.
 smoothLogSieveM :: MU.MVector s Int -> [(Prime Int, [Integer])] -> Integer -> Integer -> Integer -> Int -> ST s ()
 smoothLogSieveM sievingIntervalM factorBaseWithSquareRoots a b c m =
@@ -274,83 +273,110 @@ smoothLogSieveM sievingIntervalM factorBaseWithSquareRoots a b c m =
           -- When a prime belongs to the factorisation of @a@.
           Nothing         -> case MW.invertMod (fromInteger (2 * b) :: MW.Mod prime) of
             Just inverseOf2B -> [(wordToInt . MW.unMod) (fromIntegral m - fromInteger c * inverseOf2B :: MW.Mod prime)]
-            -- This can't mathematically happen. In this case @p@ divides @n@ and its quadratic residue would be @Zero@.
+            -- In this case @p@ divides @n@. This is not possible since any @p@
+            -- dividing @a@ has positive quadratic residue with respect to @n@.
             Nothing          -> error "Math.NumberTheory.Primes.Factorisation.QuadraticSieve: Algorithm incorrect."
       forM_ startingIndices $ \startingIndex -> do
         let change y = y - (intLog2 . unPrime) prime
         forM_ [startingIndex, startingIndex + unPrime prime..(2 * m)] $ \entry ->
           MU.modify sievingIntervalM change entry
 
--- This routine takes the @sievedInterval@ as input, it first filters for smooth numbers
--- using the given threshold and then checks which of the filtered numbers are smooth
--- by computing their factorisation by trial division.
-findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector Integer -> U.Vector Int -> M.Map Integer (I.IntMap Int)
+-- This routine takes the @sievedInterval@ as input and filters for potential
+-- smooth numbers using the given threshold. It then checks which of the
+-- filtered numbers are smooth by computing their factorisation by trial division.
+-- It also adds extra smooth numbers whenever there are numbers which are almost
+-- smooth except for one large prime. The output is a map whose keys are integers
+-- @x_i@ and whose values are, by construction, the full factorisations of
+-- @x_i ^ 2 - n@. The keys are used to compute @firstRoot@ and the values
+-- are used to compute @secondRoot@.
+findLogSmoothNumbers :: [Prime Int] -> Int -> Int -> [(Prime Integer, Word)] -> Integer -> V.Vector Integer -> U.Vector Int -> M.Map Integer (IM.IntMap Int)
 findLogSmoothNumbers factorBase m h decompositionOfA b sievingInterval sievedLogInterval =
-  M.fromList . V.toList $ V.imapMaybe selectSmooth sievingInterval
+  -- Firstly, the filtered interval is converted to a map to remove duplicates.
+  -- Then, smooth numbers which do not share a @highestFactor@ with any other
+  -- smooth numbers are removed.
+  removeColumns highestPrime . M.fromList . V.toList $ V.imapMaybe isSmooth sievingInterval
   where
-    -- This routine selects the smooth number and maybe retuns a tuple whose
-    -- first and second components are the data needed to compute the first
-    -- and second square respectively.
-    selectSmooth index value = case logResidue <= h of
-      True
-        -- This is a smooth number. @listFactorisation@ is used since the remainder
-        | null listFactorisation || (fst . maximum) listFactorisation <= highestPrime -> Just (a * intToInteger (index - m) + b, factorisation)
-        | otherwise                                                                   -> Nothing
-      False -> Nothing
+    highestPrime = unPrime $ maximum factorBase
+    isSmooth :: Int -> Integer -> Maybe (Integer, IM.IntMap Int)
+    isSmooth index value
+      | logResidue <= h && isJust highestFactor = Just (complete index, IM.unionWith (+) intMapA facMap)
+      | otherwise                               = Nothing
       where
         logResidue = sievedLogInterval U.! index
-        factorisation = I.unionWith (+) intMapA $ if value < 0 then I.insert (-1) 1 preFac else preFac
-        preFac = I.fromAscList $ map (bimap integerToInt wordToInt) listFactorisation
-        -- This performs trial division with prime numbers in the @factorBase@. It returns
-        -- the factorisation with respect to the primes in the @factorBase@ and it appends
-        -- the remainder of the number after all the divisions ifthis is larger than one.
-        -- Note that this is in ascending order since the remainder cannot be smaller than @highestPrime@.
-        listFactorisation = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
+        -- This returns the highest factor in a factorisation whenever this
+        -- is of Int type and prime. Otherwise returns @Nothing@.
+        -- The maximum in @preFac@ is the number that is left after dividing by
+        -- all the primes in @factorBase@. Note that @preFac@ is empty whenever
+        -- @value = 1@, hence the need to prepend @1@.
+        highestFactor = isPrime =<< (toIntegralSized (maximum (1 : fmap fst preFac)) :: Maybe Int)
+        -- The conversion to Int is safe since @facMap@ is only used whenever
+        -- @highestFactor@ is itself an Int.
+        facMap = IM.fromDistinctAscList $ map (bimap integerToInt wordToInt) fullFac
+        -- Add negative unit.
+        fullFac = if value < 0 then (-1, 1) : preFac else preFac
+        -- This performs trial division with prime numbers in the @factorBase@.
+        -- It returns the factorisation with respect to the primes in the
+        -- @factorBase@ and it appends the remainder of the number after all the
+        -- divisions, if this is larger than one. Note that the resulting list
+        -- is necessarily in ascending order since the remainder cannot be
+        -- smaller than @highestPrime@.
+        preFac = trialDivisionWith (map (intToInteger . unPrime) factorBase) value
 
+    -- This function completes the square in @f@.
+    complete i = a * intToInteger (i - m) + b
     a = factorBack decompositionOfA
-    intMapA = I.fromAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
-    highestPrime = intToInteger . unPrime . maximum $ factorBase
+    intMapA = IM.fromDistinctAscList $ map (bimap (integerToInt . unPrime) wordToInt) decompositionOfA
 
--- Removes all columns of the matrix which contain primes appearing only once.
--- These columns cannot be part of the solution.
-removeRows :: [(Integer, I.IntMap Int)] -> [(Integer, I.IntMap Int)]
-removeRows indexedFactorisations
-  | onlyOnce == mempty = indexedFactorisations
-  | otherwise          = removeRows $ filter (\(_, im) -> S.null (S.intersection (convertToSet im) onlyOnce)) indexedFactorisations
+-- Removes all columns of the matrix which contain primes appearing only once
+-- and are greater than @lowerBound@. When @lowerBound = 0@, this routine
+-- removes columns which cannot be part of the solution.
+removeColumns :: Int -> M.Map Integer (IM.IntMap Int) -> M.Map Integer (IM.IntMap Int)
+removeColumns lowerBound smoothData
+  | onlyOnce == mempty = smoothData
+  | otherwise          = removeColumns lowerBound $ M.filter (disjoint onlyOnce . setOddPowers) smoothData
   where
-    onlyOnce = appearsOnlyOnce $ map (convertToSet . snd) indexedFactorisations
+    onlyOnce = IS.filter (> lowerBound) . appearsOnlyOnce $ M.map setOddPowers smoothData
 
--- This routine finds all primes, which appear only once in the input list.
-appearsOnlyOnce :: [S.IntSet] -> S.IntSet
-appearsOnlyOnce = fst . L.foldl' go (mempty, mempty)
+-- This routine finds all primes, which appear only once in the input map.
+appearsOnlyOnce :: M.Map Integer IS.IntSet -> IS.IntSet
+appearsOnlyOnce = fst . M.foldl' go (mempty, mempty)
   where
     go (onlyOnce, atLeastOnce) x =
-      ((onlyOnce S.\\ x) <> (x S.\\ atLeastOnce), atLeastOnce <> x)
+      ((onlyOnce IS.\\ x) <> (x IS.\\ atLeastOnce), atLeastOnce <> x)
 
-convertToSet :: I.IntMap Int -> S.IntSet
-convertToSet = I.keysSet . I.filter odd
+#if MIN_VERSION_containers(0,5,11)
+disjoint :: IS.IntSet -> IS.IntSet -> Bool
+disjoint = IS.disjoint
+#else
+
+disjoint :: IS.IntSet -> IS.IntSet -> Bool
+disjoint x y = IS.null (IS.intersection x y)
+#endif
+
+setOddPowers :: IM.IntMap Int -> IS.IntSet
+setOddPowers = IM.keysSet . IM.filter odd
 
 -- This routine translates the list of smooth factorisations into a matrix.
--- The prime numbers (and -1) are mapped to ints based on their order (-1 -> 0,
--- 2 -> 1, 3 -> 2,...). If a prime (or -1) is missing, then their int values
+-- The prime numbers (and -1) are mapped to Ints based on their order (-1 -> 0,
+-- 2 -> 1, 3 -> 2,...). If a prime (or -1) is missing, then their Int values
 -- change accordingly (-1 -> 0, 3 -> 1, 17 -> 2,...).
--- This is needed since @linearSolve@ computes powers of a matrix,
--- so the indices of columns and rows must match up.
-translate :: [S.IntSet] -> SomeKnown SBMatrix
+-- This is needed since @linearSolve@ computes powers of a matrix, hence the
+-- indices of columns and rows must match up.
+translate :: [IS.IntSet] -> SomeKnown SBMatrix
 translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
   where
-    translateHelper :: [S.IntSet] -> Int -> SomeKnown SBMatrix
+    translateHelper :: [IS.IntSet] -> Int -> SomeKnown SBMatrix
     translateHelper columns dim = case someNatVal (fromIntegral dim) of
       SomeNat (_ :: Proxy dim) -> let result :: SBMatrix dim = SBMatrix (fromJust (SV.fromList (map toIndices columns))) in
         SomeKnown result
           where
-            indexedPrimes = U.fromList . S.toAscList $ fold columns
-            toIndices :: KnownNat dim => S.IntSet -> SBVector dim
+            indexedPrimes = U.fromList . IS.toAscList $ fold columns
+            toIndices :: KnownNat dim => IS.IntSet -> SBVector dim
             toIndices x = SBVector $ U.fromList $ map fromIntegral primeTranslation
                   where
-                    primeTranslation = binarySearch (S.toAscList x) indexedPrimes
+                    primeTranslation = binarySearch (IS.toAscList x) indexedPrimes
 
--- When translating, it becomes necessary to see the index of a certain prime.
+-- When translating, it becomes necessary to access the index of a given prime.
 -- @binarySearch@ does so efficiently.
 binarySearch :: (Eq a, Ord a, U.Unbox a) => [a] -> U.Vector a -> [Int]
 binarySearch list v = go 0 (len - 1) list v
@@ -366,16 +392,17 @@ binarySearch list v = go 0 (len - 1) list v
         entry = vector U.! currentIndex
         currentIndex = (upperIndex + lowerIndex) `div` 2
 
-findFirstSquare :: Integer -> [Integer] -> Integer
-findFirstSquare n squaresData = case someNatVal (integerToNatural n) of
+findFirstRoot :: Integer -> [Integer] -> Integer
+findFirstRoot n rootsData = case someNatVal (integerToNatural n) of
   SomeNat (Proxy :: Proxy n) ->
-    naturalToInteger . M.unMod $ foldr (\x acc -> (fromInteger x :: M.Mod n) * acc) (1 :: M.Mod n) squaresData
+    naturalToInteger . M.unMod $ foldr (\x acc -> (fromInteger x :: M.Mod n) * acc) (1 :: M.Mod n) rootsData
 
-findSecondSquare :: Integer -> [I.IntMap Int] -> Integer
-findSecondSquare n factorisations = case someNatVal (integerToNatural n) of
+findSecondRoot :: Integer -> [IM.IntMap Int] -> Integer
+findSecondRoot n factorisations = case someNatVal (integerToNatural n) of
   SomeNat (Proxy :: Proxy n) ->
     naturalToInteger . M.unMod $
-      -- Division by 2 never has remainder since, by construction, the
-      -- factorisation obtained below is that of a square number.
-      I.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $
-        I.unionsWith (+) factorisations
+      -- By contruction, the number obtained by adding the relevant factorisations
+      -- in @rootsData@ is a square number. Its square root is computed by
+      -- dividing each prime power by @2@.
+      IM.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $
+        IM.unionsWith (+) factorisations
