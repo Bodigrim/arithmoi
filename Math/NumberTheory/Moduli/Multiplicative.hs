@@ -35,7 +35,7 @@ import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 
 -- | This type represents elements of the multiplicative group mod m, i.e.
--- those elements which are coprime to m. Use @toMultElement@ to construct.
+-- those elements which are coprime to m. Use @isMultElement@ to construct.
 newtype MultMod m = MultMod {
   multElement :: Mod m -- ^ Unwrap a residue.
   } deriving (Eq, Ord, Show)
