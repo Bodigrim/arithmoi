@@ -1,0 +1,7 @@
+packages: .
+tests: True
+benchmarks: True
+constraints:
+  optparse-applicative -process,
+  tasty -unix,
+  quickcheck-classes -aeson -semigroupois
