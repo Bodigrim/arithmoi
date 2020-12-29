@@ -21,6 +21,7 @@ import Prelude hiding (words)
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 import Data.Bits
 import Data.Int
@@ -49,12 +50,14 @@ primesProperty2 _ = assertEqual "primes matches isPrime"
   (map unPrime primes :: [a])
   (filter (isJust . isPrime . toInteger) [1..maxBound])
 
-atkinPrimesProperty1 :: Assertion
-atkinPrimesProperty1 = assertEqual "atkinPrimes matches isPrime" expected actual
+atkinPrimesProperty1 :: Large Word -> Large Word -> Property
+atkinPrimesProperty1 (Large x) (Large y) = actual === expected
   where
     lim = 1000000
-    expected = filter (isJust . isPrime . toInteger) [1..lim]
-    actual   = atkinPrimeList $ atkinSieve 1 lim
+    from = fromIntegral $ x `mod` lim
+    to   = fromIntegral $ x `mod` lim + y `mod` lim
+    expected = mapMaybe isPrime [from..to]
+    actual   = atkinFromTo from to
 
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
 primeSieveProperty1 :: AnySign Integer -> Bool
@@ -77,7 +80,7 @@ psieveListProperty2 _ = assertEqual "primes == primeList . psieveList"
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
-  [ testCase "atkinPrimes" atkinPrimesProperty1
+  [ testProperty "atkinPrimes" atkinPrimesProperty1
   , testGroup "primes"
     [ testCase "Int"     (primesProperty1 (Proxy :: Proxy Int))
     , testCase "Word"    (primesProperty1 (Proxy :: Proxy Word))

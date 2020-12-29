@@ -38,7 +38,7 @@ atkinFromTo low high = coerce $ atkinPrimeList $ atkinSieve low (high - low + 1)
 atkinPrimeList :: PrimeSieve -> [Int]
 atkinPrimeList (PrimeSieve low len segments)
   | len60 == 0 = []
-  | otherwise = takeWhile (< high) $ dropWhile (< low) $ 2 : 3 : 5 : map fromWheel30 (listBits segments)
+  | otherwise = takeWhile (< high) $ dropWhile (< low) $ 2 : 3 : 5 : map ((+ low60 * 60) . fromWheel30) (listBits segments)
   where
     low60 = low `quot` 60
     len60 = (low + len + 59) `quot` 60 - low60
@@ -248,6 +248,7 @@ algo3steps456
   -> Int
   -> MU.MVector s Bit
   -> ST s ()
+algo3steps456 _ 0 _ = pure ()
 algo3steps456 low60 len60 vec =
   forM_ ps $ \p ->
     crossMultiples low60 len60 vec (p * p)
@@ -273,7 +274,7 @@ crossMultiples low60 len60 vec m =
         -- k0 is the smallest non-negative k such that 60k+delta = 0 (mod m)
     let k0 = solveCongruence (fromWheel30 i) m
         -- k1 = k0 (mod m), k1 >= lowBound
-        k1 = if r < k0 then q * m + k0 else (q + 1) * m + k0
+        k1 = if r <= k0 then q * m + k0 else (q + 1) * m + k0
     forM_ [k1, k1 + m .. (low60 + len60) - 1] $
       \k -> MU.unsafeWrite vec ((k - low60) `shiftL` 4 + i) (Bit False)
   where

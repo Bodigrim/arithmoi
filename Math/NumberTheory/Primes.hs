@@ -21,8 +21,7 @@ module Math.NumberTheory.Primes
     , -- * Old interface
       primes
     , -- * Temporary
-      atkinPrimeList
-    , atkinSieve
+      module Math.NumberTheory.Primes.Sieve.Atkin
     ) where
 
 import Data.Bits
