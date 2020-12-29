@@ -42,6 +42,7 @@ smallPrimesFromTo (W16# from#) (W16# to#) = go k0#
       = W16# p# : go (k# +# 1#)
       where
         p# = indexWord16OffAddr# smallPrimesAddr# k#
+{-# INLINE smallPrimesFromTo #-}
 
 -- length smallPrimes
 smallPrimesLength :: Int

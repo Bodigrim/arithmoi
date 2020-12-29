@@ -25,6 +25,7 @@ import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+import Data.Word
 
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Types
@@ -60,20 +61,23 @@ atkinSieve low len = PrimeSieve low len segments
     segments = sieveSegment low60 len60
 
 data SieveParams = SieveParams
-  { spDelta    :: !Int
+  { spDelta16  :: !Int
+  , spDelta60  :: !Int
+  -- ^ spDelta30 = fromWheel30 spDelta16
   , spLowBound :: !Int
   , spLength   :: !Int
   } deriving (Show)
 
+-- | Take an index of the lowest period and number of periods.
+-- Return a bitmap for wheeled primes.
 sieveSegment
   :: Int
   -> Int
   -> U.Vector Bit
 sieveSegment low60 len60 = runST $ do
   vec <- MU.new (len60 `shiftL` 4)
-  forM_ [0..15] $ \i ->
-    U.forM_ (fgs V.! i) $
-      traverseLatticePoints (SieveParams (fromWheel30 i) low60 len60) vec
+  flip V.imapM_ fgs $ \delta16 -> U.mapM_ $
+    traverseLatticePoints (SieveParams delta16 (fromWheel30 delta16) low60 len60) vec
   algo3steps456 low60 len60 vec
   U.unsafeFreeze vec
 
@@ -81,6 +85,8 @@ sieveSegment low60 len60 = runST $ do
 -- where (k, l) = (4, 1) for delta = 1 (mod 4)
 --              = (3, 1) for delta = 1 (mod 6)
 --              = (3,-1) for delta =11 (mod 12)
+-- Outer vector is indexed by delta=[0..15],
+-- inner vector is a list of pairs.
 fgs :: V.Vector (U.Vector (Int, Int))
 fgs = V.generate 16 (dispatch . fromWheel30)
   where
@@ -100,11 +106,11 @@ traverseLatticePoints
   -> (Int, Int)
   -> ST s ()
 traverseLatticePoints sp vec (x0, y0)
-  | spDelta sp `mod` 4 == 1
+  | spDelta60 sp `mod` 4 == 1
   = traverseLatticePoints1 sp vec (x0, y0)
-  | spDelta sp `mod` 6 == 1
+  | spDelta60 sp `mod` 6 == 1
   = traverseLatticePoints2 sp vec (x0, y0)
-  | spDelta sp `mod` 12 == 11
+  | spDelta60 sp `mod` 12 == 11
   = traverseLatticePoints3 sp vec (x0, y0)
   | otherwise
   = error "traverseLatticePoints: unexpected delta"
@@ -122,7 +128,7 @@ traverseLatticePoints1 !sp vec (!x0, !y0) =
     backwardX (k, x) = (k - 2 * x + 15, x - 15)
 
     -- Step 1
-    k0 = (4 * x0 * x0 + y0 * y0 - spDelta sp) `quot` 60 - spLowBound sp
+    k0 = (4 * x0 * x0 + y0 * y0 - spDelta60 sp) `quot` 60 - spLowBound sp
 
     -- Step 2
     (kMax, xMax)
@@ -142,7 +148,7 @@ traverseLatticePoints1 !sp vec (!x0, !y0) =
     -- Step 6
     doActions (!k, !y)
       | k < spLength sp
-      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30Int (spDelta sp))
+      = unsafeFlipBit vec (k `shiftL` 4 + spDelta16 sp)
         >> doActions (forwardY (k, y))
       | otherwise
       = pure ()
@@ -168,7 +174,7 @@ traverseLatticePoints2 sp vec (x0, y0) =
     backwardX (k, x) = (k - x +  5, x - 10)
 
     -- Step 1
-    k0 = (3 * x0 * x0 + y0 * y0 - spDelta sp) `quot` 60 - spLowBound sp
+    k0 = (3 * x0 * x0 + y0 * y0 - spDelta60 sp) `quot` 60 - spLowBound sp
 
     -- Step 2
     (kMax, xMax)
@@ -188,7 +194,7 @@ traverseLatticePoints2 sp vec (x0, y0) =
     -- Step 6
     doActions (!k, !y)
       | k < spLength sp
-      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30Int (spDelta sp))
+      = unsafeFlipBit vec (k `shiftL` 4 + spDelta16 sp)
         >> doActions (forwardY (k, y))
       | otherwise
       = pure ()
@@ -213,12 +219,12 @@ traverseLatticePoints3 sp vec (x0, y0) =
     forwardX  (k, x) = (k + x +  5, x + 10)
 
     -- Step 1
-    k0 = (3 * x0 * x0 - y0 * y0 - spDelta sp) `quot` 60 - spLowBound sp
+    k0 = (3 * x0 * x0 - y0 * y0 - spDelta60 sp) `quot` 60 - spLowBound sp
 
     -- Step 6
     doActions (!k, !x, !y)
       | k >= 0 && y < x
-      = unsafeFlipBit vec (k `shiftL` 4 + toWheel30Int (spDelta sp))
+      = unsafeFlipBit vec (k `shiftL` 4 + spDelta16 sp)
         >> (let (k', y') = forwardY (k, y) in doActions (k', x, y'))
       | otherwise
       = pure ()
@@ -249,8 +255,10 @@ algo3steps456 low60 len60 vec =
     low  = 7
     high = integerSquareRoot (60 * (low60 + len60) - 1)
     ps = case toIntegralSized high of
-      Just high' -> map fromIntegral $ smallPrimesFromTo (fromIntegral low) high'
-      Nothing    -> atkinPrimeList $ atkinSieve low (high - low + 1)
+      Just high' -> map fromIntegral (smallPrimesFromTo low high')
+      Nothing    -> map fromIntegral (smallPrimesFromTo low maxBound) ++ atkinPrimeList (atkinSieve low' (high - low' + 1))
+        where
+          low' = fromIntegral (maxBound :: Word16) + 1
 
 -- | Cross out multiples of the first argument
 -- in a given sieve.
