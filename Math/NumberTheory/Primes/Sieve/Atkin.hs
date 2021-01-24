@@ -22,7 +22,6 @@ import Data.Bit
 import Data.Bits
 import Data.Coerce
 import Data.Maybe
-import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
@@ -61,8 +60,8 @@ atkinSieve low len = PrimeSieve low len segments
     segments = sieveSegment low60 len60
 
 data SieveParams = SieveParams
-  { spDelta16  :: !Int
-  , spDelta60  :: !Int
+  { spDelta16  :: !Int -- [0..15]
+  , spDelta60  :: !Int -- [0..59]
   -- ^ spDelta30 = fromWheel30 spDelta16
   , spLowBound :: !Int
   , spLength   :: !Int
@@ -76,7 +75,7 @@ sieveSegment
   -> U.Vector Bit
 sieveSegment low60 len60 = runST $ do
   vec <- MU.new (len60 `shiftL` 4)
-  flip V.imapM_ fgs $ \delta16 -> U.mapM_ $
+  forM_ fgs $ uncurry $ \delta16 -> traverse $
     traverseLatticePoints (SieveParams delta16 (fromWheel30 delta16) low60 len60) vec
   algo3steps456 low60 len60 vec
   U.unsafeFreeze vec
@@ -87,16 +86,16 @@ sieveSegment low60 len60 = runST $ do
 --              = (3,-1) for delta =11 (mod 12)
 -- Outer vector is indexed by delta=[0..15],
 -- inner vector is a list of pairs.
-fgs :: V.Vector (U.Vector (Int, Int))
-fgs = V.generate 16 (dispatch . fromWheel30)
+fgs :: [(Int, [(Int, Int)])]
+fgs = map (\i -> (i, dispatch (fromWheel30 i))) [0..15]
   where
     dispatch delta
       | delta `mod` 4 == 1
-      = U.fromList [ (f, g) | f <- [1..15], g <- [1..30], (4*f*f + g*g - delta) `rem` 60 == 0]
+      = [ (f, g) | f <- [1..15], g <- [1..30], (4*f*f + g*g - delta) `rem` 60 == 0]
       | delta `mod` 6 == 1
-      = U.fromList [ (f, g) | f <- [1..10], g <- [1..30], (3*f*f + g*g - delta) `rem` 60 == 0]
+      = [ (f, g) | f <- [1..10], g <- [1..30], (3*f*f + g*g - delta) `rem` 60 == 0]
       | delta `mod` 12 == 11
-      = U.fromList [ (f, g) | f <- [1..10], g <- [1..30], (3*f*f - g*g - delta) `rem` 60 == 0]
+      = [ (f, g) | f <- [1..10], g <- [1..30], (3*f*f - g*g - delta) `rem` 60 == 0]
       | otherwise
       = error "fgs: unexpected delta"
 
