@@ -32,7 +32,7 @@ benchPartition n = bgroup "partition"
 benchSuite :: Benchmark
 benchSuite = bgroup "Recurrences"
   [ bgroup "Bilinear"
-    [ benchTriangle "binomial"  binomial 1000
+    [ benchTriangle "binomial"  binomial  100
     , benchTriangle "stirling1" stirling1 100
     , benchTriangle "stirling2" stirling2 100
     , benchTriangle "eulerian1" eulerian1 100
