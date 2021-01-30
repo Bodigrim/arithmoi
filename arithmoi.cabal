@@ -1,6 +1,6 @@
 name:          arithmoi
 version:       0.11.0.1
-cabal-version: >=1.10
+cabal-version: 2.0
 build-type:    Simple
 license:       MIT
 license-file:  LICENSE
@@ -178,7 +178,7 @@ test-suite arithmoi-tests
   hs-source-dirs: test-suite
   ghc-options: -Wall -Widentities -Wcompat -threaded
 
-benchmark arithmoi-gauge
+benchmark arithmoi-bench
   build-depends:
     base,
     arithmoi,
@@ -186,12 +186,15 @@ benchmark arithmoi-gauge
     constraints,
     containers,
     deepseq,
-    gauge,
     integer-logarithms,
     mod,
     random,
     semirings,
     vector
+  build-depends:
+    tasty-bench
+  mixins:
+    tasty-bench (Test.Tasty.Bench as Gauge.Main)
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.DiscreteLogarithmBench
