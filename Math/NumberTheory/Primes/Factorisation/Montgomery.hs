@@ -35,7 +35,6 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 
 import Control.Arrow
 import Control.Monad.Trans.State.Lazy
-import Data.Array.Base (bounds, unsafeAt)
 import Data.Bits
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
@@ -56,12 +55,11 @@ import System.Random
 import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Logarithms (integerLogBase')
-import Math.NumberTheory.Roots
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
-import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
+import Math.NumberTheory.Primes.Sieve.Atkin
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Utils hiding (splitOff)
+import Math.NumberTheory.Roots
+import Math.NumberTheory.Utils (shiftToOddCount#, shiftToOddCountBigNat)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
@@ -143,12 +141,12 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
         fact :: Integer -> Int -> State g [(Integer, Word)]
         fact 1 _ = return mempty
         fact m digs = do
-          let (b1, b2, ct) = findParms digs
+          let (b1, b1Sieve, b2, ct) = findParms digs
           -- All factors (both @pfs@ and @cfs@), are pairwise coprime. This is
           -- because 'repFact' returns either a single factor, or output of 'workFact'.
           -- In its turn, 'workFact' returns either a single factor,
           -- or concats 'repFact's over coprime integers. Induction completes the proof.
-          Factors pfs cfs <- repFact m b1 b2 ct
+          Factors pfs cfs <- repFact m b1 b1Sieve b2 ct
           case cfs of
             [] -> return pfs
             _  -> do
@@ -156,23 +154,23 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                   map (second (* j)) <$> fact k (if null pfs then digs + 5 else digs)
               return $ mconcat (pfs : nfs)
 
-        repFact :: Integer -> Word -> Word -> Word -> State g Factors
-        repFact 1 _ _ _ = return mempty
-        repFact m b1 b2 count =
+        repFact :: Integer -> Word -> PrimeSieve -> Word -> Word -> State g Factors
+        repFact 1 _ _ _ _ = return mempty
+        repFact m b1 b1Sieve b2 count =
           case perfPw m of
-            (_, 1) -> workFact m b1 b2 count
+            (_, 1) -> workFact m b1 b1Sieve b2 count
             (b, e)
               | ptest b   -> return $ singlePrimeFactor b e
-              | otherwise -> modifyPowers (* e) <$> workFact b b1 b2 count
+              | otherwise -> modifyPowers (* e) <$> workFact b b1 b1Sieve b2 count
 
-        workFact :: Integer -> Word -> Word -> Word -> State g Factors
-        workFact 1 _ _ _ = return mempty
-        workFact m _ _ 0 = return $ singleCompositeFactor m 1
-        workFact m b1 b2 count = do
+        workFact :: Integer -> Word -> PrimeSieve -> Word -> Word -> State g Factors
+        workFact 1 _ _ _ _ = return mempty
+        workFact m _ _ _ 0 = return $ singleCompositeFactor m 1
+        workFact m b1 b1Sieve b2 count = do
           s <- rndR m
           case someNatVal (fromInteger m) of
-            SomeNat (_ :: Proxy t) -> case montgomeryFactorisation b1 b2 (fromInteger s :: Mod t) of
-              Nothing -> workFact m b1 b2 (count - 1)
+            SomeNat (_ :: Proxy t) -> case montgomeryFactorisation b1 b1Sieve b2 (fromInteger s :: Mod t) of
+              Nothing -> workFact m b1 b1Sieve b2 (count - 1)
               Just d  -> do
                 let cs = unCoprimes $ splitIntoCoprimes [(d, 1), (m `quot` d, 1)]
                 -- Since all @cs@ are coprime, we can factor each of
@@ -181,7 +179,7 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                 fmap mconcat $ forM cs $
                   \(x, xm) -> if ptest x
                               then pure $ singlePrimeFactor x xm
-                              else repFact x b1 b2 (count - 1)
+                              else repFact x b1 b1Sieve b2 (count - 1)
 
 data Factors = Factors
   { _primeFactors     :: [(Integer, Word)]
@@ -269,8 +267,8 @@ badPower mx n
 --   It is assumed that @n@ has no small prime factors.
 --
 --   The result is maybe a nontrivial divisor of @n@.
-montgomeryFactorisation :: KnownNat n => Word -> Word -> Mod n -> Maybe Integer
-montgomeryFactorisation b1 b2 s = case newPoint (toInteger (unMod s)) n of
+montgomeryFactorisation :: KnownNat n => Word -> PrimeSieve -> Word -> Mod n -> Maybe Integer
+montgomeryFactorisation b1 b1Sieve b2 s = case newPoint (toInteger (unMod s)) n of
   Nothing             -> Nothing
   Just (SomePoint p0) -> do
     -- Small step: for each prime p <= b1
@@ -286,9 +284,7 @@ montgomeryFactorisation b1 b2 s = case newPoint (toInteger (unMod s)) n of
       g -> Just g
   where
     n = toInteger (natVal s)
-    smallPowers
-      = map findPower
-      $ takeWhile (<= b1) (2 : 3 : 5 : list primeStore)
+    smallPowers = map (findPower . fromIntegral) (atkinPrimeList b1Sieve)
     findPower p = go p
       where
         go acc
@@ -311,7 +307,7 @@ bigStep q b1 b2 = rs
         us * (pointZ p * pointX pq - pointX p * pointZ pq) `rem` n
         ) ts qks) 1 qs
 
-wheel :: Word
+wheel :: Num a => a
 wheel = 210
 
 wheelCoprimes :: [Word]
@@ -335,15 +331,6 @@ enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
     pStep = multiply step p
 
     progression = pFrom : pThen : zipWith (`add` pStep) progression (tail progression)
-
--- primes, compactly stored as a bit sieve
-primeStore :: [PrimeSieve]
-primeStore = psieveFrom 7
-
--- generate list of primes from arrays
-list :: [PrimeSieve] -> [Word]
-list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
-                                | PS vO bs <- sieves, let { (_,li) = bounds bs; off = fromInteger vO; }]
 
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
@@ -403,8 +390,10 @@ smallFactors = \case
 -- ("tier") return parameters B1, B2 and the number of curves to try
 -- before next "tier".
 -- Roughly based on http://www.mersennewiki.org/index.php/Elliptic_Curve_Method#Choosing_the_best_parameters_for_ECM
-testParms :: IntMap (Word, Word, Word)
-testParms = IM.fromList
+testParms :: IntMap (Word, PrimeSieve, Word, Word)
+testParms
+  = IM.fromList
+  $ map (\(k, (b1, b2, ct)) -> (k, (b1, atkinSieve 0 (fromIntegral b1), b2, ct)))
   [ (12, (       400,        40000,     10))
   , (15, (      2000,       200000,     25))
   , (20, (     11000,      1100000,     90))
@@ -420,5 +409,7 @@ testParms = IM.fromList
   , (70, (2900000000, 290000000000, 340000))
   ]
 
-findParms :: Int -> (Word, Word, Word)
-findParms digs = maybe (wheel, 1000, 7) snd (IM.lookupLT digs testParms)
+findParms :: Int -> (Word, PrimeSieve, Word, Word)
+findParms digs
+  = maybe (wheel, atkinSieve 0 wheel, 1000, 7) snd
+  $ IM.lookupLT digs testParms

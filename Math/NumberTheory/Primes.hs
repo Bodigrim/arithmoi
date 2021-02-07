@@ -20,6 +20,8 @@ module Math.NumberTheory.Primes
     , factorBack
     , -- * Old interface
       primes
+    , -- * Temporary
+      module Math.NumberTheory.Primes.Sieve.Atkin
     ) where
 
 import Data.Bits
@@ -31,6 +33,7 @@ import Numeric.Natural
 import Math.NumberTheory.Primes.Counting (nthPrime, primeCount)
 import qualified Math.NumberTheory.Primes.Factorisation.Montgomery as F (factorise)
 import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
+import Math.NumberTheory.Primes.Sieve.Atkin
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, psieveFrom, primeSieve)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Types

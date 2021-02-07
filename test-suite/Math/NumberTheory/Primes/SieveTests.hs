@@ -21,15 +21,16 @@ import Prelude hiding (words)
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 import Data.Bits
 import Data.Int
+import Data.Maybe
 import Data.Proxy (Proxy(..))
 import Data.Word
 import Numeric.Natural (Natural)
 
-import Math.NumberTheory.Primes (Prime, unPrime, primes, nextPrime, precPrime, UniqueFactorisation)
-import Math.NumberTheory.Primes.Testing
+import Math.NumberTheory.Primes
 import Math.NumberTheory.TestUtils
 
 lim1 :: Num a => a
@@ -42,12 +43,21 @@ lim2 = 100000
 primesProperty1 :: forall a. (Integral a, Show a) => Proxy a -> Assertion
 primesProperty1 _ = assertEqual "primes matches isPrime"
   (takeWhile (<= lim1) (map unPrime primes) :: [a])
-  (filter (isPrime . toInteger) [1..lim1])
+  (filter (isJust . isPrime . toInteger) [1..lim1])
 
 primesProperty2 :: forall a. (Integral a, Bounded a, Show a) => Proxy a -> Assertion
 primesProperty2 _ = assertEqual "primes matches isPrime"
   (map unPrime primes :: [a])
-  (filter (isPrime . toInteger) [1..maxBound])
+  (filter (isJust . isPrime . toInteger) [1..maxBound])
+
+atkinPrimesProperty1 :: Large Word -> Large Word -> Property
+atkinPrimesProperty1 (Large x) (Large y) = actual === expected
+  where
+    lim = 1000000
+    from = fromIntegral $ x `mod` lim
+    to   = fromIntegral $ x `mod` lim + y `mod` lim
+    expected = mapMaybe isPrime [from..to]
+    actual   = atkinFromTo from to
 
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
 primeSieveProperty1 :: AnySign Integer -> Bool
@@ -66,11 +76,12 @@ psieveListProperty1 _ = assertEqual "primes == primeList . psieveList"
 psieveListProperty2 :: forall a. (Integral a, Bounded a, Show a) => Proxy a -> Assertion
 psieveListProperty2 _ = assertEqual "primes == primeList . psieveList"
   (map unPrime primes :: [a])
-  (filter (isPrime . toInteger) [0..maxBound])
+  (filter (isJust . isPrime . toInteger) [0..maxBound])
 
 testSuite :: TestTree
 testSuite = testGroup "Sieve"
-  [ testGroup "primes"
+  [ testProperty "atkinPrimes" atkinPrimesProperty1
+  , testGroup "primes"
     [ testCase "Int"     (primesProperty1 (Proxy :: Proxy Int))
     , testCase "Word"    (primesProperty1 (Proxy :: Proxy Word))
     , testCase "Integer" (primesProperty1 (Proxy :: Proxy Integer))

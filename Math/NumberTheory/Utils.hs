@@ -30,6 +30,7 @@ module Math.NumberTheory.Utils
     , recipMod
 
     , toWheel30
+    , toWheel30Int
     , fromWheel30
     , withSomeKnown
     , intVal
@@ -202,16 +203,45 @@ bigNatToNatural bn
 
 -------------------------------------------------------------------------------
 -- Helpers for mapping to rough numbers and back.
--- Copypasted from Data.BitStream.WheelMapping
+-- Copypasted from Data.Chimera.WheelMapping
 
+bits :: Int
+bits = finiteBitSize (0 :: Word)
+
+-- | Left inverse for 'fromWheel30'. Monotonically non-decreasing function.
+--
+-- prop> toWheel30 . fromWheel30 == id
 toWheel30 :: (Integral a, Bits a) => a -> a
 toWheel30 i = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
   where
     (q, r) = i `P.quotRem` 30
+{-# INLINE toWheel30 #-}
 
+toWheel30Int :: Int -> Int
+toWheel30Int i@(I# i#) = q `shiftL` 3 + (r + r `shiftR` 4) `shiftR` 2
+  where
+    (q, r) = case bits of
+      64 -> (q64, r64)
+      _  -> i `quotRem` 30
+
+    m# = 9838263505978427529## -- (2^67+7) / 15
+    !(# z1#, _ #) = timesWord2# m# (int2Word# i#)
+    q64 = I# (word2Int# z1#) `shiftR` 4
+    r64 = i - q64 `shiftL` 5 + q64 `shiftL` 1
+
+{-# INLINE toWheel30Int #-}
+
+-- | 'fromWheel30' n is the (n+1)-th positive number, not divisible by 2, 3 or 5.
+-- Sequence <https://oeis.org/A007775 A007775>.
+--
+-- prop> map fromWheel30 [0..] == [ n | n <- [0..], n `gcd` 30 == 1 ]
+--
+-- > > map fromWheel30 [0..9]
+-- > [1,7,11,13,17,19,23,29,31,37]
 fromWheel30 :: (Num a, Bits a) => a -> a
 fromWheel30 i = ((i `shiftL` 2 - i `shiftR` 2) .|. 1)
               + ((i `shiftL` 1 - i `shiftR` 1) .&. 2)
+{-# INLINE fromWheel30 #-}
 
 -------------------------------------------------------------------------------
 -- Helpers for dealing with data types parametrised by natural numbers.
