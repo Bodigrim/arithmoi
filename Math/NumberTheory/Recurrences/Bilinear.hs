@@ -152,7 +152,7 @@ binomialFactors n k
 -- Complexity: @stirling1 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @stirling1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
--- One could also consider 'Math.Combinat.Numbers.unsignedStirling1st' to compute stand-alone values.
+-- One could also consider 'Math.Combinat.Numbers.unsignedStirling1st' from <http://hackage.haskell.org/package/combinat combinat> package to compute stand-alone values.
 stirling1 :: (Num a, Enum a) => [[a]]
 stirling1 = scanl f [1] [0..]
   where
@@ -170,7 +170,7 @@ stirling1 = scanl f [1] [0..]
 -- Complexity: @stirling2 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
--- One could also consider 'Math.Combinat.Numbers.stirling2nd' to compute stand-alone values.
+-- One could also consider 'Math.Combinat.Numbers.stirling2nd' from <http://hackage.haskell.org/package/combinat combinat> package to compute stand-alone values.
 stirling2 :: (Num a, Enum a) => [[a]]
 stirling2 = iterate f [1]
   where
@@ -242,7 +242,7 @@ eulerian2 = scanl f [] [1..]
 -- Complexity: @bernoulli !! n@ is O(n ln n) bits long, its computation
 -- takes O(n^3 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @0 <= j <= i@.
 --
--- One could also consider 'Math.Combinat.Numbers.bernoulli' to compute stand-alone values.
+-- One could also consider 'Math.Combinat.Numbers.bernoulli' from <http://hackage.haskell.org/package/combinat combinat> package to compute stand-alone values.
 bernoulli :: Integral a => [Ratio a]
 bernoulli = helperForBEEP id (map recip [1..])
 {-# SPECIALIZE bernoulli :: [Ratio Int] #-}
