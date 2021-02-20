@@ -71,8 +71,6 @@ library
     Math.NumberTheory.Primes.Counting
     Math.NumberTheory.Primes.IntSet
     Math.NumberTheory.Primes.Testing
-    Math.NumberTheory.Primes.Factorisation.QuadraticSieve
-    Math.NumberTheory.Primes.Factorisation.LinearAlgebra
     Math.NumberTheory.Quadratic.GaussianIntegers
     Math.NumberTheory.Quadratic.EisensteinIntegers
     Math.NumberTheory.Recurrences
@@ -88,7 +86,9 @@ library
     Math.NumberTheory.Moduli.SomeMod
     Math.NumberTheory.Primes.Counting.Approximate
     Math.NumberTheory.Primes.Counting.Impl
+    Math.NumberTheory.Primes.Factorisation.LinearAlgebra
     Math.NumberTheory.Primes.Factorisation.Montgomery
+    Math.NumberTheory.Primes.Factorisation.QuadraticSieve
     Math.NumberTheory.Primes.Factorisation.TrialDivision
     Math.NumberTheory.Primes.Sieve.Eratosthenes
     Math.NumberTheory.Primes.Sieve.Indexing
@@ -155,8 +155,8 @@ test-suite arithmoi-tests
     Math.NumberTheory.PrefactoredTests
     Math.NumberTheory.Primes.CountingTests
     Math.NumberTheory.Primes.FactorisationTests
-    Math.NumberTheory.Primes.LinearAlgebraTests
-    Math.NumberTheory.Primes.QuadraticSieveTests
+    -- Math.NumberTheory.Primes.LinearAlgebraTests
+    -- Math.NumberTheory.Primes.QuadraticSieveTests
     Math.NumberTheory.Primes.SequenceTests
     Math.NumberTheory.Primes.SieveTests
     Math.NumberTheory.Primes.TestingTests

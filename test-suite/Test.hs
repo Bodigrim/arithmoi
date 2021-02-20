@@ -24,8 +24,8 @@ import qualified Math.NumberTheory.PrefactoredTests as Prefactored
 import qualified Math.NumberTheory.PrimesTests as Primes
 import qualified Math.NumberTheory.Primes.CountingTests as Counting
 import qualified Math.NumberTheory.Primes.FactorisationTests as Factorisation
-import qualified Math.NumberTheory.Primes.LinearAlgebraTests as LinearAlgebra
-import qualified Math.NumberTheory.Primes.QuadraticSieveTests as QuadraticSieve
+-- import qualified Math.NumberTheory.Primes.LinearAlgebraTests as LinearAlgebra
+-- import qualified Math.NumberTheory.Primes.QuadraticSieveTests as QuadraticSieve
 import qualified Math.NumberTheory.Primes.SequenceTests as Sequence
 import qualified Math.NumberTheory.Primes.SieveTests as Sieve
 import qualified Math.NumberTheory.Primes.TestingTests as Testing
@@ -79,8 +79,8 @@ tests = testGroup "All"
     [ Primes.testSuite
     , Counting.testSuite
     , Factorisation.testSuite
-    , LinearAlgebra.testSuite
-    , QuadraticSieve.testSuite
+    -- , LinearAlgebra.testSuite
+    -- , QuadraticSieve.testSuite
     , Sequence.testSuite
     , Sieve.testSuite
     , Testing.testSuite
