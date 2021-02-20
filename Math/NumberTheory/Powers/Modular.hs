@@ -7,8 +7,6 @@
 -- Modular powers (a. k. a. modular exponentiation).
 --
 
-{-# LANGUAGE MagicHash #-}
-
 module Math.NumberTheory.Powers.Modular
   {-# DEPRECATED "Use Data.Mod or Data.Mod.Word instead" #-}
   ( powMod
@@ -16,9 +14,8 @@ module Math.NumberTheory.Powers.Modular
   , powModInt
   ) where
 
-import GHC.Exts (Word(..))
 import GHC.Natural (powModNatural)
-import qualified GHC.Integer.GMP.Internals as GMP (powModInteger, powModWord)
+import qualified GHC.Integer.GMP.Internals as GMP (powModInteger)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | @powMod@ @b@ @e@ @m@ computes (@b^e@) \`mod\` @m@ in effective way.
@@ -74,7 +71,7 @@ powModInteger b e m = GMP.powModInteger (b `mod` m) e m
 -- >>> powModWord 3 101 (2^60-1)
 -- 1018105167100379328
 powModWord :: Word -> Word -> Word -> Word
-powModWord (W# x) (W# y) (W# m) = W# (GMP.powModWord x y m)
+powModWord b e m = fromInteger $ GMP.powModInteger (toInteger b) (toInteger e) (toInteger m)
 
 -- | Specialised version of 'powMod', able to handle large moduli correctly.
 --

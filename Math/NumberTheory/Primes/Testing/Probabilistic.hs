@@ -27,8 +27,9 @@ import GHC.Integer.GMP.Internals
 import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 
 import Math.NumberTheory.Moduli.JacobiSymbol
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Roots
+import Math.NumberTheory.Utils
 
 -- | @isPrime n@ tests whether @n@ is a prime (negative or positive).
 --   It is a combination of trial division and Baillie-PSW test.
@@ -57,9 +58,17 @@ isPrime n
 -- If @millerRabinV k n@ returns @False@ then @n@ is definitely composite.
 -- Otherwise @n@ may appear composite with probability @1/4^k@.
 millerRabinV :: Int -> Integer -> Bool
-millerRabinV (I# k) n = case testPrimeInteger n k of
-  0# -> False
-  _  -> True
+millerRabinV k n
+  | n < 0       = millerRabinV k (-n)
+  | n < 2       = False
+  | n < 4       = True
+  | otherwise   = go smallPrimes
+    where
+      go (p:ps)
+        | p*p > n   = True
+        | otherwise = (n `rem` p /= 0) && go ps
+      go [] = all (isStrongFermatPP n) (take k smallPrimes)
+      smallPrimes = map toInteger $ smallPrimesFromTo minBound maxBound
 
 -- | @'isStrongFermatPP' n b@ tests whether non-negative @n@ is
 --   a strong Fermat probable prime for base @b@.

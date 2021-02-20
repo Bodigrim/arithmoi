@@ -18,7 +18,7 @@ description:
   powers (integer roots and tests, modular exponentiation).
 category:      Math, Algorithms, Number Theory
 author:        Andrew Lelechenko, Daniel Fischer
-tested-with:   GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.4 GHC ==8.10.3
+tested-with:   GHC ==8.2.2 GHC ==8.4.4 GHC ==8.6.5 GHC ==8.8.4 GHC ==8.10.4 GHC ==9.0.1
 extra-source-files:
   changelog.md
 
@@ -36,7 +36,7 @@ library
     constraints,
     deepseq,
     exact-pi >=0.5,
-    integer-gmp <1.1,
+    integer-gmp <1.2,
     integer-logarithms >=1.0,
     integer-roots >=1.0,
     mod,
@@ -107,7 +107,7 @@ library
     Math.NumberTheory.Zeta.Riemann
     Math.NumberTheory.Zeta.Utils
   default-language: Haskell2010
-  ghc-options: -Wall -Widentities -Wcompat
+  ghc-options: -Wall -Widentities -Wcompat -Wno-deprecations
 
 test-suite arithmoi-tests
   build-depends:
@@ -115,12 +115,12 @@ test-suite arithmoi-tests
     arithmoi,
     containers,
     exact-pi >=0.4.1.1,
-    integer-gmp <1.1,
+    integer-gmp <1.2,
     integer-roots >=1.0,
     mod,
     QuickCheck >=2.10,
     quickcheck-classes >=0.6.3,
-    random >=1.0 && <1.2,
+    random >=1.0 && <1.3,
     semirings >=0.2,
     smallcheck >=1.2 && <1.3,
     tasty >=0.10,

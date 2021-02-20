@@ -16,8 +16,6 @@ module Math.NumberTheory.Primes.TestingTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import GHC.Integer.GMP.Internals (nextPrimeInteger)
-
 import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.TestUtils
 
@@ -48,11 +46,6 @@ isPrimeProperty5 = assertBool "strong Lucas pseudoprimes" $ not $ any isPrime ps
     -- OEIS A217255
     pseudoprimes = [5459, 5777, 10877, 16109, 18971, 22499, 24569, 25199, 40309, 58519, 75077, 97439, 100127, 113573, 115639, 130139, 155819, 158399, 161027, 162133, 176399, 176471, 189419, 192509, 197801, 224369, 230691, 231703, 243629, 253259, 268349, 288919, 313499, 324899]
 
-isPrimeProperty6 :: NonNegative Integer -> Bool
-isPrimeProperty6 (NonNegative n) = if isPrime n
-  then nextPrimeInteger (n - 1) == n
-  else isPrime (nextPrimeInteger n)
-
 isStrongFermatPPProperty :: NonNegative Integer -> Integer -> Bool
 isStrongFermatPPProperty (NonNegative n) b = not (isPrime n) || isStrongFermatPP n b
 
@@ -64,7 +57,6 @@ testSuite = testGroup "Testing"
     , testCase          "Carmichael pseudoprimes"    isPrimeProperty3
     , testCase          "strong pseudoprimes base 2" isPrimeProperty4
     , testCase          "strong Lucas pseudoprimes"  isPrimeProperty5
-    , testSmallAndQuick "matches GMP"                isPrimeProperty6
     ]
   , testGroup "isStrongFermatPP"
     [ testSmallAndQuick "matches isPrime" isStrongFermatPPProperty
