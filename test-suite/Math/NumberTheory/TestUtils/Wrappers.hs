@@ -123,6 +123,7 @@ instance (Num a, Arbitrary a) => Arbitrary (Huge a) where
     Positive l <- arbitrary
     ds <- vector l
     return $ Huge $ foldl1 (\acc n -> acc * 2^63 + n) ds
+  shrink (Huge n) = Huge <$> shrink n
 
 instance Eq1 Huge where
   liftEq eq (Huge a) (Huge b) = a `eq` b
