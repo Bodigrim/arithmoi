@@ -1,19 +1,19 @@
 -- |
--- Module:      Math.NumberTheory.Moduli.CubicSymbol
+-- Module:      Math.NumberTheory.Moduli.Cbrt
 -- Copyright:   (c) 2020 Federico Bongiorno
 -- Licence:     MIT
 -- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
 --
--- Test for Math.NumberTheory.Moduli.CubicSymbol
+-- Test for Math.NumberTheory.Moduli.Cbrt
 --
 
 {-# LANGUAGE CPP #-}
 
-module Math.NumberTheory.Moduli.CubicSymbolTests
+module Math.NumberTheory.Moduli.CbrtTests
   ( testSuite
   ) where
 
-import Math.NumberTheory.Moduli.CubicSymbol
+import Math.NumberTheory.Moduli.Cbrt
 import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Primes
 import qualified Data.Euclidean as A
@@ -84,7 +84,7 @@ findCubicSymbol residue beta
   | (residue - ω) `A.rem` beta == 0       = Omega
   | (residue + 1 + ω) `A.rem` beta == 0   = OmegaSquare
   | (residue - 1) `A.rem` beta == 0       = One
-  | otherwise                             = error "Math.NumberTheory.Moduli.CubicSymbol: invalid EisensteinInteger."
+  | otherwise                             = error "Math.NumberTheory.Moduli.Cbrt: invalid EisensteinInteger."
 
 testSuite :: TestTree
 testSuite = testGroup "CubicSymbol"

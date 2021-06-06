@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Moduli.CubicSymbol
+-- Module:      Math.NumberTheory.Moduli.Cbrt
 -- Copyright:   (c) 2020 Federico Bongiorno
 -- Licence:     MIT
 -- Maintainer:  Federico Bongiorno <federicobongiorno97@gmail.com>
@@ -9,7 +9,7 @@
 
 {-# LANGUAGE LambdaCase #-}
 
-module Math.NumberTheory.Moduli.CubicSymbol
+module Math.NumberTheory.Moduli.Cbrt
   ( CubicSymbol(..)
   , cubicSymbol
   , symbolToNum
@@ -50,7 +50,7 @@ instance Semigroup CubicSymbol where
     (2, Omega)       -> OmegaSquare
     (2, OmegaSquare) -> Omega
     (2, symbol)      -> symbol
-    _                -> error "Math.NumberTheory.Moduli.CubicSymbol: exponentiation undefined."
+    _                -> error "Math.NumberTheory.Moduli.Cbrt: exponentiation undefined."
 
 instance Show CubicSymbol where
   show = \case
@@ -101,7 +101,7 @@ cubicSymbol :: EisensteinInteger -> EisensteinInteger -> CubicSymbol
 cubicSymbol alpha beta = case beta `A.rem` (1 - ω) of
   -- This checks whether beta is coprime to 3, i.e. divisible by @1 - ω@
   -- In particular, it returns an error if @beta == 0@
-  0 -> error "Math.NumberTheory.Moduli.CubicSymbol: denominator is not coprime to 3."
+  0 -> error "Math.NumberTheory.Moduli.Cbrt: denominator is not coprime to 3."
   _ -> cubicSymbolHelper alpha beta
 
 cubicSymbolHelper :: EisensteinInteger -> EisensteinInteger -> CubicSymbol
@@ -157,4 +157,4 @@ getPrimaryDecomposition e = case e `A.rem` 3 of
   (-1) :+ 0    -> (One, -e)
   (-1) :+ (-1) -> (OmegaSquare, ω * e)
   0 :+ (-1)    -> (Omega, (1 + ω) * e)
-  _            -> error "Math.NumberTheory.Moduli.CubicSymbol: primary decomposition failed."
+  _            -> error "Math.NumberTheory.Moduli.Cbrt: primary decomposition failed."
