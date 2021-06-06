@@ -144,8 +144,8 @@ sigma = runFunction . sigmaA
 -- > sigmaA 0 = tauA
 sigmaA :: (Integral n, Num a, GcdDomain a) => Word -> ArithmeticFunction n a
 sigmaA 0 = tauA
-sigmaA 1 = multiplicative $ sigmaHelper . fromIntegral . unPrime
-sigmaA a = multiplicative $ sigmaHelper . (^ wordToInt a) . fromIntegral . unPrime
+sigmaA 1 = multiplicative $ sigmaHelper . fromIntegral' . unPrime
+sigmaA a = multiplicative $ sigmaHelper . (^ wordToInt a) . fromIntegral' . unPrime
 {-# INLINABLE sigmaA #-}
 
 sigmaHelper :: (Num a, GcdDomain a) => a -> Word -> a
@@ -202,7 +202,7 @@ ramanujanHelper p k = sum $ zipWith3 (\a b c -> a * b * c) paPowers tpPowers bin
         tp = ramanujanHelper p 1
         paPowers = iterate (* (-pa)) 1
         binomials = scanl (\acc j -> acc * (k' - 2 * j) * (k' - 2 * j - 1) `quot` (k' - j) `quot` (j + 1)) 1 [0 .. k' `quot` 2 - 1]
-        k' = fromIntegral k
+        k' = wordToInteger k
         tpPowers = reverse $ take (length binomials) $ iterate (* tp^(2::Int)) (if even k then 1 else tp)
 {-# INLINE ramanujanHelper #-}
 

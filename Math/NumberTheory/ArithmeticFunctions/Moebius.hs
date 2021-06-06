@@ -38,7 +38,7 @@ import Unsafe.Coerce
 
 import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Utils.FromIntegral (wordToInt)
+import Math.NumberTheory.Utils.FromIntegral
 
 import Math.NumberTheory.Logarithms
 
@@ -54,11 +54,11 @@ runMoebius :: Num a => Moebius -> a
 runMoebius m = fromInteger (S# (dataToTag# m -# 1#))
 
 fromMoebius :: Moebius -> Int8
-fromMoebius m = fromIntegral $ I# (dataToTag# m)
+fromMoebius m = intToInt8 $ I# (dataToTag# m)
 {-# INLINE fromMoebius #-}
 
 toMoebius :: Int8 -> Moebius
-toMoebius i = let !(I# i#) = fromIntegral i in tagToEnum# i#
+toMoebius i = let !(I# i#) = int8ToInt i in tagToEnum# i#
 {-# INLINE toMoebius #-}
 
 newtype instance U.MVector s Moebius = MV_Moebius (P.MVector s Int8)
@@ -138,7 +138,7 @@ sieveBlockMoebius lowIndex' len'
       let offset  = negate lowIndex `mod` p
           offset2 = negate lowIndex `mod` (p * p)
           l :: Word8
-          l = fromIntegral $ intLog2 p .|. 1
+          l = intToWord8 $ intLog2 p .|. 1
       forM_ [offset, offset + p .. len - 1] $
         MU.unsafeModify as (+ l)
       forM_ [offset2, offset2 + p * p .. len - 1] $ \ix ->
@@ -166,7 +166,7 @@ sieveBlockMoebius lowIndex' len'
     mapper ix val
       | val .&. 0x80 == 0x00
       = 1
-      | fromIntegral (val .&. 0x7F) < intLog2 (ix + lowIndex) - 5
+      | word8ToInt (val .&. 0x7F) < intLog2 (ix + lowIndex) - 5
         - (if ix + lowIndex >= 0x100000   then 2 else 0)
         - (if ix + lowIndex >= 0x10000000 then 1 else 0)
       = (val .&. 1) `shiftL` 1

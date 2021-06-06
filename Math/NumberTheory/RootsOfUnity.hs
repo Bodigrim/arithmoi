@@ -50,7 +50,7 @@ toRootOfUnity q = RootOfUnity ((n `rem` d) % d)
 -- | This Semigroup is in fact a group, so @'stimes'@ can be called with a negative first argument.
 instance Semigroup RootOfUnity where
   RootOfUnity q1 <> RootOfUnity q2 = toRootOfUnity (q1 + q2)
-  stimes k (RootOfUnity q) = toRootOfUnity (q * fromIntegral k)
+  stimes k (RootOfUnity q) = toRootOfUnity (q * (toInteger k % 1))
 
 instance Monoid RootOfUnity where
   mappend = (<>)

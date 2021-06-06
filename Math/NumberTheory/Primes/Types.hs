@@ -25,6 +25,8 @@ import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed as U
 
+import Math.NumberTheory.Utils.FromIntegral
+
 -- $setup
 -- >>> import Math.NumberTheory.Primes (nextPrime, precPrime)
 
@@ -156,7 +158,7 @@ toPrimeIntegral (Prime a) = case unsignedWidth b of
       | a <= bit bW - 1 -> res
       | otherwise       -> Nothing
   where
-    b = fromIntegral a
+    b = fromIntegral' a
     res = Just (Prime b)
 {-# INLINE toPrimeIntegral #-}
 

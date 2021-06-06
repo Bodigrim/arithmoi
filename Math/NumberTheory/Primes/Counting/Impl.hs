@@ -23,6 +23,7 @@ import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
 import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
+import Math.NumberTheory.Utils.FromIntegral
 
 import Control.Monad.ST
 import Data.Array.Base
@@ -49,12 +50,12 @@ primeCount :: Integer -> Integer
 primeCount n
     | n > primeCountMaxArg = error $ "primeCount: can't handle bound " ++ show n
     | n < 2     = 0
-    | n < 1000  = fromIntegral . length . takeWhile (<= n) . map unPrime . primeList . primeSieve $ max 242 n
+    | n < 1000  = intToInteger . length . takeWhile (<= n) . map unPrime . primeList . primeSieve $ max 242 n
     | n < 30000 = runST $ do
         ba <- sieveTo n
         (s,e) <- getBounds ba
         ct <- countFromTo s e ba
-        return (fromIntegral $ ct+3)
+        return (intToInteger $ ct+3)
     | otherwise =
         let !ub = cop $ fromInteger n
             !sr = integerSquareRoot ub
@@ -111,7 +112,7 @@ tooLow n p0 shortage
   | otherwise
   = lowSieve p0 shortage   -- a third count wouldn't make it faster, I think
   where
-    gap = truncate (log (fromIntegral p0 :: Double))
+    gap = truncate (log (intToDouble p0 :: Double))
     est = toInteger shortage * gap
     p1  = toInteger p0 + est
     goodEnough = 3*est*est*est < 2*p1*p1    -- a second counting would be more work than sieving
@@ -124,7 +125,7 @@ tooHigh n p0 surplus
   | otherwise
   = tooHigh n b (c-n)
   where
-    gap = truncate (log (fromIntegral p0 :: Double))
+    gap = truncate (log (intToDouble p0 :: Double))
     b = p0 - (surplus * gap * 11) `quot` 10
     c = fromInteger (primeCount (toInteger b))
 
@@ -149,11 +150,11 @@ sieveCount ub cr sr = runST (sieveCountST ub cr sr)
 
 sieveCountST :: forall s. Int64 -> Int64 -> Int64 -> ST s Integer
 sieveCountST ub cr sr = do
-    let psieves = psieveFrom (fromIntegral cr)
+    let psieves = psieveFrom (int64ToInteger cr)
         pisr = approxPrimeCount sr
         picr = approxPrimeCount cr
         diff = pisr - picr
-        size = fromIntegral (diff + diff `quot` 50) + 30
+        size = int64ToInt (diff + diff `quot` 50) + 30
     store <- unsafeNewArray_ (0,size-1) :: ST s (STUArray s Int Int64)
     let feed :: Int64 -> Int -> Int -> UArray Int Bool -> [PrimeSieve] -> ST s Integer
         feed voff !wi !ri uar sves
@@ -181,28 +182,28 @@ sieveCountST ub cr sr = do
             | otherwise = do
                 qb <- unsafeRead store wi
                 let dist = qb - voff - 7
-                if dist < fromIntegral sieveRange
+                if dist < intToInt64 sieveRange
                   then do
                       let (b,j) = idxPr (dist+7)
                           !li = (b `shiftL` 3) .|. j
                       new <- if li < si then return 0 else countFromTo si li stu
-                      let nbtw = btw + fromIntegral new + 1
+                      let nbtw = btw + intToInteger new + 1
                       eat (acc+nbtw) nbtw voff (wi-1) (li+1) stu sves
                   else do
-                      let (cpl,fds) = dist `quotRem` fromIntegral sieveRange
+                      let (cpl,fds) = dist `quotRem` intToInt64 sieveRange
                           (b,j) = idxPr (fds+7)
                           !li = (b `shiftL` 3) .|. j
                           ctLoop !lac 0 (PS vO ba : more) = do
                               nstu <- unsafeThaw ba
                               new <- countFromTo 0 li nstu
-                              let nbtw = btw + lac + 1 + fromIntegral new
-                              eat (acc+nbtw) nbtw (fromIntegral vO) (wi-1) (li+1) nstu more
+                              let nbtw = btw + lac + 1 + intToInteger new
+                              eat (acc+nbtw) nbtw (integerToInt64 vO) (wi-1) (li+1) nstu more
                           ctLoop lac s (ps : more) = do
                               let !new = countAll ps
-                              ctLoop (lac + fromIntegral new) (s-1) more
+                              ctLoop (lac + intToInteger new) (s-1) more
                           ctLoop _ _ [] = error "Primes ended"
                       new <- countFromTo si (sieveBits-1) stu
-                      ctLoop (fromIntegral new) (cpl-1) sves
+                      ctLoop (intToInteger new) (cpl-1) sves
     case psieves of
       (PS vO ba : more) -> feed (fromInteger vO) 0 0 ba more
       _ -> error "No primes sieved"
@@ -212,7 +213,7 @@ calc lim plim = runST (calcST lim plim)
 
 calcST :: forall s. Int64 -> Int64 -> ST s Integer
 calcST lim plim = do
-    !parr <- sieveTo (fromIntegral plim)
+    !parr <- sieveTo (int64ToInteger plim)
     (plo,phi) <- getBounds parr
     !pct <- countFromTo plo phi parr
     !ar1 <- unsafeNewArray_ (0,end-1)
@@ -236,14 +237,14 @@ calcST lim plim = do
                     | i < stop  = do
                         !k <- unsafeRead ar i
                         !v <- unsafeRead ar (i+1)
-                        cgo (acc + fromIntegral v*cp6 k) (i+2)
-                    | otherwise = return (acc+fromIntegral pct+2)
+                        cgo (acc + int64ToInteger v*cp6 k) (i+2)
+                    | otherwise = return (acc+intToInteger pct+2)
             in cgo 0 0
     go 2 start ar1 ar2
   where
     (bt,ri) = idxPr plim
     !start = 8*bt + ri
-    !size = fromIntegral $ integerSquareRoot lim `quot` 4
+    !size = int64ToInt $ integerSquareRoot lim `quot` 4
     !end = 2*size
 
 treat :: Int -> Int64 -> STUArray s Int Int64 -> STUArray s Int Int64 -> ST s Int
@@ -263,9 +264,9 @@ treat end n old new = do
                 !key <- unsafeRead old qi
                 !val <- unsafeRead old (qi+1)
                 let !q0 = key `quot` n
-                    !r0 = fromIntegral (q0 `rem` 30030)
-                    !nkey = q0 - fromIntegral (cpDfAr `unsafeAt` r0)
-                    nk0 = q0 + fromIntegral (cpGpAr `unsafeAt` (r0+1) + 1)
+                    !r0 = int64ToInt (q0 `rem` 30030)
+                    !nkey = q0 - int8ToInt64 (cpDfAr `unsafeAt` r0)
+                    nk0 = q0 + int8ToInt64 (cpGpAr `unsafeAt` (r0+1) + 1)
                     !nlim = n*nk0
                 (wi1,ci1) <- copyTo end nkey old ci new wi
                 ckey <- unsafeRead old ci1
@@ -329,11 +330,11 @@ copyRem end old oi new ni = do
 cp6 :: Int64 -> Integer
 cp6 k =
   case k `quotRem` 30030 of
-    (q,r) -> 5760*fromIntegral q +
-                fromIntegral (cpCtAr `unsafeAt` fromIntegral r)
+    (q,r) -> 5760*int64ToInteger q +
+                int16ToInteger (cpCtAr `unsafeAt` int64ToInt r)
 
 cop :: Int64 -> Int64
-cop m = m - fromIntegral (cpDfAr `unsafeAt` fromIntegral (m `rem` 30030))
+cop m = m - int8ToInt64 (cpDfAr `unsafeAt` int64ToInt (m `rem` 30030))
 
 
 --------------------------------------------------------------------------------

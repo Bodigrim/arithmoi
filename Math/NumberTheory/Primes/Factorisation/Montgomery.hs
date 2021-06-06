@@ -75,7 +75,7 @@ factorise 0 = error "0 has no prime factorisation"
 factorise n' = map (first fromIntegral) sfs <> map (first fromInteger) rest
   where
     n = abs n'
-    (sfs, mb) = smallFactors (fromIntegral n)
+    (sfs, mb) = smallFactors (fromIntegral' n)
     sg = mkStdGen (fromIntegral n `xor` 0xdeadbeef)
     rest = case mb of
       Nothing -> []

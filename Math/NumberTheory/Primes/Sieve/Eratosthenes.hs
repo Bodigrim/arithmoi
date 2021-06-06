@@ -36,6 +36,7 @@ import Data.Word
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
+import Math.NumberTheory.Utils.FromIntegral
 
 iXMASK :: Num a => a
 iXMASK   = 0xFFFFF
@@ -168,9 +169,9 @@ psieveList = makeSieves plim sqlim 0 0 cache
                     let !i = indx .&. jMASK
                         k = indx `shiftR` jBITS
                         strt1 = (k*(30*k + 2*rho i) + byte i) `shiftL` jBITS + idx i
-                        !strt = fromIntegral (strt1 .&. iXMASK)
-                        !skip = fromIntegral (strt1 `shiftR` iXBITS)
-                        !ixes = fromIntegral indx `shiftL` iXJBITS + strt `shiftL` jBITS + fromIntegral i
+                        !strt = intToWord64 (strt1 .&. iXMASK)
+                        !skip = intToWord64 (strt1 `shiftR` iXBITS)
+                        !ixes = intToWord64 indx `shiftL` iXJBITS + strt `shiftL` jBITS + intToWord64 i
                     unsafeWrite new j skip
                     unsafeWrite new (j+1) ixes
                     fill (j+2) (indx+1)
@@ -198,8 +199,8 @@ makeSieves plim sqlim bitOff valOff cache
             return (fcch, fbs0)
       in PS valOff bs : makeSieves plim' sqlim' bitOff' valOff' nc
     where
-      valOff' = valOff + fromIntegral sieveRange
-      bitOff' = bitOff + fromIntegral sieveBits
+      valOff' = valOff + intToInteger sieveRange
+      bitOff' = bitOff + intToInteger sieveBits
 
 slice :: STUArray s Int Word64 -> ST s (STUArray s Int Bool)
 slice cache = do
@@ -213,18 +214,18 @@ slice cache = do
               then unsafeWrite cache pr (w-1)
               else do
                 ixes <- unsafeRead cache (pr+1)
-                let !stj = fromIntegral ixes .&. iXJMASK   -- position of multiple and index of cofactor
-                    !ixw = fromIntegral (ixes `shiftR` iXJBITS)  -- prime data, up to 41 bits
+                let !stj = word64ToInt ixes .&. iXJMASK   -- position of multiple and index of cofactor
+                    !ixw = word64ToInt (ixes `shiftR` iXJBITS)  -- prime data, up to 41 bits
                     !i = ixw .&. jMASK
                     !k = ixw - i        -- On 32-bits, k > 44717396 means overflow is possible in tick
                     !o = i `shiftL` jBITS
                     !j = stj .&. jMASK          -- index of cofactor
                     !s = stj `shiftR` jBITS     -- index of first multiple to tick off
                 (n, u) <- tick k o j s
-                let !skip = fromIntegral (n `shiftR` iXBITS)
-                    !strt = fromIntegral (n .&. iXMASK)
+                let !skip = intToWord64 (n `shiftR` iXBITS)
+                    !strt = intToWord64 (n .&. iXMASK)
                 unsafeWrite cache pr skip
-                unsafeWrite cache (pr+1) ((ixes .&. complement iXJMASK) .|. strt `shiftL` jBITS .|. fromIntegral u)
+                unsafeWrite cache (pr+1) ((ixes .&. complement iXJMASK) .|. strt `shiftL` jBITS .|. intToWord64 u)
             treat (pr+2)
         tick stp off j ix
           | lastIndex < ix  = return (ix - sieveBits, j)
@@ -241,7 +242,7 @@ sieveTo bound = arr
     (bytes,lidx) = idxPr bound
     !mxidx = 8*bytes+lidx
     mxval :: Integer
-    mxval = 30*fromIntegral bytes + fromIntegral (rho lidx)
+    mxval = 30*intToInteger bytes + intToInteger (rho lidx)
     !mxsve = integerSquareRoot mxval
     (kr,r) = idxPr mxsve
     !svbd = 8*kr+r
@@ -290,14 +291,14 @@ growCache offset plim old = do
               then do
                 let !i = indx .&. jMASK
                     k :: Integer
-                    k = fromIntegral (indx `shiftR` jBITS)
-                    strt0 = ((k*(30*k + fromIntegral (2*rho i))
-                                + fromIntegral (byte i)) `shiftL` jBITS)
-                                    + fromIntegral (idx i)
+                    k = intToInteger (indx `shiftR` jBITS)
+                    strt0 = ((k*(30*k + intToInteger (2*rho i))
+                                + intToInteger (byte i)) `shiftL` jBITS)
+                                    + intToInteger (idx i)
                     strt1 = strt0 - offset
-                    !strt = fromIntegral strt1 .&. iXMASK
-                    !skip = fromIntegral (strt1 `shiftR` iXBITS)
-                    !ixes = fromIntegral indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. fromIntegral i
+                    !strt = integerToWord64 strt1 .&. iXMASK
+                    !skip = integerToWord64 (strt1 `shiftR` iXBITS)
+                    !ixes = intToWord64 indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. intToWord64 i
                 unsafeWrite new j skip
                 unsafeWrite new (j+1) ixes
                 fill (j+2) (indx+1)
@@ -333,7 +334,7 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
       bitOff = 8*k0
       start = valOff+7
       ssr = integerSquareRoot (start-1) + 1
-      end1 = start - 6 + fromIntegral sieveRange
+      end1 = start - 6 + intToInteger sieveRange
       plim0 = integerSquareRoot end1
       plim = plim0 + 4801 - (plim0 `rem` 4800)
       sqlim = plim*plim
@@ -351,30 +352,30 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                       let !i = indx .&. jMASK
                           !moff = i `shiftL` jBITS
                           k :: Integer
-                          k = fromIntegral (indx `shiftR` jBITS)
-                          p = 30*k+fromIntegral (rho i)
+                          k = intToInteger (indx `shiftR` jBITS)
+                          p = 30*k+intToInteger (rho i)
                           q0 = (start-1) `quot` p
-                          (skp0,q1) = q0 `quotRem` fromIntegral sieveRange
+                          (skp0,q1) = q0 `quotRem` intToInteger sieveRange
                           (b0,r0)
                               | q1 == 0   = (-1,6)
                               | q1 < 7    = (-1,7)
-                              | otherwise = idxPr (fromIntegral q1 :: Int)
+                              | otherwise = idxPr (integerToInt q1 :: Int)
                           (b1,r1) | r0 == 7 = (b0+1,0)
                                   | otherwise = (b0,r0+1)
-                          b2 = skp0*fromIntegral sieveBytes + fromIntegral b1
-                          strt0 = ((k*(30*b2 + fromIntegral (rho r1))
-                                        + b2 * fromIntegral (rho i)
-                                        + fromIntegral (mu (moff + r1))) `shiftL` jBITS)
-                                            + fromIntegral (nu (moff + r1))
-                          strt1 = ((k*(30*k + fromIntegral (2*rho i))
-                                      + fromIntegral (byte i)) `shiftL` jBITS)
-                                          + fromIntegral (idx i)
+                          b2 = skp0*intToInteger sieveBytes + intToInteger b1
+                          strt0 = ((k*(30*b2 + intToInteger (rho r1))
+                                        + b2 * intToInteger (rho i)
+                                        + intToInteger (mu (moff + r1))) `shiftL` jBITS)
+                                            + intToInteger (nu (moff + r1))
+                          strt1 = ((k*(30*k + intToInteger (2*rho i))
+                                      + intToInteger (byte i)) `shiftL` jBITS)
+                                          + intToInteger (idx i)
                           (strt2,r2)
                               | p < ssr   = (strt0 - bitOff,r1)
                               | otherwise = (strt1 - bitOff, i)
-                          !strt = fromIntegral strt2 .&. iXMASK
-                          !skip = fromIntegral (strt2 `shiftR` iXBITS)
-                          !ixes = fromIntegral indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. fromIntegral r2
+                          !strt = integerToWord64 strt2 .&. iXMASK
+                          !skip = integerToWord64 (strt2 `shiftR` iXBITS)
+                          !ixes = intToWord64 indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. intToWord64 r2
                       unsafeWrite new j skip
                       unsafeWrite new (j+1) ixes
                       fill (j+2) (indx+1)

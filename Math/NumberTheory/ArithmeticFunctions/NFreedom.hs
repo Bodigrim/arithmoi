@@ -25,7 +25,7 @@ import qualified Data.Vector.Unboxed.Mutable as MU
 
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Utils.FromIntegral  (wordToInt)
+import Math.NumberTheory.Utils.FromIntegral
 
 -- | Evaluate the `Math.NumberTheory.ArithmeticFunctions.isNFree` function over a block.
 -- Value at @0@, if zero falls into block, is undefined.
@@ -105,7 +105,7 @@ nFrees n = concatMap (uncurry (nFreesBlock n)) $ zip bounds strides
     -- this value is just repeated. This means after a few dozen iterations,
     -- the sieve will stop increasing in size.
     strides :: [Word]
-    strides = take 55 (iterate (2 *) 256) ++ repeat (fromIntegral (maxBound :: Int))
+    strides = take 55 (iterate (2 *) 256) ++ repeat (intToWord (maxBound :: Int))
 
     -- Infinite list of lower bounds at which @sieveBlockNFree@ will be
     -- applied. This has type @Integral a => a@ instead of @Word@ because

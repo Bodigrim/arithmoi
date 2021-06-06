@@ -50,7 +50,7 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
 
     -- @a + n@
     aPlusN :: a
-    aPlusN = a + fromIntegral digitsOfPrecision
+    aPlusN = a + fromInteger digitsOfPrecision
 
     -- @[(a + n)^s | s <- [0, 1, 2 ..]]@
     powsOfAPlusN :: [a]

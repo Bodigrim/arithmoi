@@ -87,10 +87,10 @@ import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Internal                   (discreteLogarithmPP)
 import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
-import Math.NumberTheory.Primes                            (Prime(..), UniqueFactorisation, factorise, nextPrime)
+import Math.NumberTheory.Primes
 import Math.NumberTheory.RootsOfUnity
-import Math.NumberTheory.Utils.FromIntegral                (wordToInt)
 import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.FromIntegral
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
 -- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
@@ -139,12 +139,12 @@ instance Eq DirichletFactor where
   _ == _ = False
 
 -- | For primes, define the canonical primitive root as the smallest such.
-generator :: (Integral a, UniqueFactorisation a) => Prime a -> Word -> a
+generator :: Prime Natural -> Word -> Natural
 generator p k = case cyclicGroupFromFactors [(p, k)] of
   Nothing -> error "illegal"
   Just (Some cg)
     | Sub Dict <- proofFromCyclicGroup cg ->
-      fromIntegral $ unMod $ multElement $ unPrimitiveRoot $ head $
+      unMod $ multElement $ unPrimitiveRoot $ head $
         mapMaybe (isPrimitiveRoot cg) [2..maxBound]
 
 -- | Implement the function \(\lambda\) from page 5 of
@@ -222,8 +222,8 @@ stimesChar s (Generated xs) = Generated (map mult xs)
 -- | We define `succ` and `pred` with more efficient implementations than
 -- @`toEnum` . (+1) . `fromEnum`@.
 instance KnownNat n => Enum (DirichletCharacter n) where
-  toEnum = indexToChar . fromIntegral
-  fromEnum = fromIntegral . characterNumber
+  toEnum = indexToChar . intToNatural
+  fromEnum = integerToInt . characterNumber
   succ x = makeChar x (characterNumber x + 1)
   pred x = makeChar x (characterNumber x - 1)
 
@@ -240,12 +240,12 @@ instance KnownNat n => Bounded (DirichletCharacter n) where
 -- | We have a (non-canonical) enumeration of dirichlet characters.
 characterNumber :: DirichletCharacter n -> Integer
 characterNumber (Generated y) = foldl' go 0 y
-  where go x (OddPrime p k _ a) = x * m + numerator (fromRootOfUnity a * fromIntegral m)
-          where p' = fromIntegral (unPrime p)
+  where go x (OddPrime p k _ a) = x * m + numerator (fromRootOfUnity a * (m % 1))
+          where p' = naturalToInteger (unPrime p)
                 m = p'^(k-1)*(p'-1)
         go x (TwoPower k a b)   = x' * 2 + numerator (fromRootOfUnity a * 2)
           where m = bit (k-2) :: Integer
-                x' = x `shiftL` (k-2) + numerator (fromRootOfUnity b * fromIntegral m)
+                x' = x `shiftL` (k-2) + numerator (fromRootOfUnity b * (m % 1))
         go x Two = x
 
 -- | Give the dirichlet character from its number.
@@ -272,7 +272,7 @@ makeChar x = runIdentity . bulkMakeChars x . Identity
 -- | Use one character to make many more: better than indicesToChars since it avoids recalculating
 -- some primitive roots
 bulkMakeChars :: (Integral a, Functor f) => DirichletCharacter n -> f a -> f (DirichletCharacter n)
-bulkMakeChars x = fmap (Generated . unroll t . (`mod` m) . fromIntegral)
+bulkMakeChars x = fmap (Generated . unroll t . (`mod` m) . fromIntegral')
   where (Product m, t) = templateFromCharacter x
 
 -- We assign each natural a unique Template, which can be decorated (eg in `unroll`) to
@@ -357,7 +357,6 @@ induced (Generated start) = if n `rem` d == 0
         newFactor TwoTemplate = Two
         newFactor (TwoPTemplate k _) = TwoPower k mempty mempty
         newFactor (OddTemplate p k g _) = OddPrime p k g mempty
-        -- rest (p,k) = OddPrime p k (generator p k) mempty
 
 -- | The <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol> gives a real Dirichlet
 -- character for odd moduli.
@@ -403,7 +402,7 @@ toRealFunction (RealChar chi) m = case evalGeneral chi m of
 validChar :: forall n. KnownNat n => DirichletCharacter n -> Bool
 validChar (Generated xs) = correctDecomposition && all correctPrimitiveRoot xs && all validValued xs
   where correctDecomposition = sort (factorise n) == map getPP xs
-        getPP (TwoPower k _ _) = (two, fromIntegral k)
+        getPP (TwoPower k _ _) = (two, intToWord k)
         getPP (OddPrime p k _ _) = (p, k)
         getPP Two = (two,1)
         correctPrimitiveRoot (OddPrime p k g _) = g == generator p k
@@ -504,7 +503,7 @@ orZeroToNum f (NonZero x) = f x
 -- of a dirichlet character are required, `evalAll` will be better than `evalGeneral`, since
 -- computations can be shared.
 evalAll :: forall n. KnownNat n => DirichletCharacter n -> Vector (OrZero RootOfUnity)
-evalAll (Generated xs) = V.generate (fromIntegral n) func
+evalAll (Generated xs) = V.generate (naturalToInt n) func
   where n = natVal (Proxy :: Proxy n)
         vectors = map mkVector xs
         func :: Int -> OrZero RootOfUnity
@@ -513,10 +512,10 @@ evalAll (Generated xs) = V.generate (fromIntegral n) func
                 go (modulus,v) = v ! (m `mod` modulus)
         mkVector :: DirichletFactor -> (Int, Vector (OrZero RootOfUnity))
         mkVector Two = (2, V.fromList [Zero, mempty])
-        mkVector (OddPrime p k (fromIntegral -> g) a) = (modulus, w)
+        mkVector (OddPrime p k (naturalToInt -> g) a) = (modulus, w)
           where
             p' = unPrime p
-            modulus = fromIntegral (p'^k) :: Int
+            modulus = naturalToInt (p'^k) :: Int
             w = V.create $ do
               v <- MV.replicate modulus Zero
               -- TODO: we're in the ST monad here anyway, could be better to use STRefs to manage
@@ -548,11 +547,11 @@ iterateMaybe f x = unfoldr (fmap (\t -> (t, f t))) (Just x)
 -- | Attempt to construct a character from its table of values.
 -- An inverse to `evalAll`, defined only on its image.
 fromTable :: forall n. KnownNat n => Vector (OrZero RootOfUnity) -> Maybe (DirichletCharacter n)
-fromTable v = if length v == fromIntegral n
+fromTable v = if length v == naturalToInt n
                  then traverse makeFactor tmpl >>= check . Generated
                  else Nothing
   where n = natVal (Proxy :: Proxy n)
-        n' = fromIntegral n :: Integer
+        n' = naturalToInteger n :: Integer
         tmpl = snd (mkTemplate n)
         check :: DirichletCharacter n -> Maybe (DirichletCharacter n)
         check chi = if evalAll chi == v then Just chi else Nothing

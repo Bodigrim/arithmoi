@@ -73,7 +73,7 @@ instance S.Semiring GaussianInteger where
     times         = (*)
     zero          = 0 :+ 0
     one           = 1 :+ 0
-    fromNatural n = fromIntegral n :+ 0
+    fromNatural n = naturalToInteger n :+ 0
 
 instance S.Ring GaussianInteger where
     negate = negate

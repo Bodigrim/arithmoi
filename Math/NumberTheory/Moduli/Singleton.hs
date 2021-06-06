@@ -62,6 +62,7 @@ import Unsafe.Coerce
 import Math.NumberTheory.Roots (highestPower)
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
+import Math.NumberTheory.Utils.FromIntegral
 
 -- | Wrapper to hide an unknown type-level natural.
 data Some (a :: Nat -> Type) where
@@ -132,7 +133,7 @@ someSFactors
 -- > toModulo :: SFactors Integer m -> Natural
 -- > toModulo t = case proofFromSFactors t of Sub Dict -> natVal t
 proofFromSFactors :: Integral a => SFactors a m -> (() :- KnownNat m)
-proofFromSFactors (SFactors fs) = Sub $ unsafeCoerce (Magic Dict) (fromIntegral (factorBack fs) :: Natural)
+proofFromSFactors (SFactors fs) = Sub $ unsafeCoerce (Magic Dict) (fromIntegral' (factorBack fs) :: Natural)
 
 -- | This singleton data type establishes a correspondence
 -- between a modulo @m@ on type level

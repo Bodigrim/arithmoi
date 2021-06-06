@@ -96,7 +96,7 @@ autoConfig n = QuadraticSieveConfig t m k h
       | otherwise = max (41 - l) 1 * floor (exp (sqrt (le * log le) / 2) :: Double)
     -- number of digits of n
     l = integerLog10 n
-    le = fromIntegral l * log 10
+    le = intToDouble l * log 10
 
 -- | Given an odd positive composite Integer @n@, @quadraticSieve@ outputs a
 -- factor of @n@. These conditions are not checked.
@@ -161,7 +161,7 @@ findRoots n qsc@(QuadraticSieveConfig t m k h) = trace ("Parameters: " ++ show q
       where
         a = factorBack decompositionOfA
         -- The @Ratio@ traced below needs to be close to @1@ for maximal efficiency.
-        valuesOfB = trace ("Ratio: " ++ show ((fromInteger (a * fromIntegral m) :: Double) / fromInteger (integerSquareRoot (2*n)))) $
+        valuesOfB = trace ("Ratio: " ++ show ((fromInteger (a * intToInteger m) :: Double) / fromInteger (integerSquareRoot (2*n)))) $
           -- Only one root is picked since they produce equivalent data.
           filter (<= a `div` 2) $ sqrtsModFactorisation n decompositionOfA
         -- @b@ and @c@ are chosen so that @b ^ 2 - a * c = n@.
@@ -366,7 +366,7 @@ translate :: [IS.IntSet] -> SomeKnown SBMatrix
 translate listOfFactorisations = translateHelper listOfFactorisations (length listOfFactorisations)
   where
     translateHelper :: [IS.IntSet] -> Int -> SomeKnown SBMatrix
-    translateHelper columns dim = case someNatVal (fromIntegral dim) of
+    translateHelper columns dim = case someNatVal (intToNatural dim) of
       SomeNat (_ :: Proxy dim) -> let result :: SBMatrix dim = SBMatrix (fromJust (SV.fromList (map toIndices columns))) in
         SomeKnown result
           where
@@ -404,5 +404,5 @@ findSecondRoot n factorisations = case someNatVal (integerToNatural n) of
       -- By contruction, the number obtained by adding the relevant factorisations
       -- in @rootsData@ is a square number. Its square root is computed by
       -- dividing each prime power by @2@.
-      IM.foldrWithKey (\key power acc -> (fromInteger (fromIntegral key) :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $
+      IM.foldrWithKey (\key power acc -> (fromIntegral key :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $
         IM.unionsWith (+) factorisations

@@ -17,6 +17,7 @@ import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.Roots
 import Math.NumberTheory.ArithmeticFunctions.Moebius
+import Math.NumberTheory.Utils.FromIntegral
 
 -- | Compute individual values of Mertens function in O(n^(2/3)) time and space.
 --
@@ -34,9 +35,9 @@ mertens x = sumMultMoebius lookupMus (\n -> sfunc (x `quot` n)) [1 .. x `quot` u
     sfunc :: Word -> Int
     sfunc y
       = 1
-      - sum [ U.unsafeIndex mes (fromIntegral $ y `quot` n) |  n <- [y `quot` u + 1 .. kappa] ]
-      + fromIntegral kappa * U.unsafeIndex mes (fromIntegral nu)
-      - sumMultMoebius lookupMus (\n -> fromIntegral $ y `quot` n) [1 .. nu]
+      - sum [ U.unsafeIndex mes (wordToInt $ y `quot` n) |  n <- [y `quot` u + 1 .. kappa] ]
+      + wordToInt kappa * U.unsafeIndex mes (wordToInt nu)
+      - sumMultMoebius lookupMus (\n -> wordToInt $ y `quot` n) [1 .. nu]
       where
         nu = integerSquareRoot y
         kappa = y `quot` (nu + 1)
@@ -50,7 +51,7 @@ mertens x = sumMultMoebius lookupMus (\n -> sfunc (x `quot` n)) [1 .. x `quot` u
     mus = sieveBlockMoebius 1 cacheSize
 
     lookupMus :: Word -> Moebius
-    lookupMus i = U.unsafeIndex mus (fromIntegral (i - 1))
+    lookupMus i = U.unsafeIndex mus (wordToInt (i - 1))
 
     -- 0-based index
     mes :: U.Vector Int

@@ -87,7 +87,7 @@ mult matrix vector = runST $ do
 -- as a list of columns. Each column is a list of Ints corresponding to the position
 -- of the non-zero entries of the column.
 fromList :: [[Int]] -> SomeKnown SBMatrix
-fromList columns = case someNatVal (fromIntegral (length columns)) of
+fromList columns = case someNatVal (intToNatural (length columns)) of
   SomeNat (Proxy :: Proxy k) -> SomeKnown (mat :: SBMatrix k)
   where
     mat :: KnownNat k => SBMatrix k

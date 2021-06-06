@@ -46,6 +46,7 @@ import GHC.Integer.GMP.Internals
 import qualified Math.NumberTheory.Utils.FromIntegral as UT
 import GHC.Natural
 import GHC.TypeNats
+import Math.NumberTheory.Utils.FromIntegral (intToWord)
 
 -- | Remove factors of @2@ and count them. If
 --   @n = 2^k*m@ with @m@ odd, the result is @(k, m)@.
@@ -58,7 +59,7 @@ import GHC.TypeNats
   #-}
 {-# INLINE [1] shiftToOddCount #-}
 shiftToOddCount :: Integral a => a -> (Word, a)
-shiftToOddCount n = case shiftOCInteger (fromIntegral n) of
+shiftToOddCount n = case shiftOCInteger (toInteger n) of
                       (z, o) -> (z, fromInteger o)
 
 -- | Specialised version for @'Word'@.
@@ -108,7 +109,7 @@ shiftToOddCountBigNat bn# = case bigNatZeroCount bn# of
 bigNatZeroCount :: BigNat -> Word#
 bigNatZeroCount bn# = count 0## 0#
   where
-    !(W# bitSize#) = fromIntegral (finiteBitSize (0 :: Word))
+    !(W# bitSize#) = intToWord (finiteBitSize (0 :: Word))
     count a# i# =
           case indexBigNat# bn# i# of
             0## -> count (a# `plusWord#` bitSize#) (i# +# 1#)
@@ -123,7 +124,7 @@ bigNatZeroCount bn# = count 0## 0#
   #-}
 {-# INLINE [1] shiftToOdd #-}
 shiftToOdd :: Integral a => a -> a
-shiftToOdd n = fromInteger (shiftOInteger (fromIntegral n))
+shiftToOdd n = fromInteger (shiftOInteger (toInteger n))
 
 -- | Specialised version for @'Int'@.
 --   Precondition: argument nonzero (not checked).
