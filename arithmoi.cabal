@@ -124,8 +124,7 @@ test-suite arithmoi-tests
     tasty-rerun >=1.1.17,
     tasty-smallcheck >=0.8 && <0.9,
     transformers >=0.5,
-    vector,
-    vector-sized
+    vector
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsTests
     Math.NumberTheory.ArithmeticFunctions.InverseTests
