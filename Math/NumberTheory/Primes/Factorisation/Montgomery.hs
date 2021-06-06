@@ -368,7 +368,11 @@ smallFactors = \case
       | i >= smallPrimesLength
       = ([], Just (NatJ# m))
       | otherwise
-      = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
+      = let p# =
+#if MIN_VERSION_base(4,16,0)
+              word16ToWord#
+#endif
+              (indexWord16OffAddr# smallPrimesAddr# i#) in
       case m `quotRemBigNatWord` p# of
         (# mp, 0## #) ->
           let (# k, r #) = splitOff 1 mp in
@@ -386,7 +390,12 @@ smallFactors = \case
       = if isTrue# (m# `leWord#` 4294967295##) -- 65536 * 65536 - 1
         then ([(NatS# m#, 1)], Nothing)
         else ([], Just (NatS# m#))
-    goWord m# i@(I# i#) = let p# = indexWord16OffAddr# smallPrimesAddr# i# in
+    goWord m# i@(I# i#)
+      = let p# =
+#if MIN_VERSION_base(4,16,0)
+              word16ToWord#
+#endif
+              (indexWord16OffAddr# smallPrimesAddr# i#) in
       if isTrue# (m# `ltWord#` (p# `timesWord#` p#))
         then ([(NatS# m#, 1)], Nothing)
         else case m# `quotRemWord#` p# of

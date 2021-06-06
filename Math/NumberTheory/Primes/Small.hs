@@ -21,12 +21,12 @@ import GHC.Exts hiding (fromList)
 import GHC.Word
 
 smallPrimesFromTo :: Word16 -> Word16 -> [Word16]
-smallPrimesFromTo (W16# from#) (W16# to#) = go k0#
+smallPrimesFromTo from to = go k0#
   where
     !(Ptr smallPrimesAddr#) = smallPrimesPtr
-    fromD# = word2Double# from#
+    !(D# fromD#) = fromIntegral from
     k0#
-      | isTrue# (from# `leWord#` 5##)
+      | from <= 5
       = 0#
       | otherwise
       = double2Int# (fromD# /## logDouble# fromD#)
@@ -34,14 +34,14 @@ smallPrimesFromTo (W16# from#) (W16# to#) = go k0#
     go k#
       | I# k# >= smallPrimesLength
       = []
-      | isTrue# (p# `gtWord#` to#)
+      | p > to
       = []
-      | isTrue# (p# `ltWord#` from#)
+      | p < from
       = go (k# +# 1#)
       | otherwise
-      = W16# p# : go (k# +# 1#)
+      = p : go (k# +# 1#)
       where
-        p# = indexWord16OffAddr# smallPrimesAddr# k#
+        p = W16# (indexWord16OffAddr# smallPrimesAddr# k#)
 
 -- length smallPrimes
 smallPrimesLength :: Int

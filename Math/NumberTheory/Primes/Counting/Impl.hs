@@ -399,7 +399,6 @@ cpGpAr = runSTUArray $ do
                     then accumulate 2 (i-2)
                     else do unsafeWrite ar i d
                             accumulate (d+1) (i-1)
-            | otherwise = return ar
     note 2 0
     note 6 3
     note 10 5
