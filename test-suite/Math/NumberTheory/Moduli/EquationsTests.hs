@@ -19,28 +19,36 @@ import Data.Proxy
 import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 import Numeric.Natural
 
+import Math.NumberTheory.Moduli (SomeMod(..))
 import Math.NumberTheory.Moduli.Equations
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.TestUtils
 
-solveLinearProp :: KnownNat m => Mod m -> Mod m -> Bool
-solveLinearProp a b = sort (solveLinear a b) ==
-  filter (\x -> a * x + b == 0) [minBound .. maxBound]
+wrapSome :: KnownNat m => ([Mod m], [Mod m]) -> ([SomeMod], [SomeMod])
+wrapSome (xs, ys) = (map SomeMod xs, map SomeMod ys)
 
-solveLinearProperty1 :: Positive Natural -> Integer -> Integer -> Bool
-solveLinearProperty1 (Positive m) a b = case someNatVal m of
-  SomeNat (_ :: Proxy t) -> solveLinearProp (fromInteger a :: Mod t) (fromInteger b)
+solveLinearProp :: KnownNat m => Mod m -> Mod m -> ([Mod m], [Mod m])
+solveLinearProp a b =
+  ( sort (solveLinear a b)
+  , filter (\x -> a * x + b == 0) [minBound .. maxBound]
+  )
 
-solveQuadraticProp :: KnownNat m => Mod m -> Mod m -> Mod m -> Bool
-solveQuadraticProp a b c = sort (solveQuadratic sfactors a b c) ==
-  filter (\x -> a * x * x + b * x + c == 0) [minBound .. maxBound]
+solveLinearProperty1 :: (Positive Natural, Integer, Integer) -> ([SomeMod], [SomeMod])
+solveLinearProperty1 (Positive m, a, b) = case someNatVal m of
+  SomeNat (_ :: Proxy t) -> wrapSome $ solveLinearProp (fromInteger a :: Mod t) (fromInteger b)
 
-solveQuadraticProperty1 :: Positive Natural -> Integer -> Integer -> Integer -> Bool
-solveQuadraticProperty1 (Positive m) a b c = case someNatVal m of
-  SomeNat (_ :: Proxy t) -> solveQuadraticProp (fromInteger a :: Mod t) (fromInteger b) (fromInteger c)
+solveQuadraticProp :: KnownNat m => Mod m -> Mod m -> Mod m -> ([Mod m], [Mod m])
+solveQuadraticProp a b c =
+  ( sort (solveQuadratic sfactors a b c)
+  , filter (\x -> a * x * x + b * x + c == 0) [minBound .. maxBound]
+  )
+
+solveQuadraticProperty1 :: (Positive Natural, Integer, Integer, Integer) -> ([SomeMod], [SomeMod])
+solveQuadraticProperty1 (Positive m, a, b, c) = case someNatVal m of
+  SomeNat (_ :: Proxy t) -> wrapSome $ solveQuadraticProp (fromInteger a :: Mod t) (fromInteger b) (fromInteger c)
 
 testSuite :: TestTree
 testSuite = testGroup "Equations"
-  [ testSmallAndQuick "solveLinear"    solveLinearProperty1
-  , testSmallAndQuick "solveQuadratic" solveQuadraticProperty1
+  [ testEqualSmallAndQuick "solveLinear"    solveLinearProperty1
+  , testEqualSmallAndQuick "solveQuadratic" solveQuadraticProperty1
   ]
