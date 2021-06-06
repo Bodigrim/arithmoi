@@ -2,6 +2,17 @@
 
 ## 0.12.0.0
 
+### Added
+
+* Define cubic symbol ([#194](https://github.com/Bodigrim/arithmoi/pull/194)).
+* Add `instance Unbox (Prime a)` and `toPrimeIntegral` helper ([#201](https://github.com/Bodigrim/arithmoi/pull/201)).
+* Implement Cornacchia's algorithm for Diophantine equations ([#195](https://github.com/Bodigrim/arithmoi/pull/195)).
+* Define a wrapper `PrimeIntSet` for sets of primes ([#205](https://github.com/Bodigrim/arithmoi/pull/205)).
+
+### Deprecated
+
+* Deprecate `Math.NumberTheory.Powers.Modular`, use `Data.Mod` or `Data.Mod.Word` instead.
+
 ### Removed
 
 * Remove modules and functions, deprecated in the previous release.
