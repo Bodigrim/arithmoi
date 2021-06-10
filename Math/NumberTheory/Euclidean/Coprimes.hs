@@ -21,12 +21,13 @@ module Math.NumberTheory.Euclidean.Coprimes
 import Prelude hiding (gcd, quot, rem)
 import Data.Coerce
 import Data.Euclidean
-import Data.List (tails, mapAccumL)
+import Data.List (tails)
 import Data.Maybe
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
 import Data.Semiring (Semiring(..), isZero)
+import Data.Traversable
 
 -- | A list of pairwise coprime numbers
 -- with their multiplicities.

@@ -64,10 +64,10 @@ import Control.Applicative                                 (liftA2)
 #endif
 import Data.Bits                                           (Bits(..))
 import Data.Constraint
-import Data.Foldable                                       (for_)
+import Data.Foldable
 import Data.Functor.Identity                               (Identity(..))
 import Data.Kind
-import Data.List                                           (mapAccumL, foldl', sort, find, unfoldr)
+import Data.List                                           (sort, unfoldr)
 import Data.Maybe                                          (mapMaybe, fromJust, fromMaybe)
 import Data.Mod
 #if MIN_VERSION_base(4,12,0)
@@ -76,6 +76,7 @@ import Data.Monoid                                         (Ap(..))
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          ((%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..),Product(..))
+import Data.Traversable
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vector                                         (Vector, (!))

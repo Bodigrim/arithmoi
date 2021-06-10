@@ -31,7 +31,8 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
 import Prelude hiding (rem, quot)
 import Data.Bits (Bits)
 import Data.Euclidean
-import Data.List (foldl', partition, mapAccumL, sortOn)
+import Data.Foldable
+import Data.List (partition, sortOn)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -42,6 +43,7 @@ import Data.Semigroup
 import Data.Semiring (Semiring(..), Mul(..))
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.Traversable
 import Numeric.Natural
 
 import Math.NumberTheory.ArithmeticFunctions
