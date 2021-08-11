@@ -29,7 +29,7 @@ import Math.NumberTheory.Euclidean.Coprimes
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Primes.Types
 
--- | A container for a number and its pairwise coprime (but not neccessarily prime)
+-- | A container for a number and its pairwise coprime (but not necessarily prime)
 -- factorisation.
 -- It is designed to preserve information about factors under multiplication.
 -- One can use this representation to speed up prime factorisation
@@ -78,7 +78,7 @@ data Prefactored a = Prefactored
   { prefValue   :: a
     -- ^ Number itself.
   , prefFactors :: Coprimes a Word
-    -- ^ List of pairwise coprime (but not neccesarily prime) factors,
+    -- ^ List of pairwise coprime (but not necessarily prime) factors,
     -- accompanied by their multiplicities.
   } deriving (Eq, Show)
 
@@ -90,7 +90,7 @@ fromValue :: (Eq a, GcdDomain a) => a -> Prefactored a
 fromValue a = Prefactored a (singleton a 1)
 
 -- | Create 'Prefactored' from a given list of pairwise coprime
--- (but not neccesarily prime) factors with multiplicities.
+-- (but not necessarily prime) factors with multiplicities.
 --
 -- >>> fromFactors (splitIntoCoprimes [(140, 1), (165, 1)])
 -- Prefactored {prefValue = 23100, prefFactors = Coprimes {unCoprimes = [(28,1),(33,1),(5,2)]}}
