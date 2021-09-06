@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0.1
+
+### Fixed
+
+* Compatibility patches for GHC 9.2.
+
 ## 0.12.0.0
 
 ### Added
