@@ -22,7 +22,7 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
 import Data.Bits
 import Data.Mod
 import Data.Proxy
-import GHC.Base
+import GHC.Exts (Word(..), Int(..), (-#), (<#), isTrue#)
 import GHC.Integer.GMP.Internals
 import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 
