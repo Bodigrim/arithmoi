@@ -2,6 +2,7 @@
 
 {-# LANGUAGE CPP       #-}
 
+{-# LANGUAGE RecordWildCards, GADTs #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.DiophantineTests
@@ -33,8 +34,17 @@ cornacchiaBruteForce (Positive d) (Positive a) = gcd d m /= 1 || findSolutions [
             where x2 = m - d*y*y
                   x = integerSquareRoot x2
 
+linearTest :: (a ~ Integer) => a -> a -> a -> a -> Bool
+linearTest a b c k =
+  case solveLinear Lin {..} of
+    Nothing -> True -- Disproving this would require a counter example
+    Just ls | (x, y) <- runLinearSolution ls k
+            -> a*x + b*y == c
+
+
 testSuite :: TestTree
 testSuite = testGroup "Diophantine"
   [ testSmallAndQuick "Cornacchia correct" cornacchiaTest
   , testSmallAndQuick "Cornacchia same solutions as brute force" cornacchiaBruteForce
+  , testSmallAndQuick "Linear correct" linearTest
   ]
