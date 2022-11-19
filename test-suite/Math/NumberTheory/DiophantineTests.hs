@@ -37,14 +37,14 @@ cornacchiaBruteForce (Positive d) (Positive a) = gcd d m /= 1 || findSolutions [
 
 linearTest :: (a ~ Integer) => a -> a -> a -> a -> Bool
 linearTest a b c k =
-  case solveLinear Lin {..} of
+  case linear a b c of
     Nothing -> True -- Disproving this would require a counter example
     Just ls | (x, y) <- runLinearSolution ls k
             -> a*x + b*y == c
 
 linearTest' :: (a ~ Integer) => Prime a -> Prime a -> a -> a -> Bool
 linearTest' l c' d k =
-  case solveLinear Lin {..} of
+  case linear a b c of
     Nothing -> l == c'
     Just ls | (x, y) <- runLinearSolution ls k
             -> a*x + b*y == c

@@ -6,9 +6,8 @@
 module Math.NumberTheory.Diophantine
   ( cornacchiaPrimitive
   , cornacchia
-  , Linear (..)
   , LinearSolution (..)
-  , solveLinear
+  , linear
   , runLinearSolution
   )
 where
@@ -77,27 +76,17 @@ cornacchia d m
 
 ----
 
--- | A linear diophantine equation `ax + by = c`
--- | where `x` and `y` are unknown
-data Linear a = Lin { a,b,c :: a }
-  deriving
-    ( Show, Eq, Ord
-    )
-
 -- | A solution to a linear equation
 data LinearSolution a = LS { x,v,y,u :: a }
   deriving
     ( Show, Eq, Ord
     )
 
--- | Produces an unique solution given any
--- | arbitrary number k
-runLinearSolution :: _ => LinearSolution a -> a -> (a, a)
-runLinearSolution LS {..} k =
-  ( x + k*v, y - k*u )
-
-solveLinear :: _ => Linear a -> Maybe (LinearSolution a)
-solveLinear Lin {..} =
+-- | Solves a linear diophantine equation
+-- |   ax + by = c
+-- | where `x` and `y` are unknown
+linear :: _ => a -> a -> a -> Maybe (LinearSolution a)
+linear a b c =
     LS {..} <$ guard (b /= 0 && q == 0)
   where
     (d, e) = gcdExt a b
@@ -105,4 +94,10 @@ solveLinear Lin {..} =
     f      = div (a*e-d) (-b)
     (x, y) = (e*h, f*h)
     (u, v) = (quot a d, quot b d)
+
+-- | Produces an unique solution given any
+-- | arbitrary number k
+runLinearSolution :: _ => LinearSolution a -> a -> (a, a)
+runLinearSolution LS {..} k =
+  ( x + k*v, y - k*u )
 
