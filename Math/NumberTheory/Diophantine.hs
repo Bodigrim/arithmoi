@@ -1,6 +1,6 @@
 -- Module for Diophantine Equations and related functions
 
-{-# LANGUAGE RecordWildCards, PartialTypeSignatures #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Math.NumberTheory.Diophantine
@@ -77,7 +77,7 @@ cornacchia d m
 ----
 
 -- | A solution to a linear equation
-data LinearSolution a = LS { x,v,y,u :: a }
+data LinearSolution a = LS { base1,base2,scale1,scale2 :: a }
   deriving
     ( Show, Eq, Ord
     )
@@ -87,7 +87,7 @@ data LinearSolution a = LS { x,v,y,u :: a }
 -- | where `x` and `y` are unknown
 linear :: _ => a -> a -> a -> Maybe (LinearSolution a)
 linear a b c =
-    LS {..} <$ guard (b /= 0 && q == 0)
+    LS x y v u <$ guard (b /= 0 && q == 0)
   where
     (d, e) = gcdExt a b
     (h, q) = divMod c d
@@ -98,6 +98,6 @@ linear a b c =
 -- | Produces an unique solution given any
 -- | arbitrary number k
 runLinearSolution :: _ => LinearSolution a -> a -> (a, a)
-runLinearSolution LS {..} k =
+runLinearSolution (LS x y v u) k =
   ( x + k*v, y - k*u )
 
