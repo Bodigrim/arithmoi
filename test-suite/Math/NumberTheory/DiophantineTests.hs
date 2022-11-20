@@ -1,6 +1,7 @@
 -- Tests for Math.NumberTheory.Diophantine
 
 {-# LANGUAGE CPP       #-}
+{-# LANGUAGE GADTs     #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
@@ -15,6 +16,7 @@ import Test.Tasty
 import Math.NumberTheory.Diophantine
 import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.TestUtils
+import Math.NumberTheory.Primes
 
 cornacchiaTest :: Positive Integer -> Positive Integer -> Bool
 cornacchiaTest (Positive d) (Positive a) = gcd d m /= 1 || all checkSoln (cornacchia d m)
@@ -33,8 +35,30 @@ cornacchiaBruteForce (Positive d) (Positive a) = gcd d m /= 1 || findSolutions [
             where x2 = m - d*y*y
                   x = integerSquareRoot x2
 
+linearTest :: (a ~ Integer) => a -> a -> a -> a -> Bool
+linearTest a b c k =
+  case linear a b c of
+    Nothing -> True -- Disproving this would require a counter example
+    Just ls | (x, y) <- runLinearSolution ls k
+            -> a*x + b*y == c
+
+linearTest' :: (a ~ Integer) => Prime a -> Prime a -> a -> a -> Bool
+linearTest' l c' d k =
+  case linear a b c of
+    Nothing -> l == c'
+    Just ls | (x, y) <- runLinearSolution ls k
+            -> a*x + b*y == c
+  where
+    a = unPrime l
+    b = unPrime c'
+    c = d
+
+
 testSuite :: TestTree
 testSuite = testGroup "Diophantine"
   [ testSmallAndQuick "Cornacchia correct" cornacchiaTest
   , testSmallAndQuick "Cornacchia same solutions as brute force" cornacchiaBruteForce
+  , testSmallAndQuick "Linear correct" linearTest
+  , testSmallAndQuick "Linear correct #2" linearTest'
   ]
+

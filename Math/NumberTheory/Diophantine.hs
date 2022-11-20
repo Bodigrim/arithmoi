@@ -1,8 +1,14 @@
 -- Module for Diophantine Equations and related functions
 
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
+
 module Math.NumberTheory.Diophantine
   ( cornacchiaPrimitive
   , cornacchia
+  , LinearSolution (..)
+  , linear
+  , runLinearSolution
   )
 where
 
@@ -13,6 +19,9 @@ import           Math.NumberTheory.Primes       ( factorise
                                                 )
 import           Math.NumberTheory.Roots        ( integerSquareRoot )
 import           Math.NumberTheory.Utils.FromIntegral
+
+import           Control.Monad                  (guard)
+import           Data.Euclidean                 (gcdExt)
 
 -- | See `cornacchiaPrimitive`, this is the internal algorithm implementation
 -- | as described at https://en.wikipedia.org/wiki/Cornacchia%27s_algorithm 
@@ -64,3 +73,31 @@ cornacchia d m
  where
   candidates = map (\sf -> (sf, m `div` (sf * sf))) (squareFactors m)
   solve (sf, m') = map (\(x, y) -> (x * sf, y * sf)) (cornacchiaPrimitive d m')
+
+----
+
+-- | A solution to a linear equation
+data LinearSolution a = LS { base1,base2,scale1,scale2 :: a }
+  deriving
+    ( Show, Eq, Ord
+    )
+
+-- | Solves a linear diophantine equation
+-- |   ax + by = c
+-- | where `x` and `y` are unknown
+linear :: _ => a -> a -> a -> Maybe (LinearSolution a)
+linear a b c =
+    LS x y v u <$ guard (b /= 0 && q == 0)
+  where
+    (d, e) = gcdExt a b
+    (h, q) = divMod c d
+    f      = div (a*e-d) (-b)
+    (x, y) = (e*h, f*h)
+    (u, v) = (quot a d, quot b d)
+
+-- | Produces an unique solution given any
+-- | arbitrary number k
+runLinearSolution :: _ => LinearSolution a -> a -> (a, a)
+runLinearSolution (LS x y v u) k =
+  ( x + k*v, y - k*u )
+
