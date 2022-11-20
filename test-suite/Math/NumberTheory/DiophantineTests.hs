@@ -1,7 +1,7 @@
 -- Tests for Math.NumberTheory.Diophantine
 
 {-# LANGUAGE CPP       #-}
-{-# LANGUAGE RecordWildCards, GADTs #-}
+{-# LANGUAGE GADTs     #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
