@@ -21,6 +21,7 @@ import Control.Applicative
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif
+import Prelude hiding (Applicative(..))
 
 import Math.NumberTheory.Primes
 

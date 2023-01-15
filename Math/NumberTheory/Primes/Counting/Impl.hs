@@ -11,6 +11,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Math.NumberTheory.Primes.Counting.Impl
     ( primeCount
     , primeCountMaxArg
