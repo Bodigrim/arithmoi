@@ -6,7 +6,7 @@ module Math.NumberTheory.EisensteinIntegersBench
   ) where
 
 import Data.Maybe
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Math.NumberTheory.ArithmeticFunctions (tau)
 import Math.NumberTheory.Primes (isPrime)

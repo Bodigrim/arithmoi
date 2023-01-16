@@ -4,7 +4,7 @@ module Math.NumberTheory.ZetaBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Math.NumberTheory.Zeta
 

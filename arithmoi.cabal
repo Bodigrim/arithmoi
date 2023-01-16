@@ -184,11 +184,8 @@ benchmark arithmoi-bench
     mod,
     random,
     semirings,
+    tasty-bench,
     vector
-  build-depends:
-    tasty-bench
-  mixins:
-    tasty-bench (Test.Tasty.Bench as Gauge.Main)
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
     Math.NumberTheory.DiscreteLogarithmBench

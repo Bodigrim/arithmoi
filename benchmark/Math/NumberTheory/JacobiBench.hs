@@ -4,7 +4,7 @@ module Math.NumberTheory.JacobiBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli.Sqrt

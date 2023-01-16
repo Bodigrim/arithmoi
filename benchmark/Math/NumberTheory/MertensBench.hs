@@ -4,7 +4,7 @@ module Math.NumberTheory.MertensBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Math.NumberTheory.ArithmeticFunctions.Mertens
 

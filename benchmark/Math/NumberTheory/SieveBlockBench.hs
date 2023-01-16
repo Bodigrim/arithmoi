@@ -7,7 +7,7 @@ module Math.NumberTheory.SieveBlockBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 #if __GLASGOW_HASKELL__ < 803
 import Data.Semigroup
 #endif

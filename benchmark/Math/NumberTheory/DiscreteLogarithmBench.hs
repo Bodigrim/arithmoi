@@ -11,7 +11,7 @@ module Math.NumberTheory.DiscreteLogarithmBench
   , discreteLogarithm'
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 import Control.Monad
 import Data.Maybe
 import Data.Mod

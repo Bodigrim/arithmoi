@@ -4,7 +4,7 @@ module Math.NumberTheory.SmoothNumbersBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Math.NumberTheory.Primes
 import Math.NumberTheory.SmoothNumbers

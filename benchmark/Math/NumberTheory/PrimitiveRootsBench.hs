@@ -6,7 +6,7 @@ module Math.NumberTheory.PrimitiveRootsBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 import Data.Constraint
 import Data.Maybe
 

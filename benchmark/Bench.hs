@@ -1,6 +1,6 @@
 module Main where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Math.NumberTheory.ArithmeticFunctionsBench as ArithmeticFunctions
 import Math.NumberTheory.DiscreteLogarithmBench as DiscreteLogarithm

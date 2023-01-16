@@ -4,7 +4,7 @@ module Math.NumberTheory.SequenceBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Data.Array.Unboxed
 import Data.Bits

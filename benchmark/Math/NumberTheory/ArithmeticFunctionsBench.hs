@@ -4,7 +4,7 @@ module Math.NumberTheory.ArithmeticFunctionsBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 import Data.Set (Set)
 
 import Math.NumberTheory.ArithmeticFunctions as A

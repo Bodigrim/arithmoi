@@ -4,7 +4,7 @@ module Math.NumberTheory.PrimesBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 import System.Random
 
 import Math.NumberTheory.Logarithms (integerLog2)

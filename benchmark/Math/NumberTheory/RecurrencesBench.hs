@@ -4,7 +4,7 @@ module Math.NumberTheory.RecurrencesBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 
 import Data.Euclidean (GcdDomain)
 import Math.NumberTheory.Recurrences

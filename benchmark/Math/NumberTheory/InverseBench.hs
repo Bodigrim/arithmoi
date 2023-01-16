@@ -7,7 +7,7 @@ module Math.NumberTheory.InverseBench
   ( benchSuite
   ) where
 
-import Gauge.Main
+import Test.Tasty.Bench
 import Data.Bits (Bits)
 import Data.Euclidean
 import Numeric.Natural
