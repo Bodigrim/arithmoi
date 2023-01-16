@@ -20,6 +20,7 @@ import Test.Tasty.HUnit
 
 import Control.Arrow
 import Data.List (sort)
+import qualified Data.List.Infinite as Inf
 
 import Math.NumberTheory.Primes
 import Math.NumberTheory.Recurrences.Linear
@@ -30,8 +31,8 @@ fibonacciProperty1 :: AnySign Int -> Bool
 fibonacciProperty1 (AnySign n) = fibonacci n + fibonacci (n + 1) == fibonacci (n +2)
 
 -- | Check that 'fibonacci' for negative indices is correctly defined.
-fibonacciProperty2 :: NonNegative Int -> Bool
-fibonacciProperty2 (NonNegative n) = fibonacci n == (if even n then negate else id) (fibonacci (- n))
+fibonacciProperty2 :: Word -> Bool
+fibonacciProperty2 n = fibonacci (fromIntegral n) == (if even n then negate else id) (fibonacci (- fromIntegral n))
 
 -- | Check that 'fibonacciPair' is a pair of consequent 'fibonacci'.
 fibonacciPairProperty :: AnySign Int -> Bool
@@ -51,8 +52,8 @@ lucasProperty1 :: AnySign Int -> Bool
 lucasProperty1 (AnySign n) = lucas n + lucas (n + 1) == lucas (n +2)
 
 -- | Check that 'lucas' for negative indices is correctly defined.
-lucasProperty2 :: NonNegative Int -> Bool
-lucasProperty2 (NonNegative n) = lucas n == (if odd n then negate else id) (lucas (- n))
+lucasProperty2 :: Word -> Bool
+lucasProperty2 n = lucas (fromIntegral n) == (if odd n then negate else id) (lucas (- fromIntegral n))
 
 -- | Check that 'lucasPair' is a pair of consequent 'lucas'.
 lucasPairProperty :: AnySign Int -> Bool
@@ -67,17 +68,17 @@ lucasSpecialCase1 :: Assertion
 lucasSpecialCase1 = assertEqual "lucas" (lucas 1) 1
 
 -- | Check that 'generalLucas' matches its definition.
-generalLucasProperty1 :: AnySign Integer -> AnySign Integer -> NonNegative Int -> Bool
-generalLucasProperty1 (AnySign p) (AnySign q) (NonNegative n) = un1 == un1' && vn1 == vn1' && un2 == p * un1 - q * un && vn2 == p * vn1 - q * vn
+generalLucasProperty1 :: AnySign Integer -> AnySign Integer -> Word -> Bool
+generalLucasProperty1 (AnySign p) (AnySign q) n = un1 == un1' && vn1 == vn1' && un2 == p * un1 - q * un && vn2 == p * vn1 - q * vn
   where
-    (un, un1, vn, vn1) = generalLucas p q n
-    (un1', un2, vn1', vn2) = generalLucas p q (n + 1)
+    (un, un1, vn, vn1) = generalLucas p q (fromIntegral n)
+    (un1', un2, vn1', vn2) = generalLucas p q (fromIntegral n + 1)
 
 -- | Check that 'generalLucas' 1 (-1) is 'fibonacciPair' plus 'lucasPair'.
-generalLucasProperty2 :: NonNegative Int -> Bool
-generalLucasProperty2 (NonNegative n) = (un, un1) == fibonacciPair n && (vn, vn1) == lucasPair n
+generalLucasProperty2 :: Word -> Bool
+generalLucasProperty2 n = (un, un1) == fibonacciPair (fromIntegral n) && (vn, vn1) == lucasPair (fromIntegral n)
   where
-    (un, un1, vn, vn1) = generalLucas 1 (-1) n
+    (un, un1, vn, vn1) = generalLucas 1 (-1) (fromIntegral n)
 
 -- | Check that 'generalLucas' p _ 0 is (0, 1, 2, p).
 generalLucasProperty3 :: AnySign Integer -> AnySign Integer -> Bool
@@ -85,12 +86,12 @@ generalLucasProperty3 (AnySign p) (AnySign q) = generalLucas p q 0 == (0, 1, 2, 
 
 factorialProperty1 :: Word -> Bool
 factorialProperty1 n = n > 100000 ||
-  sort (map (first unPrime) (factorise (factorial !! fromIntegral n))) ==
+  sort (map (first unPrime) (factorise (factorial Inf.!! n))) ==
     sort (map (first (toInteger . unPrime)) (factorialFactors n))
 
 factorialProperty2 :: Word -> Bool
 factorialProperty2 n = n > 100000 ||
-  factorial !! fromIntegral n ==
+  factorial Inf.!! n ==
     product (map (\(p, k) -> toInteger (unPrime p) ^ k) (factorialFactors n))
 
 testSuite :: TestTree

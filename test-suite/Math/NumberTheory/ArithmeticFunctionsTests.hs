@@ -19,6 +19,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.List (sort)
+import qualified Data.List.Infinite as Inf
 import qualified Data.Set as S
 import qualified Data.IntSet as IS
 
@@ -292,7 +293,7 @@ nFreedomProperty3 :: Power Word -> Positive Int -> Bool
 nFreedomProperty3 (Power n) (Positive m) =
     let n' | n == maxBound = n
            | otherwise     = n + 1
-        zet = 1 / zetas 1e-14 !! fromIntegral n' :: Double
+        zet = 1 / zetas 1e-14 Inf.!! n' :: Double
         m' = 100 * m
         nfree = fromIntegral m' /
                 fromIntegral (head (drop (m' - 1) $ nFrees n' :: [Integer]))

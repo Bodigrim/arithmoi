@@ -26,6 +26,8 @@
 -- 1
 
 {-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE PostfixOperators    #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Recurrences.Bilinear
@@ -49,6 +51,9 @@ module Math.NumberTheory.Recurrences.Bilinear
 
 import Data.Euclidean (GcdDomain(..))
 import Data.List (scanl', zipWith4)
+import Data.List.Infinite (Infinite(..), (...))
+import qualified Data.List.Infinite as Inf
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe
 import Data.Ratio
 import Data.Semiring (Semiring(..))
@@ -67,12 +72,12 @@ import Math.NumberTheory.Primes
 --
 -- >>> take 6 binomial :: [[Int]]
 -- [[1],[1,1],[1,2,1],[1,3,3,1],[1,4,6,4,1],[1,5,10,10,5,1]]
-binomial :: Semiring a => [[a]]
-binomial = iterate (\l -> zipWith plus (l ++ [zero]) (zero : l)) [one]
-{-# SPECIALIZE binomial :: [[Int]]     #-}
-{-# SPECIALIZE binomial :: [[Word]]    #-}
-{-# SPECIALIZE binomial :: [[Integer]] #-}
-{-# SPECIALIZE binomial :: [[Natural]] #-}
+binomial :: Semiring a => Infinite [a]
+binomial = Inf.iterate (\l -> zipWith plus (l ++ [zero]) (zero : l)) [one]
+{-# SPECIALIZE binomial :: Infinite [Int]     #-}
+{-# SPECIALIZE binomial :: Infinite [Word]    #-}
+{-# SPECIALIZE binomial :: Infinite [Integer] #-}
+{-# SPECIALIZE binomial :: Infinite [Natural] #-}
 
 -- | Pascal triangle, rotated by 45 degrees.
 --
@@ -84,12 +89,12 @@ binomial = iterate (\l -> zipWith plus (l ++ [zero]) (zero : l)) [one]
 --
 -- >>> take 6 (map (take 6) binomialRotated) :: [[Int]]
 -- [[1,1,1,1,1,1],[1,2,3,4,5,6],[1,3,6,10,15,21],[1,4,10,20,35,56],[1,5,15,35,70,126],[1,6,21,56,126,252]]
-binomialRotated :: Semiring a => [[a]]
-binomialRotated = iterate (tail . scanl' plus zero) (repeat one)
-{-# SPECIALIZE binomialRotated :: [[Int]]     #-}
-{-# SPECIALIZE binomialRotated :: [[Word]]    #-}
-{-# SPECIALIZE binomialRotated :: [[Integer]] #-}
-{-# SPECIALIZE binomialRotated :: [[Natural]] #-}
+binomialRotated :: Semiring a => Infinite (Infinite a)
+binomialRotated = Inf.iterate (Inf.tail . Inf.scanl' plus zero) (Inf.repeat one)
+{-# SPECIALIZE binomialRotated :: Infinite (Infinite Int)     #-}
+{-# SPECIALIZE binomialRotated :: Infinite (Infinite Word)    #-}
+{-# SPECIALIZE binomialRotated :: Infinite (Infinite Integer) #-}
+{-# SPECIALIZE binomialRotated :: Infinite (Infinite Natural) #-}
 
 -- | The n-th (zero-based) line of 'binomial'
 -- (and the n-th diagonal of 'binomialRotated').
@@ -111,15 +116,15 @@ binomialLine n = scanl'
 --
 -- >>> take 6 (binomialDiagonal 5)
 -- [1,6,21,56,126,252]
-binomialDiagonal :: (Enum a, GcdDomain a) => a -> [a]
-binomialDiagonal n = scanl'
+binomialDiagonal :: (Enum a, GcdDomain a) => a -> Infinite a
+binomialDiagonal n = Inf.scanl'
   (\x k -> fromJust (x `times` (n `plus` k) `divide` k))
   one
-  [one..]
-{-# SPECIALIZE binomialDiagonal :: Int     -> [Int]     #-}
-{-# SPECIALIZE binomialDiagonal :: Word    -> [Word]    #-}
-{-# SPECIALIZE binomialDiagonal :: Integer -> [Integer] #-}
-{-# SPECIALIZE binomialDiagonal :: Natural -> [Natural] #-}
+  (one...)
+{-# SPECIALIZE binomialDiagonal :: Int     -> Infinite Int     #-}
+{-# SPECIALIZE binomialDiagonal :: Word    -> Infinite Word    #-}
+{-# SPECIALIZE binomialDiagonal :: Integer -> Infinite Integer #-}
+{-# SPECIALIZE binomialDiagonal :: Natural -> Infinite Natural #-}
 
 -- | Prime factors of a binomial coefficient.
 --
@@ -153,14 +158,14 @@ binomialFactors n k
 -- takes O(k n^2 ln n) time and forces thunks @stirling1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
 -- One could also consider 'Math.Combinat.Numbers.unsignedStirling1st' from <http://hackage.haskell.org/package/combinat combinat> package to compute stand-alone values.
-stirling1 :: (Num a, Enum a) => [[a]]
-stirling1 = scanl f [1] [0..]
+stirling1 :: (Num a, Enum a) => Infinite [a]
+stirling1 = Inf.scanl f [1] (0...)
   where
     f xs n = 0 : zipIndexedListWithTail (\_ x y -> x + n * y) 1 xs 0
-{-# SPECIALIZE stirling1 :: [[Int]]     #-}
-{-# SPECIALIZE stirling1 :: [[Word]]    #-}
-{-# SPECIALIZE stirling1 :: [[Integer]] #-}
-{-# SPECIALIZE stirling1 :: [[Natural]] #-}
+{-# SPECIALIZE stirling1 :: Infinite [Int]     #-}
+{-# SPECIALIZE stirling1 :: Infinite [Word]    #-}
+{-# SPECIALIZE stirling1 :: Infinite [Integer] #-}
+{-# SPECIALIZE stirling1 :: Infinite [Natural] #-}
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind Stirling numbers of the second kind>.
 --
@@ -171,14 +176,14 @@ stirling1 = scanl f [1] [0..]
 -- takes O(k n^2 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
 -- One could also consider 'Math.Combinat.Numbers.stirling2nd' from <http://hackage.haskell.org/package/combinat combinat> package to compute stand-alone values.
-stirling2 :: (Num a, Enum a) => [[a]]
-stirling2 = iterate f [1]
+stirling2 :: (Num a, Enum a) => Infinite [a]
+stirling2 = Inf.iterate f [1]
   where
     f xs = 0 : zipIndexedListWithTail (\k x y -> x + k * y) 1 xs 0
-{-# SPECIALIZE stirling2 :: [[Int]]     #-}
-{-# SPECIALIZE stirling2 :: [[Word]]    #-}
-{-# SPECIALIZE stirling2 :: [[Integer]] #-}
-{-# SPECIALIZE stirling2 :: [[Natural]] #-}
+{-# SPECIALIZE stirling2 :: Infinite [Int]     #-}
+{-# SPECIALIZE stirling2 :: Infinite [Word]    #-}
+{-# SPECIALIZE stirling2 :: Infinite [Integer] #-}
+{-# SPECIALIZE stirling2 :: Infinite [Natural] #-}
 
 -- | Infinite one-based table of <https://en.wikipedia.org/wiki/Lah_number Lah numbers>.
 -- @lah !! n !! k@ equals to lah(n + 1, k + 1).
@@ -188,15 +193,15 @@ stirling2 = iterate f [1]
 --
 -- Complexity: @lah !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n ln n) time and forces thunks @lah !! n !! i@ for @0 <= i <= k@.
-lah :: Integral a => [[a]]
+lah :: Integral a => Infinite [a]
 -- Implementation was derived from code by https://github.com/grandpascorpion
-lah = zipWith f (tail factorial) [1..]
+lah = Inf.zipWith f (Inf.tail factorial) (1...)
   where
     f nf n = scanl (\x k -> x * (n - k) `div` (k * (k + 1))) nf [1..n-1]
-{-# SPECIALIZE lah :: [[Int]]     #-}
-{-# SPECIALIZE lah :: [[Word]]    #-}
-{-# SPECIALIZE lah :: [[Integer]] #-}
-{-# SPECIALIZE lah :: [[Natural]] #-}
+{-# SPECIALIZE lah :: Infinite [Int]     #-}
+{-# SPECIALIZE lah :: Infinite [Word]    #-}
+{-# SPECIALIZE lah :: Infinite [Integer] #-}
+{-# SPECIALIZE lah :: Infinite [Natural] #-}
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Eulerian_number Eulerian numbers of the first kind>.
 --
@@ -206,14 +211,14 @@ lah = zipWith f (tail factorial) [1..]
 -- Complexity: @eulerian1 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @eulerian1 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
-eulerian1 :: (Num a, Enum a) => [[a]]
-eulerian1 = scanl f [] [1..]
+eulerian1 :: (Num a, Enum a) => Infinite [a]
+eulerian1 = Inf.scanl f [] (1...)
   where
     f xs n = 1 : zipIndexedListWithTail (\k x y -> (n - k) * x + (k + 1) * y) 1 xs 0
-{-# SPECIALIZE eulerian1 :: [[Int]]     #-}
-{-# SPECIALIZE eulerian1 :: [[Word]]    #-}
-{-# SPECIALIZE eulerian1 :: [[Integer]] #-}
-{-# SPECIALIZE eulerian1 :: [[Natural]] #-}
+{-# SPECIALIZE eulerian1 :: Infinite [Int]     #-}
+{-# SPECIALIZE eulerian1 :: Infinite [Word]    #-}
+{-# SPECIALIZE eulerian1 :: Infinite [Integer] #-}
+{-# SPECIALIZE eulerian1 :: Infinite [Natural] #-}
 
 -- | Infinite zero-based table of <https://en.wikipedia.org/wiki/Eulerian_number#Eulerian_numbers_of_the_second_kind Eulerian numbers of the second kind>.
 --
@@ -223,14 +228,14 @@ eulerian1 = scanl f [] [1..]
 -- Complexity: @eulerian2 !! n !! k@ is O(n ln n) bits long, its computation
 -- takes O(k n^2 ln n) time and forces thunks @eulerian2 !! i !! j@ for @0 <= i <= n@ and @max(0, k - n + i) <= j <= k@.
 --
-eulerian2 :: (Num a, Enum a) => [[a]]
-eulerian2 = scanl f [] [1..]
+eulerian2 :: (Num a, Enum a) => Infinite [a]
+eulerian2 = Inf.scanl f [] (1...)
   where
     f xs n = 1 : zipIndexedListWithTail (\k x y -> (2 * n - k - 1) * x + (k + 1) * y) 1 xs 0
-{-# SPECIALIZE eulerian2 :: [[Int]]     #-}
-{-# SPECIALIZE eulerian2 :: [[Word]]    #-}
-{-# SPECIALIZE eulerian2 :: [[Integer]] #-}
-{-# SPECIALIZE eulerian2 :: [[Natural]] #-}
+{-# SPECIALIZE eulerian2 :: Infinite [Int]     #-}
+{-# SPECIALIZE eulerian2 :: Infinite [Word]    #-}
+{-# SPECIALIZE eulerian2 :: Infinite [Integer] #-}
+{-# SPECIALIZE eulerian2 :: Infinite [Natural] #-}
 
 -- | Infinite zero-based sequence of <https://en.wikipedia.org/wiki/Bernoulli_number Bernoulli numbers>,
 -- computed via <https://en.wikipedia.org/wiki/Bernoulli_number#Connection_with_Stirling_numbers_of_the_second_kind connection>
@@ -243,10 +248,10 @@ eulerian2 = scanl f [] [1..]
 -- takes O(n^3 ln n) time and forces thunks @stirling2 !! i !! j@ for @0 <= i <= n@ and @0 <= j <= i@.
 --
 -- One could also consider 'Math.Combinat.Numbers.bernoulli' from <http://hackage.haskell.org/package/combinat combinat> package to compute stand-alone values.
-bernoulli :: Integral a => [Ratio a]
-bernoulli = helperForBEEP id (map recip [1..])
-{-# SPECIALIZE bernoulli :: [Ratio Int] #-}
-{-# SPECIALIZE bernoulli :: [Rational] #-}
+bernoulli :: Integral a => Infinite (Ratio a)
+bernoulli = helperForBEEP id (Inf.map recip (1...))
+{-# SPECIALIZE bernoulli :: Infinite (Ratio Int) #-}
+{-# SPECIALIZE bernoulli :: Infinite (Rational) #-}
 
 -- | <https://en.wikipedia.org/wiki/Faulhaber%27s_formula Faulhaber's formula>.
 --
@@ -259,10 +264,10 @@ faulhaberPoly :: (GcdDomain a, Integral a) => Int -> [Ratio a]
 faulhaberPoly p
   = zipWith (*) ((0:)
   $ reverse
-  $ take (p + 1) bernoulli)
+  $ Inf.take (p + 1) bernoulli)
   $ map (% (fromIntegral p+1))
   $ zipWith (*) (iterate negate (if odd p then 1 else -1))
-  $ binomial !! (p+1)
+  $ binomial Inf.!! (fromIntegral (p+1))
 
 -- | Infinite zero-based list of <https://en.wikipedia.org/wiki/Euler_number Euler numbers>.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
@@ -271,28 +276,28 @@ faulhaberPoly p
 --
 -- >>> take 10 euler' :: [Rational]
 -- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
-euler' :: forall a . Integral a => [Ratio a]
-euler' = tail $ helperForBEEP tail as
+euler' :: forall a . Integral a => Infinite (Ratio a)
+euler' = Inf.tail $ helperForBEEP tail as
   where
-    as :: [Ratio a]
-    as = zipWith3
+    as :: Infinite (Ratio a)
+    as = Inf.zipWith3
         (\sgn frac ones -> (sgn * ones) % frac)
-        (cycle [1, 1, 1, 1, -1, -1, -1, -1])
-        (dups (iterate (2 *) 1))
-        (cycle [1, 1, 1, 0])
+        (Inf.cycle (1 :| [1, 1, 1, -1, -1, -1, -1]))
+        (dups (Inf.iterate (2 *) 1))
+        (Inf.cycle (1 :| [1, 1, 0]))
 
-    dups :: forall x . [x] -> [x]
-    dups = foldr (\n list -> n : n : list) []
-{-# SPECIALIZE euler' :: [Ratio Int]     #-}
-{-# SPECIALIZE euler' :: [Rational]      #-}
+    dups :: forall x . Infinite x -> Infinite x
+    dups = Inf.foldr (\n list -> n :< n :< list)
+{-# SPECIALIZE euler' :: Infinite (Ratio Int)     #-}
+{-# SPECIALIZE euler' :: Infinite (Rational)      #-}
 
 -- | The same sequence as @euler'@, but with type @[a]@ instead of @[Ratio a]@
 -- as the denominators in @euler'@ are always @1@.
 --
 -- >>> take 10 euler :: [Integer]
 -- [1,0,-1,0,5,0,-61,0,1385,0]
-euler :: forall a . Integral a => [a]
-euler = map numerator euler'
+euler :: forall a . Integral a => Infinite a
+euler = Inf.map numerator euler'
 
 -- | Infinite zero-based list of the @n@-th order Euler polynomials evaluated at @1@.
 -- The algorithm used was derived from <http://www.emis.ams.org/journals/JIS/VOL4/CHEN/AlgBE2.pdf Algorithms for Bernoulli numbers and Euler numbers>
@@ -302,10 +307,10 @@ euler = map numerator euler'
 --
 -- >>> take 10 eulerPolyAt1 :: [Rational]
 -- [1 % 1,1 % 2,0 % 1,(-1) % 4,0 % 1,1 % 2,0 % 1,(-17) % 8,0 % 1,31 % 2]
-eulerPolyAt1 :: forall a . Integral a => [Ratio a]
-eulerPolyAt1 = tail $ helperForBEEP tail (map recip (iterate (2 *) 1))
-{-# SPECIALIZE eulerPolyAt1 :: [Ratio Int]     #-}
-{-# SPECIALIZE eulerPolyAt1 :: [Rational]      #-}
+eulerPolyAt1 :: forall a . Integral a => Infinite (Ratio a)
+eulerPolyAt1 = Inf.tail $ helperForBEEP tail (Inf.map recip (Inf.iterate (2 *) 1))
+{-# SPECIALIZE eulerPolyAt1 :: Infinite (Ratio Int)     #-}
+{-# SPECIALIZE eulerPolyAt1 :: Infinite (Rational)      #-}
 
 -------------------------------------------------------------------------------
 -- Utils
@@ -334,9 +339,9 @@ zipIndexedListWithTail f n as a = case as of
 -- @stirling2 !! n@, while @euler, eulerPolyAt1@ only use
 -- @tail $ stirling2 !! n@. As such, this argument serves to pass @id@
 -- in the former case, and @tail@ in the latter.
-helperForBEEP :: Integral a => ([Ratio a] -> [Ratio a]) -> [Ratio a] -> [Ratio a]
-helperForBEEP g xs = map (f . g) stirling2
+helperForBEEP :: Integral a => (forall b. [b] -> [b]) -> Infinite (Ratio a) -> Infinite (Ratio a)
+helperForBEEP g xs = Inf.map (f . g) stirling2
   where
-    f = sum . zipWith4 (\sgn fact x stir -> sgn * fact * x * stir) (cycle [1, -1]) factorial xs
-{-# SPECIALIZE helperForBEEP :: ([Ratio Int] -> [Ratio Int]) -> [Ratio Int] -> [Ratio Int] #-}
-{-# SPECIALIZE helperForBEEP :: ([Rational] -> [Rational]) -> [Rational] -> [Rational]     #-}
+    f = sum . zipWith4 (\sgn fact x stir -> sgn * fact * x * stir) (cycle [1, -1]) (Inf.toList factorial) (Inf.toList xs)
+{-# SPECIALIZE helperForBEEP :: (forall b. [b] -> [b]) -> Infinite (Ratio Int) -> Infinite (Ratio Int) #-}
+{-# SPECIALIZE helperForBEEP :: (forall b. [b] -> [b]) -> Infinite (Rational) -> Infinite (Rational)     #-}

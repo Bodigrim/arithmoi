@@ -7,6 +7,7 @@
 -- Values of <https://en.wikipedia.org/wiki/Partition_(number_theory)#Partition_function partition function>.
 --
 
+{-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Math.NumberTheory.Recurrences.Pentagonal
@@ -14,6 +15,8 @@ module Math.NumberTheory.Recurrences.Pentagonal
   ) where
 
 import qualified Data.Chimera as Ch
+import Data.List.Infinite (Infinite(..), (...))
+import qualified Data.List.Infinite as Inf
 import Data.Vector (Vector)
 import Numeric.Natural (Natural)
 
@@ -22,13 +25,10 @@ import Numeric.Natural (Natural)
 --
 -- >>> take 10 pents
 -- [0,1,2,5,7,12,15,22,26,35]
-pents :: (Enum a, Num a) => [a]
-pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
-                   (scanl (\acc n -> acc + 3 * n - 2) 1 [2..])
-  where
-    interleave :: [a] -> [a] -> [a]
-    interleave (n : ns) (m : ms) = n : m : interleave ns ms
-    interleave _ _ = []
+pents :: (Enum a, Num a) => Infinite a
+pents = Inf.interleave
+  (Inf.scanl (\acc n -> acc + 3 * n - 1) 0 (1...))
+  (Inf.scanl (\acc n -> acc + 3 * n - 2) 1 (2...))
 
 -- | @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@, where @p(0) = 1@
 -- and @p(k) = 0@ for a negative integer @k@. Uses a @Chimera@ from the
@@ -39,8 +39,8 @@ partitionF f n
   = sum
   $ zipWith (*) (cycle [1, 1, -1, -1])
   $ map (f . (n -))
-  $ takeWhile (<= n)
-  $ tail pents
+  $ Inf.takeWhile (<= n)
+  $ Inf.tail pents
 
 -- | Infinite zero-based table of <https://oeis.org/A000041 partition numbers>.
 --
@@ -51,9 +51,11 @@ partitionF f n
 -- >>> import Data.Mod
 -- >>> partition !! 1000 :: Mod 1000
 -- (991 `modulo` 1000)
-partition :: Num a => [a]
-partition = Ch.toList $ Ch.tabulateFix @Vector partitionF
-{-# SPECIALIZE partition :: [Int]     #-}
-{-# SPECIALIZE partition :: [Word]    #-}
-{-# SPECIALIZE partition :: [Integer] #-}
-{-# SPECIALIZE partition :: [Natural] #-}
+partition :: Num a => Infinite a
+partition = Inf.tabulate (Ch.index ch)
+  where
+    ch = Ch.tabulateFix @Vector partitionF
+{-# SPECIALIZE partition :: Infinite Int     #-}
+{-# SPECIALIZE partition :: Infinite Word    #-}
+{-# SPECIALIZE partition :: Infinite Integer #-}
+{-# SPECIALIZE partition :: Infinite Natural #-}

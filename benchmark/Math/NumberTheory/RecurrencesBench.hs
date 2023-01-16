@@ -7,27 +7,29 @@ module Math.NumberTheory.RecurrencesBench
 import Test.Tasty.Bench
 
 import Data.Euclidean (GcdDomain)
+import Data.List.Infinite (Infinite(..))
+import qualified Data.List.Infinite as Inf
 import Math.NumberTheory.Recurrences
 
-benchTriangle :: String -> (forall a. (GcdDomain a, Integral a) => [[a]]) -> Int -> Benchmark
+benchTriangle :: String -> (forall a. (GcdDomain a, Integral a) => Infinite [a]) -> Word -> Benchmark
 benchTriangle name triangle n = bgroup name
-  [ benchAt (10 * n)  (1 * n)
-  , benchAt (10 * n)  (2 * n)
-  , benchAt (10 * n)  (5 * n)
-  , benchAt (10 * n)  (9 * n)
+  [ benchAt (10 * n)  (1 * fromIntegral n)
+  , benchAt (10 * n)  (2 * fromIntegral n)
+  , benchAt (10 * n)  (5 * fromIntegral n)
+  , benchAt (10 * n)  (9 * fromIntegral n)
   ]
   where
     benchAt i j = bench ("!! " ++ show i ++ " !! " ++ show j)
-                $ nf (\(x, y) -> triangle !! x !! y :: Integer) (i, j)
+                $ nf (\(x, y) -> triangle Inf.!! x !! y :: Integer) (i, j)
 
-benchPartition :: Int -> Benchmark
+benchPartition :: Word -> Benchmark
 benchPartition n = bgroup "partition"
   [ benchAt n
   , benchAt (n * 10)
   , benchAt (n * 100)
   ]
   where
-    benchAt m = bench ("!!" ++ show m) $  nf (\k -> partition !! k :: Integer) m
+    benchAt m = bench ("!!" ++ show m) $  nf (\k -> partition Inf.!! k :: Integer) m
 
 benchSuite :: Benchmark
 benchSuite = bgroup "Recurrences"
