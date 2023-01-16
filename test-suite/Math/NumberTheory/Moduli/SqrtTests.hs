@@ -11,6 +11,7 @@
 {-# LANGUAGE ViewPatterns    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Math.NumberTheory.Moduli.SqrtTests
   ( testSuite
