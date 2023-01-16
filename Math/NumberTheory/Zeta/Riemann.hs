@@ -6,6 +6,7 @@
 --
 -- Riemann zeta-function.
 
+{-# LANGUAGE PostfixOperators    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Zeta.Riemann
@@ -15,11 +16,13 @@ module Math.NumberTheory.Zeta.Riemann
   ) where
 
 import Data.ExactPi
+import Data.List.Infinite (Infinite(..), (...), (....))
+import qualified Data.List.Infinite as Inf
 import Data.Ratio                     ((%))
 
 import Math.NumberTheory.Recurrences  (bernoulli)
 import Math.NumberTheory.Zeta.Hurwitz (zetaHurwitz)
-import Math.NumberTheory.Zeta.Utils   (intertwine, skipEvens, skipOdds)
+import Math.NumberTheory.Zeta.Utils   (skipEvens, skipOdds)
 
 -- | Infinite sequence of exact values of Riemann zeta-function at even arguments, starting with @ζ(0)@.
 -- Note that due to numerical errors conversion to 'Double' may return values below 1:
@@ -33,15 +36,16 @@ import Math.NumberTheory.Zeta.Utils   (intertwine, skipEvens, skipOdds)
 -- >>> approximateValue (zetasEven !! 25) :: Fixed Prec50
 -- 1.00000000000000088817842111574532859293035196051773
 --
-zetasEven :: [ExactPi]
-zetasEven = zipWith Exact [0, 2 ..] $ zipWith (*) (skipOdds bernoulli) cs
+zetasEven :: Infinite ExactPi
+zetasEven = Inf.zipWith Exact ((0, 2)....) $ Inf.zipWith (*) (skipOdds bernoulli) cs
   where
-    cs = (- 1 % 2) : zipWith (\i f -> i * (-4) / fromInteger (2 * f * (2 * f - 1))) cs [1..]
+    cs :: Infinite Rational
+    cs = (- 1 % 2) :< Inf.zipWith (\i f -> i * (-4) / fromInteger (2 * f * (2 * f - 1))) cs (1...)
 
 -- | Infinite sequence of approximate values of Riemann zeta-function
 -- at odd arguments, starting with @ζ(1)@.
-zetasOdd :: forall a. (Floating a, Ord a) => a -> [a]
-zetasOdd eps = (1 / 0) : tail (skipEvens $ zetaHurwitz eps 1)
+zetasOdd :: forall a. (Floating a, Ord a) => a -> Infinite a
+zetasOdd eps = (1 / 0) :< Inf.tail (skipEvens $ zetaHurwitz eps 1)
 
 -- | Infinite sequence of approximate (up to given precision)
 -- values of Riemann zeta-function at integer arguments, starting with @ζ(0)@.
@@ -52,11 +56,11 @@ zetasOdd eps = (1 / 0) : tail (skipEvens $ zetaHurwitz eps 1)
 -- Beware to force evaluation of @zetas !! 1@ if the type @a@ does not support infinite values
 -- (for instance, 'Data.Number.Fixed.Fixed').
 --
-zetas :: (Floating a, Ord a) => a -> [a]
-zetas eps = e : o : scanl1 f (intertwine es os)
+zetas :: (Floating a, Ord a) => a -> Infinite a
+zetas eps = e :< o :< Inf.scanl1 f (Inf.interleave es os)
   where
-    e : es = map (getRationalLimit (\a b -> abs (a - b) < eps) . rationalApproximations) zetasEven
-    o : os = zetasOdd eps
+    e :< es = Inf.map (getRationalLimit (\a b -> abs (a - b) < eps) . rationalApproximations) zetasEven
+    o :< os = zetasOdd eps
 
     -- Cap-and-floor to improve numerical stability:
     -- 0 < zeta(n + 1) - 1 < (zeta(n) - 1) / 2

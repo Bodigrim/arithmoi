@@ -6,7 +6,8 @@
 --
 -- Efficient calculation of linear recurrent sequences, including Fibonacci and Lucas sequences.
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE PostfixOperators #-}
 
 module Math.NumberTheory.Recurrences.Linear
   ( factorial
@@ -19,6 +20,8 @@ module Math.NumberTheory.Recurrences.Linear
   ) where
 
 import Data.Bits
+import Data.List.Infinite (Infinite(..), (...))
+import qualified Data.List.Infinite as Inf
 import Numeric.Natural
 import Math.NumberTheory.Primes
 
@@ -29,12 +32,12 @@ import Math.NumberTheory.Primes
 --
 -- The time-and-space behaviour of 'factorial' is similar to described in
 -- "Math.NumberTheory.Recurrences.Bilinear#memory".
-factorial :: (Num a, Enum a) => [a]
-factorial = scanl (*) 1 [1..]
-{-# SPECIALIZE factorial :: [Int]     #-}
-{-# SPECIALIZE factorial :: [Word]    #-}
-{-# SPECIALIZE factorial :: [Integer] #-}
-{-# SPECIALIZE factorial :: [Natural] #-}
+factorial :: (Num a, Enum a) => Infinite a
+factorial = Inf.scanl (*) 1 (1...)
+{-# SPECIALIZE factorial :: Infinite Int     #-}
+{-# SPECIALIZE factorial :: Infinite Word    #-}
+{-# SPECIALIZE factorial :: Infinite Integer #-}
+{-# SPECIALIZE factorial :: Infinite Natural #-}
 
 -- | Prime factors of a factorial.
 --

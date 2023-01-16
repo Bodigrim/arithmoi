@@ -14,6 +14,8 @@ module Math.NumberTheory.Zeta.DirichletTests
   ) where
 
 import Data.ExactPi                (approximateValue)
+import Data.List.Infinite (Infinite(..))
+import qualified Data.List.Infinite as Inf
 
 import Test.Tasty
 import Test.Tasty.HUnit            (Assertion, assertEqual, testCase)
@@ -24,25 +26,25 @@ import Math.NumberTheory.TestUtils
 epsilon :: Double
 epsilon = 1e-14
 
-betas' :: [Double]
+betas' :: Infinite Double
 betas' = betas epsilon
 
 betasOddSpecialCase1 :: Assertion
 betasOddSpecialCase1
   = assertEqualUpToEps "beta(1) = pi/4" epsilon
-    (approximateValue $ head betasOdd)
+    (approximateValue $ Inf.head betasOdd)
     (pi / 4)
 
 betasOddSpecialCase2 :: Assertion
 betasOddSpecialCase2
   = assertEqualUpToEps "beta(3) = pi^3/32" epsilon
-    (approximateValue $ betasOdd !! 1)
+    (approximateValue $ betasOdd Inf.!! 1)
     (pi^3 / 32)
 
 betasOddSpecialCase3 :: Assertion
 betasOddSpecialCase3
   = assertEqualUpToEps "beta(5) = 5*pi^5/1536" epsilon
-    (approximateValue $ betasOdd !! 2)
+    (approximateValue $ betasOdd Inf.!! 2)
     ((5 * pi^5) / 1536)
 
 betasOddProperty1 :: Positive Int -> Bool
@@ -50,32 +52,32 @@ betasOddProperty1 (Positive m)
   =  betaM < 1
   || betaM < betaM1
   where
-    betaM  = approximateValue (betasOdd !! m)
-    betaM1 = approximateValue (betasOdd !! (m + 1))
+    betaM  = approximateValue (betasOdd Inf.!! fromIntegral m)
+    betaM1 = approximateValue (betasOdd Inf.!! (fromIntegral m + 1))
 
-betasOddProperty2 :: NonNegative Int -> Bool
-betasOddProperty2 (NonNegative m)
+betasOddProperty2 :: Word -> Bool
+betasOddProperty2 m
   = abs (betaM - betaM') < epsilon
   where
-    betaM  = approximateValue (betasOdd !! m)
-    betaM' = betas' !! ((2 * m) + 1)
+    betaM  = approximateValue (betasOdd Inf.!! m)
+    betaM' = betas' Inf.!! ((2 * m) + 1)
 
 betasSpecialCase1 :: Assertion
 betasSpecialCase1
   = assertEqual "beta(0) = 1/2"
-    (head betas')
+    (Inf.head betas')
     (1 / 2)
 
 betasSpecialCase2 :: Assertion
 betasSpecialCase2
   = assertEqualUpToEps "beta(2) = 0.9159655" epsilon
-    (betas' !! 2)
+    (betas' Inf.!! 2)
     0.9159655941772190150546035149323841107
 
 betasSpecialCase3 :: Assertion
 betasSpecialCase3
   = assertEqualUpToEps "beta(4) = 0.9889445" epsilon
-    (betas' !! 4)
+    (betas' Inf.!! 4)
     0.9889445517411053361084226332283778213
 
 betasProperty1 :: Positive Int -> Bool
@@ -83,12 +85,12 @@ betasProperty1 (Positive m)
   =  betaM <= betaM1
   && betaM1 <= 1
   where
-    betaM  = betas' !! m
-    betaM1 = betas' !! (m + 1)
+    betaM  = betas' Inf.!! fromIntegral m
+    betaM1 = betas' Inf.!! (fromIntegral m + 1)
 
 betasProperty2 :: NonNegative Int -> NonNegative Int -> Bool
 betasProperty2 (NonNegative e1) (NonNegative e2)
-  = maximum (take 35 $ drop 2 $ zipWith ((abs .) . (-)) (betas eps1) (betas eps2)) <= eps1 + eps2
+  = maximum (Inf.take 35 $ Inf.drop 2 $ Inf.zipWith ((abs .) . (-)) (betas eps1) (betas eps2)) <= eps1 + eps2
   where
     eps1, eps2 :: Double
     eps1 = max ((1.0 / 2) ^ e1) ((1.0 / 2) ^ 53)

@@ -17,6 +17,8 @@ module Math.NumberTheory.Recurrences.PentagonalTests
   ( testSuite
   ) where
 
+import Data.List.Infinite (Infinite(..))
+import qualified Data.List.Infinite as Inf
 import Data.Proxy                    (Proxy (..))
 import GHC.Natural                   (Natural)
 import GHC.TypeNats                  (SomeNat (..), someNatVal)
@@ -30,7 +32,7 @@ import Test.Tasty.HUnit
 
 -- | Helper to avoid writing @partition !!@ too many times.
 partition' :: Num a => Int -> a
-partition' = (partition !!)
+partition' = (partition Inf.!!) . fromIntegral
 
 -- | Check that the @k@-th generalized pentagonal number is
 -- @div (3 * k² - k) 2@, where @k ∈ {0, 1, -1, 2, -2, 3, -3, 4, ...}@.
@@ -48,7 +50,7 @@ pentagonalNumbersProperty1 (AnySign n)
 -- https://oeis.org/A000041.
 partitionSpecialCase20 :: Assertion
 partitionSpecialCase20 = assertEqual "partition"
-    (take 20 partition)
+    (Inf.take 20 partition)
     [1, 1, 2, 3, 5, 7, 11, 15, 22, 30, 42, 56, 77, 101, 135, 176, 231, 297, 385, 490]
 
 -- | Copied from @Math.NumberTheory.Recurrences.Pentagonal@ to test the
@@ -81,8 +83,8 @@ partitionProperty1 (Positive n) =
 partitionProperty2 :: NonNegative Integer -> Positive Natural -> Bool
 partitionProperty2 (NonNegative m)
                    n@(someNatVal . getPositive -> (SomeNat (Proxy :: Proxy n))) =
-    (take m' . map getVal $ (partition :: [Mod n])) ==
-    map helper (take m' partition :: [Integer])
+    (Inf.take m' . Inf.map getVal $ (partition :: Infinite (Mod n))) ==
+    map helper (Inf.take m' partition :: [Integer])
   where
     m' = fromIntegral m
     n' = fromIntegral n

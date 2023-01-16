@@ -14,6 +14,8 @@ module Math.NumberTheory.Zeta.RiemannTests
   ) where
 
 import Data.ExactPi                (approximateValue)
+import Data.List.Infinite (Infinite(..))
+import qualified Data.List.Infinite as Inf
 
 import Test.Tasty
 import Test.Tasty.HUnit            (Assertion, assertEqual, testCase)
@@ -27,19 +29,19 @@ epsilon = 1e-14
 zetasEvenSpecialCase1 :: Assertion
 zetasEvenSpecialCase1
   = assertEqual "zeta(0) = -1/2"
-    (approximateValue $ head zetasEven)
+    (approximateValue $ Inf.head zetasEven)
     (-1 / 2)
 
 zetasEvenSpecialCase2 :: Assertion
 zetasEvenSpecialCase2
   = assertEqualUpToEps "zeta(2) = pi^2/6" epsilon
-    (approximateValue $ zetasEven !! 1)
+    (approximateValue $ zetasEven Inf.!! 1)
     (pi * pi / 6)
 
 zetasEvenSpecialCase3 :: Assertion
 zetasEvenSpecialCase3
   = assertEqualUpToEps "zeta(4) = pi^4/90" epsilon
-    (approximateValue $ zetasEven !! 2)
+    (approximateValue $ zetasEven Inf.!! 2)
     (pi ^ 4 / 90)
 
 zetasEvenProperty1 :: Positive Int -> Bool
@@ -47,35 +49,35 @@ zetasEvenProperty1 (Positive m)
   =  zetaM < 1
   || zetaM > zetaM1
   where
-    zetaM  = approximateValue (zetasEven !! m)
-    zetaM1 = approximateValue (zetasEven !! (m + 1))
+    zetaM  = approximateValue (zetasEven Inf.!! fromIntegral m)
+    zetaM1 = approximateValue (zetasEven Inf.!! (fromIntegral m + 1))
 
 zetasEvenProperty2 :: Positive Int -> Bool
 zetasEvenProperty2 (Positive m)
   = abs (zetaM - zetaM') < epsilon
   where
-    zetaM  = approximateValue (zetasEven !! m)
-    zetaM' = zetas' !! (2 * m)
+    zetaM  = approximateValue (zetasEven Inf.!! fromIntegral m)
+    zetaM' = zetas' Inf.!! (2 * fromIntegral m)
 
-zetas' :: [Double]
+zetas' :: Infinite Double
 zetas' = zetas epsilon
 
 zetasSpecialCase1 :: Assertion
 zetasSpecialCase1
   = assertEqual "zeta(1) = Infinity"
-    (zetas' !! 1)
+    (zetas' Inf.!! 1)
     (1 / 0)
 
 zetasSpecialCase2 :: Assertion
 zetasSpecialCase2
   = assertEqualUpToEps "zeta(3) = 1.2020569" epsilon
-    (zetas' !! 3)
+    (zetas' Inf.!! 3)
     1.2020569031595942853997381615114499908
 
 zetasSpecialCase3 :: Assertion
 zetasSpecialCase3
   = assertEqualUpToEps "zeta(5) = 1.0369277" epsilon
-    (zetas' !! 5)
+    (zetas' Inf.!! 5)
     1.0369277551433699263313654864570341681
 
 zetasProperty1 :: Positive Int -> Bool
@@ -83,8 +85,8 @@ zetasProperty1 (Positive m)
   =  zetaM >= zetaM1
   && zetaM1 >= 1
   where
-    zetaM  = zetas' !! m
-    zetaM1 = zetas' !! (m + 1)
+    zetaM  = zetas' Inf.!! fromIntegral m
+    zetaM1 = zetas' Inf.!! (fromIntegral m + 1)
 
 -- | Let z1 be an approximation of z with precision eps1,
 -- and z2 be an approximation of the same value with precision eps2.
@@ -92,7 +94,7 @@ zetasProperty1 (Positive m)
 -- abs (z1 - z2) < eps1 + eps2.
 zetasProperty2 :: NonNegative Int -> NonNegative Int -> Bool
 zetasProperty2 (NonNegative e1) (NonNegative e2)
-  = maximum (take 35 $ drop 2 $ zipWith ((abs .) . (-)) (zetas eps1) (zetas eps2)) < eps1 + eps2
+  = maximum (Inf.take 35 $ Inf.drop 2 $ Inf.zipWith ((abs .) . (-)) (zetas eps1) (zetas eps2)) < eps1 + eps2
   where
     eps1, eps2 :: Double
     eps1 = max ((1.0 / 2) ^ e1) ((1.0 / 2) ^ 53)

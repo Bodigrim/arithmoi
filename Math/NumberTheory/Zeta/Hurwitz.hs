@@ -6,11 +6,15 @@
 --
 -- Hurwitz zeta function.
 
+{-# LANGUAGE PostfixOperators    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Math.NumberTheory.Zeta.Hurwitz
   ( zetaHurwitz
   ) where
+
+import Data.List.Infinite (Infinite(..), (....))
+import qualified Data.List.Infinite as Inf
 
 import Math.NumberTheory.Recurrences (bernoulli, factorial)
 import Math.NumberTheory.Zeta.Utils  (skipEvens, skipOdds)
@@ -33,8 +37,8 @@ import Math.NumberTheory.Zeta.Utils  (skipEvens, skipOdds)
 --
 -- >>> zetaHurwitz 1e-15 0.25 !! 5
 -- 1024.3489745265808
-zetaHurwitz :: forall a . (Floating a, Ord a) => a -> a -> [a]
-zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
+zetaHurwitz :: forall a . (Floating a, Ord a) => a -> a -> Infinite a
+zetaHurwitz eps a = Inf.zipWith3 (\s i t -> s + i + t) ss is ts
   where
     -- When given @1e-14@ as the @eps@ argument, this'll be
     -- @div (33 * (length . takeWhile (>= 1) . iterate (/ 10) . recip) 1e-14) 10 == div (33 * 14) 10@
@@ -53,70 +57,70 @@ zetaHurwitz eps a = zipWith3 (\s i t -> s + i + t) ss is ts
     aPlusN = a + fromInteger digitsOfPrecision
 
     -- @[(a + n)^s | s <- [0, 1, 2 ..]]@
-    powsOfAPlusN :: [a]
-    powsOfAPlusN = iterate (aPlusN *) 1
+    powsOfAPlusN :: Infinite a
+    powsOfAPlusN = Inf.iterate (aPlusN *) 1
 
     -- [                   [      1      ] |                   ]
     -- | \sum_{k=0}^\(n-1) | ----------- | | s <- [0, 1, 2 ..] |
     -- [                   [ (a + k) ^ s ] |                   ]
     -- @S@ value in 4.8.5 formula.
-    ss :: [a]
+    ss :: Infinite a
     ss = let numbers = map ((a +) . fromInteger) [0..digitsOfPrecision-1]
-             denoms  = replicate (fromInteger digitsOfPrecision) 1 :
-                       iterate (zipWith (*) numbers) numbers
-         in map (sum . map recip) denoms
+             denoms  = replicate (fromInteger digitsOfPrecision) 1 :<
+                       Inf.iterate (zipWith (*) numbers) numbers
+         in Inf.map (sum . map recip) denoms
 
     -- [ (a + n) ^ (1 - s)            a + n         |                   ]
     -- | ----------------- = ---------------------- | s <- [0, 1, 2 ..] |
     -- [       s - 1          (a + n) ^ s * (s - 1) |                   ]
     -- @I@ value in 4.8.5 formula.
-    is :: [a]
-    is = let denoms = zipWith
+    is :: Infinite a
+    is = let denoms = Inf.zipWith
                       (\powOfA int -> powOfA * fromInteger int)
                       powsOfAPlusN
-                      [-1, 0..]
-         in map (aPlusN /) denoms
+                      ((-1, 0)....)
+         in Inf.map (aPlusN /) denoms
 
     -- [      1      |             ]
     -- [ ----------- | s <- [0 ..] ]
     -- [ (a + n) ^ s |             ]
-    constants2 :: [a]
-    constants2 = map recip powsOfAPlusN
+    constants2 :: Infinite a
+    constants2 = Inf.map recip powsOfAPlusN
 
     -- [ [(s)_(2*k - 1) | k <- [1 ..]], s <- [0 ..]], i.e. odd indices of
     -- infinite rising factorial sequences, each sequence starting at a
     -- positive integer.
-    pochhammers :: [[Integer]]
+    pochhammers :: Infinite (Infinite Integer)
     pochhammers = let -- [ [(s)_k | k <- [1 ..]], s <- [1 ..]]
-                      pochhs :: [[Integer]]
-                      pochhs = iterate (\(x : xs) -> map (`div` x) xs) (tail factorial)
+                      pochhs :: Infinite (Infinite Integer)
+                      pochhs = Inf.iterate (\(x :< xs) -> Inf.map (`div` x) xs) (Inf.tail factorial)
                   in -- When @s@ is @0@, the infinite sequence of rising
                      -- factorials starting at @s@ is @[0,0,0,0..]@.
-                     repeat 0 : map skipOdds pochhs
+                     Inf.repeat 0 :< Inf.map skipOdds pochhs
 
     -- [            B_2k           |             ]
     -- | ------------------------- | k <- [1 ..] |
     -- [ (2k)! (a + n) ^ (2*k - 1) |             ]
     second :: [a]
     second =
-        take (fromInteger digitsOfPrecision) $
-        zipWith3
+        Inf.take (fromInteger digitsOfPrecision) $
+        Inf.zipWith3
         (\bern evenFac denom -> fromRational bern / (denom * fromInteger evenFac))
-        (tail $ skipOdds bernoulli)
-        (tail $ skipOdds factorial)
+        (Inf.tail $ skipOdds bernoulli)
+        (Inf.tail $ skipOdds factorial)
         -- Recall that @powsOfAPlusN = [(a + n) ^ s | s <- [0 ..]]@, so this
         -- is @[(a + n) ^ (2 * s - 1) | s <- [1 ..]]@
         (skipEvens powsOfAPlusN)
 
-    fracs :: [a]
-    fracs = map
-            (sum . zipWith (\s p -> s * fromInteger p) second)
+    fracs :: Infinite a
+    fracs = Inf.map
+            (sum . zipWith (\s p -> s * fromInteger p) second . Inf.toList)
             pochhammers
 
     -- Infinite list of @T@ values in 4.8.5 formula, for every @s@ in
     -- @[0, 1, 2 ..]@.
-    ts :: [a]
-    ts = zipWith
+    ts :: Infinite a
+    ts = Inf.zipWith
          (\constant2 frac -> constant2 * (0.5 + frac))
          constants2
          fracs

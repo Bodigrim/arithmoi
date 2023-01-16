@@ -27,6 +27,7 @@ import Test.Tasty.QuickCheck as QC hiding (Positive)
 
 import Data.Bits (Bits)
 import Data.Euclidean
+import qualified Data.List.Infinite as Inf
 import Data.Semiring (Semiring)
 import qualified Data.Set as S
 import Numeric.Natural (Natural)
@@ -89,7 +90,7 @@ totientCountFactorial =
   ]
 
 totientSpecialCases1 :: [Assertion]
-totientSpecialCases1 = zipWith mkAssert (tail factorial) totientCountFactorial
+totientSpecialCases1 = zipWith mkAssert (drop 1 (Inf.toList factorial)) totientCountFactorial
   where
     mkAssert n m = assertEqual "should be equal" m (totientCount n)
 
@@ -120,7 +121,7 @@ totientMinFactorial =
   ]
 
 totientSpecialCases2 :: [Assertion]
-totientSpecialCases2 = zipWith mkAssert (tail factorial) totientMinFactorial
+totientSpecialCases2 = zipWith mkAssert (drop 1 (Inf.toList factorial)) totientMinFactorial
   where
     mkAssert n m = assertEqual "should be equal" m (totientMin n)
 
@@ -151,7 +152,7 @@ totientMaxFactorial =
   ]
 
 totientSpecialCases3 :: [Assertion]
-totientSpecialCases3 = zipWith mkAssert (tail factorial) totientMaxFactorial
+totientSpecialCases3 = zipWith mkAssert (drop 1 (Inf.toList factorial)) totientMaxFactorial
   where
     mkAssert n m = assertEqual "should be equal" m (totientMax n)
 
@@ -250,7 +251,7 @@ sigmaCountFactorial =
   ]
 
 sigmaSpecialCases1 :: [Assertion]
-sigmaSpecialCases1 = zipWith mkAssert (tail factorial) sigmaCountFactorial
+sigmaSpecialCases1 = zipWith mkAssert (drop 1 (Inf.toList factorial)) sigmaCountFactorial
   where
     mkAssert n m = assertEqual "should be equal" m (sigmaCount n)
 
@@ -279,7 +280,7 @@ sigmaMinFactorial =
   ]
 
 sigmaSpecialCases2 :: [Assertion]
-sigmaSpecialCases2 = zipWith mkAssert (drop 3 factorial) sigmaMinFactorial
+sigmaSpecialCases2 = zipWith mkAssert (drop 3 (Inf.toList factorial)) sigmaMinFactorial
   where
     mkAssert n m = assertEqual "should be equal" m (sigmaMin n)
 
@@ -308,7 +309,7 @@ sigmaMaxFactorial =
   ]
 
 sigmaSpecialCases3 :: [Assertion]
-sigmaSpecialCases3 = zipWith mkAssert (drop 3 factorial) sigmaMaxFactorial
+sigmaSpecialCases3 = zipWith mkAssert (drop 3 (Inf.toList factorial)) sigmaMaxFactorial
   where
     mkAssert n m = assertEqual "should be equal" m (sigmaMax n)
 
