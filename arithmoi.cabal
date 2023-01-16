@@ -63,7 +63,6 @@ library
     Math.NumberTheory.Moduli.Singleton
     Math.NumberTheory.Moduli.Sqrt
     Math.NumberTheory.MoebiusInversion
-    Math.NumberTheory.Powers.Modular
     Math.NumberTheory.Prefactored
     Math.NumberTheory.Primes
     Math.NumberTheory.Primes.Counting
