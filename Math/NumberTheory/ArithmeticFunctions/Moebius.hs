@@ -33,7 +33,7 @@ import qualified Data.Vector.Primitive as P
 import qualified Data.Vector.Unboxed         as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import GHC.Exts
-import GHC.Integer.GMP.Internals
+import GHC.Num.Integer
 import Unsafe.Coerce
 
 import Math.NumberTheory.Roots (integerSquareRoot)
@@ -51,7 +51,7 @@ data Moebius
 
 -- | Convert to any numeric type.
 runMoebius :: Num a => Moebius -> a
-runMoebius m = fromInteger (S# (dataToTag# m -# 1#))
+runMoebius m = fromInteger (IS (dataToTag# m -# 1#))
 
 fromMoebius :: Moebius -> Int8
 fromMoebius m = intToInt8 $ I# (dataToTag# m)

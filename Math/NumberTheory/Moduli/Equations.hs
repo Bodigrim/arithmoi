@@ -7,8 +7,11 @@
 -- Polynomial modular equations.
 --
 
+{-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedSums         #-}
 {-# LANGUAGE ViewPatterns        #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Math.NumberTheory.Moduli.Equations
   ( solveLinear
@@ -18,7 +21,7 @@ module Math.NumberTheory.Moduli.Equations
 import Data.Constraint
 import Data.Maybe
 import Data.Mod
-import GHC.Integer.GMP.Internals
+import GHC.Num.Integer
 import GHC.TypeNats (KnownNat, natVal)
 
 import Math.NumberTheory.Moduli.Chinese
@@ -130,7 +133,7 @@ solveQuadraticPrime a b c p
   | a `rem` p' == 0
   = solveLinear' p' b c
   | otherwise
-  = map (\n -> (n - b) * recipModInteger (2 * a) p' `mod` p')
+  = map (\n -> let (# t | #) = integerRecipMod# (2 * a) (fromInteger p') in (n - b) * toInteger t `mod` p')
   $ sqrtsModPrime (b * b - 4 * a * c) p
     where
       p' :: Integer

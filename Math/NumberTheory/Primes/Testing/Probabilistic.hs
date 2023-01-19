@@ -22,8 +22,9 @@ module Math.NumberTheory.Primes.Testing.Probabilistic
 import Data.Bits
 import Data.Mod
 import Data.Proxy
+import GHC.Num.BigNat
+import GHC.Num.Integer
 import GHC.Exts (Word(..), Int(..), (-#), (<#), isTrue#)
-import GHC.Integer.GMP.Internals
 import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 
 import Math.NumberTheory.Moduli.JacobiSymbol
@@ -174,7 +175,7 @@ lucasTest n
 
 -- n odd positive, n > abs q, index odd
 testLucas :: Integer -> Integer -> Integer -> (Integer, Integer, Integer)
-testLucas n q (S# i#) = look (finiteBitSize (0 :: Word) - 2)
+testLucas n q (IS i#) = look (finiteBitSize (0 :: Word) - 2)
   where
     j = I# i#
     look k
@@ -192,10 +193,10 @@ testLucas n q (S# i#) = look (finiteBitSize (0 :: Word) - 2)
           v2n1  = ((un1 - (2*q)*un)*vn-qn) `rem` n
           q2n   = (qn*qn) `rem` n
           q2n1  = (qn*qn*q) `rem` n
-testLucas n q (Jp# bn#) = test (s# -# 1#)
+testLucas n q (IP bn#) = test (s# -# 1#)
   where
-    s# = sizeofBigNat# bn#
-    test j# = case indexBigNat# bn# j# of
+    s# = bigNatSize# bn#
+    test j# = case bigNatIndex# bn# j# of
                 0## -> test (j# -# 1#)
                 w# -> look (j# -# 1#) (W# w#) (finiteBitSize (0 :: Word) - 1)
     look j# w i
@@ -204,7 +205,7 @@ testLucas n q (Jp# bn#) = test (s# -# 1#)
     go k# w i un un1 vn qn
       | i < 0       = if isTrue# (k# <# 0#)
                          then (un,vn,qn)
-                         else go (k# -# 1#) (W# (indexBigNat# bn# k#)) (finiteBitSize (0 :: Word) - 1) un un1 vn qn
+                         else go (k# -# 1#) (W# (bigNatIndex# bn# k#)) (finiteBitSize (0 :: Word) - 1) un un1 vn qn
       | testBit w i = go k# w (i-1) u2n1 u2n2 v2n1 q2n1
       | otherwise   = go k# w (i-1) u2n u2n1 v2n q2n
         where

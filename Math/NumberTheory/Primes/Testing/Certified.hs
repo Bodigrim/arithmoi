@@ -6,8 +6,11 @@
 --
 -- Deterministic primality testing.
 
+{-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples       #-}
 {-# LANGUAGE ViewPatterns        #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Math.NumberTheory.Primes.Testing.Certified
   ( isCertifiedPrime
@@ -17,7 +20,7 @@ import Data.List (foldl')
 import Data.Bits ((.&.))
 import Data.Mod
 import Data.Proxy
-import GHC.Integer.GMP.Internals (powModInteger)
+import GHC.Num.Integer
 import GHC.TypeNats (SomeNat(..), someNatVal)
 
 import Math.NumberTheory.Roots (integerSquareRoot)
@@ -67,10 +70,10 @@ checkPrimalityProof (Pocklington p a b fcts) = b > 0 && a > b && a*b == pm1 && a
     pm1 = p-1
     ppProd pps = product [pf^e | (pf,e,_,_) <- pps]
     verify (pf,_,base,proof) = pf == cprime proof && crit pf base && checkPrimalityProof proof
-    crit pf base = gcd p (x-1) == 1 && y == 1
+    crit pf base = gcd p (toInteger x-1) == 1 && y == 1
       where
-        x = powModInteger base (pm1 `quot` pf) p
-        y = powModInteger x pf p
+        (# x | #) = integerPowMod# base (pm1 `quot` pf) (fromInteger p)
+        (# y | #) = integerPowMod# (toInteger x) pf (fromInteger p)
 
 -- | @'isTrivialPrime'@ checks whether its argument is a trivially
 --   known prime.
@@ -144,9 +147,9 @@ certifyBPSW n = Pocklington n a b kfcts
                             Just ppr ->(p,e,bs,ppr)
               where
                 q = nm1 `quot` p
-                x = powModInteger bs q n
-                y = powModInteger x p n
-                g = gcd n (x-1)
+                (# x | #) = integerPowMod# bs q (fromInteger n)
+                (# y | #) = integerPowMod# (toInteger x) p (fromInteger n)
+                g = gcd n (toInteger x-1)
 
 -- | Find a decomposition of p-1 for the pocklington certificate.
 --   Usually bloody slow if p-1 has two (or more) /large/ prime divisors.

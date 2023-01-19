@@ -8,7 +8,10 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Math.NumberTheory.Moduli.Internal
   ( isPrimitiveRoot'
@@ -20,7 +23,7 @@ import Data.Maybe
 import Data.Mod
 import Data.Proxy
 import GHC.TypeNats (SomeNat(..), someNatVal)
-import GHC.Integer.GMP.Internals
+import GHC.Num.Integer
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli.Chinese
@@ -64,7 +67,9 @@ discreteLogarithmPP p k a b = fromInteger $ if result < 0 then result + pkMinusP
     thetaA     = theta p pkMinusOne a
     thetaB     = theta p pkMinusOne b
     pkMinusOne = p^(k-1)
-    c          = (recipModInteger thetaA pkMinusOne * thetaB) `rem` pkMinusOne
+    c          = (toInteger t * thetaB) `rem` pkMinusOne
+      where
+        (# t | #) = integerRecipMod# thetaA (fromInteger pkMinusOne)
     (result, pkMinusPk1) = fromJust $ chinese (baseSol, p-1) (c, pkMinusOne)
 
 -- compute the homomorphism theta given in https://math.stackexchange.com/a/1864495/418148
@@ -74,7 +79,9 @@ theta p pkMinusOne a = (numerator `quot` pk) `rem` pkMinusOne
   where
     pk           = pkMinusOne * p
     p2kMinusOne  = pkMinusOne * pk
-    numerator    = (powModInteger a (pk - pkMinusOne) p2kMinusOne - 1) `rem` p2kMinusOne
+    numerator    = (toInteger t  - 1) `rem` p2kMinusOne
+      where
+        (# t | #) = integerPowMod# a (pk - pkMinusOne) (fromInteger p2kMinusOne)
 
 -- TODO: Use Pollig-Hellman to reduce the problem further into groups of prime order.
 -- While Bach reduction simplifies the problem into groups of the form (Z/pZ)*, these
@@ -93,8 +100,12 @@ discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1],
     m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
     babies   = iterate (.* a) 1
     table    = M.fromList (zip babies [0..m-1])
-    aInv     = recipModInteger (toInteger a) (toInteger p)
-    bigGiant = fromInteger $ powModInteger aInv (toInteger m) (toInteger p)
+    aInv     = fromIntegral ap
+      where
+        (# ap | #) = integerRecipMod# (toInteger a) (fromIntegral p)
+    bigGiant = fromIntegral aInvmp
+      where
+        (# aInvmp | #) = integerPowMod# aInv (toInteger m) (fromIntegral p)
     giants   = iterate (.* bigGiant) b
     x .* y   = x * y `rem` p
 
@@ -116,9 +127,14 @@ discreteLogarithmPrimePollard p a b =
                           0 -> (xi*xi `rem` p, mul2 ai, mul2 bi)
                           1 -> ( a*xi `rem` p,    ai+1,      bi)
                           _ -> ( b*xi `rem` p,      ai,    bi+1)
-    initialise (x,y)  = (powModInteger a x n * powModInteger b y n `rem` n, x, y)
+    initialise (x,y)  = (toInteger axn * toInteger byn `rem` n, x, y)
+      where
+        (# axn | #) = integerPowMod# a x (fromInteger n)
+        (# byn | #) = integerPowMod# b y (fromInteger n)
     begin t           = go (step t) (step (step t))
-    check t           = powModInteger a t p == b
+    check t           = case integerPowMod# a t (fromInteger p) of
+      (# atp | #) -> toInteger atp == b
+      (# | _ #) -> False
     go tort@(xi,ai,bi) hare@(x2i,a2i,b2i)
       | xi == x2i, gcd (bi - b2i) n < sqrtN = case someNatVal (fromInteger n) of
         SomeNat (Proxy :: Proxy n) -> map (toInteger . unMod) $ solveLinear (fromInteger (bi - b2i) :: Mod n) (fromInteger (ai - a2i))

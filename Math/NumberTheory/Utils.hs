@@ -42,7 +42,9 @@ import Data.Bits
 import Data.Euclidean
 import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
-import GHC.Integer.GMP.Internals
+import GHC.Num.BigNat
+import GHC.Num.Integer
+import GHC.Num.Natural
 import qualified Math.NumberTheory.Utils.FromIntegral as UT
 import GHC.Natural
 import GHC.TypeNats
@@ -77,16 +79,16 @@ shiftOCInt (I# i#) = case shiftToOddCount# (int2Word# i#) of
 -- | Specialised version for @'Integer'@.
 --   Precondition: argument nonzero (not checked).
 shiftOCInteger :: Integer -> (Word, Integer)
-shiftOCInteger n@(S# i#) =
+shiftOCInteger n@(IS i#) =
     case shiftToOddCount# (int2Word# i#) of
       (# 0##, _ #) -> (0, n)
-      (# z#, w# #) -> (W# z#, wordToInteger w#)
-shiftOCInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
+      (# z#, w# #) -> (W# z#, integerFromWord# w#)
+shiftOCInteger n@(IP bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
-                                 z#  -> (W# z#, bigNatToInteger (bn# `shiftRBigNat` word2Int# z#))
-shiftOCInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
+                                 z#  -> (W# z#, integerFromBigNat# (bn# `bigNatShiftR#` z#))
+shiftOCInteger n@(IN bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
-                                 z#  -> (W# z#, bigNatToNegInteger (bn# `shiftRBigNat` word2Int# z#))
+                                 z#  -> (W# z#, integerFromBigNatNeg# (bn# `bigNatShiftR#` z#))
 
 -- | Specialised version for @'Natural'@.
 --   Precondition: argument nonzero (not checked).
@@ -95,23 +97,23 @@ shiftOCNatural n@(NatS# i#) =
     case shiftToOddCount# i# of
       (# 0##, _ #) -> (0, n)
       (# z#, w# #) -> (W# z#, NatS# w#)
-shiftOCNatural n@(NatJ# bn#) = case bigNatZeroCount bn# of
+shiftOCNatural n@(NatJ# (BN# bn#)) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
-                                 z#  -> (W# z#, bigNatToNatural (bn# `shiftRBigNat` word2Int# z#))
+                                 z#  -> (W# z#, naturalFromBigNat# (bn# `bigNatShiftR#` z#))
 
-shiftToOddCountBigNat :: BigNat -> (Word, BigNat)
+shiftToOddCountBigNat :: BigNat# -> (# Word, BigNat# #)
 shiftToOddCountBigNat bn# = case bigNatZeroCount bn# of
-  0## -> (0, bn#)
-  z#  -> (W# z#, bn# `shiftRBigNat` word2Int# z#)
+  0## -> (# 0, bn# #)
+  z#  -> (# W# z#, bn# `bigNatShiftR#` z# #)
 
 -- | Count trailing zeros in a @'BigNat'@.
 --   Precondition: argument nonzero (not checked, Integer invariant).
-bigNatZeroCount :: BigNat -> Word#
+bigNatZeroCount :: BigNat# -> Word#
 bigNatZeroCount bn# = count 0## 0#
   where
     !(W# bitSize#) = intToWord (finiteBitSize (0 :: Word))
     count a# i# =
-          case indexBigNat# bn# i# of
+          case bigNatIndex# bn# i# of
             0## -> count (a# `plusWord#` bitSize#) (i# +# 1#)
             w#  -> a# `plusWord#` ctz# w#
 
@@ -139,13 +141,13 @@ shiftOWord (W# w#) = W# (shiftToOdd# w#)
 -- | Specialised version for @'Int'@.
 --   Precondition: argument nonzero (not checked).
 shiftOInteger :: Integer -> Integer
-shiftOInteger (S# i#) = wordToInteger (shiftToOdd# (int2Word# i#))
-shiftOInteger n@(Jp# bn#) = case bigNatZeroCount bn# of
+shiftOInteger (IS i#) = integerFromWord# (shiftToOdd# (int2Word# i#))
+shiftOInteger n@(IP bn#) = case bigNatZeroCount bn# of
                                  0## -> n
-                                 z#  -> bigNatToInteger (bn# `shiftRBigNat` word2Int# z#)
-shiftOInteger n@(Jn# bn#) = case bigNatZeroCount bn# of
+                                 z#  -> integerFromBigNat# (bn# `bigNatShiftR#` z#)
+shiftOInteger n@(IN bn#) = case bigNatZeroCount bn# of
                                  0## -> n
-                                 z#  -> bigNatToNegInteger (bn# `shiftRBigNat` word2Int# z#)
+                                 z#  -> integerFromBigNatNeg# (bn# `bigNatShiftR#` z#)
 
 -- | Shift argument right until the result is odd.
 --   Precondition: argument not @0@, not checked.
@@ -192,14 +194,9 @@ mergeBy cmp = loop
 
 -- | Work around https://ghc.haskell.org/trac/ghc/ticket/14085
 recipMod :: Integer -> Integer -> Maybe Integer
-recipMod x m = case recipModInteger (x `P.mod` m) m of
-  0 -> Nothing
-  y -> Just y
-
-bigNatToNatural :: BigNat -> Natural
-bigNatToNatural bn
-  | isTrue# (sizeofBigNat# bn ==# 1#) = NatS# (bigNatToWord bn)
-  | otherwise = NatJ# bn
+recipMod x m = case integerRecipMod# (x `P.mod` m) (fromInteger m) of
+  (# | _ #) -> Nothing
+  (# y | #) -> Just (toInteger y)
 
 -------------------------------------------------------------------------------
 -- Helpers for mapping to rough numbers and back.

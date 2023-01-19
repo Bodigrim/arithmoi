@@ -48,7 +48,7 @@ import Data.Semigroup
 #endif
 import Data.Traversable
 import GHC.Exts
-import GHC.Integer.GMP.Internals hiding (integerToInt, wordToInteger)
+import GHC.Num.BigNat
 import GHC.Natural
 import GHC.TypeNats (KnownNat, SomeNat(..), natVal, someNatVal)
 import System.Random
@@ -353,32 +353,32 @@ smallFactors = \case
   NatS# n#  -> case shiftToOddCount# n# of
     (# 0##, m# #) -> goWord m# 1
     (# k#,  m# #) -> (2, W# k#) <: goWord m# 1
-  NatJ# n -> case shiftToOddCountBigNat n of
-    (0, m) -> goBigNat m 1
-    (k, m) -> (2, k) <: goBigNat m 1
+  NatJ# (BN# n) -> case shiftToOddCountBigNat n of
+    (# 0, m #) -> goBigNat m 1
+    (# k, m #) -> (2, k) <: goBigNat m 1
   where
     x <: ~(l,b) = (x:l,b)
 
     !(Ptr smallPrimesAddr#) = smallPrimesPtr
 
-    goBigNat :: BigNat -> Int -> ([(Natural, Word)], Maybe Natural)
+    goBigNat :: BigNat# -> Int -> ([(Natural, Word)], Maybe Natural)
     goBigNat !m i@(I# i#)
-      | isTrue# (sizeofBigNat# m ==# 1#)
-      = goWord (bigNatToWord m) i
+      | isTrue# (bigNatSize# m ==# 1#)
+      = goWord (bigNatToWord# m) i
       | i >= smallPrimesLength
-      = ([], Just (NatJ# m))
+      = ([], Just (NatJ# (BN# m)))
       | otherwise
       = let p# =
 #if MIN_VERSION_base(4,16,0)
               word16ToWord#
 #endif
               (indexWord16OffAddr# smallPrimesAddr# i#) in
-      case m `quotRemBigNatWord` p# of
+      case m `bigNatQuotRemWord#` p# of
         (# mp, 0## #) ->
-          let (# k, r #) = splitOff 1 mp in
+          let !(# k, r #) = splitOff 1 mp in
             (NatS# p#, k) <: goBigNat r (i + 1)
           where
-            splitOff !k x = case x `quotRemBigNatWord` p# of
+            splitOff !k x = case x `bigNatQuotRemWord#` p# of
               (# xp, 0## #) -> splitOff (k + 1) xp
               _             -> (# k, x #)
         _ -> goBigNat m (i + 1)
