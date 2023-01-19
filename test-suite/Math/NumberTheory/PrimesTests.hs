@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Primes
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
@@ -22,9 +21,6 @@ import Test.Tasty
 import Data.Bits
 import Data.Int
 import Data.Proxy
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 
 import Math.NumberTheory.Primes
 import qualified Math.NumberTheory.Primes.IntSet as PS

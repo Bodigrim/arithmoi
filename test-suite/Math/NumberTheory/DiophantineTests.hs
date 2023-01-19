@@ -1,7 +1,5 @@
 -- Tests for Math.NumberTheory.Diophantine
 
-{-# LANGUAGE CPP       #-}
-
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.DiophantineTests

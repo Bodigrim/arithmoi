@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Moduli.Sqrt
 --
 
-{-# LANGUAGE CPP             #-}
 {-# LANGUAGE ViewPatterns    #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}

@@ -7,8 +7,6 @@
 -- Tests for Math.NumberTheory.Prefactored
 --
 
-{-# LANGUAGE CPP #-}
-
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.PrefactoredTests

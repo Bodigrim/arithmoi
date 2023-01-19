@@ -7,7 +7,6 @@
 -- Utils to test Math.NumberTheory
 --
 
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}

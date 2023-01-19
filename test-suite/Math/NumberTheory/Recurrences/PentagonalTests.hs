@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Recurrences.Pentagonal
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
 

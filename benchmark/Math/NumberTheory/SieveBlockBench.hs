@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -8,9 +7,6 @@ module Math.NumberTheory.SieveBlockBench
   ) where
 
 import Test.Tasty.Bench
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 

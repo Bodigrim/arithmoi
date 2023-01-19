@@ -6,7 +6,6 @@
 --
 -- Container for pairwise coprime numbers.
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections       #-}
 
@@ -23,9 +22,6 @@ import Data.Coerce
 import Data.Euclidean
 import Data.List (tails)
 import Data.Maybe
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Data.Semiring (Semiring(..), isZero)
 import Data.Traversable
 

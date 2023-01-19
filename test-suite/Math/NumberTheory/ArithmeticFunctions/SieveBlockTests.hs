@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.ArithmeticFunctions.SieveBlock
 --
 
-{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -19,9 +18,6 @@ module Math.NumberTheory.ArithmeticFunctions.SieveBlockTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import qualified Data.Vector as V
 
 import Math.NumberTheory.ArithmeticFunctions

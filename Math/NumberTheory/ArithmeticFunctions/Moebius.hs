@@ -8,7 +8,6 @@
 --
 
 {-# LANGUAGE BangPatterns          #-}
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MagicHash             #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -24,9 +23,6 @@ import Control.Monad.ST (runST)
 import Data.Bits
 import Data.Int
 import Data.Word
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Primitive as P

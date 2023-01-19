@@ -7,7 +7,6 @@
 -- Safe modular arithmetic with modulo on type level.
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -23,9 +22,6 @@ module Math.NumberTheory.Moduli.SomeMod
 import Data.Euclidean (GcdDomain(..), Euclidean(..), Field)
 import Data.Mod
 import Data.Proxy
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Data.Semiring (Semiring(..), Ring(..))
 import Data.Type.Equality
 import GHC.TypeNats (KnownNat, SomeNat(..), sameNat, natVal, someNatVal)

@@ -7,8 +7,6 @@
 -- Tests for Math.NumberTheory.ArithmeticFunctions
 --
 
-{-# LANGUAGE CPP       #-}
-
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.ArithmeticFunctionsTests

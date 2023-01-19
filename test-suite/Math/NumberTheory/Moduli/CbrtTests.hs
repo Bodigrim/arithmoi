@@ -7,8 +7,6 @@
 -- Test for Math.NumberTheory.Moduli.Cbrt
 --
 
-{-# LANGUAGE CPP #-}
-
 module Math.NumberTheory.Moduli.CbrtTests
   ( testSuite
   ) where
@@ -18,9 +16,6 @@ import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Primes
 import qualified Data.Euclidean as A
 import Data.List (genericReplicate)
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Test.Tasty
 import Math.NumberTheory.TestUtils
 

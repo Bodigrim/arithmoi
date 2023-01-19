@@ -43,9 +43,6 @@ import Data.List (foldl')
 import Data.Maybe
 import Data.Mod
 import Data.Proxy
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Data.Traversable
 import GHC.Exts
 import GHC.Num.BigNat

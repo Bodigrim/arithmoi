@@ -13,7 +13,6 @@
 --
 
 {-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -179,15 +178,9 @@ isSubsetOf = coerce IS.isSubsetOf
 isProperSubsetOf :: PrimeIntSet -> PrimeIntSet -> Bool
 isProperSubsetOf = coerce IS.isProperSubsetOf
 
-#if MIN_VERSION_containers(0,5,11)
 -- | Check whether two sets are disjoint.
 disjoint :: PrimeIntSet -> PrimeIntSet -> Bool
 disjoint = coerce IS.disjoint
-#else
--- | Check whether two sets are disjoint.
-disjoint :: PrimeIntSet -> PrimeIntSet -> Bool
-disjoint (PrimeIntSet x) (PrimeIntSet y) = IS.null (IS.intersection x y)
-#endif
 
 -- | Difference between a set of primes and a set of integers.
 difference :: PrimeIntSet -> IntSet -> PrimeIntSet

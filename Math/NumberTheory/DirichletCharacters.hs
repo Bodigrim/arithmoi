@@ -7,10 +7,8 @@
 -- Implementation and enumeration of Dirichlet characters.
 --
 
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE PatternSynonyms            #-}
@@ -59,9 +57,6 @@ module Math.NumberTheory.DirichletCharacters
   , validChar
   ) where
 
-#if !MIN_VERSION_base(4,12,0)
-import Control.Applicative                                 (liftA2)
-#endif
 import Data.Bits                                           (Bits(..))
 import Data.Constraint
 import Data.Foldable
@@ -70,9 +65,7 @@ import Data.Kind
 import Data.List                                           (sort, unfoldr)
 import Data.Maybe                                          (mapMaybe, fromJust, fromMaybe)
 import Data.Mod
-#if MIN_VERSION_base(4,12,0)
 import Data.Monoid                                         (Ap(..))
-#endif
 import Data.Proxy                                          (Proxy(..))
 import Data.Ratio                                          ((%), numerator, denominator)
 import Data.Semigroup                                      (Semigroup(..),Product(..))
@@ -465,18 +458,6 @@ makePrimitive (Generated xs) =
                                   Just (i,_) -> Just (bit i :: Natural, TwoPower i a b)
           where options = [(i, bit (i-2) :: Natural) | i <- [2..k]]
                 worksb (_,phi) = phi `stimes` b == mempty
-
-#if !MIN_VERSION_base(4,12,0)
-newtype Ap f a = Ap { getAp :: f a }
-  deriving (Eq, Functor, Applicative, Monad)
-
-instance (Applicative f, Semigroup a) => Semigroup (Ap f a) where
-  (<>) = liftA2 (<>)
-
-instance (Applicative f, Semigroup a, Monoid a) => Monoid (Ap f a) where
-  mempty = pure mempty
-  mappend = (<>)
-#endif
 
 -- | Similar to Maybe, but with different Semigroup and Monoid instances.
 type OrZero a = Ap Maybe a

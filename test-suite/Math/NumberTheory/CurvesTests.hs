@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Curves
 --
 
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 

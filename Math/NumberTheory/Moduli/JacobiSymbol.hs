@@ -11,7 +11,6 @@
 --
 
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP          #-}
 {-# LANGUAGE LambdaCase   #-}
 
 module Math.NumberTheory.Moduli.JacobiSymbol
@@ -21,9 +20,6 @@ module Math.NumberTheory.Moduli.JacobiSymbol
   ) where
 
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Numeric.Natural
 
 import Math.NumberTheory.Utils

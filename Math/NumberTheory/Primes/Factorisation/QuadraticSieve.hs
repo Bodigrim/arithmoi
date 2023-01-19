@@ -7,7 +7,6 @@
 -- <https://en.wikipedia.org/wiki/Quadratic_sieve Quadratic Sieve> algorithm
 -- employing multiple polynomials and large prime variation.
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE TupleSections       #-}
@@ -21,9 +20,6 @@ module Math.NumberTheory.Primes.Factorisation.QuadraticSieve
   , findRoots
   ) where
 
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
 import qualified Data.IntSet as IS
@@ -344,14 +340,8 @@ appearsOnlyOnce = fst . M.foldl' go (mempty, mempty)
     go (onlyOnce, atLeastOnce) x =
       ((onlyOnce IS.\\ x) <> (x IS.\\ atLeastOnce), atLeastOnce <> x)
 
-#if MIN_VERSION_containers(0,5,11)
 disjoint :: IS.IntSet -> IS.IntSet -> Bool
 disjoint = IS.disjoint
-#else
-
-disjoint :: IS.IntSet -> IS.IntSet -> Bool
-disjoint x y = IS.null (IS.intersection x y)
-#endif
 
 setOddPowers :: IM.IntMap Int -> IS.IntSet
 setOddPowers = IM.keysSet . IM.filter odd

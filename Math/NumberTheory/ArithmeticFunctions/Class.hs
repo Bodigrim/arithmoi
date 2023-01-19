@@ -8,7 +8,6 @@
 -- factorisation domains.
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 
 module Math.NumberTheory.ArithmeticFunctions.Class
@@ -18,9 +17,6 @@ module Math.NumberTheory.ArithmeticFunctions.Class
   ) where
 
 import Control.Applicative
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Prelude hiding (Applicative(..))
 
 import Math.NumberTheory.Primes
@@ -66,11 +62,7 @@ instance Semigroup a => Semigroup (ArithmeticFunction n a) where
 
 instance Monoid a => Monoid (ArithmeticFunction n a) where
   mempty  = pure mempty
-#if __GLASGOW_HASKELL__ < 803
-  mappend = liftA2 mappend
-#else
   mappend = (<>)
-#endif
 
 -- | Factorisation is expensive, so it is better to avoid doing it twice.
 -- Write 'runFunction (f + g) n' instead of 'runFunction f n + runFunction g n'.

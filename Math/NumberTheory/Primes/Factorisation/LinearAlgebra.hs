@@ -7,7 +7,6 @@
 -- <http://www.enseignement.polytechnique.fr/profs/informatique/Francois.Morain/Master1/Crypto/projects/Wiedemann86.pdf Weidemann algorithm>
 -- to find a non-zero element in the kernel of a singular sparse binary matrix.
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE KindSignatures      #-}
@@ -24,9 +23,6 @@ module Math.NumberTheory.Primes.Factorisation.LinearAlgebra
   , linearSolve
   ) where
 
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import qualified Data.List as L
 import qualified Data.Vector as V
 import qualified Data.Vector.Sized as SV

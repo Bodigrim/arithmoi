@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Moduli.PrimitiveRoot
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}

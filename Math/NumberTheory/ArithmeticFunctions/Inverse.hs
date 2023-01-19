@@ -9,7 +9,6 @@
 -- <https://www.emis.de/journals/JIS/VOL19/Alekseyev/alek5.pdf Computing the Inverses, their Power Sums, and Extrema for Euler’s Totient and Other Multiplicative Functions>
 -- by M. A. Alekseyev.
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -37,9 +36,6 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Ord (Down(..))
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import Data.Semiring (Semiring(..), Mul(..))
 import Data.Set (Set)
 import qualified Data.Set as S

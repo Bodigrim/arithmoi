@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Primes.Sieve
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 

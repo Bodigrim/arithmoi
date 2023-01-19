@@ -7,7 +7,6 @@
 -- Singleton data types.
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleInstances   #-}
@@ -51,9 +50,6 @@ import Data.Kind
 import Data.List (sort)
 import qualified Data.Map as M
 import Data.Proxy
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 import GHC.Generics
 import GHC.TypeNats (KnownNat, Nat, natVal)
 import Numeric.Natural
@@ -315,6 +311,4 @@ pattern CGOddPrimePower p k <- CGOddPrimePower' p k
 pattern CGDoubleOddPrimePower :: Prime a -> Word -> CyclicGroup a m
 pattern CGDoubleOddPrimePower p k <- CGDoubleOddPrimePower' p k
 
-#if __GLASGOW_HASKELL__ > 801
 {-# COMPLETE CG2, CG4, CGOddPrimePower, CGDoubleOddPrimePower #-}
-#endif

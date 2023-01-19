@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.Euclidean.Coprimes
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 

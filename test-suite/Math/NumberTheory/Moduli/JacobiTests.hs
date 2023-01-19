@@ -7,8 +7,6 @@
 -- Tests for Math.NumberTheory.Moduli.Jacobi
 --
 
-{-# LANGUAGE CPP                        #-}
-
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Math.NumberTheory.Moduli.JacobiTests
@@ -18,9 +16,6 @@ module Math.NumberTheory.Moduli.JacobiTests
 import Test.Tasty
 
 import Data.Bits
-#if __GLASGOW_HASKELL__ < 803
-import Data.Semigroup
-#endif
 
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.TestUtils

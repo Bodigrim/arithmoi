@@ -7,7 +7,6 @@
 -- Tests for Math.NumberTheory.ArithmeticFunctions
 --
 
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
