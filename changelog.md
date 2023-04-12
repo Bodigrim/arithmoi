@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0.0
+
+### Changed
+
+* Migrate functions under `Math.NumberTheory.Recurrences` and `Math.NumberTheory.Zeta`, which operate on infinite lists, to use `Infinite` from `infinite-list` package.
+
+### Removed
+
+* Remove deprecated `Math.NumberTheory.Powers.Modular`.
+
 ## 0.12.1.0
 
 ### Fixed
