@@ -181,12 +181,12 @@ curveFactorisation primeBound primeTest prng seed mbdigs n
                 fmap mconcat $ forM cs $
                   \(x, xm) -> if ptest x
                               then pure $ singlePrimeFactor x xm
-                              else repFact x b1 b2 (count - 1)
+                              else fmap (modifyPowers (* xm)) (repFact x b1 b2 (count - 1))
 
 data Factors = Factors
   { _primeFactors     :: [(Integer, Word)]
   , _compositeFactors :: [(Integer, Word)]
-  }
+  } deriving (Show)
 
 singlePrimeFactor :: Integer -> Word -> Factors
 singlePrimeFactor a b = Factors [(a, b)] []

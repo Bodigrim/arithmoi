@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1.0
+
+### Fixed
+
+* Fix a grave bug in prime factorisation, lurking since `arithmoi-0.7.0.0`.
+
 ## 0.12.0.2
 
 ### Fixed
