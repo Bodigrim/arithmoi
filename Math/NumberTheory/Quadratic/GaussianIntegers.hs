@@ -9,6 +9,7 @@
 --
 
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE TypeFamilies  #-}
 
 module Math.NumberTheory.Quadratic.GaussianIntegers (
@@ -24,7 +25,10 @@ import Prelude hiding (quot, quotRem)
 import Control.DeepSeq (NFData)
 import Data.Coerce
 import Data.Euclidean
-import Data.List (mapAccumL, partition)
+import Data.List (mapAccumL)
+import Data.List.Infinite (Infinite(..), (...))
+import qualified Data.List.Infinite as Inf
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe
 import Data.Ord (comparing)
 import qualified Data.Semiring as S
@@ -131,14 +135,19 @@ isPrime g@(x :+ y)
 --
 -- >>> take 10 primes
 -- [Prime 1+ι,Prime 2+ι,Prime 1+2*ι,Prime 3,Prime 3+2*ι,Prime 2+3*ι,Prime 4+ι,Prime 1+4*ι,Prime 5+2*ι,Prime 2+5*ι]
-primes :: [U.Prime GaussianInteger]
-primes = coerce $ (1 :+ 1) : mergeBy (comparing norm) l r
+primes :: Infinite (U.Prime GaussianInteger)
+primes = coerce $ (1 :+ 1) :< mergeBy (comparing norm) l r
   where
-    leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 4 == 3) [U.nextPrime 3 ..]
-    l = [unPrime p :+ 0 | p <- leftPrimes]
-    r = [g | p <- rightPrimes, let Prime (x :+ y) = findPrime p, g <- [x :+ y, y :+ x]]
+    leftPrimes, rightPrimes :: Infinite (Prime Integer)
+    (leftPrimes, rightPrimes) = Inf.partition (\p -> unPrime p `mod` 4 == 3) (U.nextPrime 3 ...)
 
+    l :: Infinite (GaussianInteger)
+    l = fmap (\p -> unPrime p :+ 0) leftPrimes
+
+    r :: Infinite (GaussianInteger)
+    r = Inf.concatMap
+        (\p -> let x :+ y = unPrime (findPrime p) in (x :+ y) :| [y :+ x])
+        rightPrimes
 
 -- |Find a Gaussian integer whose norm is the given prime number
 -- of form 4k + 1 using

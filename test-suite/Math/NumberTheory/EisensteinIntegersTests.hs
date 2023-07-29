@@ -15,6 +15,7 @@ module Math.NumberTheory.EisensteinIntegersTests
 
 import Prelude hiding (gcd, rem, quot, quotRem)
 import Data.Euclidean
+import qualified Data.List.Infinite as Inf
 import Data.Maybe (fromJust, isJust)
 import Data.Proxy
 import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonNegative(..))
@@ -99,7 +100,7 @@ euclideanDomainProperty1 e1 e2 = E.norm (e1 * e2) == E.norm e1 * E.norm e2
 -- | Checks that the numbers produced by @primes@ are actually Eisenstein
 -- primes.
 primesProperty1 :: Positive Int -> Bool
-primesProperty1 (Positive index) = all (isJust . isPrime . (unPrime :: Prime E.EisensteinInteger -> E.EisensteinInteger)) $ take index E.primes
+primesProperty1 (Positive index) = all (isJust . isPrime . (unPrime :: Prime E.EisensteinInteger -> E.EisensteinInteger)) $ Inf.take index E.primes
 
 -- | Checks that the infinite list of Eisenstein primes @primes@ is ordered
 -- by the numbers' norm.
@@ -107,13 +108,13 @@ primesProperty2 :: Positive Int -> Bool
 primesProperty2 (Positive index) =
     let isOrdered :: [Prime E.EisensteinInteger] -> Bool
         isOrdered xs = all (\(x, y) -> E.norm (unPrime x) <= E.norm (unPrime y)) . zip xs $ tail xs
-    in isOrdered $ take index E.primes
+    in isOrdered $ Inf.take index E.primes
 
 -- | Checks that the numbers produced by @primes@ are all in the first
 -- sextant.
 primesProperty3 :: Positive Int -> Bool
 primesProperty3 (Positive index) =
-    all (\e -> abs (unPrime e) == (unPrime e :: E.EisensteinInteger)) $ take index E.primes
+    all (\e -> abs (unPrime e) == (unPrime e :: E.EisensteinInteger)) $ Inf.take index E.primes
 
 -- | An Eisenstein integer is either zero or associated (i.e. equal up to
 -- multiplication by a unit) to the product of its factors raised to their

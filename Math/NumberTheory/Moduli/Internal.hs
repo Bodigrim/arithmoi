@@ -95,18 +95,34 @@ discreteLogarithmPrime p a b
   | otherwise     = discreteLogarithmPrimePollard p a b
 
 discreteLogarithmPrimeBSGS :: Int -> Int -> Int -> Int
-discreteLogarithmPrimeBSGS p a b = head [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)]
+discreteLogarithmPrimeBSGS p a b =
+  case [i*m + j | (v,i) <- zip giants [0..m-1], j <- maybeToList (M.lookup v table)] of
+    [] -> error ("discreteLogarithmPrimeBSGS: failed, please report this as a bug. Inputs: " ++ show [p,a,b])
+    hd : _ -> hd
   where
+    m :: Int
     m        = integerSquareRoot (p - 2) + 1 -- simple way of ceiling (sqrt (p-1))
+
+    babies :: [Int]
     babies   = iterate (.* a) 1
+
+    table :: M.Map Int Int
     table    = M.fromList (zip babies [0..m-1])
+
+    aInv :: Integer
     aInv     = fromIntegral ap
       where
         (# ap | #) = integerRecipMod# (toInteger a) (fromIntegral p)
+
+    bigGiant :: Int
     bigGiant = fromIntegral aInvmp
       where
         (# aInvmp | #) = integerPowMod# aInv (toInteger m) (fromIntegral p)
+
+    giants :: [Int]
     giants   = iterate (.* bigGiant) b
+
+    (.*) :: Int -> Int -> Int
     x .* y   = x * y `rem` p
 
 -- TODO: Use more advanced walks, in order to reduce divisions, cf
@@ -117,7 +133,7 @@ discreteLogarithmPrimePollard :: Integer -> Integer -> Integer -> Natural
 discreteLogarithmPrimePollard p a b =
   case concatMap runPollard [(x,y) | x <- [0..n], y <- [0..n]] of
     (t:_)  -> fromInteger t
-    []     -> error ("discreteLogarithm: pollard's rho failed, please report this as a bug. inputs " ++ show [p,a,b])
+    []     -> error ("discreteLogarithm: pollard's rho failed, please report this as a bug. Inputs: " ++ show [p,a,b])
   where
     n                 = p-1 -- order of the cyclic group
     halfN             = n `quot` 2

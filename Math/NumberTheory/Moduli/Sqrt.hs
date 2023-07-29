@@ -8,11 +8,15 @@
 -- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.
 --
 
-{-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ViewPatterns  #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Math.NumberTheory.Moduli.Sqrt
   ( -- * Modular square roots
@@ -29,10 +33,13 @@ module Math.NumberTheory.Moduli.Sqrt
 import Control.Monad (liftM2)
 import Data.Bits
 import Data.Constraint
+import Data.List.Infinite (Infinite(..), (...))
+import qualified Data.List.Infinite as Inf
 import Data.Maybe
 import Data.Mod
 import Data.Proxy
-import GHC.TypeNats (KnownNat, SomeNat(..), natVal, someNatVal)
+import GHC.TypeNats (KnownNat, SomeNat(..), natVal, someNatVal, Nat)
+import Numeric.Natural (Natural)
 
 import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.JacobiSymbol
@@ -139,14 +146,20 @@ sqrtModP' square
     prime = natVal square
 
 -- | @p@ must be of form @4k + 1@
-sqrtOfMinusOne :: KnownNat p => Mod p
-sqrtOfMinusOne = res
+sqrtOfMinusOne :: forall (p :: Nat). KnownNat p => Mod p
+sqrtOfMinusOne = case results of
+  [] -> error "sqrtOfMinusOne: internal invariant violated"
+  hd : _ -> hd
   where
-    p = natVal res
+    p :: Natural
+    p = natVal (Proxy :: Proxy p)
+
+    k :: Natural
     k = (p - 1) `quot` 4
-    res = head
-      $ dropWhile (\n -> n == 1 || n == maxBound)
-      $ map (^ k) [2 .. maxBound - 1]
+
+    results :: [Mod p]
+    results = dropWhile (\n -> n == 1 || n == maxBound) $
+      map (^ k) [2 .. maxBound - 1]
 
 -- | @tonelliShanks square prime@ calculates a square root of @square@
 --   modulo @prime@, where @prime@ is a prime of the form @4*k + 1@ and
@@ -243,17 +256,18 @@ rem4 n = fromIntegral n .&. 3
 rem8 :: Integral a => a -> Int
 rem8 n = fromIntegral n .&. 7
 
-findNonSquare :: KnownNat n => Mod n
-findNonSquare = res
+findNonSquare :: forall (n :: Nat). KnownNat n => Mod n
+findNonSquare
+  | rem8 n == 3 || rem8 n == 5 = 2
+  | otherwise = fromIntegral $ Inf.head $
+    Inf.dropWhile (\p -> jacobi p n /= MinusOne) candidates
   where
-    n = natVal res
-    res
-      | rem8 n == 3 || rem8 n == 5 = 2
-      | otherwise = fromIntegral $ head $
-        dropWhile (\p -> jacobi p n /= MinusOne) candidates
+    n = natVal (Proxy :: Proxy n)
 
     -- It is enough to consider only prime candidates, but
     -- the probability that the smallest non-residue is > 67
     -- is small and 'jacobi' test is fast,
     -- so we use [71..n] instead of filter isPrime [71..n].
-    candidates = 3:5:7:11:13:17:19:23:29:31:37:41:43:47:53:59:61:67:[71..n]
+    candidates :: Infinite Natural
+    candidates = 3 :< 5 :< 7 :< 11 :< 13 :< 17 :< 19 :< 23 :< 29 :< 31 :<
+      37 :< 41 :< 43 :< 47 :< 53 :< 59 :< 61 :< 67 :< (71...)

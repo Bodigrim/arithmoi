@@ -277,7 +277,7 @@ faulhaberPoly p
 -- >>> take 10 euler' :: [Rational]
 -- [1 % 1,0 % 1,(-1) % 1,0 % 1,5 % 1,0 % 1,(-61) % 1,0 % 1,1385 % 1,0 % 1]
 euler' :: forall a . Integral a => Infinite (Ratio a)
-euler' = Inf.tail $ helperForBEEP tail as
+euler' = Inf.tail $ helperForBEEP (drop 1) as
   where
     as :: Infinite (Ratio a)
     as = Inf.zipWith3
@@ -308,7 +308,7 @@ euler = Inf.map numerator euler'
 -- >>> take 10 eulerPolyAt1 :: [Rational]
 -- [1 % 1,1 % 2,0 % 1,(-1) % 4,0 % 1,1 % 2,0 % 1,(-17) % 8,0 % 1,31 % 2]
 eulerPolyAt1 :: forall a . Integral a => Infinite (Ratio a)
-eulerPolyAt1 = Inf.tail $ helperForBEEP tail (Inf.map recip (Inf.iterate (2 *) 1))
+eulerPolyAt1 = Inf.tail $ helperForBEEP (drop 1) (Inf.map recip (Inf.iterate (2 *) 1))
 {-# SPECIALIZE eulerPolyAt1 :: Infinite (Ratio Int)     #-}
 {-# SPECIALIZE eulerPolyAt1 :: Infinite (Rational)      #-}
 

@@ -10,6 +10,7 @@
 
 {-# LANGUAGE BangPatterns   #-}
 {-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE TypeFamilies   #-}
 
@@ -30,7 +31,10 @@ import Prelude hiding (quot, quotRem, gcd)
 import Control.DeepSeq
 import Data.Coerce
 import Data.Euclidean
-import Data.List                                       (mapAccumL, partition)
+import Data.List                                       (mapAccumL)
+import Data.List.Infinite (Infinite(..), (...))
+import qualified Data.List.Infinite as Inf
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe
 import Data.Ord                                        (comparing)
 import qualified Data.Semiring as S
@@ -191,14 +195,22 @@ findPrime p = case (r, sqrtsModPrime (9 * q * q - 1) p) of
 --
 -- >>> take 10 primes
 -- [Prime 2+ω,Prime 2,Prime 3+2*ω,Prime 3+ω,Prime 4+3*ω,Prime 4+ω,Prime 5+3*ω,Prime 5+2*ω,Prime 5,Prime 6+5*ω]
-primes :: [Prime EisensteinInteger]
-primes = coerce $ (2 :+ 1) : mergeBy (comparing norm) l r
+primes :: Infinite (Prime EisensteinInteger)
+primes = coerce $ (2 :+ 1) :< mergeBy (comparing norm) l r
   where
-    leftPrimes, rightPrimes :: [Prime Integer]
-    (leftPrimes, rightPrimes) = partition (\p -> unPrime p `mod` 3 == 2) [U.nextPrime 2 ..]
-    rightPrimes' = filter (\prime -> unPrime prime `mod` 3 == 1) $ tail rightPrimes
-    l = [unPrime p :+ 0 | p <- leftPrimes]
-    r = [g | p <- rightPrimes', let x :+ y = unPrime (findPrime p), g <- [x :+ y, x :+ (x - y)]]
+    leftPrimes, rightPrimes :: Infinite (Prime Integer)
+    (leftPrimes, rightPrimes) = Inf.partition (\p -> unPrime p `mod` 3 == 2) (U.nextPrime 2...)
+
+    rightPrimes' :: Infinite (Prime Integer)
+    rightPrimes' = Inf.filter (\prime -> unPrime prime `mod` 3 == 1) $ Inf.tail rightPrimes
+
+    l :: Infinite EisensteinInteger
+    l = fmap (\p -> unPrime p :+ 0) leftPrimes
+
+    r :: Infinite EisensteinInteger
+    r = Inf.concatMap
+        (\p -> let x :+ y = unPrime (findPrime p) in (x :+ y) :| [x :+ (x - y)])
+        rightPrimes'
 
 -- | [Implementation notes for factorise function]
 --

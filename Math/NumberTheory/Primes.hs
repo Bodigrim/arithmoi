@@ -7,6 +7,7 @@
 
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE PostfixOperators  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -24,6 +25,8 @@ module Math.NumberTheory.Primes
 
 import Data.Bits
 import Data.Coerce
+import Data.List.Infinite (Infinite(..), (...), (....))
+import qualified Data.List.Infinite as Inf
 import Data.Maybe
 import Data.Word
 import Numeric.Natural
@@ -112,8 +115,8 @@ nextPrime n
   | n <= 2    = Prime 2
   | n <= 3    = Prime 3
   | n <= 5    = Prime 5
-  | otherwise = head $ mapMaybe isPrime $
-                  dropWhile (< n) $ map fromWheel30 [toWheel30 n ..]
+  | otherwise = Inf.head $ mapMaybeInf isPrime $
+                  Inf.dropWhile (< n) $ fmap fromWheel30 (toWheel30 n ...)
                   -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be < n.
                   -- E. g., fromWheel30 (toWheel30 94) == 97
 
@@ -127,10 +130,13 @@ precPrime n
   | n < 3     = Prime 2
   | n < 5     = Prime 3
   | n < 7     = Prime 5
-  | otherwise = head $ mapMaybe isPrime $
-                  dropWhile (> n) $ map fromWheel30 [toWheel30 n, toWheel30 n - 1 ..]
+  | otherwise = Inf.head $ mapMaybeInf isPrime $
+                  Inf.dropWhile (> n) $ fmap fromWheel30 ((toWheel30 n, toWheel30 n - 1) ....)
                   -- dropWhile is important, because fromWheel30 (toWheel30 n) may appear to be > n.
                   -- E. g., fromWheel30 (toWheel30 100) == 101
+
+mapMaybeInf :: (a -> Maybe b) -> Infinite a -> Infinite b
+mapMaybeInf = Inf.foldr . (maybe id (:<) .)
 
 -------------------------------------------------------------------------------
 -- Prime sequences
@@ -153,7 +159,7 @@ succGeneric = \case
   Prime 2 -> Prime 3
   Prime 3 -> Prime 5
   Prime 5 -> Prime 7
-  Prime p -> head $ mapMaybe (isPrime . fromWheel30) [toWheel30 p + 1 ..]
+  Prime p -> Inf.head $ mapMaybeInf (isPrime . fromWheel30) ((toWheel30 p + 1) ...)
 
 succGenericBounded
   :: (Bits a, Integral a, UniqueFactorisation a, Bounded a)
@@ -173,7 +179,7 @@ predGeneric = \case
   Prime 3 -> Prime 2
   Prime 5 -> Prime 3
   Prime 7 -> Prime 5
-  Prime p -> head $ mapMaybe (isPrime . fromWheel30) [toWheel30 p - 1, toWheel30 p - 2 ..]
+  Prime p -> Inf.head $ mapMaybeInf (isPrime . fromWheel30) ((toWheel30 p - 1, toWheel30 p - 2) ....)
 
 -- 'dropWhile' is important, because 'psieveFrom' can actually contain primes less than p.
 enumFromGeneric :: Integral a => Prime a -> [Prime a]

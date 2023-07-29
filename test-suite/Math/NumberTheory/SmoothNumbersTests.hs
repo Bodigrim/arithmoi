@@ -22,6 +22,8 @@ import Test.Tasty.HUnit
 import Data.Coerce
 import Data.Euclidean
 import Data.List (nub)
+import Data.List.Infinite (Infinite(..))
+import qualified Data.List.Infinite as Inf
 import Numeric.Natural
 
 import Math.NumberTheory.Primes (Prime (..))
@@ -33,22 +35,22 @@ import Math.NumberTheory.TestUtils
 isSmoothPropertyHelper
   :: (Eq a, Num a, Euclidean a)
   => (a -> Integer)
-  -> [a]
+  -> Infinite a
   -> Int
   -> Int
   -> Bool
 isSmoothPropertyHelper norm primes' i1 i2 =
-    let primes = take i1 primes'
+    let primes = Inf.take i1 primes'
         basis  = fromList primes
     in all (isSmooth basis) $ take i2 $ smoothOver' norm basis
 
 isSmoothProperty1 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty1 (Positive i1) (Positive i2) =
-    isSmoothPropertyHelper G.norm (map unPrime G.primes) i1 i2
+    isSmoothPropertyHelper G.norm (fmap unPrime G.primes) i1 i2
 
 isSmoothProperty2 :: Positive Int -> Positive Int -> Bool
 isSmoothProperty2 (Positive i1) (Positive i2) =
-    isSmoothPropertyHelper E.norm (map unPrime E.primes) i1 i2
+    isSmoothPropertyHelper E.norm (fmap unPrime E.primes) i1 i2
 
 smoothOverInRange :: Integral a => SmoothBasis a -> a -> a -> [a]
 smoothOverInRange s lo hi

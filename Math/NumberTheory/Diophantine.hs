@@ -6,6 +6,9 @@ module Math.NumberTheory.Diophantine
   )
 where
 
+import Data.List.Infinite (Infinite(..))
+import qualified Data.List.Infinite as Inf
+
 import           Math.NumberTheory.Moduli.Sqrt  ( sqrtsModFactorisation )
 import           Math.NumberTheory.Primes       ( factorise
                                                 , unPrime
@@ -18,12 +21,17 @@ import           Math.NumberTheory.Utils.FromIntegral
 -- | as described at https://en.wikipedia.org/wiki/Cornacchia%27s_algorithm 
 cornacchiaPrimitive' :: Integer -> Integer -> [(Integer, Integer)]
 cornacchiaPrimitive' d m = concatMap
-  (findSolution . head . dropWhile (\r -> r * r >= m) . gcdSeq m)
+  (findSolution . Inf.head . Inf.dropWhile (\r -> r * r >= m) . gcdSeq m)
   roots
  where
+  roots :: [Integer]
   roots = filter (<= m `div` 2) $ sqrtsModFactorisation (m - d) (factorise m)
-  gcdSeq a b = a : gcdSeq b (mod a b)
+
+  gcdSeq :: Integer -> Integer -> Infinite Integer
+  gcdSeq a b = a :< gcdSeq b (mod a b)
+
   -- If s = sqrt((m - r*r) / d) is an integer then (r, s) is a solution
+  findSolution :: Integer -> [(Integer, Integer)]
   findSolution r = [ (r, s) | rem1 == 0 && s * s == s2 ]
    where
     (s2, rem1) = divMod (m - r * r) d

@@ -136,10 +136,10 @@ instance Eq DirichletFactor where
 generator :: Prime Natural -> Word -> Natural
 generator p k = case cyclicGroupFromFactors [(p, k)] of
   Nothing -> error "illegal"
-  Just (Some cg)
-    | Sub Dict <- proofFromCyclicGroup cg ->
-      unMod $ multElement $ unPrimitiveRoot $ head $
-        mapMaybe (isPrimitiveRoot cg) [2..maxBound]
+  Just (Some cg) -> case proofFromCyclicGroup cg of
+    Sub Dict -> case mapMaybe (isPrimitiveRoot cg) [2..maxBound] of
+      [] -> error "illegal"
+      hd : _ -> unMod $ multElement $ unPrimitiveRoot hd
 
 -- | Implement the function \(\lambda\) from page 5 of
 -- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1984/CSD-84-186.pdf

@@ -40,6 +40,7 @@ import qualified Prelude as P
 
 import Data.Bits
 import Data.Euclidean
+import Data.List.Infinite (Infinite(..))
 import Data.Semiring (Semiring(..), isZero)
 import GHC.Base
 import GHC.Num.BigNat
@@ -182,15 +183,13 @@ splitOff# p n = go 0## n
 
 -- | Merges two ordered lists into an ordered list. Checks for neither its
 -- precondition or postcondition.
-mergeBy :: (a -> a -> Ordering) -> [a] -> [a] -> [a]
+mergeBy :: (a -> a -> Ordering) -> Infinite a -> Infinite a -> Infinite a
 mergeBy cmp = loop
   where
-    loop [] ys  = ys
-    loop xs []  = xs
-    loop (x:xs) (y:ys)
+    loop ( x:< xs) (y :< ys)
       = case cmp x y of
-         GT -> y : loop (x:xs) ys
-         _  -> x : loop xs (y:ys)
+         GT -> y :< loop (x :< xs) ys
+         _  -> x :< loop xs (y :< ys)
 
 -- | Work around https://ghc.haskell.org/trac/ghc/ticket/14085
 recipMod :: Integer -> Integer -> Maybe Integer

@@ -5,6 +5,7 @@
 ### Changed
 
 * Migrate functions under `Math.NumberTheory.Recurrences` and `Math.NumberTheory.Zeta`, which operate on infinite lists, to use `Infinite` from `infinite-list` package.
+* Migrate functions under `Math.NumberTheory.Quadratic` to return an `Infinite` list of quadratic primes.
 
 ### Removed
 
