@@ -18,7 +18,7 @@ description:
 category:      Math, Algorithms, Number Theory
 author:        Andrew Lelechenko, Daniel Fischer
 tested-with:   GHC ==9.0.2 GHC ==9.2.5 GHC ==9.4.4 GHC ==9.6.1
-extra-source-files:
+extra-doc-files:
   changelog.md
 
 source-repository head
@@ -30,19 +30,19 @@ library
     base >=4.15 && <5,
     array >=0.5 && <0.6,
     containers >=0.5.11 && <0.7,
-    chimera >=0.3,
-    constraints,
-    deepseq,
-    exact-pi >=0.5,
-    ghc-bignum,
-    infinite-list,
-    integer-logarithms >=1.0,
-    integer-roots >=1.0,
-    mod,
+    chimera >=0.3 && <0.4,
+    constraints <0.14,
+    deepseq <1.6,
+    exact-pi >=0.5 && <0.6,
+    ghc-bignum <1.4,
+    infinite-list <0.2,
+    integer-logarithms >=1.0 && <1.1,
+    integer-roots >=1.0 && <1.1,
+    mod <0.3,
     random >=1.0 && <1.3,
     transformers >=0.4 && <0.7,
-    semirings >=0.5.2,
-    vector >=0.12
+    semirings >=0.5.2 && <0.7,
+    vector >=0.12 && <0.14
   exposed-modules:
     Math.NumberTheory.ArithmeticFunctions
     Math.NumberTheory.ArithmeticFunctions.Inverse
@@ -113,15 +113,15 @@ test-suite arithmoi-tests
     infinite-list,
     integer-roots >=1.0,
     mod,
-    QuickCheck >=2.10,
-    quickcheck-classes >=0.6.3,
+    QuickCheck >=2.10 && <2.15,
+    quickcheck-classes >=0.6.3 && <0.7,
     random >=1.0 && <1.3,
     semirings >=0.2,
     smallcheck >=1.2 && <1.3,
-    tasty >=0.10,
+    tasty >=0.10 && <1.5,
     tasty-hunit >=0.9 && <0.11,
     tasty-quickcheck >=0.9 && <0.11,
-    tasty-rerun >=1.1.17,
+    tasty-rerun >=1.1.17 && <1.2,
     tasty-smallcheck >=0.8 && <0.9,
     transformers >=0.5,
     vector
@@ -185,7 +185,7 @@ benchmark arithmoi-bench
     mod,
     random,
     semirings,
-    tasty-bench,
+    tasty-bench < 0.4,
     vector
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsBench
