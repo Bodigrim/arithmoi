@@ -73,7 +73,7 @@ findPrimeReference p =
         k  = integerSquareRoot (unPrime p)
         bs = [1 .. k]
         asbs = map (\b' -> ((b' * c) `mod` unPrime p, b')) bs
-        (a, b) = head [ (a', b') | (a', b') <- asbs, a' <= k]
+        (a, b) : _ = [ (a', b') | (a', b') <- asbs, a' <= k]
     in a :+ b
 
 findPrimeProperty1 :: Prime Integer -> Bool
@@ -113,7 +113,7 @@ primesGeneratesPrimesProperty i = case isPrime (unPrime (primes Inf.!! i) :: Gau
 
 -- | Check that primes generates the primes in order.
 orderingPrimes :: Assertion
-orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (tail xs))
+orderingPrimes = assertBool "primes are ordered" (and $ zipWith (<=) xs (drop 1 xs))
   where xs = map (norm . unPrime) $ Inf.take 1000 primes
 
 numberOfPrimes :: Assertion

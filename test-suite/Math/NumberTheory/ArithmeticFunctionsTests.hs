@@ -288,14 +288,15 @@ nFreedomProperty2 (Power n) (NonNegative m) =
     in take m (filter (isNFree n') [1 ..]) == take m (nFrees n' :: [Integer])
 
 nFreedomProperty3 :: Power Word -> Positive Int -> Bool
-nFreedomProperty3 (Power n) (Positive m) =
-    let n' | n == maxBound = n
-           | otherwise     = n + 1
-        zet = 1 / zetas 1e-14 Inf.!! n' :: Double
-        m' = 100 * m
-        nfree = fromIntegral m' /
-                fromIntegral (head (drop (m' - 1) $ nFrees n' :: [Integer]))
-    in 1 / fromIntegral m >= abs (zet - nfree)
+nFreedomProperty3 (Power n) (Positive m) = case drop (m' - 1) $ nFrees n :: [Integer] of
+  [] -> True
+  x : _ -> 1 / fromIntegral m >= abs (zet - fromIntegral m' / fromIntegral x)
+  where
+    zet :: Double
+    zet = 1 / zetas 1e-14 Inf.!! n
+
+    m' :: Int
+    m' = 100 * m
 
 -- |
 -- * Using a bounded integer type like @Int@ instead of @Integer@ here means

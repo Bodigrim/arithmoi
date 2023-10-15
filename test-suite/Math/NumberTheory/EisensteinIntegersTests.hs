@@ -107,7 +107,7 @@ primesProperty1 (Positive index) = all (isJust . isPrime . (unPrime :: Prime E.E
 primesProperty2 :: Positive Int -> Bool
 primesProperty2 (Positive index) =
     let isOrdered :: [Prime E.EisensteinInteger] -> Bool
-        isOrdered xs = all (\(x, y) -> E.norm (unPrime x) <= E.norm (unPrime y)) . zip xs $ tail xs
+        isOrdered xs = all (\(x, y) -> E.norm (unPrime x) <= E.norm (unPrime y)) . zip xs $ drop 1 xs
     in isOrdered $ Inf.take index E.primes
 
 -- | Checks that the numbers produced by @primes@ are all in the first

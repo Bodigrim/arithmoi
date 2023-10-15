@@ -7,6 +7,7 @@
 -- Tests for Math.NumberTheory.Recurrences.Pentagonal
 --
 
+{-# LANGUAGE PostfixOperators    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
 
@@ -16,7 +17,7 @@ module Math.NumberTheory.Recurrences.PentagonalTests
   ( testSuite
   ) where
 
-import Data.List.Infinite (Infinite(..))
+import Data.List.Infinite (Infinite(..), (...))
 import qualified Data.List.Infinite as Inf
 import Data.Proxy                    (Proxy (..))
 import GHC.Natural                   (Natural)
@@ -39,9 +40,9 @@ partition' = (partition Inf.!!) . fromIntegral
 -- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
 pentagonalNumbersProperty1 :: AnySign Int -> Bool
 pentagonalNumbersProperty1 (AnySign n)
-    | n == 0    = head pents           == 0
-    | n > 0     = pents !! (2 * n - 1) == pent n
-    | otherwise = pents !! (2 * abs n) == pent n
+    | n == 0    = Inf.head pents           == 0
+    | n > 0     = pents Inf.!! (2 * fromIntegral n - 1) == pent n
+    | otherwise = pents Inf.!! (2 * fromIntegral (- n)) == pent n
   where
     pent m = div (3 * (m * m) - m) 2
 
@@ -59,13 +60,10 @@ pentagonalSigns = zipWith (*) (cycle [1, 1, -1, -1])
 
 -- | Copied from @Math.NumberTheory.Recurrences.Pentagonal@ to test the
 -- reference implementation of @partition@.
-pents :: (Enum a, Num a) => [a]
-pents = interleave (scanl (\acc n -> acc + 3 * n - 1) 0 [1..])
-                   (scanl (\acc n -> acc + 3 * n - 2) 1 [2..])
-  where
-    interleave :: [a] -> [a] -> [a]
-    interleave (n : ns) (m : ms) = n : m : interleave ns ms
-    interleave _ _ = []
+pents :: (Enum a, Num a) => Infinite a
+pents = Inf.interleave
+  (Inf.scanl (\acc n -> acc + 3 * n - 1) 0 (1...))
+  (Inf.scanl (\acc n -> acc + 3 * n - 2) 1 (2...))
 
 -- | Check that @p(n) = p(n-1) + p(n-2) - p(n-5) - p(n-7) + p(n-11) + ...@,
 -- where @p(x) = 0@ for any negative integer and @p(0) = 1@.
@@ -74,8 +72,8 @@ partitionProperty1 (Positive n) =
     partition' n == (sum .
                      pentagonalSigns .
                      map (\m -> partition' (n - m)) .
-                     takeWhile (\m -> n - m >= 0) .
-                     tail $ pents)
+                     Inf.takeWhile (\m -> n - m >= 0) .
+                     Inf.tail $ pents)
 
 -- | Check that
 -- @partition :: [Math.NumberTheory.Moduli.Mod n] == map (`mod` n) partition@.

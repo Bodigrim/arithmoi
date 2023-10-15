@@ -20,8 +20,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Control.Arrow
-import Data.List (group, sort)
-import Data.Maybe (fromJust)
+import Data.List (sort)
+import qualified Data.List.NonEmpty as NE
+import Data.Maybe (fromJust, listToMaybe)
 import Numeric.Natural
 
 import Math.NumberTheory.Moduli hiding (invertMod)
@@ -32,7 +33,7 @@ unwrapPP :: (Prime Integer, Power Word) -> (Prime Integer, Word)
 unwrapPP (p, Power e) = (p, e `mod` 5)
 
 nubOrd :: Ord a => [a] -> [a]
-nubOrd = map head . group . sort
+nubOrd = map NE.head . NE.group . sort
 
 -- | Check that 'sqrtMod' is defined iff a quadratic residue exists.
 --   Also check that the result is a solution of input modular equation.
@@ -60,7 +61,7 @@ tonelliShanksProperty1 (Positive n) p'@(unPrime -> p) = p `mod` 4 /= 1 || jacobi
 tonelliShanksProperty2 :: Prime Integer -> Bool
 tonelliShanksProperty2 p'@(unPrime -> p) = p `mod` 4 /= 1 || (rt ^ 2 - n) `rem` p == 0
   where
-    n  = head $ filter (\s -> jacobi s p == One) [2..p-1]
+    n : _ = filter (\s -> jacobi s p == One) [2..p-1]
     rt : _ = sqrtsModPrime n p'
 
 tonelliShanksProperty3 :: Prime Integer -> Bool
@@ -72,11 +73,11 @@ tonelliShanksProperty3 p'@(unPrime -> p)
 
 tonelliShanksSpecialCases :: Assertion
 tonelliShanksSpecialCases =
-  assertEqual "OEIS A002224" [6, 32, 219, 439, 1526, 2987, 22193, 11740, 13854, 91168, 326277, 232059, 3230839, 4379725, 11754394, 32020334, 151024619, 345641931, 373671108, 1857111865, 8110112775, 4184367042] rts
+  assertEqual "OEIS A002224" (map Just [6, 32, 219, 439, 1526, 2987, 22193, 11740, 13854, 91168, 326277, 232059, 3230839, 4379725, 11754394, 32020334, 151024619, 345641931, 373671108, 1857111865, 8110112775, 4184367042]) rts
   where
     ps :: [Integer]
     ps = [17, 73, 241, 1009, 2689, 8089, 33049, 53881, 87481, 483289, 515761, 1083289, 3818929, 9257329, 22000801, 48473881, 175244281, 427733329, 898716289, 8114538721, 9176747449, 23616331489]
-    rts = map (head . sqrtsModPrime 2 . fromJust . isPrime) ps
+    rts = map (listToMaybe . sqrtsModPrime 2 . fromJust . isPrime) ps
 
 sqrtsModPrimePowerProperty1 :: AnySign Integer -> (Prime Integer, Power Word) -> Bool
 sqrtsModPrimePowerProperty1 (AnySign n) (p'@(unPrime -> p), Power e) = gcd n p > 1

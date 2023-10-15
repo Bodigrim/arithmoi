@@ -31,7 +31,7 @@ binomialProperty1 :: Word -> Bool
 binomialProperty1 i = length (binomial @Integer Inf.!! i) == fromIntegral i + 1
 
 binomialProperty2 :: Word -> Bool
-binomialProperty2 i = head (binomial @Integer Inf.!! i) == 1
+binomialProperty2 i = take 1 (binomial @Integer Inf.!! i) == [1]
 
 binomialProperty3 :: Word -> Bool
 binomialProperty3 i = binomial @Integer Inf.!! i !! fromIntegral i == 1
@@ -91,8 +91,8 @@ stirling1Property1 i = length (stirling1 Inf.!! i) == fromIntegral i + 1
 
 stirling1Property2 :: Word -> Bool
 stirling1Property2 i
-  =  head (stirling1 Inf.!! i)
-  == if i == 0 then 1 else 0
+  =  take 1 (stirling1 Inf.!! i)
+  == [if i == 0 then 1 else 0]
 
 stirling1Property3 :: Word -> Bool
 stirling1Property3 i = stirling1 Inf.!! i !! fromIntegral i == 1
@@ -109,8 +109,8 @@ stirling2Property1 i = length (stirling2 Inf.!! i) == fromIntegral i + 1
 
 stirling2Property2 :: Word -> Bool
 stirling2Property2 i
-  =  head (stirling2 Inf.!! i)
-  == if i == 0 then 1 else 0
+  =  take 1 (stirling2 Inf.!! i)
+  == [if i == 0 then 1 else 0]
 
 stirling2Property3 :: Word -> Bool
 stirling2Property3 i = stirling2 Inf.!! i !! fromIntegral i == 1
@@ -127,8 +127,8 @@ lahProperty1 i = length (lah Inf.!! i) == fromIntegral i + 1
 
 lahProperty2 :: Word -> Bool
 lahProperty2 i
-  =  head (lah Inf.!! i)
-  == product [1 .. i+1]
+  =  take 1 (lah Inf.!! i)
+  == [product [1 .. i+1]]
 
 lahProperty3 :: Word -> Bool
 lahProperty3 i = lah Inf.!! i !! fromIntegral i == 1
@@ -143,7 +143,9 @@ eulerian1Property1 :: Word -> Bool
 eulerian1Property1 i = length (eulerian1 Inf.!! i) == fromIntegral i
 
 eulerian1Property2 :: Positive Int -> Bool
-eulerian1Property2 (Positive i) = head (eulerian1 Inf.!! fromIntegral i) == 1
+eulerian1Property2 (Positive i)
+  =  take 1 (eulerian1 Inf.!! fromIntegral i)
+  == [1]
 
 eulerian1Property3 :: Positive Int -> Bool
 eulerian1Property3 (Positive i) = eulerian1 Inf.!! fromIntegral i !! (i - 1) == 1
@@ -160,7 +162,8 @@ eulerian2Property1 i = length (eulerian2 Inf.!! i) == fromIntegral i
 
 eulerian2Property2 :: Positive Int -> Bool
 eulerian2Property2 (Positive i)
-  = head (eulerian2 Inf.!! fromIntegral i) == 1
+  =  take 1 (eulerian2 Inf.!! fromIntegral i)
+  == [1]
 
 eulerian2Property3 :: Positive Int -> Bool
 eulerian2Property3 (Positive i)
