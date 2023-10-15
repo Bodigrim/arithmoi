@@ -23,6 +23,8 @@ import GHC.Generics (Generic)
 import Test.QuickCheck (Arbitrary)
 import Test.SmallCheck.Series (Serial)
 
+-- | As of @base-4.19@ Data.Functor.Compose has every instance we need,
+-- except for instance Arbitrary, which overzealously requires Arbitrary1.
 newtype MyCompose f g a = MyCompose { getMyCompose :: f (g a) }
   deriving (Eq, Ord, Show, Functor, Num, Enum, Bounded, Real, Integral, Arbitrary, Generic)
 
