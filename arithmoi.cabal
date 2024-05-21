@@ -41,7 +41,7 @@ library
     mod <0.3,
     random >=1.0 && <1.3,
     transformers >=0.4 && <0.7,
-    semirings >=0.5.2 && <0.7,
+    semirings >=0.5.2 && <0.8,
     vector >=0.12 && <0.14
   exposed-modules:
     Math.NumberTheory.ArithmeticFunctions
