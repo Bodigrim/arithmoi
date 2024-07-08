@@ -33,13 +33,14 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
   , findParms
   ) where
 
+import Prelude hiding (Foldable(..))
 import Control.Arrow
 import Control.Monad.Trans.State.Lazy
 import Data.Array.Base (bounds, unsafeAt)
 import Data.Bits
+import Data.Foldable
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
-import Data.List (foldl')
 import Data.Maybe
 import Data.Mod
 import Data.Proxy

@@ -27,7 +27,7 @@ module Math.NumberTheory.ArithmeticFunctions.Inverse
     asSetOfPreimages
   ) where
 
-import Prelude hiding (rem, quot)
+import Prelude hiding (rem, quot, Foldable(..))
 import Data.Bits (Bits)
 import Data.Euclidean
 import Data.Foldable

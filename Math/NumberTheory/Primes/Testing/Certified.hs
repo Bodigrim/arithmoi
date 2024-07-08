@@ -16,8 +16,9 @@ module Math.NumberTheory.Primes.Testing.Certified
   ( isCertifiedPrime
   ) where
 
-import Data.List (foldl')
+import Prelude hiding (Foldable(..))
 import Data.Bits ((.&.))
+import Data.Foldable
 import Data.Mod
 import Data.Proxy
 import GHC.Num.Integer

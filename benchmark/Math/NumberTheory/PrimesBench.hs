@@ -1,4 +1,6 @@
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
+{-# OPTIONS_GHC -Wno-x-partial #-}
+{-# OPTIONS_GHC -Wno-unrecognised-warning-flags #-}
 
 module Math.NumberTheory.PrimesBench
   ( benchSuite
