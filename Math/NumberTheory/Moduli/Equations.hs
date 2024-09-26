@@ -123,7 +123,7 @@ solveQuadraticPrime
   -> Integer
   -> Prime Integer
   -> [Integer]
-solveQuadraticPrime a b c (unPrime -> 2 :: Integer)
+solveQuadraticPrime a b c (unPrime -> (2 :: Integer))
   = case (even c, even (a + b)) of
     (True, True) -> [0, 1]
     (True, _)    -> [0]
