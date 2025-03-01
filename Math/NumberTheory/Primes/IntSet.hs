@@ -13,6 +13,7 @@
 --
 
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -74,20 +75,24 @@ module Math.NumberTheory.Primes.IntSet
   , toDescList
   ) where
 
-import Prelude ((>), (/=), (==), (-), Eq, Ord, Show, Monoid, Bool, Maybe(..), Int, Word, otherwise)
+import Prelude (Eq, Ord, Show, Monoid, Bool, Maybe(..), Int, otherwise)
 import Control.DeepSeq (NFData)
 import Data.Coerce (coerce)
 import Data.Data (Data)
-import Data.Function (on)
 import Data.IntSet (IntSet)
 import qualified Data.IntSet.Internal as IS
 import Data.Semigroup (Semigroup)
 import qualified GHC.Exts (IsList(..))
 
 import Math.NumberTheory.Primes.Types (Prime(..))
+
+#if !MIN_VERSION_containers(0,8,0)
+import Prelude ((>), (/=), (==), (-), Word)
+import Data.Function (on)
 import Math.NumberTheory.Utils.FromIntegral (wordToInt, intToWord)
 import Data.Bits (Bits(..))
 import Utils.Containers.Internal.BitUtil (highestBitMask)
+#endif
 
 -- | A set of 'Prime' integers.
 newtype PrimeIntSet = PrimeIntSet {
@@ -194,7 +199,11 @@ infixl 9 \\{- -}
 
 -- | Symmetric difference of two sets of primes.
 symmetricDifference :: PrimeIntSet -> PrimeIntSet -> PrimeIntSet
+#if MIN_VERSION_containers(0,8,0)
+symmetricDifference = coerce IS.symmetricDifference
+#else
 symmetricDifference = coerce symmDiff
+#endif
 
 -- | Intersection of a set of primes and a set of integers.
 intersection :: PrimeIntSet -> IntSet -> PrimeIntSet
@@ -270,6 +279,8 @@ toDescList = coerce IS.toDescList
 -------------------------------------------------------------------------------
 -- IntSet helpers
 
+#if !MIN_VERSION_containers(0,8,0)
+
 -- | Symmetric difference of two sets.
 -- Implementation is inspired by 'Data.IntSet.union'
 -- and 'Data.IntSet.difference'.
@@ -329,3 +340,5 @@ bin p m l r = case r of
 mask :: Int -> Int -> Int
 mask i m = i .&. (complement (m - 1) `xor` m)
 {-# INLINE mask #-}
+
+#endif
