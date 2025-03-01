@@ -65,7 +65,6 @@ instance KnownNat k => Semigroup (DBVector k) where
 -- | Dense Binary Vectors of given length form a group under addition.
 instance KnownNat k => Monoid (DBVector k) where
   mempty = DBVector $ SU.replicate (Bit False)
-  mappend = (<>)
 
 -- | Dot product of two dense Binary Vectors of the same size.
 dot :: KnownNat k => DBVector k -> DBVector k -> Bit

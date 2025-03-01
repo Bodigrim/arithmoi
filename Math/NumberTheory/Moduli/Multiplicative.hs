@@ -49,7 +49,6 @@ instance KnownNat m => Semigroup (MultMod m) where
 
 instance KnownNat m => Monoid (MultMod m) where
   mempty = MultMod 1
-  mappend = (<>)
 
 instance KnownNat m => Bounded (MultMod m) where
   minBound = MultMod 1

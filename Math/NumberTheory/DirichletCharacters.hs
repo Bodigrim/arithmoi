@@ -204,7 +204,6 @@ instance Semigroup (DirichletCharacter n) where
 
 instance KnownNat n => Monoid (DirichletCharacter n) where
   mempty = principalChar
-  mappend = (<>)
 
 stimesChar :: Integral a => a -> DirichletCharacter n -> DirichletCharacter n
 stimesChar s (Generated xs) = Generated (map mult xs)

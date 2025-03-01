@@ -296,7 +296,6 @@ instance Semigroup (Mangoldt a) where
 
 instance Monoid (Mangoldt a) where
   mempty  = MangoldtZero
-  mappend = (<>)
 
 -- | See 'isNFreeA'.
 isNFree :: UniqueFactorisation n => Word -> n -> Bool
@@ -315,7 +314,6 @@ instance Integral a => Semigroup (LCM a) where
 
 instance Integral a => Monoid (LCM a) where
   mempty  = LCM 1
-  mappend = (<>)
 
 newtype Xor = Xor { _getXor :: Bool }
 
@@ -329,7 +327,6 @@ instance Semigroup Xor where
 
 instance Monoid Xor where
   mempty  = Xor False
-  mappend = (<>)
 
 newtype SetProduct a = SetProduct { getSetProduct :: Set a }
 
@@ -338,7 +335,6 @@ instance (Num a, Ord a) => Semigroup (SetProduct a) where
 
 instance (Num a, Ord a) => Monoid (SetProduct a) where
   mempty  = SetProduct mempty
-  mappend = (<>)
 
 newtype ListProduct a = ListProduct { getListProduct :: [a] }
 
@@ -347,7 +343,6 @@ instance Num a => Semigroup (ListProduct a) where
 
 instance Num a => Monoid (ListProduct a) where
   mempty  = ListProduct mempty
-  mappend = (<>)
 
 -- Represent as a Reader monad
 newtype BoundedSetProduct a = BoundedSetProduct { _getBoundedSetProduct :: a -> Set a }
@@ -364,7 +359,6 @@ instance (Ord a, Num a) => Semigroup (BoundedSetProduct a) where
 
 instance (Ord a, Num a) => Monoid (BoundedSetProduct a) where
   mempty = BoundedSetProduct mempty
-  mappend = (<>)
 
 newtype IntSetProduct = IntSetProduct { getIntSetProduct :: IntSet }
 
@@ -373,4 +367,3 @@ instance Semigroup IntSetProduct where
 
 instance Monoid IntSetProduct where
   mempty  = IntSetProduct mempty
-  mappend = (<>)

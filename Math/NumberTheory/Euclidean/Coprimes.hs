@@ -121,7 +121,6 @@ instance (Eq a, GcdDomain a, Eq b, Num b) => Semigroup (Coprimes a b) where
 
 instance (Eq a, GcdDomain a, Eq b, Num b) => Monoid (Coprimes a b) where
   mempty  = Coprimes []
-  mappend = (<>)
 
 -- | The input list is assumed to be a factorisation of some number
 -- into a list of powers of (possibly, composite) non-zero factors. The output

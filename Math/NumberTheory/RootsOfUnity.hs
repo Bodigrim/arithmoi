@@ -53,7 +53,6 @@ instance Semigroup RootOfUnity where
   stimes k (RootOfUnity q) = toRootOfUnity (q * (toInteger k % 1))
 
 instance Monoid RootOfUnity where
-  mappend = (<>)
   mempty = RootOfUnity 0
 
 -- | Convert a root of unity into an inexact complex number. Due to floating point inaccuracies,

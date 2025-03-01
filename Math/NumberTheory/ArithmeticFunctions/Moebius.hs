@@ -113,7 +113,6 @@ instance Semigroup Moebius where
 
 instance Monoid Moebius where
   mempty  = MoebiusP
-  mappend = (<>)
 
 -- | Evaluate the Möbius function over a block.
 -- Value of @f@ at 0, if zero falls into block, is undefined.

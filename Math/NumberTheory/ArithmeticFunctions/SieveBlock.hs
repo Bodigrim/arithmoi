@@ -97,7 +97,7 @@ runFunctionOverBlock
   -> V.Vector a
 runFunctionOverBlock (ArithmeticFunction f g) = (G.map g .) . sieveBlock SieveBlockConfig
   { sbcEmpty                = mempty
-  , sbcAppend               = mappend
+  , sbcAppend               = (<>)
   , sbcFunctionOnPrimePower = coerce f
   }
 

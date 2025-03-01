@@ -198,7 +198,6 @@ instance Semigroup Factors where
 
 instance Monoid Factors where
   mempty = Factors [] []
-  mappend = (<>)
 
 modifyPowers :: (Word -> Word) -> Factors -> Factors
 modifyPowers f (Factors pfs cfs)
