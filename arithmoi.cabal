@@ -34,7 +34,7 @@ library
     constraints <0.15,
     deepseq <1.6,
     exact-pi >=0.5 && <0.6,
-    ghc-bignum <1.4,
+    ghc-bignum <1.5,
     infinite-list <0.2,
     integer-logarithms >=1.0 && <1.1,
     integer-roots >=1.0 && <1.1,
