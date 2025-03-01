@@ -17,7 +17,7 @@ description:
   powers (integer roots and tests, modular exponentiation).
 category:      Math, Algorithms, Number Theory
 author:        Andrew Lelechenko, Daniel Fischer
-tested-with:   GHC ==9.0.2 GHC ==9.2.8 GHC ==9.4.8 GHC ==9.6.6 GHC ==9.8.2 GHC ==9.10.1
+tested-with:   GHC ==9.0.2 GHC ==9.2.8 GHC ==9.4.8 GHC ==9.6.6 GHC ==9.8.4 GHC ==9.10.1 GHC ==9.12.1
 extra-doc-files:
   changelog.md
 
