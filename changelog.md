@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0.1
+
+### Fixed
+
+* Compatibility patches for `containers-0.8`.
+
 ## 0.13.0.0
 
 ### Changed
