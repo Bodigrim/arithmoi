@@ -431,10 +431,10 @@ countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
 countToNth !n (PS v0 bs : more) = go n 0
   where
     wa :: UArray Int Word
-    wa = unsafeCoerce bs
+    wa = coerceArray bs
 
     go !k i
-      | i == snd (bounds wa)
+      | i > snd (bounds wa)
       = countToNth k more
       | otherwise
       = let w = unsafeAt wa i
@@ -450,13 +450,24 @@ countAll :: PrimeSieve -> Int
 countAll (PS _ bs) = go 0 0
   where
     wa :: UArray Int Word
-    wa = unsafeCoerce bs
+    wa = coerceArray bs
 
     go !ct i
-      | i == snd (bounds wa)
+      | i > snd (bounds wa)
       = ct
       | otherwise
       = go (ct + popCount (unsafeAt wa i)) (i+1)
+
+-- This is dangerous: we rely on the fact that reading a whole word
+-- at the end of ByteArray is permissible, even if its length
+-- is not aligned with word boundaries.
+coerceArray :: UArray Int Bool -> UArray Int Word
+coerceArray (UArray 0 u n ba)
+  | u + 1 == n, n' > 0 = UArray 0 (n' - 1) n' ba
+  where
+    n' = (n + rMASK) `shiftR` wSHFT
+coerceArray (UArray l u n _) =
+    error $ "Cannot coerce array of Bool to array of Word: " ++ show (l, u, n)
 
 -- Find the j-th highest of bc set bits in the Word w.
 top :: Word -> Int -> Int -> Int

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.1.0
+
+### Fixed
+
+* Fix a grave bug in prime counting, lurking since `arithmoi-0.11.0.0`.
+
 ## 0.13.0.1
 
 ### Fixed

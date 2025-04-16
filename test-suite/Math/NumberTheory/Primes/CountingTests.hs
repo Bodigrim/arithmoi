@@ -36,6 +36,8 @@ table =
   , (10^10,  455052511)
   , (10^11,  4118054813)
   , (10^12,  37607912018)
+  -- Enable tests below to validate any changes to 'primeCount' implementation:
+  -- certain routines are not triggered until very large numbers.
   -- , (10^13,  346065536839)
   -- , (10^14,  3204941750802)
   -- , (10^15,  29844570422669)
