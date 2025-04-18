@@ -323,12 +323,9 @@ copyTo end lim old oi new ni = do
 {-# INLINE copyRem #-}
 copyRem :: Int -> MU.MVector s Int64 -> Int -> MU.MVector s Int64 -> Int -> ST s Int
 copyRem end old oi new ni = do
-    let go ri wi
-          | ri < end    = do
-            MU.unsafeRead old ri >>= MU.unsafeWrite new wi
-            go (ri+1) (wi+1)
-          | otherwise   = return wi
-    go oi ni
+  let len = end - oi
+  MU.copy (MU.slice ni len new) (MU.slice oi len old)
+  pure $ ni + len
 
 {-# INLINE cp6 #-}
 cp6 :: Int64 -> Integer
