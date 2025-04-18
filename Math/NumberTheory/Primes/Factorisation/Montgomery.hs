@@ -36,7 +36,7 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 import Prelude hiding (Foldable(..))
 import Control.Arrow
 import Control.Monad.Trans.State.Lazy
-import Data.Array.Base (bounds, unsafeAt)
+import Data.Bit
 import Data.Bits
 import Data.Foldable
 import Data.IntMap (IntMap)
@@ -45,6 +45,7 @@ import Data.Maybe
 import Data.Mod
 import Data.Proxy
 import Data.Traversable
+import qualified Data.Vector.Unboxed as U
 import GHC.Exts
 import GHC.Num.BigNat
 import GHC.Natural
@@ -339,8 +340,8 @@ primeStore = psieveFrom 7
 
 -- generate list of primes from arrays
 list :: [PrimeSieve] -> [Word]
-list sieves = concat [[off + toPrim i | i <- [0 .. li], unsafeAt bs i]
-                                | PS vO bs <- sieves, let { (_,li) = bounds bs; off = fromInteger vO; }]
+list sieves = concat [[off + toPrim i | i <- [0 .. li], unBit (U.unsafeIndex bs i)]
+                                | PS vO bs <- sieves, let { li = U.length bs - 1; off = fromInteger vO; }]
 
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.

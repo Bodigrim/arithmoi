@@ -27,16 +27,19 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 import Control.Monad (when)
 import Control.Monad.ST
 import Data.Array.Base
-import Data.Array.ST
+import Data.Bit
 import Data.Bits
 import Data.Coerce
 import Data.Proxy
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as MU
 import Data.Word
 
 import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Utils.FromIntegral
+import Unsafe.Coerce (unsafeCoerce)
 
 iXMASK :: Num a => a
 iXMASK   = 0xFFFFF
@@ -78,7 +81,7 @@ wSHFT :: (Bits a, Num a) => a
 wSHFT = if finiteBitSize (0 :: Word) == 64 then 6 else 5
 
 -- | Compact store of primality flags.
-data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
+data PrimeSieve = PS !Integer {-# UNPACK #-} !(U.Vector Bit)
 
 -- | Sieve primes up to (and including) a bound (or 7, if bound is smaller).
 --   For small enough bounds, this is more efficient than
@@ -90,7 +93,7 @@ data PrimeSieve = PS !Integer {-# UNPACK #-} !(UArray Int Bool)
 --   is often within memory limits, so don't give bounds larger than
 --   @8*10^9@ there.
 primeSieve :: Integer -> PrimeSieve
-primeSieve bound = PS 0 (runSTUArray $ sieveTo bound)
+primeSieve bound = PS 0 (runST $ sieveTo bound >>= U.unsafeFreeze)
 
 -- | Generate a list of primes for consumption from a
 --   'PrimeSieve'.
@@ -106,9 +109,9 @@ primeList ps@(PS v _)
 primeListInternal :: Num a => PrimeSieve -> [a]
 primeListInternal (PS v0 bs)
   = map ((+ fromInteger v0) . toPrim)
-  $ filter (unsafeAt bs) [lo..hi]
+  $ filter (unBit . U.unsafeIndex bs) [lo..hi]
   where
-    (lo, hi) = bounds bs
+    (lo, hi) = (0, U.length bs - 1)
 
 -- | Returns true if integer is beyond representation range of type a.
 doesNotFit :: forall a. Integral a => Proxy a -> Integer -> Bool
@@ -157,13 +160,13 @@ psieveList = makeSieves plim sqlim 0 0 cache
   where
     plim = 4801     -- prime #647, 644 of them to use
     sqlim = plim*plim
-    cache = runSTUArray $ do
+    cache = runST $ do
         sieve <- sieveTo (4801 :: Integer)
-        new <- unsafeNewArray_ (0,1287) :: ST s (STUArray s Int Word64)
+        new <- MU.unsafeNew 1288 :: ST s (MU.MVector s Word64)
         let fill j indx
               | 1279 < indx = return new    -- index of 4801 = 159*30 + 31 ~> 159*8+7
               | otherwise = do
-                p <- unsafeRead sieve indx
+                Bit p <- MU.unsafeRead sieve indx
                 if p
                   then do
                     let !i = indx .&. jMASK
@@ -172,20 +175,21 @@ psieveList = makeSieves plim sqlim 0 0 cache
                         !strt = intToWord64 (strt1 .&. iXMASK)
                         !skip = intToWord64 (strt1 `shiftR` iXBITS)
                         !ixes = intToWord64 indx `shiftL` iXJBITS + strt `shiftL` jBITS + intToWord64 i
-                    unsafeWrite new j skip
-                    unsafeWrite new (j+1) ixes
+                    MU.unsafeWrite new j skip
+                    MU.unsafeWrite new (j+1) ixes
                     fill (j+2) (indx+1)
                   else fill j (indx+1)
-        fill 0 0
+        vec <- fill 0 0
+        U.unsafeFreeze vec
 
-makeSieves :: Integer -> Integer -> Integer -> Integer -> UArray Int Word64 -> [PrimeSieve]
+makeSieves :: Integer -> Integer -> Integer -> Integer -> U.Vector Word64 -> [PrimeSieve]
 makeSieves plim sqlim bitOff valOff cache
   | valOff' < sqlim =
       let (nc, bs) = runST $ do
-            cch <- unsafeThaw cache :: ST s (STUArray s Int Word64)
+            cch <- U.unsafeThaw cache :: ST s (MU.MVector s Word64)
             bs0 <- slice cch
-            fcch <- unsafeFreeze cch
-            fbs0 <- unsafeFreeze bs0
+            fcch <- U.unsafeFreeze cch
+            fbs0 <- U.unsafeFreeze bs0
             return (fcch, fbs0)
       in PS valOff bs : makeSieves plim sqlim bitOff' valOff' nc
   | otherwise       =
@@ -194,26 +198,26 @@ makeSieves plim sqlim bitOff valOff cache
           (nc,bs) = runST $ do
             cch <- growCache bitOff plim cache
             bs0 <- slice cch
-            fcch <- unsafeFreeze cch
-            fbs0 <- unsafeFreeze bs0
+            fcch <- U.unsafeFreeze cch
+            fbs0 <- U.unsafeFreeze bs0
             return (fcch, fbs0)
       in PS valOff bs : makeSieves plim' sqlim' bitOff' valOff' nc
     where
       valOff' = valOff + intToInteger sieveRange
       bitOff' = bitOff + intToInteger sieveBits
 
-slice :: STUArray s Int Word64 -> ST s (STUArray s Int Bool)
+slice :: MU.MVector s Word64 -> ST s (MU.MVector s Bit)
 slice cache = do
-    hi <- snd `fmap` getBounds cache
-    sieve <- newArray (0,lastIndex) True
+    let hi = MU.length cache - 1
+    sieve <- MU.replicate (lastIndex + 1) (Bit True)
     let treat pr
           | hi < pr     = return sieve
           | otherwise   = do
-            w <- unsafeRead cache pr
+            w <- MU.unsafeRead cache pr
             if w /= 0
-              then unsafeWrite cache pr (w-1)
+              then MU.unsafeWrite cache pr (w-1)
               else do
-                ixes <- unsafeRead cache (pr+1)
+                ixes <- MU.unsafeRead cache (pr+1)
                 let !stj = word64ToInt ixes .&. iXJMASK   -- position of multiple and index of cofactor
                     !ixw = word64ToInt (ixes `shiftR` iXJBITS)  -- prime data, up to 41 bits
                     !i = ixw .&. jMASK
@@ -224,19 +228,19 @@ slice cache = do
                 (n, u) <- tick k o j s
                 let !skip = intToWord64 (n `shiftR` iXBITS)
                     !strt = intToWord64 (n .&. iXMASK)
-                unsafeWrite cache pr skip
-                unsafeWrite cache (pr+1) ((ixes .&. complement iXJMASK) .|. strt `shiftL` jBITS .|. intToWord64 u)
+                MU.unsafeWrite cache pr skip
+                MU.unsafeWrite cache (pr+1) ((ixes .&. complement iXJMASK) .|. strt `shiftL` jBITS .|. intToWord64 u)
             treat (pr+2)
         tick stp off j ix
           | lastIndex < ix  = return (ix - sieveBits, j)
           | otherwise       = do
-            p <- unsafeRead sieve ix
-            when p (unsafeWrite sieve ix False)
+            Bit p <- MU.unsafeRead sieve ix
+            when p (MU.unsafeWrite sieve ix (Bit False))
             tick stp off ((j+1) .&. jMASK) (ix + stp*delta j + tau (off+j))
     treat 0
 
 -- | Sieve up to bound in one go.
-sieveTo :: Integer -> ST s (STUArray s Int Bool)
+sieveTo :: Integer -> ST s (MU.MVector s Bit)
 sieveTo bound = arr
   where
     (bytes,lidx) = idxPr bound
@@ -247,18 +251,18 @@ sieveTo bound = arr
     (kr,r) = idxPr mxsve
     !svbd = 8*kr+r
     arr = do
-        ar <- newArray (0,mxidx) True
+        ar <- MU.replicate (mxidx + 1) (Bit True)
         let start k i = 8*(k*(30*k+2*rho i) + byte i) + idx i
             tick stp off j ix
               | mxidx < ix = return ()
               | otherwise  = do
-                p <- unsafeRead ar ix
-                when p (unsafeWrite ar ix False)
+                Bit p <- MU.unsafeRead ar ix
+                when p (MU.unsafeWrite ar ix (Bit False))
                 tick stp off ((j+1) .&. jMASK) (ix + stp*delta j + tau (off+j))
             sift ix
               | svbd < ix = return ar
               | otherwise = do
-                p <- unsafeRead ar ix
+                Bit p <- MU.unsafeRead ar ix
                 when p  (do let i = ix .&. jMASK
                                 k = ix `shiftR` jBITS
                                 !off = i `shiftL` jBITS
@@ -267,26 +271,26 @@ sieveTo bound = arr
                 sift (ix+1)
         sift 0
 
-growCache :: Integer -> Integer -> UArray Int Word64 -> ST s (STUArray s Int Word64)
+growCache :: Integer -> Integer -> U.Vector Word64 -> ST s (MU.MVector s Word64)
 growCache offset plim old = do
-    let (_,num) = bounds old
+    let num = U.length old - 1
         (bt,ix) = idxPr plim
         !start  = 8*bt+ix+1
         !nlim   = plim+4800
     sieve <- sieveTo nlim       -- Implement SieveFromTo for this, it's pretty wasteful when nlim isn't
-    (_,hi) <- getBounds sieve   -- very small anymore
+    let hi = MU.length sieve - 1
     more <- countFromToWd start hi sieve
-    new <- unsafeNewArray_ (0,num+2*more) :: ST s (STUArray s Int Word64)
+    new <- MU.unsafeNew (1 + num + 2 * more) :: ST s (MU.MVector s Word64)
     let copy i
           | num < i   = return ()
           | otherwise = do
-            unsafeWrite new i (old `unsafeAt` i)
+            MU.unsafeWrite new i (old `U.unsafeIndex` i)
             copy (i+1)
     copy 0
     let fill j indx
           | hi < indx = return new
           | otherwise = do
-            p <- unsafeRead sieve indx
+            Bit p <- MU.unsafeRead sieve indx
             if p
               then do
                 let !i = indx .&. jMASK
@@ -299,8 +303,8 @@ growCache offset plim old = do
                     !strt = integerToWord64 strt1 .&. iXMASK
                     !skip = integerToWord64 (strt1 `shiftR` iXBITS)
                     !ixes = intToWord64 indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. intToWord64 i
-                unsafeWrite new j skip
-                unsafeWrite new (j+1) ixes
+                MU.unsafeWrite new j skip
+                MU.unsafeWrite new (j+1) ixes
                 fill (j+2) (indx+1)
               else fill j (indx+1)
     fill (num+1) start
@@ -309,15 +313,15 @@ growCache offset plim old = do
 -- index in a Word
 -- Do not use except in growCache and psieveFrom
 {-# INLINE countFromToWd #-}
-countFromToWd :: Int -> Int -> STUArray s Int Bool -> ST s Int
+countFromToWd :: Int -> Int -> MU.MVector s Bit -> ST s Int
 countFromToWd start end ba = do
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
+    let wa = (unsafeCoerce :: MU.MVector s Bit -> MU.MVector s Word) ba
     let !sb = start `shiftR` wSHFT
         !eb = end `shiftR` wSHFT
         count !acc i
           | eb < i    = return acc
           | otherwise = do
-            w <- unsafeRead wa i
+            w <- MU.unsafeRead wa i
             count (acc + popCount w) (i+1)
     count 0 sb
 
@@ -338,15 +342,15 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
       plim0 = integerSquareRoot end1
       plim = plim0 + 4801 - (plim0 `rem` 4800)
       sqlim = plim*plim
-      cache = runSTUArray $ do
+      cache = runST $ do
           sieve <- sieveTo plim
-          (lo,hi) <- getBounds sieve
+          let (lo,hi) = (0, MU.length sieve - 1)
           pct <- countFromToWd lo hi sieve
-          new <- unsafeNewArray_ (0,2*pct-1) ::  ST s (STUArray s Int Word64)
+          new <- MU.unsafeNew (2 * pct) ::  ST s (MU.MVector s Word64)
           let fill j indx
                 | hi < indx = return new
                 | otherwise = do
-                  isPr <- unsafeRead sieve indx
+                  Bit isPr <- MU.unsafeRead sieve indx
                   if isPr
                     then do
                       let !i = indx .&. jMASK
@@ -376,12 +380,12 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
                           !strt = integerToWord64 strt2 .&. iXMASK
                           !skip = integerToWord64 (strt2 `shiftR` iXBITS)
                           !ixes = intToWord64 indx `shiftL` iXJBITS .|. strt `shiftL` jBITS .|. intToWord64 r2
-                      unsafeWrite new j skip
-                      unsafeWrite new (j+1) ixes
+                      MU.unsafeWrite new j skip
+                      MU.unsafeWrite new (j+1) ixes
                       fill (j+2) (indx+1)
                     else fill j (indx+1)
-          fill 0 0
-
+          vec <- fill 0 0
+          U.unsafeFreeze vec
 
 {-# INLINE delta #-}
 delta :: Int -> Int

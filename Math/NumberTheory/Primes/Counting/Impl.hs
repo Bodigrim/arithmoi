@@ -30,9 +30,12 @@ import Math.NumberTheory.Utils.FromIntegral
 import Control.Monad.ST
 import Data.Array.Base
 import Data.Array.ST
+import Data.Bit
 import Data.Bits
 import Data.Int
-import Unsafe.Coerce
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Unboxed.Mutable as MU
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | Maximal allowed argument of 'primeCount'. Currently 8e18.
 primeCountMaxArg :: Integer
@@ -55,7 +58,7 @@ primeCount n
     | n < 1000  = intToInteger . length . takeWhile (<= n) . map unPrime . primeList . primeSieve $ max 242 n
     | n < 30000 = runST $ do
         ba <- sieveTo n
-        (s,e) <- getBounds ba
+        let (s, e) = (0, MU.length ba - 1)
         ct <- countFromTo s e ba
         return (intToInteger $ ct+3)
     | otherwise =
@@ -137,7 +140,7 @@ lowSieve a miss = countToNth (miss+rep) psieves
         strt = a + 1 + (a .&. 1)
         psieves@(PS vO ba:_) = psieveFrom (toInteger strt)
         rep | o0 < 0    = 0
-            | otherwise = sum [1 | i <- [0 .. r2], ba `unsafeAt` i]
+            | otherwise = sum [1 | i <- [0 .. r2], unBit (ba `U.unsafeIndex` i)]
               where
                 o0 = toInteger strt - vO - 9   -- (strt - 2) - v0 - 7
                 r0 = fromInteger o0 `rem` 30
@@ -157,32 +160,32 @@ sieveCountST ub cr sr = do
         picr = approxPrimeCount cr
         diff = pisr - picr
         size = int64ToInt (diff + diff `quot` 50) + 30
-    store <- unsafeNewArray_ (0,size-1) :: ST s (STUArray s Int Int64)
-    let feed :: Int64 -> Int -> Int -> UArray Int Bool -> [PrimeSieve] -> ST s Integer
+    store <- MU.unsafeNew size :: ST s (MU.MVector s Int64)
+    let feed :: Int64 -> Int -> Int -> U.Vector Bit -> [PrimeSieve] -> ST s Integer
         feed voff !wi !ri uar sves
           | ri == sieveBits = case sves of
                                 (PS vO ba : more) -> feed (fromInteger vO) wi 0 ba more
                                 _ -> error "prime stream ended prematurely"
           | pval > sr   = do
-              stu <- unsafeThaw uar
+              stu <- U.unsafeThaw uar
               eat 0 0 voff (wi-1) ri stu sves
-          | uar `unsafeAt` ri = do
-              unsafeWrite store wi (ub `quot` pval)
+          | unBit (uar `U.unsafeIndex` ri) = do
+              MU.unsafeWrite store wi (ub `quot` pval)
               feed voff (wi+1) (ri+1) uar sves
           | otherwise = feed voff wi (ri+1) uar sves
             where
               pval = voff + toPrim ri
-        eat :: Integer -> Integer -> Int64 -> Int -> Int -> STUArray s Int Bool -> [PrimeSieve] -> ST s Integer
+        eat :: Integer -> Integer -> Int64 -> Int -> Int -> MU.MVector s Bit -> [PrimeSieve] -> ST s Integer
         eat !acc !btw voff !wi !si stu sves
             | si == sieveBits =
                 case sves of
                   [] -> error "Premature end of prime stream"
                   (PS vO ba : more) -> do
-                      nstu <- unsafeThaw ba
+                      nstu <- U.unsafeThaw ba
                       eat acc btw (fromInteger vO) wi 0 nstu more
             | wi < 0    = return acc
             | otherwise = do
-                qb <- unsafeRead store wi
+                qb <- MU.unsafeRead store wi
                 let dist = qb - voff - 7
                 if dist < intToInt64 sieveRange
                   then do
@@ -196,7 +199,7 @@ sieveCountST ub cr sr = do
                           (b,j) = idxPr (fds+7)
                           !li = (b `shiftL` 3) .|. j
                           ctLoop !lac 0 (PS vO ba : more) = do
-                              nstu <- unsafeThaw ba
+                              nstu <- U.unsafeThaw ba
                               new <- countFromTo 0 li nstu
                               let nbtw = btw + lac + 1 + intToInteger new
                               eat (acc+nbtw) nbtw (integerToInt64 vO) (wi-1) (li+1) nstu more
@@ -216,29 +219,29 @@ calc lim plim = runST (calcST lim plim)
 calcST :: forall s. Int64 -> Int64 -> ST s Integer
 calcST lim plim = do
     !parr <- sieveTo (int64ToInteger plim)
-    (plo,phi) <- getBounds parr
+    let (plo, phi) = (0, MU.length parr - 1)
     !pct <- countFromTo plo phi parr
-    !ar1 <- unsafeNewArray_ (0,end-1)
-    unsafeWrite ar1 0 lim
-    unsafeWrite ar1 1 1
-    !ar2 <- unsafeNewArray_ (0,end-1)
-    let go :: Int -> Int -> STUArray s Int Int64 -> STUArray s Int Int64 -> ST s Integer
+    !ar1 <- MU.unsafeNew end
+    MU.unsafeWrite ar1 0 lim
+    MU.unsafeWrite ar1 1 1
+    !ar2 <- MU.unsafeNew end
+    let go :: Int -> Int -> MU.MVector s Int64 -> MU.MVector s Int64 -> ST s Integer
         go cap pix old new
             | pix == 2  =   coll cap old
             | otherwise = do
-                isp <- unsafeRead parr pix
+                Bit isp <- MU.unsafeRead parr pix
                 if isp
                     then do
                         let !n = fromInteger (toPrim pix)
                         !ncap <- treat cap n old new
                         go ncap (pix-1) new old
                     else go cap (pix-1) old new
-        coll :: Int -> STUArray s Int Int64 -> ST s Integer
+        coll :: Int -> MU.MVector s Int64 -> ST s Integer
         coll stop ar =
             let cgo !acc i
                     | i < stop  = do
-                        !k <- unsafeRead ar i
-                        !v <- unsafeRead ar (i+1)
+                        !k <- MU.unsafeRead ar i
+                        !v <- MU.unsafeRead ar (i+1)
                         cgo (acc + int64ToInteger v*cp6 k) (i+2)
                     | otherwise = return (acc+intToInteger pct+2)
             in cgo 0 0
@@ -249,37 +252,37 @@ calcST lim plim = do
     !size = int64ToInt $ integerSquareRoot lim `quot` 4
     !end = 2*size
 
-treat :: Int -> Int64 -> STUArray s Int Int64 -> STUArray s Int Int64 -> ST s Int
+treat :: Int -> Int64 -> MU.MVector s Int64 -> MU.MVector s Int64 -> ST s Int
 treat end n old new = do
     qi0 <- locate n 0 (end `quot` 2 - 1) old
     let collect stop !acc ix
             | ix < end  = do
-                !k <- unsafeRead old ix
+                !k <- MU.unsafeRead old ix
                 if k < stop
                     then do
-                        v <- unsafeRead old (ix+1)
+                        v <- MU.unsafeRead old (ix+1)
                         collect stop (acc-v) (ix+2)
                     else return (acc,ix)
             | otherwise = return (acc,ix)
         goTreat !wi !ci qi
             | qi < end  = do
-                !key <- unsafeRead old qi
-                !val <- unsafeRead old (qi+1)
+                !key <- MU.unsafeRead old qi
+                !val <- MU.unsafeRead old (qi+1)
                 let !q0 = key `quot` n
                     !r0 = int64ToInt (q0 `rem` 30030)
                     !nkey = q0 - int8ToInt64 (cpDfAr `unsafeAt` r0)
                     nk0 = q0 + int8ToInt64 (cpGpAr `unsafeAt` (r0+1) + 1)
                     !nlim = n*nk0
                 (wi1,ci1) <- copyTo end nkey old ci new wi
-                ckey <- unsafeRead old ci1
+                ckey <- MU.unsafeRead old ci1
                 (!acc, !ci2) <- if ckey == nkey
                                   then do
-                                    !ov <- unsafeRead old (ci1+1)
+                                    !ov <- MU.unsafeRead old (ci1+1)
                                     return (ov-val,ci1+2)
                                   else return (-val,ci1)
                 (!tot, !nqi) <- collect nlim acc (qi+2)
-                unsafeWrite new wi1 nkey
-                unsafeWrite new (wi1+1) tot
+                MU.unsafeWrite new wi1 nkey
+                MU.unsafeWrite new (wi1+1) tot
                 goTreat (wi1+2) ci2 nqi
             | otherwise = copyRem end old ci new wi
     goTreat 0 0 qi0
@@ -288,12 +291,12 @@ treat end n old new = do
 --                               Auxiliaries                                  --
 --------------------------------------------------------------------------------
 
-locate :: Int64 -> Int -> Int -> STUArray s Int Int64 -> ST s Int
+locate :: Int64 -> Int -> Int -> MU.MVector s Int64 -> ST s Int
 locate p low high arr = do
     let go lo hi
           | lo < hi     = do
             let !md = (lo+hi) `quot` 2
-            v <- unsafeRead arr (2*md)
+            v <- MU.unsafeRead arr (2*md)
             case compare p v of
                 LT -> go lo md
                 EQ -> return (2*md)
@@ -302,28 +305,28 @@ locate p low high arr = do
     go low high
 
 {-# INLINE copyTo #-}
-copyTo :: Int -> Int64 -> STUArray s Int Int64 -> Int
-       -> STUArray s Int Int64 -> Int -> ST s (Int,Int)
+copyTo :: Int -> Int64 -> MU.MVector s Int64 -> Int
+       -> MU.MVector s Int64 -> Int -> ST s (Int,Int)
 copyTo end lim old oi new ni = do
     let go ri wi
             | ri < end  = do
-                ok <- unsafeRead old ri
+                ok <- MU.unsafeRead old ri
                 if ok < lim
                     then do
-                        !ov <- unsafeRead old (ri+1)
-                        unsafeWrite new wi ok
-                        unsafeWrite new (wi+1) ov
+                        !ov <- MU.unsafeRead old (ri+1)
+                        MU.unsafeWrite new wi ok
+                        MU.unsafeWrite new (wi+1) ov
                         go (ri+2) (wi+2)
                     else return (wi,ri)
             | otherwise = return (wi,ri)
     go oi ni
 
 {-# INLINE copyRem #-}
-copyRem :: Int -> STUArray s Int Int64 -> Int -> STUArray s Int Int64 -> Int -> ST s Int
+copyRem :: Int -> MU.MVector s Int64 -> Int -> MU.MVector s Int64 -> Int -> ST s Int
 copyRem end old oi new ni = do
     let go ri wi
           | ri < end    = do
-            unsafeRead old ri >>= unsafeWrite new wi
+            MU.unsafeRead old ri >>= MU.unsafeWrite new wi
             go (ri+1) (wi+1)
           | otherwise   = return wi
     go oi ni
@@ -430,14 +433,14 @@ countToNth :: Int -> [PrimeSieve] -> Integer
 countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
 countToNth !n (PS v0 bs : more) = go n 0
   where
-    wa :: UArray Int Word
-    wa = coerceArray bs
+    wa :: U.Vector Word
+    wa = unsafeCoerce bs
 
     go !k i
-      | i > snd (bounds wa)
+      | i >= (U.length bs + rMASK) `shiftR` wSHFT
       = countToNth k more
       | otherwise
-      = let w = unsafeAt wa i
+      = let w = U.unsafeIndex wa i
             bc = popCount w
         in if bc < k
           then go (k-bc) (i+1)
@@ -449,25 +452,14 @@ countToNth !n (PS v0 bs : more) = go n 0
 countAll :: PrimeSieve -> Int
 countAll (PS _ bs) = go 0 0
   where
-    wa :: UArray Int Word
-    wa = coerceArray bs
+    wa :: U.Vector Word
+    wa = unsafeCoerce bs
 
     go !ct i
-      | i > snd (bounds wa)
+      | i >= (U.length bs + rMASK) `shiftR` wSHFT
       = ct
       | otherwise
-      = go (ct + popCount (unsafeAt wa i)) (i+1)
-
--- This is dangerous: we rely on the fact that reading a whole word
--- at the end of ByteArray is permissible, even if its length
--- is not aligned with word boundaries.
-coerceArray :: UArray Int Bool -> UArray Int Word
-coerceArray (UArray 0 u n ba)
-  | u + 1 == n, n' > 0 = UArray 0 (n' - 1) n' ba
-  where
-    n' = (n + rMASK) `shiftR` wSHFT
-coerceArray (UArray l u n _) =
-    error $ "Cannot coerce array of Bool to array of Word: " ++ show (l, u, n)
+      = go (ct + popCount (U.unsafeIndex wa i)) (i+1)
 
 -- Find the j-th highest of bc set bits in the Word w.
 top :: Word -> Int -> Int -> Int
@@ -485,25 +477,25 @@ top w j bc = go 0 tOPB tOPM bn w
 
 -- count set bits between two indices (inclusive)
 -- start and end must both be valid indices and start <= end
-countFromTo :: Int -> Int -> STUArray s Int Bool -> ST s Int
+countFromTo :: Int -> Int -> MU.MVector s Bit -> ST s Int
 countFromTo start end ba = do
-    wa <- (castSTUArray :: STUArray s Int Bool -> ST s (STUArray s Int Word)) ba
+    let wa = (unsafeCoerce :: MU.MVector s Bit -> MU.MVector s Word) ba
     let !sb = start `shiftR` wSHFT
         !si = start .&. rMASK
         !eb = end `shiftR` wSHFT
         !ei = end .&. rMASK
         count !acc i
             | i == eb = do
-                w <- unsafeRead wa i
+                w <- MU.unsafeRead wa i
                 return (acc + popCount (w `shiftL` (rMASK - ei)))
             | otherwise = do
-                w <- unsafeRead wa i
+                w <- MU.unsafeRead wa i
                 count (acc + popCount w) (i+1)
     if sb < eb
       then do
-          w <- unsafeRead wa sb
+          w <- MU.unsafeRead wa sb
           count (popCount (w `shiftR` si)) (sb+1)
       else do
-          w <- unsafeRead wa sb
+          w <- MU.unsafeRead wa sb
           let !w1 = w `shiftR` si
           return (popCount (w1 `shiftL` (rMASK - ei + si)))
