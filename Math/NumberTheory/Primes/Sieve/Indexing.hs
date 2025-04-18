@@ -12,8 +12,8 @@ module Math.NumberTheory.Primes.Sieve.Indexing
     , rho
     ) where
 
-import Data.Array.Base
 import Data.Bits
+import qualified Data.Vector.Unboxed as U
 
 {-# INLINE idxPr #-}
 idxPr :: Integral a => a -> (Int,Int)
@@ -37,7 +37,7 @@ toPrim ix = 30*fromIntegral k + fromIntegral (rho i)
 
 {-# INLINE rho #-}
 rho :: Int -> Int
-rho = unsafeAt residues
+rho = U.unsafeIndex residues
 
-residues :: UArray Int Int
-residues = listArray (0,7) [7,11,13,17,19,23,29,31]
+residues :: U.Vector Int
+residues = U.fromList [7,11,13,17,19,23,29,31]

@@ -6,8 +6,8 @@ module Math.NumberTheory.SequenceBench
 
 import Test.Tasty.Bench
 
-import Data.Array.Unboxed
 import Data.Bits
+import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.Primes (Prime(..), nextPrime, precPrime)
 import Math.NumberTheory.Primes.Testing
@@ -43,10 +43,10 @@ benchSuite = bgroup "Sequence"
 -- Utils copypasted from internal modules
 
 rho :: Int -> Int
-rho i = residues ! i
+rho i = residues U.! i
 
-residues :: UArray Int Int
-residues = listArray (0,7) [7,11,13,17,19,23,29,31]
+residues :: U.Vector Int
+residues = U.fromList [7,11,13,17,19,23,29,31]
 
 toIdx :: Integral a => a -> Int
 toIdx n = 8*fromIntegral q+r2

@@ -28,8 +28,6 @@ import Math.NumberTheory.Roots
 import Math.NumberTheory.Utils.FromIntegral
 
 import Control.Monad.ST
-import Data.Array.Base
-import Data.Array.ST
 import Data.Bit
 import Data.Bits
 import Data.Int
@@ -269,8 +267,8 @@ treat end n old new = do
                 !val <- MU.unsafeRead old (qi+1)
                 let !q0 = key `quot` n
                     !r0 = int64ToInt (q0 `rem` 30030)
-                    !nkey = q0 - int8ToInt64 (cpDfAr `unsafeAt` r0)
-                    nk0 = q0 + int8ToInt64 (cpGpAr `unsafeAt` (r0+1) + 1)
+                    !nkey = q0 - int8ToInt64 (cpDfAr `U.unsafeIndex` r0)
+                    nk0 = q0 + int8ToInt64 (cpGpAr `U.unsafeIndex` (r0+1) + 1)
                     !nlim = n*nk0
                 (wi1,ci1) <- copyTo end nkey old ci new wi
                 ckey <- MU.unsafeRead old ci1
@@ -332,27 +330,27 @@ cp6 :: Int64 -> Integer
 cp6 k =
   case k `quotRem` 30030 of
     (q,r) -> 5760*int64ToInteger q +
-                int16ToInteger (cpCtAr `unsafeAt` int64ToInt r)
+                int16ToInteger (cpCtAr `U.unsafeIndex` int64ToInt r)
 
 cop :: Int64 -> Int64
-cop m = m - int8ToInt64 (cpDfAr `unsafeAt` int64ToInt (m `rem` 30030))
+cop m = m - int8ToInt64 (cpDfAr `U.unsafeIndex` int64ToInt (m `rem` 30030))
 
 
 --------------------------------------------------------------------------------
 --                           Ugly helper arrays                               --
 --------------------------------------------------------------------------------
 
-cpCtAr :: UArray Int Int16
-cpCtAr = runSTUArray $ do
-    ar <- newArray (0,30029) 1
+cpCtAr :: U.Vector Int16
+cpCtAr = runST $ do
+    ar <- MU.replicate 30030 1
     let zilch s i
-            | i < 30030 = unsafeWrite ar i 0 >> zilch s (i+s)
+            | i < 30030 = MU.unsafeWrite ar i 0 >> zilch s (i+s)
             | otherwise = return ()
         accumulate ct i
             | i < 30030 = do
-                v <- unsafeRead ar i
+                v <- MU.unsafeRead ar i
                 let !ct' = ct+v
-                unsafeWrite ar i ct'
+                MU.unsafeWrite ar i ct'
                 accumulate ct' (i+1)
             | otherwise = return ar
     zilch 2 0
@@ -361,20 +359,21 @@ cpCtAr = runSTUArray $ do
     zilch 14 7
     zilch 22 11
     zilch 26 13
-    accumulate 1 2
+    vec <- accumulate 1 2
+    U.unsafeFreeze vec
 
-cpDfAr :: UArray Int Int8
-cpDfAr = runSTUArray $ do
-    ar <- newArray (0,30029) 0
+cpDfAr :: U.Vector Int8
+cpDfAr = runST $ do
+    ar <- MU.replicate 30030 0
     let note s i
-            | i < 30029 = unsafeWrite ar i 1 >> note s (i+s)
+            | i < 30029 = MU.unsafeWrite ar i 1 >> note s (i+s)
             | otherwise = return ()
         accumulate d i
             | i < 30029 = do
-                v <- unsafeRead ar i
+                v <- MU.unsafeRead ar i
                 if v == 0
                     then accumulate 2 (i+2)
-                    else do unsafeWrite ar i d
+                    else do MU.unsafeWrite ar i d
                             accumulate (d+1) (i+1)
             | otherwise = return ar
     note 2 0
@@ -383,22 +382,23 @@ cpDfAr = runSTUArray $ do
     note 14 7
     note 22 11
     note 26 13
-    accumulate 2 3
+    vec <- accumulate 2 3
+    U.unsafeFreeze vec
 
-cpGpAr :: UArray Int Int8
-cpGpAr = runSTUArray $ do
-    ar <- newArray (0,30030) 0
-    unsafeWrite ar 30030 1
+cpGpAr :: U.Vector Int8
+cpGpAr = runST $ do
+    ar <- MU.replicate 30031 0
+    MU.unsafeWrite ar 30030 1
     let note s i
-            | i < 30029 = unsafeWrite ar i 1 >> note s (i+s)
+            | i < 30029 = MU.unsafeWrite ar i 1 >> note s (i+s)
             | otherwise = return ()
         accumulate d i
             | i < 1     = return ar
             | otherwise = do
-                v <- unsafeRead ar i
+                v <- MU.unsafeRead ar i
                 if v == 0
                     then accumulate 2 (i-2)
-                    else do unsafeWrite ar i d
+                    else do MU.unsafeWrite ar i d
                             accumulate (d+1) (i-1)
     note 2 0
     note 6 3
@@ -406,7 +406,8 @@ cpGpAr = runSTUArray $ do
     note 14 7
     note 22 11
     note 26 13
-    accumulate 2 30027
+    vec <- accumulate 2 30027
+    U.unsafeFreeze vec
 
 -------------------------------------------------------------------------------
 -- Prime counting

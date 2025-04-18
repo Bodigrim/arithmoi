@@ -26,7 +26,6 @@ module Math.NumberTheory.Primes.Sieve.Eratosthenes
 
 import Control.Monad (when)
 import Control.Monad.ST
-import Data.Array.Base
 import Data.Bit
 import Data.Bits
 import Data.Coerce
@@ -374,17 +373,17 @@ psieveFrom n = makeSieves plim sqlim bitOff valOff cache
 
 {-# INLINE delta #-}
 delta :: Int -> Int
-delta = unsafeAt deltas
+delta = U.unsafeIndex deltas
 
-deltas :: UArray Int Int
-deltas = listArray (0,7) [4,2,4,2,4,6,2,6]
+deltas :: U.Vector Int
+deltas = U.fromList [4,2,4,2,4,6,2,6]
 
 {-# INLINE tau #-}
 tau :: Int -> Int
-tau = unsafeAt taus
+tau = U.unsafeIndex taus
 
-taus :: UArray Int Int
-taus = listArray (0,63)
+taus :: U.Vector Int
+taus = U.fromList
         [  7,  4,  7,  4,  7, 12,  3, 12
         , 12,  6, 11,  6, 12, 18,  5, 18
         , 14,  7, 13,  7, 14, 21,  7, 21
@@ -397,28 +396,28 @@ taus = listArray (0,63)
 
 {-# INLINE byte #-}
 byte :: Int -> Int
-byte = unsafeAt startByte
+byte = U.unsafeIndex startByte
 
-startByte :: UArray Int Int
-startByte = listArray (0,7) [1,3,5,9,11,17,27,31]
+startByte :: U.Vector Int
+startByte = U.fromList [1,3,5,9,11,17,27,31]
 
 {-# INLINE idx #-}
 idx :: Int -> Int
-idx = unsafeAt startIdx
+idx = U.unsafeIndex startIdx
 
-startIdx :: UArray Int Int
-startIdx = listArray (0,7) [4,7,4,4,7,4,7,7]
+startIdx :: U.Vector Int
+startIdx = U.fromList [4,7,4,4,7,4,7,7]
 
 {-# INLINE mu #-}
 mu :: Int -> Int
-mu = unsafeAt mArr
+mu = U.unsafeIndex mArr
 
 {-# INLINE nu #-}
 nu :: Int -> Int
-nu = unsafeAt nArr
+nu = U.unsafeIndex nArr
 
-mArr :: UArray Int Int
-mArr = listArray (0,63)
+mArr :: U.Vector Int
+mArr = U.fromList
         [ 1,  2,  2,  3,  4,  5,  6,  7
         , 2,  3,  4,  6,  6,  8, 10, 11
         , 2,  4,  5,  7,  8,  9, 12, 13
@@ -429,8 +428,8 @@ mArr = listArray (0,63)
         , 7, 11, 13, 17, 19, 23, 29, 31
         ]
 
-nArr :: UArray Int Int
-nArr = listArray (0,63)
+nArr :: U.Vector Int
+nArr = U.fromList
         [ 4, 3, 7, 6, 2, 1, 5, 0
         , 3, 7, 5, 0, 6, 2, 4, 1
         , 7, 5, 4, 1, 0, 6, 3, 2
