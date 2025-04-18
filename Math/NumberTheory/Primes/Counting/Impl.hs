@@ -35,7 +35,6 @@ import Data.Bits
 import Data.Int
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Unsafe.Coerce (unsafeCoerce)
 
 -- | Maximal allowed argument of 'primeCount'. Currently 8e18.
 primeCountMaxArg :: Integer
@@ -415,87 +414,20 @@ cpGpAr = runSTUArray $ do
 -------------------------------------------------------------------------------
 -- Prime counting
 
-rMASK :: Int
-rMASK = finiteBitSize (0 :: Word) - 1
-
-wSHFT :: (Bits a, Num a) => a
-wSHFT = if finiteBitSize (0 :: Word) == 64 then 6 else 5
-
-tOPB :: Int
-tOPB = finiteBitSize (0 :: Word) `shiftR` 1
-
-tOPM :: (Bits a, Num a) => a
-tOPM = (1 `shiftL` tOPB) - 1
-
 -- find the n-th set bit in a list of PrimeSieves,
 -- aka find the (n+3)-rd prime
 countToNth :: Int -> [PrimeSieve] -> Integer
 countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
-countToNth !n (PS v0 bs : more) = go n 0
-  where
-    wa :: U.Vector Word
-    wa = unsafeCoerce bs
-
-    go !k i
-      | i >= (U.length bs + rMASK) `shiftR` wSHFT
-      = countToNth k more
-      | otherwise
-      = let w = U.unsafeIndex wa i
-            bc = popCount w
-        in if bc < k
-          then go (k-bc) (i+1)
-          else let j = bc - k
-                   px = top w j bc
-               in v0 + toPrim (px + (i `shiftL` wSHFT))
+countToNth !n (PS v0 bs : more) = case nthBitIndex (Bit True) n bs of
+  Just i -> v0 + toPrim i
+  Nothing -> countToNth (n - countBits bs) more
 
 -- count all set bits in a chunk, do it wordwise for speed.
 countAll :: PrimeSieve -> Int
-countAll (PS _ bs) = go 0 0
-  where
-    wa :: U.Vector Word
-    wa = unsafeCoerce bs
-
-    go !ct i
-      | i >= (U.length bs + rMASK) `shiftR` wSHFT
-      = ct
-      | otherwise
-      = go (ct + popCount (U.unsafeIndex wa i)) (i+1)
-
--- Find the j-th highest of bc set bits in the Word w.
-top :: Word -> Int -> Int -> Int
-top w j bc = go 0 tOPB tOPM bn w
-    where
-      !bn = bc-j
-      go !_ _ !_ !_ 0 = error "Too few bits set"
-      go bs 0 _ _ wd = if wd .&. 1 == 0 then error "Too few bits, shift 0" else bs
-      go bs a msk ix wd =
-        case popCount (wd .&. msk) of
-          lc | lc < ix  -> go (bs+a) a msk (ix-lc) (wd `unsafeShiftR` a)
-             | otherwise ->
-               let !na = a `shiftR` 1
-               in go bs na (msk `unsafeShiftR` na) ix wd
+countAll (PS _ bs) = countBits bs
 
 -- count set bits between two indices (inclusive)
 -- start and end must both be valid indices and start <= end
 countFromTo :: Int -> Int -> MU.MVector s Bit -> ST s Int
-countFromTo start end ba = do
-    let wa = (unsafeCoerce :: MU.MVector s Bit -> MU.MVector s Word) ba
-    let !sb = start `shiftR` wSHFT
-        !si = start .&. rMASK
-        !eb = end `shiftR` wSHFT
-        !ei = end .&. rMASK
-        count !acc i
-            | i == eb = do
-                w <- MU.unsafeRead wa i
-                return (acc + popCount (w `shiftL` (rMASK - ei)))
-            | otherwise = do
-                w <- MU.unsafeRead wa i
-                count (acc + popCount w) (i+1)
-    if sb < eb
-      then do
-          w <- MU.unsafeRead wa sb
-          count (popCount (w `shiftR` si)) (sb+1)
-      else do
-          w <- MU.unsafeRead wa sb
-          let !w1 = w `shiftR` si
-          return (popCount (w1 `shiftL` (rMASK - ei + si)))
+countFromTo start end =
+  fmap countBits . U.unsafeFreeze . MU.slice start (end - start + 1)

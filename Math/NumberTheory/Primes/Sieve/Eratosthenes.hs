@@ -39,7 +39,6 @@ import Math.NumberTheory.Primes.Sieve.Indexing
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Utils.FromIntegral
-import Unsafe.Coerce (unsafeCoerce)
 
 iXMASK :: Num a => a
 iXMASK   = 0xFFFFF
@@ -76,9 +75,6 @@ lastIndex = sieveBits - 1
 -- Range of a chunk.
 sieveRange :: Int
 sieveRange = 30 * sieveBytes
-
-wSHFT :: (Bits a, Num a) => a
-wSHFT = if finiteBitSize (0 :: Word) == 64 then 6 else 5
 
 -- | Compact store of primality flags.
 data PrimeSieve = PS !Integer {-# UNPACK #-} !(U.Vector Bit)
@@ -309,21 +305,10 @@ growCache offset plim old = do
               else fill j (indx+1)
     fill (num+1) start
 
--- Danger: relies on start and end being the first resp. last
--- index in a Word
--- Do not use except in growCache and psieveFrom
 {-# INLINE countFromToWd #-}
 countFromToWd :: Int -> Int -> MU.MVector s Bit -> ST s Int
-countFromToWd start end ba = do
-    let wa = (unsafeCoerce :: MU.MVector s Bit -> MU.MVector s Word) ba
-    let !sb = start `shiftR` wSHFT
-        !eb = end `shiftR` wSHFT
-        count !acc i
-          | eb < i    = return acc
-          | otherwise = do
-            w <- MU.unsafeRead wa i
-            count (acc + popCount w) (i+1)
-    count 0 sb
+countFromToWd start end =
+  fmap countBits . U.unsafeFreeze . MU.slice start (end - start + 1)
 
 -- | @'psieveFrom' n@ creates the list of 'PrimeSieve's starting roughly
 --   at @n@. Due to the organisation of the sieve, the list may contain
