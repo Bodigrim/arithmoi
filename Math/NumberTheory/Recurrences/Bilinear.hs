@@ -343,5 +343,4 @@ helperForBEEP :: Integral a => (forall b. [b] -> [b]) -> Infinite (Ratio a) -> I
 helperForBEEP g xs = Inf.map (f . g) stirling2
   where
     f = sum . zipWith4 (\sgn fact x stir -> sgn * fact * x * stir) (cycle [1, -1]) (Inf.toList factorial) (Inf.toList xs)
-{-# SPECIALIZE helperForBEEP :: (forall b. [b] -> [b]) -> Infinite (Ratio Int) -> Infinite (Ratio Int) #-}
-{-# SPECIALIZE helperForBEEP :: (forall b. [b] -> [b]) -> Infinite (Rational) -> Infinite (Rational)     #-}
+{-# INLINABLE helperForBEEP #-}

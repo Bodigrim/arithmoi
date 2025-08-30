@@ -15,6 +15,8 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE ViewPatterns               #-}
 
+{-# OPTIONS_GHC -Wno-unrecognised-warning-flags -Wno-pattern-namespace-specifier #-}
+
 module Math.NumberTheory.DirichletCharacters
   (
   -- * An absorbing semigroup

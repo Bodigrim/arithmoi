@@ -41,17 +41,17 @@ negJS = \case
   Zero     -> Zero
   One      -> MinusOne
 
-{-# SPECIALISE symbolToNum :: JacobiSymbol -> Integer,
-                              JacobiSymbol -> Int,
-                              JacobiSymbol -> Word,
-                              JacobiSymbol -> Natural
-  #-}
 -- | Convenience function to convert out of a Jacobi symbol
 symbolToNum :: Num a => JacobiSymbol -> a
 symbolToNum = \case
   Zero -> 0
   One -> 1
   MinusOne -> -1
+
+{-# SPECIALISE symbolToNum :: JacobiSymbol -> Integer #-}
+{-# SPECIALISE symbolToNum :: JacobiSymbol -> Int #-}
+{-# SPECIALISE symbolToNum :: JacobiSymbol -> Word #-}
+{-# SPECIALISE symbolToNum :: JacobiSymbol -> Natural #-}
 
 -- | <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol> of two arguments.
 -- The lower argument (\"denominator\") must be odd and positive,
@@ -64,17 +64,17 @@ symbolToNum = \case
 -- Zero
 -- >>> jacobi 1001 9907
 -- MinusOne
-{-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol,
-                         Natural -> Natural -> JacobiSymbol,
-                         Int -> Int -> JacobiSymbol,
-                         Word -> Word -> JacobiSymbol
-  #-}
 jacobi :: (Integral a, Bits a) => a -> a -> JacobiSymbol
 jacobi _ 1 = One
 jacobi a b
   | b < 0     = error "Math.NumberTheory.Moduli.jacobi: negative denominator"
   | evenI b   = error "Math.NumberTheory.Moduli.jacobi: even denominator"
   | otherwise = jacobi' a b   -- b odd, > 1
+
+{-# SPECIALISE jacobi :: Integer -> Integer -> JacobiSymbol #-}
+{-# SPECIALISE jacobi :: Natural -> Natural -> JacobiSymbol #-}
+{-# SPECIALISE jacobi :: Int -> Int -> JacobiSymbol #-}
+{-# SPECIALISE jacobi :: Word -> Word -> JacobiSymbol #-}
 
 jacobi' :: (Integral a, Bits a) => a -> a -> JacobiSymbol
 jacobi' 0 _ = Zero

@@ -180,11 +180,10 @@ invertSomeMod = \case
   InfMod  r -> Just (InfMod (recip r))
 {-# INLINABLE [1] invertSomeMod #-}
 
-{-# SPECIALISE [1] powSomeMod ::
-  SomeMod -> Integer -> SomeMod,
-  SomeMod -> Natural -> SomeMod,
-  SomeMod -> Int     -> SomeMod,
-  SomeMod -> Word    -> SomeMod #-}
+{-# SPECIALISE [1] powSomeMod :: SomeMod -> Integer -> SomeMod #-}
+{-# SPECIALISE [1] powSomeMod :: SomeMod -> Natural -> SomeMod #-}
+{-# SPECIALISE [1] powSomeMod :: SomeMod -> Int     -> SomeMod #-}
+{-# SPECIALISE [1] powSomeMod :: SomeMod -> Word    -> SomeMod #-}
 
 -- | Drop-in replacement for 'Prelude.^', with much better performance.
 -- When -O is enabled, there is a rewrite rule, which specialises 'Prelude.^' to 'powSomeMod'.
