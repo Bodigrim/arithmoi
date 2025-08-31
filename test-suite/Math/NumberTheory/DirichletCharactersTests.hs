@@ -141,9 +141,8 @@ inducedCheck chi (Positive k) =
 -- | Primitive checker is correct (in both directions)
 primitiveCheck :: forall n. KnownNat n => DirichletCharacter n -> Bool
 primitiveCheck chi = isJust (isPrimitive chi) == isPrimitive'
-  where isPrimitive' = all testModulus possibleModuli
+  where isPrimitive' = all (\m -> m == n || testModulus m) (divisorsList n)
         n = fromIntegral (natVal @n Proxy) :: Int
-        possibleModuli = init (divisorsList n)
         table = evalAll chi
         testModulus d = not $ null [a | a <- [1..n-1], gcd a n == 1, a `mod` d == 1 `mod` d, table V.! a /= mempty]
 

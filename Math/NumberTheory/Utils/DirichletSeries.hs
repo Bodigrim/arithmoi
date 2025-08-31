@@ -22,14 +22,22 @@ module Math.NumberTheory.Utils.DirichletSeries
   , timesAndCrop
   ) where
 
-import Prelude hiding (filter, last, rem, quot, snd, lookup)
-import Data.Coerce
-import Data.Euclidean
+import Prelude (Integer, Num, (*))
+import Data.Bool (Bool)
+import Data.Coerce (coerce)
+import Data.Euclidean (Euclidean, quot, divide)
+import Data.Function (($), (.))
+import Data.Int (Int)
+import Data.List (takeWhile)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
+import Data.Maybe (isJust)
+import Data.Ord (Ord, (<=))
 import Data.Semiring (Semiring(..))
-import Numeric.Natural
+import Data.Tuple (fst)
+import Data.Word (Word)
+import Numeric.Natural (Natural)
+import Text.Show (Show)
 
 -- Sparse Dirichlet series are represented by an ascending list of pairs.
 -- For instance, [(a, b), (c, d)] stands for 1 + b/a^s + d/c^s.
