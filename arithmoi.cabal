@@ -115,7 +115,6 @@ test-suite arithmoi-tests
     mod,
     QuickCheck >=2.10 && <2.17,
     quickcheck-classes >=0.6.3 && <0.7,
-    random,
     semirings >=0.2,
     smallcheck >=1.2 && <1.3,
     tasty >=0.10 && <1.6,
@@ -123,7 +122,6 @@ test-suite arithmoi-tests
     tasty-quickcheck >=0.9 && <0.12,
     tasty-rerun >=1.1.17 && <1.2,
     tasty-smallcheck >=0.8 && <0.9,
-    transformers >=0.5,
     vector
   other-modules:
     Math.NumberTheory.ArithmeticFunctionsTests
@@ -178,7 +176,6 @@ benchmark arithmoi-bench
     arithmoi,
     constraints,
     containers,
-    deepseq,
     infinite-list,
     integer-logarithms,
     mod,
