@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.2.0
+
+### Changed
+
+* Migrate implementation of prime sieves from `Array Bool` to `Vector Bit`.
+
 ## 0.13.1.0
 
 ### Fixed
