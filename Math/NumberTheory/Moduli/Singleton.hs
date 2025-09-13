@@ -19,6 +19,7 @@
 {-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE ViewPatterns        #-}
+{-# OPTIONS_GHC -Wno-unrecognised-warning-flags -Wno-pattern-namespace-specifier #-}
 
 module Math.NumberTheory.Moduli.Singleton
   ( -- * SFactors singleton

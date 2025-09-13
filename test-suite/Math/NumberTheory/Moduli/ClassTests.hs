@@ -35,7 +35,7 @@ invertModProperty :: AnySign Integer -> Positive Integer -> Bool
 invertModProperty (AnySign k) (Positive m) = case invertMod k m of
   Nothing            -> k `rem` m == 0 || gcd k m > 1
   Just InfMod{}      -> False
-  Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1
+  Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1 `mod` m
 
 -- | Check that 'powerMod' is multiplicative by first argument.
 powerModProperty2 :: (Integral a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool

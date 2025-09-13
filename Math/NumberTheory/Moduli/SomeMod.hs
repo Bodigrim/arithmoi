@@ -20,7 +20,7 @@ module Math.NumberTheory.Moduli.SomeMod
   ) where
 
 import Data.Euclidean (GcdDomain(..), Euclidean(..), Field)
-import Data.Mod
+import Data.Mod (Mod, unMod, invertMod, (^%))
 import Data.Proxy
 import Data.Semiring (Semiring(..), Ring(..))
 import Data.Type.Equality

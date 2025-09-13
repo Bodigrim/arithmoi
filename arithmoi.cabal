@@ -38,7 +38,7 @@ library
     infinite-list <0.2,
     integer-logarithms >=1.0 && <1.1,
     integer-roots >=1.0 && <1.1,
-    mod <0.3,
+    mod >=0.2.1 && <0.3,
     random >=1.0 && <1.4,
     transformers >=0.4 && <0.7,
     semirings >=0.5.2 && <0.8,
