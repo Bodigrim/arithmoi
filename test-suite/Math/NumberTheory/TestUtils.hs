@@ -8,6 +8,7 @@
 --
 
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -68,9 +69,11 @@ import qualified Math.NumberTheory.SmoothNumbers as SN
 import Math.NumberTheory.TestUtils.MyCompose
 import Math.NumberTheory.TestUtils.Wrappers
 
+#if !MIN_VERSION_QuickCheck(2,17,0)
 instance Arbitrary Natural where
   arbitrary = fromInteger <$> (arbitrary `suchThat` (>= 0))
   shrink = map fromInteger . filter (>= 0) . shrink . toInteger
+#endif
 
 instance Arbitrary E.EisensteinInteger where
   arbitrary = (E.:+) <$> arbitrary <*> arbitrary
