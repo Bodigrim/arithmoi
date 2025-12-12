@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.3.0
+
+- changed primeCount implementation to something a little faster and better documented.
+- added a documentation file: "HowPrimeCountingWorks.md".
+- upped the version of "integer-roots" to 1.0.4.0 so `Word64` is a specialization for square root.
+- made the optimization default to level 2.
+- tweaked some benchmark settings to make them complete faster.
+
 ## 0.13.2.0
 
 ### Changed

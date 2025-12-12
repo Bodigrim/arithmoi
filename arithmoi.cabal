@@ -1,5 +1,5 @@
 name:          arithmoi
-version:       0.13.2.0
+version:       0.13.3.0
 cabal-version: 2.0
 build-type:    Simple
 license:       MIT
@@ -38,7 +38,7 @@ library
     ghc-bignum <1.5,
     infinite-list <0.2,
     integer-logarithms >=1.0 && <1.1,
-    integer-roots >=1.0 && <1.1,
+    integer-roots >= 1.0.4.0 && <1.1,
     mod >=0.2.1 && <0.3,
     random >=1.0 && <1.4,
     transformers >=0.4 && <0.7,

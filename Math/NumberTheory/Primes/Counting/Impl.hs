@@ -10,6 +10,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-# OPTIONS_GHC -O2 #-}
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
@@ -66,7 +67,7 @@ primeCountMaxArg = 8000000000000000000
 primeCount :: Integer -> Integer
 primeCount limit
   | limit > primeCountMaxArg = error $ "primeCount: can't handle bound " ++ show limit
-  | limit < 3 = if limit < 2 then 0 else 1
+  | limit < 9 = if limit < 2 then 0 else (limit + 1) `div` 2
   | otherwise =
   let
     
