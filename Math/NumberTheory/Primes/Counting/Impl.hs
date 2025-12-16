@@ -4,12 +4,13 @@
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
 --
--- Number of primes not exceeding @n@, @&#960;(n)@, and @n@-th prime.
+-- Number of primes not exceeding @limit@, @&#960;(limit)@, and @n@-th prime.
 --
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-# OPTIONS_GHC -O2 #-}
 {-# OPTIONS_GHC -fspec-constr-count=24 #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
@@ -20,53 +21,213 @@ module Math.NumberTheory.Primes.Counting.Impl
     ) where
 
 import Math.NumberTheory.Primes.Sieve.Eratosthenes
-    (PrimeSieve(..), primeList, primeSieve, psieveFrom, sieveTo, sieveBits, sieveRange)
-import Math.NumberTheory.Primes.Sieve.Indexing (toPrim, idxPr)
-import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox, approxPrimeCount)
+                             (PrimeSieve(..), primeSieve, psieveFrom)
+import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
+import Math.NumberTheory.Primes.Counting.Approximate (nthPrimeApprox)
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Roots
+import Math.NumberTheory.Roots (integerSquareRoot)
 import Math.NumberTheory.Utils.FromIntegral
 
-import Control.Monad.ST
-import Data.Bit
-import Data.Bits
-import Data.Int
+import Data.Word (Word64, Word32)
+import Data.Bits (Bits(shiftR, (.&.), (.|.)))
+import Control.Monad (forM_, when)
+import Control.Monad.ST (ST, runST)
+import Data.Array.Base (STUArray, MArray(unsafeNewArray_),
+                        unsafeAt, unsafeFreezeSTUArray, unsafeRead, unsafeWrite)
+import Data.Bit (Bit(..), unBit, nthBitIndex, countBits)
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Unboxed.Mutable as MU
 
 -- | Maximal allowed argument of 'primeCount'. Currently 8e18.
 primeCountMaxArg :: Integer
 primeCountMaxArg = 8000000000000000000
 
--- | @'primeCount' n == &#960;(n)@ is the number of (positive) primes not exceeding @n@.
+-- | @'primeCount' limit == &#960;(limit)@ is the number of primes not exceeding @limit@.
 --
---   For efficiency, the calculations are done on 64-bit signed integers, therefore @n@ must
---   not exceed 'primeCountMaxArg'.
+--   For efficiency, the calculations are done on 64-bit unsigned integers, therefore @limit@
+--   must not exceed 'primeCountMaxArg'.
 --
---   Requires @/O/(n^0.5)@ space, the time complexity is roughly @/O/(n^0.7)@.
---   For small bounds, @'primeCount' n@ simply counts the primes not exceeding @n@,
---   for bounds from @30000@ on, Meissel's algorithm is used in the improved form due to
---   D.H. Lehmer, cf.
---   <http://en.wikipedia.org/wiki/Prime_counting_function#Algorithms_for_evaluating_.CF.80.28x.29>.
+--   Requires @/O/(limit^0.5)@ space, the time complexity is roughly @/O/(limit^0.7)@.
+--   @'primeCount' limit@ uses Legendre's algorithm in an improved form using "partial sieving"
+--   and processing by "splitting" based on whether the product of the "base prime" and a
+--   product of higher co-primes is less than or equal to, or greater than the square root of
+--   @limit@ where "base primes" are lower than the square root of the square root of @limit@;
+--   above this limit all remaining values are primes so are used in unique prime pairs to
+--   calculate the additional amounts to add to the accumulated "Phi" for the answer.
+
+--   NOTE: This is not related to the later work (about 1870) by Daniel Friedrich Ernst Meissel,
+--   nor the extension to Meissel's work by Professor D. H. Lehmer in 1959 to adapt these types
+--   of algorithms to use on a mainframe computer of that time; both of whose purpose was to
+--   reduce the number of calculations for a given counting range and/or reduce the storage
+--   requirements.  Neither of these used "partial sieving" to get anywhere near the asymptotic
+--   complexity of this implementation.
+
+--   See the "HowPrimeCountingWorks.md" file in this directory for a more complete explanation
+--   of how this implementation works.
+
 primeCount :: Integer -> Integer
-primeCount n
-    | n > primeCountMaxArg = error $ "primeCount: can't handle bound " ++ show n
-    | n < 2     = 0
-    | n < 1000  = intToInteger . length . takeWhile (<= n) . map unPrime . primeList . primeSieve $ max 242 n
-    | n < 30000 = runST $ do
-        ba <- sieveTo n
-        let (s, e) = (0, MU.length ba - 1)
-        ct <- countFromTo s e ba
-        return (intToInteger $ ct+3)
-    | otherwise =
-        let !ub = cop $ fromInteger n
-            !sr = integerSquareRoot ub
-            !cr = nxtEnd $ integerCubeRoot ub + 15
-            nxtEnd k = k - (k `rem` 30) + 31
-            !phn1 = calc ub cr
-            !cs = cr+6
-            !pdf = sieveCount ub cs sr
-        in phn1 - pdf
+primeCount limit
+  | limit > primeCountMaxArg = error $ "primeCount: can't handle bound " ++ show limit
+  | limit < 9 = if limit < 2 then 0 else (limit + 1) `div` 2
+  | otherwise =
+  let
+    
+    -- initialize constants...
+    ilimit = fromIntegral limit
+    sqrtlmt = fromIntegral $ integerSquareRoot ilimit
+    sqrtsqrtlmt = integerSquareRoot sqrtlmt
+    maxndx = toIndex sqrtlmt -- last index of arrays
+
+    -- `numbps` will be the number of odd base primes up to `limit`^(1/4);
+    -- `roughssz` is the current effective length of `roughs` after reduction;
+    -- `phindxs` is the count of odd primes to limit by index not including bps,
+    --    the above is an index to the `roughs`/`phis` that repr the index;
+    -- `roughs` are the values remaining after culling base primes < its index,
+    --    the above values when divided by two is the index for `phindxs`;
+    -- `phis` is count of odd primes to a limit set by its index...
+    (numbps, roughssz, phindxs, roughs, phis) = runST $ do -- run in ST monad...
+
+      -- initialize monadic versions of `phindxs`/`roughs`/`phis`...
+      mphindxs <- unsafeNewArray_ (0, maxndx) :: ST s (STUArray s Int Word32)
+      -- initially is odd phi of the index repr 3 shr 1 is 1 -> value 1, etc...
+      forM_ [ 0 .. maxndx ] $ \ i -> unsafeWrite mphindxs i (fromIntegral i)
+      unsafeWrite mphindxs 0 1 -- for correctness, never used!
+      mrs <- unsafeNewArray_ (0, maxndx) :: ST s (STUArray s Int Word32)
+      -- odd values from 1 as in 1, 3 ... to maximum for roughs...
+      forM_ [ 0 .. maxndx ] $ \ i ->
+        unsafeWrite mrs i (fromIntegral i * 2 + 1)
+      mphis <- unsafeNewArray_ (0, maxndx) :: ST s (STUArray s Int Word64)
+      -- initialized to limit // roughs; are phis including count for one...
+      forM_ [ 0 .. maxndx ] $ \ i -> do
+        r <- unsafeRead mrs i; let d = fromIntegral r
+        unsafeWrite mphis i (fromIntegral $ phip2 $ divide ilimit d)
+
+      -- all work requiring modifying arrays and values done recursively here;
+      -- the "partial sieving" loop with one `bp` sieving pass per loop;
+      -- uses `roi` output and `rii` input roughs processing indices...
+      let loop !nbps !rsilmt = do -- `rslmt` is maximum current ndx for `roughs`
+            bpw32 <- unsafeRead mrs 1
+            let bp = fromIntegral bpw32
+            if bp > sqrtsqrtlmt then do -- means `bp` primes <= limit^(1/4)
+              fmsops <- unsafeFreezeSTUArray mphindxs
+              fmrs <- unsafeFreezeSTUArray mrs
+              fmlops <- unsafeFreezeSTUArray mphis
+              return (nbps, rsilmt + 1, fmsops, fmrs, fmlops) -- done loop!
+            else do -- for each base prime `bp`...
+                let -- mark `mrs` values that are multiples of bp if still there
+                    cullmrs cullpos =
+                      if cullpos > sqrtlmt then return () else do
+                        cnt <- unsafeRead mphindxs (cullpos `shiftR` 1)
+                        let ndx = fromIntegral cnt - nbps
+                        tstr <- unsafeRead mrs ndx
+                        when (tstr == fromIntegral cullpos)
+                          (unsafeWrite mrs ndx 0)
+                        cullmrs (cullpos + bp + bp)
+
+                    -- recursive function to process all remaining `mrs` by
+                    -- forming products of unique pairs with `bp`...
+                    split rii !roi =
+                      if rii > rsilmt then return (roi - 1) else do
+                        m <- unsafeRead mrs rii -- multiplier may not be prime!
+                        if m == 0 then split (rii + 1) roi else do -- skip marked
+                          -- only unculled values; may not be prime
+                          olv <- unsafeRead mphis rii -- large odd "pi" to adjust
+                          let mbp = fromIntegral m * fromIntegral bp
+                          adjv <- -- depends on condition...
+                            if mbp <= fromIntegral sqrtlmt then do
+                              -- ilimit `div` mbp too large...
+                              let cnti = fromIntegral mbp `shiftR` 1
+                              adji <- unsafeRead mphindxs cnti
+                              let adjndx = fromIntegral adji - nbps
+                              unsafeRead mphis adjndx
+--                              adj <- unsafeRead mphis adjndx
+--                              return $ adj - fromIntegral nbps
+                            else do
+                              -- ilimit `div` mbp in index range; use directly!
+                              let adjndx = toIndex (divide ilimit mbp)
+                              adj <- unsafeRead mphindxs adjndx -- phi form...
+                              return $ fromIntegral adj - fromIntegral nbps + 1
+                          -- write adjusted value into `mphis` at new offset...
+                          unsafeWrite mphis roi (olv - adjv)
+                          unsafeWrite mrs roi m -- move rougn values in sync
+                          split (rii + 1) (roi + 1) -- recursively loop 
+
+                    -- update `mphindxs` array for last cull pass...
+                    adjcnt cm !mxci = -- cull multiple and maximum index
+                      if cm < bp then return () else do
+                        ofstc <- unsafeRead mphindxs (cm `shiftR` 1)
+                        let c = ofstc - fromIntegral nbps
+                            e = (cm * bp) `shiftR` 1
+                            adjci ci =
+                              if ci < e then adjcnt (cm - 2) ci else do
+                                ov <- unsafeRead mphindxs ci
+                                unsafeWrite mphindxs ci (ov - c)
+                                adjci (ci - 1)
+                        adjci mxci
+                
+                -- the code that uses the above "let"'s...
+                unsafeWrite mrs 1 0 -- mark first non-one rough for deletion
+                cullmrs (bp * bp) -- mark the other rough multiples of `bp`
+                maxrsi <- split 0 0 -- adjust `roughs` and `phis` for cull
+                let topcullpnt = (sqrtlmt `div` bp - 1) .|. 1 -- odd <= sqrtlmt
+                adjcnt topcullpnt maxndx -- update `phindxs` for culling pass
+                loop (nbps + 1) maxrsi -- recurse for all base primes
+
+      loop 0 maxndx -- calling recursive "partial sieving" loop!
+
+    -- the offset of the sum of the other `phis`...
+    othroddpis = sum [ unsafeAt phis bpi | bpi <- [ 1 .. roughssz - 1 ] ]
+    -- subtracted from the first first element of `phis`...
+    phi0 = unsafeAt phis 0 - othroddpis -- + pi0crct -- to produce an intermediate phi
+    
+    -- recursively calculate the additional odd "phis" for all pairs of
+    -- unique primes/`roughs` starting above limit^(1/4) to limit^(1/2);
+    -- these are exactly the remaining values in `roughs` above the "one";
+    -- Note that all roughs above the first "one" element are now prime;
+    -- pre-comp of all additional ones for following "pairs" calculation...
+    phi0adj = fromIntegral $ (roughssz - 2) * (roughssz - 1) `div` 2
+    accum p1i !ans =
+      if p1i >= roughssz - 1 then ans else -- for all roughs skipping "one"...
+      let p1 = fromIntegral $ unsafeAt roughs p1i -- `p1` - first of prime pair
+          qp1 = ilimit `div` p1 -- pre divide for "p1" value
+          ndx = unsafeAt phindxs (toIndex (fromIntegral (qp1 `div` p1)))
+          endndx = fromIntegral ndx - numbps -- last `p1` index!
+          adj = fromIntegral $ (endndx - p1i) * (numbps + p1i - 1)
+          comp p2i !ac = -- `rii` is index of the second of the `roughs`
+            if p2i > endndx then accum (p1i + 1) ac else -- exit if reach end index!
+            let p2 = fromIntegral (unsafeAt roughs p2i) -- second rough
+                cnti = toIndex (divide qp1 p2) -- ndx for comp "pi"
+            in comp (p2i + 1) (ac + fromIntegral (unsafeAt phindxs cnti))
+      in if endndx <= p1i then ans -- terminate if `p1`^3 >= `ilimit`!
+         -- adjust for ones added and not used due to `endndx` termination...
+         else comp (p1i + 1) (ans - adj)
+
+    numsqrtprms = fromIntegral $ numbps + roughssz
+
+  -- finally call addition of the phis for all pairs of unique primes added to
+  -- the offset of the other odd "phis" already adjusted for the subtracting
+  -- of odd "phis" from odd "phis" plus the total primes to the square root of
+  -- the `limit` counting range minus one according to the formula...
+  in fromIntegral $ accum 1 (phi0 + phi0adj) + numsqrtprms - 1
+
+--------------------------------------------------------------------------------
+--                               Auxiliaries                                  --
+--------------------------------------------------------------------------------
+
+{-# INLINE divide #-}
+divide :: Word64 -> Word64 -> Int
+divide n d = fromIntegral $ n `div` d
+
+{-# INLINE phip2 #-}
+phip2 :: Int -> Int
+phip2 x = (x + 1) `shiftR` 1    
+
+{-# INLINE toIndex #-}
+toIndex :: Int -> Int
+toIndex x = (x - 1) `shiftR` 1
+
+--------------------------------------------------------------------------------
+--                                Nth Prime                                   --
+--------------------------------------------------------------------------------
 
 -- | @'nthPrime' n@ calculates the @n@-th prime. Numbering of primes is
 --   @1@-based, so @'nthPrime' 1 == 2@.
@@ -144,271 +305,6 @@ lowSieve a miss = countToNth (miss+rep) psieves
                 r1 = r0 `quot` 3
                 r2 = min 7 (if r1 > 5 then r1-1 else r1)
 
--- highSieve :: Integer -> Integer -> Integer -> Integer
--- highSieve a surp gap = error "Oh shit"
-
-sieveCount :: Int64 -> Int64 -> Int64 -> Integer
-sieveCount ub cr sr = runST (sieveCountST ub cr sr)
-
-sieveCountST :: forall s. Int64 -> Int64 -> Int64 -> ST s Integer
-sieveCountST ub cr sr = do
-    let psieves = psieveFrom (int64ToInteger cr)
-        pisr = approxPrimeCount sr
-        picr = approxPrimeCount cr
-        diff = pisr - picr
-        size = int64ToInt (diff + diff `quot` 50) + 30
-    store <- MU.unsafeNew size :: ST s (MU.MVector s Int64)
-    let feed :: Int64 -> Int -> Int -> U.Vector Bit -> [PrimeSieve] -> ST s Integer
-        feed voff !wi !ri uar sves
-          | ri == sieveBits = case sves of
-                                (PS vO ba : more) -> feed (fromInteger vO) wi 0 ba more
-                                _ -> error "prime stream ended prematurely"
-          | pval > sr   = do
-              stu <- U.unsafeThaw uar
-              eat 0 0 voff (wi-1) ri stu sves
-          | unBit (uar `U.unsafeIndex` ri) = do
-              MU.unsafeWrite store wi (ub `quot` pval)
-              feed voff (wi+1) (ri+1) uar sves
-          | otherwise = feed voff wi (ri+1) uar sves
-            where
-              pval = voff + toPrim ri
-        eat :: Integer -> Integer -> Int64 -> Int -> Int -> MU.MVector s Bit -> [PrimeSieve] -> ST s Integer
-        eat !acc !btw voff !wi !si stu sves
-            | si == sieveBits =
-                case sves of
-                  [] -> error "Premature end of prime stream"
-                  (PS vO ba : more) -> do
-                      nstu <- U.unsafeThaw ba
-                      eat acc btw (fromInteger vO) wi 0 nstu more
-            | wi < 0    = return acc
-            | otherwise = do
-                qb <- MU.unsafeRead store wi
-                let dist = qb - voff - 7
-                if dist < intToInt64 sieveRange
-                  then do
-                      let (b,j) = idxPr (dist+7)
-                          !li = (b `shiftL` 3) .|. j
-                      new <- if li < si then return 0 else countFromTo si li stu
-                      let nbtw = btw + intToInteger new + 1
-                      eat (acc+nbtw) nbtw voff (wi-1) (li+1) stu sves
-                  else do
-                      let (cpl,fds) = dist `quotRem` intToInt64 sieveRange
-                          (b,j) = idxPr (fds+7)
-                          !li = (b `shiftL` 3) .|. j
-                          ctLoop !lac 0 (PS vO ba : more) = do
-                              nstu <- U.unsafeThaw ba
-                              new <- countFromTo 0 li nstu
-                              let nbtw = btw + lac + 1 + intToInteger new
-                              eat (acc+nbtw) nbtw (integerToInt64 vO) (wi-1) (li+1) nstu more
-                          ctLoop lac s (ps : more) = do
-                              let !new = countAll ps
-                              ctLoop (lac + intToInteger new) (s-1) more
-                          ctLoop _ _ [] = error "Primes ended"
-                      new <- countFromTo si (sieveBits-1) stu
-                      ctLoop (intToInteger new) (cpl-1) sves
-    case psieves of
-      (PS vO ba : more) -> feed (fromInteger vO) 0 0 ba more
-      _ -> error "No primes sieved"
-
-calc :: Int64 -> Int64 -> Integer
-calc lim plim = runST (calcST lim plim)
-
-calcST :: forall s. Int64 -> Int64 -> ST s Integer
-calcST lim plim = do
-    !parr <- sieveTo (int64ToInteger plim)
-    let (plo, phi) = (0, MU.length parr - 1)
-    !pct <- countFromTo plo phi parr
-    !ar1 <- MU.unsafeNew end
-    MU.unsafeWrite ar1 0 lim
-    MU.unsafeWrite ar1 1 1
-    !ar2 <- MU.unsafeNew end
-    let go :: Int -> Int -> MU.MVector s Int64 -> MU.MVector s Int64 -> ST s Integer
-        go cap pix old new
-            | pix == 2  =   coll cap old
-            | otherwise = do
-                Bit isp <- MU.unsafeRead parr pix
-                if isp
-                    then do
-                        let !n = fromInteger (toPrim pix)
-                        !ncap <- treat cap n old new
-                        go ncap (pix-1) new old
-                    else go cap (pix-1) old new
-        coll :: Int -> MU.MVector s Int64 -> ST s Integer
-        coll stop ar =
-            let cgo !acc i
-                    | i < stop  = do
-                        !k <- MU.unsafeRead ar i
-                        !v <- MU.unsafeRead ar (i+1)
-                        cgo (acc + int64ToInteger v*cp6 k) (i+2)
-                    | otherwise = return (acc+intToInteger pct+2)
-            in cgo 0 0
-    go 2 start ar1 ar2
-  where
-    (bt,ri) = idxPr plim
-    !start = 8*bt + ri
-    !size = int64ToInt $ integerSquareRoot lim `quot` 4
-    !end = 2*size
-
-treat :: Int -> Int64 -> MU.MVector s Int64 -> MU.MVector s Int64 -> ST s Int
-treat end n old new = do
-    qi0 <- locate n 0 (end `quot` 2 - 1) old
-    let collect stop !acc ix
-            | ix < end  = do
-                !k <- MU.unsafeRead old ix
-                if k < stop
-                    then do
-                        v <- MU.unsafeRead old (ix+1)
-                        collect stop (acc-v) (ix+2)
-                    else return (acc,ix)
-            | otherwise = return (acc,ix)
-        goTreat !wi !ci qi
-            | qi < end  = do
-                !key <- MU.unsafeRead old qi
-                !val <- MU.unsafeRead old (qi+1)
-                let !q0 = key `quot` n
-                    !r0 = int64ToInt (q0 `rem` 30030)
-                    !nkey = q0 - int8ToInt64 (cpDfAr `U.unsafeIndex` r0)
-                    nk0 = q0 + int8ToInt64 (cpGpAr `U.unsafeIndex` (r0+1) + 1)
-                    !nlim = n*nk0
-                (wi1,ci1) <- copyTo end nkey old ci new wi
-                ckey <- MU.unsafeRead old ci1
-                (!acc, !ci2) <- if ckey == nkey
-                                  then do
-                                    !ov <- MU.unsafeRead old (ci1+1)
-                                    return (ov-val,ci1+2)
-                                  else return (-val,ci1)
-                (!tot, !nqi) <- collect nlim acc (qi+2)
-                MU.unsafeWrite new wi1 nkey
-                MU.unsafeWrite new (wi1+1) tot
-                goTreat (wi1+2) ci2 nqi
-            | otherwise = copyRem end old ci new wi
-    goTreat 0 0 qi0
-
---------------------------------------------------------------------------------
---                               Auxiliaries                                  --
---------------------------------------------------------------------------------
-
-locate :: Int64 -> Int -> Int -> MU.MVector s Int64 -> ST s Int
-locate p low high arr = do
-    let go lo hi
-          | lo < hi     = do
-            let !md = (lo+hi) `quot` 2
-            v <- MU.unsafeRead arr (2*md)
-            case compare p v of
-                LT -> go lo md
-                EQ -> return (2*md)
-                GT -> go (md+1) hi
-          | otherwise   = return (2*lo)
-    go low high
-
-{-# INLINE copyTo #-}
-copyTo :: Int -> Int64 -> MU.MVector s Int64 -> Int
-       -> MU.MVector s Int64 -> Int -> ST s (Int,Int)
-copyTo end lim old oi new ni = do
-    let go ri wi
-            | ri < end  = do
-                ok <- MU.unsafeRead old ri
-                if ok < lim
-                    then do
-                        !ov <- MU.unsafeRead old (ri+1)
-                        MU.unsafeWrite new wi ok
-                        MU.unsafeWrite new (wi+1) ov
-                        go (ri+2) (wi+2)
-                    else return (wi,ri)
-            | otherwise = return (wi,ri)
-    go oi ni
-
-{-# INLINE copyRem #-}
-copyRem :: Int -> MU.MVector s Int64 -> Int -> MU.MVector s Int64 -> Int -> ST s Int
-copyRem end old oi new ni = do
-  let len = end - oi
-  MU.copy (MU.slice ni len new) (MU.slice oi len old)
-  pure $ ni + len
-
-{-# INLINE cp6 #-}
-cp6 :: Int64 -> Integer
-cp6 k =
-  case k `quotRem` 30030 of
-    (q,r) -> 5760*int64ToInteger q +
-                int16ToInteger (cpCtAr `U.unsafeIndex` int64ToInt r)
-
-cop :: Int64 -> Int64
-cop m = m - int8ToInt64 (cpDfAr `U.unsafeIndex` int64ToInt (m `rem` 30030))
-
-
---------------------------------------------------------------------------------
---                           Ugly helper arrays                               --
---------------------------------------------------------------------------------
-
-cpCtAr :: U.Vector Int16
-cpCtAr = runST $ do
-    ar <- MU.replicate 30030 1
-    let zilch s i
-            | i < 30030 = MU.unsafeWrite ar i 0 >> zilch s (i+s)
-            | otherwise = return ()
-        accumulate ct i
-            | i < 30030 = do
-                v <- MU.unsafeRead ar i
-                let !ct' = ct+v
-                MU.unsafeWrite ar i ct'
-                accumulate ct' (i+1)
-            | otherwise = return ar
-    zilch 2 0
-    zilch 6 3
-    zilch 10 5
-    zilch 14 7
-    zilch 22 11
-    zilch 26 13
-    vec <- accumulate 1 2
-    U.unsafeFreeze vec
-
-cpDfAr :: U.Vector Int8
-cpDfAr = runST $ do
-    ar <- MU.replicate 30030 0
-    let note s i
-            | i < 30029 = MU.unsafeWrite ar i 1 >> note s (i+s)
-            | otherwise = return ()
-        accumulate d i
-            | i < 30029 = do
-                v <- MU.unsafeRead ar i
-                if v == 0
-                    then accumulate 2 (i+2)
-                    else do MU.unsafeWrite ar i d
-                            accumulate (d+1) (i+1)
-            | otherwise = return ar
-    note 2 0
-    note 6 3
-    note 10 5
-    note 14 7
-    note 22 11
-    note 26 13
-    vec <- accumulate 2 3
-    U.unsafeFreeze vec
-
-cpGpAr :: U.Vector Int8
-cpGpAr = runST $ do
-    ar <- MU.replicate 30031 0
-    MU.unsafeWrite ar 30030 1
-    let note s i
-            | i < 30029 = MU.unsafeWrite ar i 1 >> note s (i+s)
-            | otherwise = return ()
-        accumulate d i
-            | i < 1     = return ar
-            | otherwise = do
-                v <- MU.unsafeRead ar i
-                if v == 0
-                    then accumulate 2 (i-2)
-                    else do MU.unsafeWrite ar i d
-                            accumulate (d+1) (i-1)
-    note 2 0
-    note 6 3
-    note 10 5
-    note 14 7
-    note 22 11
-    note 26 13
-    vec <- accumulate 2 30027
-    U.unsafeFreeze vec
-
 -------------------------------------------------------------------------------
 -- Prime counting
 
@@ -419,13 +315,3 @@ countToNth !_ [] = error "countToNth: Prime stream ended prematurely"
 countToNth !n (PS v0 bs : more) = case nthBitIndex (Bit True) n bs of
   Just i -> v0 + toPrim i
   Nothing -> countToNth (n - countBits bs) more
-
--- count all set bits in a chunk, do it wordwise for speed.
-countAll :: PrimeSieve -> Int
-countAll (PS _ bs) = countBits bs
-
--- count set bits between two indices (inclusive)
--- start and end must both be valid indices and start <= end
-countFromTo :: Int -> Int -> MU.MVector s Bit -> ST s Int
-countFromTo start end =
-  fmap countBits . U.unsafeFreeze . MU.slice start (end - start + 1)
