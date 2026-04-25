@@ -363,7 +363,7 @@ sigmaSpecialCase5 = zipWith mkAssert ixs sigmas5
 -- TestTree
 
 -- Tests for 'Int', 'Word' are omitted because 'inverseSigmaK/inverseJordan'
--- tests would quickly oveflow in these types.
+-- tests would quickly overflow in these types.
 testIntegralPropertyNoLargeInverse
   :: forall bool. (SC.Testable IO bool, QC.Testable bool)
   => String -> (forall a. (Euclidean a, Semiring a, Integral a, Bits a, UniqueFactorisation a, Show a, Enum (Prime a)) => Power Word -> Positive a -> bool) -> TestTree

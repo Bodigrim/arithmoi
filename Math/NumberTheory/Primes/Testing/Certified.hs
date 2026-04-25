@@ -206,7 +206,7 @@ bpswMessage n = unlines
                     , "The number in question is:\n"
                     , show n
                     , "\nOther parties like wikipedia might also be interested."
-                    , "\nSorry for aborting your programm, but this is a major discovery."
+                    , "\nSorry for aborting your program, but this is a major discovery."
                     ]
 
 -- | Found a factor

@@ -19,7 +19,7 @@ import Math.NumberTheory.Roots
 import Math.NumberTheory.ArithmeticFunctions.Moebius
 import Math.NumberTheory.Utils.FromIntegral
 
--- | Compute individual values of Mertens function in O(n^(2/3)) time and space.
+-- | Compute individual values of Mertens function in \( O(n^{2/3}) \) time and space.
 --
 -- >>> map (mertens . (10 ^)) [0..9]
 -- [1,-1,1,2,-23,-48,212,1037,1928,-222]

@@ -45,7 +45,7 @@ Rough numbers: https://en.wikipedia.org/wiki/Rough_number.Applicative
 In general, the method is as follows:
 
 1. All arrays are of size the square root of the counting range limit, as follows:
-   
+
     a. A `roughs` array to process the remaining rough numbers in culling waves, initialized to all odds starting from 1 (ie. 1, 3, ...),
 
     b. A `phis` array which contains counts of remaining values after culling up to some level of base prime but is used for emulating the stack during processing initialized with the values as culled by two as in ((`limit`/roughs[`i`] + 1) `div` 2) where `i` is the zero-base index, and
@@ -77,8 +77,8 @@ In general, the method is as follows:
                     (acc + phip2(limit / npmult) - phi npmult pi) -- recursion
    ```
 
-   Phi(limit (Pi(sqrt(limit))) is the above function called with:   
-   phi 1 (lenth paseprms).
+   Phi(limit (Pi(sqrt(limit))) is the above function called with:
+   phi 1 (length paseprms).
 
    Using the recursive function is not efficient because it doesn't have the asymptotic improvements to performance due to partial sieving.
 
@@ -89,11 +89,11 @@ In general, the method is as follows:
      b. this phase processes each of the remaining `roughs` values in turn for all remaining after being marked and splits the processing depending on whether the base prime value multiplied by the remaining rough element is:
 
     - less than or equal to the square root limit, in which case it compresses the `roughs` and `pis` array by subtracting the next `pis` element from the current one and writing it into an index that doesn't included the marked/skipped elements, or
-  
-    - if greater than it subtracts a value looked up by rough value index in the `pisndxs` array and again writes the result into the compression index as per above.  
-  
+
+    - if greater than it subtracts a value looked up by rough value index in the `pisndxs` array and again writes the result into the compression index as per above.
+
     - in all cases it moves the `roughs` to synchronizes with the pi's indices to move values to the left to fill the holes left by eliminating the marked rough values.
-  
+
      c. the last phase is to adjust pisndxs values so they address the correct rough/pis values after the above compression of these arrays has taken place.
 
 3. The partial sieving loop only runs the base prime values up to the square root of the square root of the limit; after that point all of the roughs are prime (other than one) and therefore, the `limit` divided by each of the unique products of pairs of these roughs are added to the final answer from the loop with the usual procedure of looking up the values to be added from the `pisndx` array by using as an index: toIndex (limit / p1 / p2) but with the limitation that p1 can not be larger than (limit / p1 / p1) which satisfies the terminating condition that `p1` must be less than or equal to the quotient:
@@ -106,7 +106,7 @@ In general, the method is as follows:
 
 In more detail, the "bottom up" partial sieving method is as follows; this implementeds the odds-only optimization so the arrays represent only the odd numbers:
 
-1. Keep track of the number of base primes that have been processed yet and the current effective number of rough numbers; INITIALIAZE `y` as the square root of the limit and three arrays each of the size `y`, with the first small counts array keeping track of the current number of possible primes up to the number represented by the index value so initialized with each element containing the index value, the second the roughs array containing the current level zero rough numbers as per the current culling passes (starts with nothing culled, so all odd values could be prime), and finally, the third containing the current Phi's/ (Pi's in this case) for each rough number in the rough numbers array (initially limit divided by the rough value corresponding to the index).
+1. Keep track of the number of base primes that have been processed yet and the current effective number of rough numbers; INITIALIZE `y` as the square root of the limit and three arrays each of the size `y`, with the first small counts array keeping track of the current number of possible primes up to the number represented by the index value so initialized with each element containing the index value, the second the roughs array containing the current level zero rough numbers as per the current culling passes (starts with nothing culled, so all odd values could be prime), and finally, the third containing the current Phi's/ (Pi's in this case) for each rough number in the rough numbers array (initially limit divided by the rough value corresponding to the index).
 
 2. For each base prime in order from the lowest to the limit^(1/4) (same as the square root of `y`) do the following:
 

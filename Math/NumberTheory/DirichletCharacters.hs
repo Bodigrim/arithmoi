@@ -307,7 +307,7 @@ mkTemplate = go . sort . factorise
           where p' = unPrime p
                 m = p'^(k-1)*(p'-1)
 
--- the validity of the producted dirichletfactor list here requires the template to be valid
+-- the validity of the produced dirichletfactor list here requires the template to be valid
 unroll :: [Template] -> Natural -> [DirichletFactor]
 unroll t m = snd (mapAccumL func m t)
   where func :: Natural -> Template -> (Natural, DirichletFactor)

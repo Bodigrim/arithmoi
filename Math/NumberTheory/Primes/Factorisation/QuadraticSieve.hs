@@ -55,7 +55,7 @@ trace = if tuning then Debug.Trace.trace else const id
 tuning :: Bool
 tuning = False
 
--- | This data type is used to configure running ot the quadratic sieve. It
+-- | This data type is used to configure running of the quadratic sieve. It
 -- comprises four parameters.
 -- 1. @qscFactorBase@ controls the size of the factor base. More precisely the
 -- factor base consists of all primes up to the given bound such that @n@, the
@@ -77,7 +77,7 @@ data QuadraticSieveConfig = QuadraticSieveConfig
   , qscSmoothThreshold :: Int
   } deriving (Show)
 
--- | Given an integer @n@ to factor, this routine produces a configuaration
+-- | Given an integer @n@ to factor, this routine produces a configuration
 -- to run the quadratic sieve. Significantly better results may be
 -- obtained by tuning the algorithm manually.
 autoConfig :: Integer -> QuadraticSieveConfig
@@ -122,7 +122,7 @@ findFactor n ((x, y) : otherRoots)
     factor = gcd (x - y) n
 
 -- | This routine outputs an infinite list of tuples @(x, y)@ such that
--- @(x ^ 2 - y ^ 2) `mod` n = 0@. A factorisation can be infered from this data
+-- @(x ^ 2 - y ^ 2) `mod` n = 0@. A factorisation can be inferred from this data
 -- in at least a half of the cases. The algorithm employs multiple polynomials
 -- with self-initialisation, approximate log sieving and the large prime variation.
 -- The algorithm has four steps:
@@ -391,7 +391,7 @@ findSecondRoot :: Integer -> [IM.IntMap Int] -> Integer
 findSecondRoot n factorisations = case someNatVal (integerToNatural n) of
   SomeNat (Proxy :: Proxy n) ->
     naturalToInteger . M.unMod $
-      -- By contruction, the number obtained by adding the relevant factorisations
+      -- By construction, the number obtained by adding the relevant factorisations
       -- in @rootsData@ is a square number. Its square root is computed by
       -- dividing each prime power by @2@.
       IM.foldrWithKey (\key power acc -> (fromIntegral key :: M.Mod n) ^ (power `div` 2 :: Int) * acc) (1 :: M.Mod n) $

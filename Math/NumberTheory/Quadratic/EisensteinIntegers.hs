@@ -228,7 +228,7 @@ primes = coerce $ (2 :+ 1) :< mergeBy (comparing norm) l r
 --        where @a, b, c, a_i@ are nonnegative integers, @N > 1@ is an integer and
 --        @π_i@ are Eisenstein primes.
 --
--- Aplying @norm@ to both sides of the equation from Theorem 8.4:
+-- Applying @norm@ to both sides of the equation from Theorem 8.4:
 --
 -- 1. @norm μ = norm ( (-1)^a * ω^b * (1 - ω)^c * product [ π_i^a_i | i <- [1..N]] ) ==@
 -- 2. @norm μ = norm ((-1)^a) * norm (ω^b) * norm ((1 - ω)^c) * norm (product [ π_i^a_i | i <- [1..N]]) ==@

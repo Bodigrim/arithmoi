@@ -227,7 +227,7 @@ cyclicGroupFromFactors = \case
 
 -- | Similar to 'cyclicGroupFromFactors' . 'factorise',
 -- but much faster, because it
--- but performes only one primality test instead of full
+-- but performs only one primality test instead of full
 -- factorisation.
 cyclicGroupFromModulo
   :: (Integral a, UniqueFactorisation a)

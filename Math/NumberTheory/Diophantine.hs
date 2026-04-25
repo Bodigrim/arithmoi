@@ -18,7 +18,7 @@ import           Math.NumberTheory.Roots        ( integerSquareRoot )
 import           Math.NumberTheory.Utils.FromIntegral
 
 -- | See `cornacchiaPrimitive`, this is the internal algorithm implementation
--- | as described at https://en.wikipedia.org/wiki/Cornacchia%27s_algorithm 
+-- as described at https://en.wikipedia.org/wiki/Cornacchia%27s_algorithm
 cornacchiaPrimitive' :: Integer -> Integer -> [(Integer, Integer)]
 cornacchiaPrimitive' d m = concatMap
   (findSolution . Inf.head . Inf.dropWhile (\r -> r * r >= m) . gcdSeq m)
@@ -37,16 +37,21 @@ cornacchiaPrimitive' d m = concatMap
     (s2, rem1) = divMod (m - r * r) d
     s          = integerSquareRoot s2
 
--- | Finds all primitive solutions (x,y) to the diophantine equation 
--- |    x^2 + d*y^2 = m
--- | when 1 <= d < m and gcd(d,m)=1
--- | Given m is square free these are all the positive integer solutions
+-- | @cornacchiaPrimitive d m@ finds all primitive solutions \((x, y)\) (i.e. with \(\gcd(x, y) = 1\))
+-- to the Diophantine equation
+-- \[ x^2 + d \cdot y^2 = m \]
+-- Preconditions: \(1 \le d < m\) and \(\gcd(d, m) = 1\).
+--
+-- Throws error if the preconditions are not met.
+--
+-- When \(m\) is square-free these are all the positive integer solutions;
+-- use 'cornacchia' to find all solutions for arbitrary \(m\).
 cornacchiaPrimitive :: Integer -> Integer -> [(Integer, Integer)]
 cornacchiaPrimitive d m
   | not (1 <= d && d < m) = error "precondition failed: 1 <= d < m"
   | gcd d m /= 1          = error "precondition failed: d and m coprime"
   |
-  -- If d=1 then the algorithm doesn't generate symmetrical pairs 
+  -- If d=1 then the algorithm doesn't generate symmetrical pairs
     d == 1                = concatMap genPairs solutions
   | otherwise             = solutions
  where
@@ -60,10 +65,14 @@ squareFactors = foldl squareProducts [1] . factorise
   squareProducts acc f = [ a * b | a <- acc, b <- squarePowers f ]
   squarePowers (p, a) = map (unPrime p ^) [0 .. wordToInt a `div` 2]
 
--- | Finds all positive integer solutions (x,y) to the
--- | diophantine equation:
--- |    x^2 + d*y^2 = m
--- | when 1 <= d < m and gcd(d,m)=1
+-- | @cornacchia d m@ finds all positive integer solutions \((x, y)\) to the Diophantine equation
+-- \[ x^2 + d \cdot y^2 = m \]
+-- Preconditions: \(1 \le d < m\) and \(\gcd(d, m) = 1\).
+--
+-- Throws error if the preconditions are not met.
+--
+-- Unlike 'cornacchiaPrimitive', this also finds non-primitive solutions (where \(\gcd(x, y) > 1\))
+-- by solving the equation for each square divisor of \(m\) and scaling the results.
 cornacchia :: Integer -> Integer -> [(Integer, Integer)]
 cornacchia d m
   | not (1 <= d && d < m) = error "precondition failed: 1 <= d < m"
