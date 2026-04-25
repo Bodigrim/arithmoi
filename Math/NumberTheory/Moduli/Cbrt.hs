@@ -121,7 +121,7 @@ cubicReciprocity 1 _ = One
 -- Otherwise, cubic reciprocity is called.
 cubicReciprocity alpha beta = cubicSymbolHelper beta alpha
 
--- | This function takes two Eisenstein intgers @alpha@ and @beta@ and returns
+-- | This function takes two Eisenstein integers @alpha@ and @beta@ and returns
 -- three arguments @(gamma, delta, newSymbol)@. @gamma@ and @delta@ are the
 -- associated primary numbers of alpha and beta respectively. @newSymbol@
 -- is the cubic symbol measuring the discrepancy between the cubic residue

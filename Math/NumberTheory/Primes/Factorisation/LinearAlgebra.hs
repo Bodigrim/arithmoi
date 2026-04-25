@@ -121,8 +121,8 @@ linearSolve seed matrix = linearSolveHelper 1 matrix randomVectors 1
     randomVectors = getRandomDBVectors 0.5 $ mkStdGen seed
 
 -- The idea of the algorithm is to estimate the minimal polynomial of the matrix
--- and to infer a non-zero solution from there. Indeed the miniaml polynomial of
--- a singular matrix in the variable @t@ is divisble by a power of @t@. Dividing
+-- and to infer a non-zero solution from there. Indeed the minimal polynomial of
+-- a singular matrix in the variable @t@ is divisible by a power of @t@. Dividing
 -- this the highest power of @t@ and applying the polynomial to a random vector
 -- yields @almostZeroVector@. This vector is non-zero and repeatedly applying
 -- @matrix@ yields zero. This must give a non-zero solution.
