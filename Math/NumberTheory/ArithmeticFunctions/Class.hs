@@ -56,6 +56,8 @@ instance Applicative (ArithmeticFunction n) where
     = ArithmeticFunction (\_ _ -> ()) (const x)
   (ArithmeticFunction f1 g1) <*> (ArithmeticFunction f2 g2)
     = ArithmeticFunction (\p k -> (f1 p k, f2 p k)) (\(a1, a2) -> g1 a1 (g2 a2))
+  liftA2 h (ArithmeticFunction f1 g1) (ArithmeticFunction f2 g2)
+    = ArithmeticFunction (\p k -> (f1 p k, f2 p k)) (\(a1, a2) -> h (g1 a1) (g2 a2))
 
 instance Semigroup a => Semigroup (ArithmeticFunction n a) where
   (<>) = liftA2 (<>)
