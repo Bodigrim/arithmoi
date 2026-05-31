@@ -17,6 +17,8 @@ module Math.NumberTheory.Quadratic.GaussianIntegers (
     ι,
     conjugate,
     norm,
+    ids,
+    associates,
     primes,
     findPrime,
 ) where
@@ -96,7 +98,7 @@ absSignum z@(a :+ b)
 
 -- | List of all Guassian units, counterclockwise across all quadrants,
 -- starting with @1@.
-ids :: [EisensteinInteger]
+ids :: [GaussianInteger]
 ids = [1, ι, -1, -ι]
 
 -- | Produce a list of a @GaussianInteger@'s associates.
