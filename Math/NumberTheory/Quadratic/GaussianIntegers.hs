@@ -94,6 +94,15 @@ absSignum z@(a :+ b)
   -- fourth quadrant: [0, inf) x (-inf, 0)i
   | otherwise        = ((-b) :+ a, -ι)
 
+-- | List of all Guassian units, counterclockwise across all quadrants,
+-- starting with @1@.
+ids :: [EisensteinInteger]
+ids = [1, ι, -1, -ι]
+
+-- | Produce a list of a @GaussianInteger@'s associates.
+associates :: GaussianInteger -> [GaussianInteger]
+associates (a :+ b) = [a :+ b, (-b) :+ a, (-a) :+ (-b), b :+ (-a)]
+
 instance GcdDomain GaussianInteger
 
 instance Euclidean GaussianInteger where
