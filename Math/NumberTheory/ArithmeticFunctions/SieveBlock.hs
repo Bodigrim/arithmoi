@@ -150,7 +150,9 @@ sieveBlock (SieveBlockConfig empty f append) !lowIndex' len' = runST $ do
               npHigh = highIndex'      `shiftR` 1
           forM_ [npLow .. npHigh] $ \np@(W# np#) -> do
             let ix = wordToInt (np `shiftL` 1) - lowIndex :: Int
-                tz = I# (word2Int# (ctz# np#))
+                -- Calling ctz# assumes that np /= 0, otherwise you get 64
+                -- and can have an out-of-bounds read from 'fs'.
+                tz = if np == 0 then 0 else I# (word2Int# (ctz# np#))
             MU.unsafeModify as (\x -> x `shiftL` (tz + 1)) ix
             MG.unsafeModify bs (\y -> y `append` V.unsafeIndex fs tz) ix
 

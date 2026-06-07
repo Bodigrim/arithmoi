@@ -19,9 +19,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
+import Math.NumberTheory.Primes (Prime(..))
 
 pointwiseTest :: (Eq a, Show a) => ArithmeticFunction Word a -> Word -> Word -> IO ()
 pointwiseTest f lowIndex len = assertEqual "pointwise"
@@ -67,6 +69,19 @@ moebiusConfig = SieveBlockConfig
       _ -> MoebiusZ
   }
 
+doesNotSegfaultOnZero :: IO ()
+doesNotSegfaultOnZero = assertBool "should not segfault" $ xs == xs
+  where
+    xs = U.sum $ sieveBlockUnboxed sigmaConfig 0 5
+
+sigmaConfig :: SieveBlockConfig Int
+sigmaConfig = SieveBlockConfig
+  { sbcEmpty = 1
+  , sbcAppend = (*)
+  , sbcFunctionOnPrimePower =
+      \p n -> fromIntegral $ (unPrime p ^ (n+1) - 1) `quot` (unPrime p - 1)
+  }
+
 testSuite :: TestTree
 testSuite = testGroup "SieveBlock"
   [ testGroup "pointwise"
@@ -79,4 +94,5 @@ testSuite = testGroup "SieveBlock"
     , testCase "carmichael" $ pointwiseTest carmichaelA 1 1000
     ]
   , testGroup "special moebius" moebiusSpecialCases
+  , testCase "does not segfault at 0" doesNotSegfaultOnZero
   ]
