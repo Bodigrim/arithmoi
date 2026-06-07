@@ -96,12 +96,16 @@ absSignum z@(a :+ b)
   -- fourth quadrant: [0, inf) x (-inf, 0)i
   | otherwise        = ((-b) :+ a, -ι)
 
--- | List of all Guassian units, counterclockwise across all quadrants,
+-- | List of all Gaussian units, counterclockwise across all quadrants,
 -- starting with @1@.
+--
+-- @since 0.13.4.0
 ids :: [GaussianInteger]
 ids = [1, ι, -1, -ι]
 
 -- | Produce a list of a @GaussianInteger@'s associates.
+--
+-- @since 0.13.4.0
 associates :: GaussianInteger -> [GaussianInteger]
 associates (a :+ b) = [a :+ b, (-b) :+ a, (-a) :+ (-b), b :+ (-a)]
 

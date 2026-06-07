@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.4.0
+
+### Fixed
+
+* Fix `sieveBlockUnboxed` segfaulting when a block starts from 0.
+* Fix typos.
+
+### Added
+
+* Add `ids` and `associates` to `Math.NumberTheory.Quadratic.GaussianIntegers`.
+
+### Changed
+
+* Define `liftA2` for `ArithmeticFunction` explicitly.
+
 ## 0.13.3.0
 
 ### Changed
