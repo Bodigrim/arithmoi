@@ -367,10 +367,12 @@ jacobiCharacter = if odd n
           -- every factor of n should be odd
 
 -- | A Dirichlet character is real if it is real-valued.
-newtype RealCharacter n = RealChar { -- | Extract the character itself from a `RealCharacter`.
-                                     getRealChar :: DirichletCharacter n
-                                   }
-                                   deriving Eq
+newtype RealCharacter n = RealChar (DirichletCharacter n)
+  deriving Eq
+
+-- | Extract the character itself from a `RealCharacter`.
+getRealChar :: RealCharacter n -> DirichletCharacter n
+getRealChar (RealChar a) = a
 
 -- | Test if a given `DirichletCharacter` is real, and if so give a `RealCharacter`.
 isRealCharacter :: DirichletCharacter n -> Maybe (RealCharacter n)
@@ -429,10 +431,12 @@ isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter
 
 -- | A Dirichlet character is primitive if cannot be 'induced' from any character with
 -- strictly smaller modulus.
-newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
-                                                    getPrimitiveChar :: DirichletCharacter n
-                                                    }
-                                                    deriving Eq
+newtype PrimitiveCharacter n = PrimitiveCharacter (DirichletCharacter n)
+  deriving Eq
+
+-- | Extract the character itself from a `PrimitiveCharacter`.
+getPrimitiveChar :: PrimitiveCharacter n -> DirichletCharacter n
+getPrimitiveChar (PrimitiveCharacter a) = a
 
 -- | Wrapper to hide an unknown type-level natural.
 data WithNat (a :: Nat -> Type) where

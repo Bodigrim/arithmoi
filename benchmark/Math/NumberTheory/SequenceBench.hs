@@ -9,7 +9,7 @@ import Test.Tasty.Bench
 import Data.Bits
 import qualified Data.Vector.Unboxed as U
 
-import Math.NumberTheory.Primes (Prime(..), nextPrime, precPrime)
+import Math.NumberTheory.Primes (unPrime, nextPrime, precPrime)
 import Math.NumberTheory.Primes.Testing
 
 filterIsPrime :: (Integer, Integer) -> Integer

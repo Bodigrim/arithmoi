@@ -29,11 +29,12 @@ import Data.Maybe
 import Data.Semiring
 
 -- | An abstract representation of a smooth basis.
-newtype SmoothBasis a = SmoothBasis
-  { unSmoothBasis :: [a]
-  -- ^ Unwrap elements of a smooth basis.
-  }
+newtype SmoothBasis a = SmoothBasis [a]
   deriving (Show)
+
+-- | Unwrap elements of a smooth basis.
+unSmoothBasis :: SmoothBasis a -> [a]
+unSmoothBasis (SmoothBasis a) = a
 
 -- | Build a 'SmoothBasis' from a list of numbers,
 -- sanitizing it from duplicates, zeros and units.

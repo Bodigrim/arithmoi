@@ -95,11 +95,12 @@ import Utils.Containers.Internal.BitUtil (highestBitMask)
 #endif
 
 -- | A set of 'Prime' integers.
-newtype PrimeIntSet = PrimeIntSet {
-  -- | Convert to a set of integers.
-  unPrimeIntSet :: IntSet
-  }
+newtype PrimeIntSet = PrimeIntSet IntSet
   deriving (Eq, Ord, Data, Show, Semigroup, Monoid, NFData)
+
+-- | Convert to a set of integers.
+unPrimeIntSet :: PrimeIntSet -> IntSet
+unPrimeIntSet (PrimeIntSet a) = a
 
 instance GHC.Exts.IsList PrimeIntSet where
   type Item PrimeIntSet = Prime Int

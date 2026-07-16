@@ -95,7 +95,7 @@ generalInversion
     -> Word
     -> t
 generalInversion proxy fun n = case n of
-    0 ->error "Möbius inversion only defined on positive domain"
+    0 -> error "Möbius inversion only defined on positive domain"
     1 -> fun 1
     2 -> fun 2 - fun 1
     3 -> fun 3 - 2*fun 1

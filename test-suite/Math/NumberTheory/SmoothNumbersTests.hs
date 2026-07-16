@@ -26,7 +26,7 @@ import Data.List.Infinite (Infinite(..))
 import qualified Data.List.Infinite as Inf
 import Numeric.Natural
 
-import Math.NumberTheory.Primes (Prime (..))
+import Math.NumberTheory.Primes (unPrime)
 import qualified Math.NumberTheory.Quadratic.GaussianIntegers as G
 import qualified Math.NumberTheory.Quadratic.EisensteinIntegers as E
 import Math.NumberTheory.SmoothNumbers (SmoothBasis, fromList, isSmooth, smoothOver, smoothOver')

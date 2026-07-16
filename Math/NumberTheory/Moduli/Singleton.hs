@@ -71,10 +71,12 @@ newtype Magic n = Magic (KnownNat n => Dict (KnownNat n))
 -- | This singleton data type establishes a correspondence
 -- between a modulo @m@ on type level
 -- and its factorisation on term level.
-newtype SFactors a (m :: Nat) = SFactors
-  { unSFactors :: [(Prime a, Word)]
-  -- ^ Factors of @m@.
-  } deriving (Show, Generic)
+newtype SFactors a (m :: Nat) = SFactors [(Prime a, Word)]
+  deriving (Show, Generic)
+
+-- | Factors of @m@.
+unSFactors :: SFactors a m -> [(Prime a, Word)]
+unSFactors (SFactors xs) = xs
 
 instance Eq (SFactors a m) where
   _ == _ = True

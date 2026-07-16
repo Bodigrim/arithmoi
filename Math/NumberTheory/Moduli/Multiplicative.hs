@@ -36,9 +36,12 @@ import Math.NumberTheory.Primes
 
 -- | This type represents elements of the multiplicative group mod m, i.e.
 -- those elements which are coprime to m. Use @isMultElement@ to construct.
-newtype MultMod m = MultMod {
-  multElement :: Mod m -- ^ Unwrap a residue.
-  } deriving (Eq, Ord, Show)
+newtype MultMod m = MultMod (Mod m)
+  deriving (Eq, Ord, Show)
+
+-- | Unwrap a residue.
+multElement :: MultMod m -> Mod m
+multElement (MultMod a) = a
 
 instance KnownNat m => Semigroup (MultMod m) where
   MultMod a <> MultMod b = MultMod (a * b)
@@ -69,10 +72,12 @@ invertGroup (MultMod a) = case invertMod a of
 
 -- | 'PrimitiveRoot' m is a type which is only inhabited
 -- by <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive roots> of m.
-newtype PrimitiveRoot m = PrimitiveRoot
-  { unPrimitiveRoot :: MultMod m -- ^ Extract primitive root value.
-  }
+newtype PrimitiveRoot m = PrimitiveRoot (MultMod m)
   deriving (Eq, Show)
+
+-- | Extract primitive root value.
+unPrimitiveRoot :: PrimitiveRoot m -> MultMod m
+unPrimitiveRoot (PrimitiveRoot a) = a
 
 -- | Check whether a given modular residue is
 -- a <https://en.wikipedia.org/wiki/Primitive_root_modulo_n primitive root>.

@@ -12,7 +12,9 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Math.NumberTheory.Prefactored
-  ( Prefactored(prefValue, prefFactors)
+  ( Prefactored
+  , prefValue
+  , prefFactors
   , fromValue
   , fromFactors
   ) where
@@ -74,13 +76,17 @@ import Math.NumberTheory.Primes.Types
 -- Following invariant is guaranteed to hold:
 --
 -- > abs (prefValue x) = abs (product (map (uncurry (^)) (prefFactors x)))
-data Prefactored a = Prefactored
-  { prefValue   :: a
-    -- ^ Number itself.
-  , prefFactors :: Coprimes a Word
-    -- ^ List of pairwise coprime (but not necessarily prime) factors,
-    -- accompanied by their multiplicities.
-  } deriving (Eq, Show)
+data Prefactored a = Prefactored a (Coprimes a Word)
+  deriving (Eq, Show)
+
+-- | Number itself.
+prefValue :: Prefactored a -> a
+prefValue (Prefactored x _) = x
+
+-- | List of pairwise coprime (but not necessarily prime) factors,
+-- accompanied by their multiplicities.
+prefFactors :: Prefactored a -> Coprimes a Word
+prefFactors (Prefactored _ y) = y
 
 -- | Create 'Prefactored' from a given number.
 --

@@ -23,7 +23,7 @@ import qualified Data.Vector.Unboxed as U
 
 import Math.NumberTheory.ArithmeticFunctions
 import Math.NumberTheory.ArithmeticFunctions.SieveBlock
-import Math.NumberTheory.Primes (Prime(..))
+import Math.NumberTheory.Primes (unPrime)
 
 pointwiseTest :: (Eq a, Show a) => ArithmeticFunction Word a -> Word -> Word -> IO ()
 pointwiseTest f lowIndex len = assertEqual "pointwise"

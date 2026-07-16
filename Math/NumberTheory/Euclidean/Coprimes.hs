@@ -27,10 +27,12 @@ import Data.Traversable
 
 -- | A list of pairwise coprime numbers
 -- with their multiplicities.
-newtype Coprimes a b = Coprimes {
-  unCoprimes :: [(a, b)] -- ^ Unwrap.
-  }
+newtype Coprimes a b = Coprimes [(a, b)]
   deriving (Eq, Show)
+
+-- | Unwrap.
+unCoprimes :: Coprimes a b -> [(a, b)]
+unCoprimes (Coprimes xs) = xs
 
 unsafeDivide :: GcdDomain a => a -> a -> a
 unsafeDivide x y = case x `divide` y of
