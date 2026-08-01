@@ -18,7 +18,7 @@ module Math.NumberTheory.Moduli.Cbrt
 import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Utils.FromIntegral
 import qualified Data.Euclidean as A
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.Internal
 import Data.Semigroup
 
 -- | Represents the

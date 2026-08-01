@@ -43,7 +43,7 @@ import GHC.Generics                                    (Generic)
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Primes.Types
 import qualified Math.NumberTheory.Primes as U
-import Math.NumberTheory.Utils                          (mergeBy)
+import Math.NumberTheory.Utils.Internal (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
 infix 6 :+

@@ -28,7 +28,7 @@ import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Utils (recipMod)
+import Math.NumberTheory.Utils.Internal (recipMod)
 
 -------------------------------------------------------------------------------
 -- Linear equations

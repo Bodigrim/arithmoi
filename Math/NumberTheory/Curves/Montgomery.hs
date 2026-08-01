@@ -36,7 +36,7 @@ import GHC.Exts
 import GHC.Integer.Logarithms
 import GHC.TypeNats (KnownNat, SomeNat(..), Nat, natVal, someNatVal)
 
-import Math.NumberTheory.Utils (recipMod)
+import Math.NumberTheory.Utils.Internal (recipMod)
 
 -- | We use the Montgomery form of elliptic curve:
 -- b Y² = X³ + a X² + X (mod n).

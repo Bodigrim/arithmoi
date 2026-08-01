@@ -95,10 +95,10 @@ library
     Math.NumberTheory.Primes.Types
     Math.NumberTheory.Recurrences.Pentagonal
     Math.NumberTheory.RootsOfUnity
-    Math.NumberTheory.Utils
     Math.NumberTheory.Utils.DirichletSeries
     Math.NumberTheory.Utils.FromIntegral
     Math.NumberTheory.Utils.Hyperbola
+    Math.NumberTheory.Utils.Internal
     Math.NumberTheory.Zeta.Dirichlet
     Math.NumberTheory.Zeta.Hurwitz
     Math.NumberTheory.Zeta.Riemann

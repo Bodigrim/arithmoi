@@ -22,7 +22,7 @@ module Math.NumberTheory.Moduli.JacobiSymbol
 import Data.Bits
 import Numeric.Natural
 
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.Internal
 
 -- | Represents three possible values of
 -- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.

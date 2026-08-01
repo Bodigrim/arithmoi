@@ -37,7 +37,7 @@ import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, psieveFrom, primeSieve)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Utils (toWheel30, fromWheel30)
+import Math.NumberTheory.Utils.Internal (toWheel30, fromWheel30)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | A class for unique factorisation domains.

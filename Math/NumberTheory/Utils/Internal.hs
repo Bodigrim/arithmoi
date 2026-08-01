@@ -1,5 +1,5 @@
 -- |
--- Module:      Math.NumberTheory.Utils
+-- Module:      Math.NumberTheory.Utils.Internal
 -- Copyright:   (c) 2011 Daniel Fischer
 -- Licence:     MIT
 -- Maintainer:  Daniel Fischer <daniel.is.fischer@googlemail.com>
@@ -15,7 +15,7 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE GADTs          #-}
 
-module Math.NumberTheory.Utils
+module Math.NumberTheory.Utils.Internal
     ( SomeKnown(..)
     , shiftToOddCount
     , shiftToOdd

@@ -30,7 +30,7 @@ import GHC.TypeNats (KnownNat, SomeNat(..), someNatVal)
 import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Roots
-import Math.NumberTheory.Utils
+import Math.NumberTheory.Utils.Internal
 
 -- | @isPrime n@ tests whether @n@ is a prime (negative or positive).
 --   It is a combination of trial division and Baillie-PSW test.

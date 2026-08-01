@@ -60,7 +60,7 @@ import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Utils hiding (splitOff)
+import Math.NumberTheory.Utils.Internal hiding (splitOff)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is

@@ -85,8 +85,8 @@ import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 import Math.NumberTheory.RootsOfUnity
-import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
+import Math.NumberTheory.Utils.Internal
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
 -- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
