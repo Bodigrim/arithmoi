@@ -17,6 +17,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC hiding (Positive)
 
+import Data.Functor.Identity
 import Data.Proxy
 import Data.Vector.Unboxed (Vector)
 
@@ -27,8 +28,8 @@ import Math.NumberTheory.TestUtils
 proxy :: Proxy Vector
 proxy = Proxy
 
-totientSumProperty :: AnySign Word -> Bool
-totientSumProperty (AnySign n) = (totientSum proxy n :: Word) == sum (map totient [1..n])
+totientSumProperty :: Identity Word -> Bool
+totientSumProperty (Identity n) = (totientSum proxy n :: Word) == sum (map totient [1..n])
 
 totientSumSpecialCase1 :: Assertion
 totientSumSpecialCase1 = assertEqual "totientSum" 4496 (totientSum proxy 121 :: Word)

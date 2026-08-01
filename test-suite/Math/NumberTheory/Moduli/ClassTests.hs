@@ -18,6 +18,7 @@ module Math.NumberTheory.Moduli.ClassTests
 import Test.Tasty
 import qualified Test.Tasty.QuickCheck as QC
 
+import Data.Functor.Identity
 import Data.Maybe
 import Numeric.Natural
 
@@ -31,15 +32,15 @@ powerMod :: Integral a => Integer -> a -> Integer -> SomeMod
 powerMod b e m = (b `modulo` fromInteger m) ^ e
 
 -- | Check that 'invertMod' inverts numbers modulo.
-invertModProperty :: AnySign Integer -> Positive Integer -> Bool
-invertModProperty (AnySign k) (Positive m) = case invertMod k m of
+invertModProperty :: Identity Integer -> Positive Integer -> Bool
+invertModProperty (Identity k) (Positive m) = case invertMod k m of
   Nothing            -> k `rem` m == 0 || gcd k m > 1
   Just InfMod{}      -> False
   Just (SomeMod inv) -> gcd k m == 1 && k * getVal inv `mod` m == 1 `mod` m
 
 -- | Check that 'powerMod' is multiplicative by first argument.
-powerModProperty2 :: (Integral a) => NonNegative a -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
+powerModProperty2 :: (Integral a) => NonNegative a -> Identity Integer -> Identity Integer -> Positive Integer -> Bool
+powerModProperty2 (NonNegative e) (Identity b1) (Identity b2) (Positive m)
   =  e < 0 && (isNothing (invertMod b1 m) || isNothing (invertMod b2 m))
   || pm1 * pm2 == pm12
   where
@@ -48,8 +49,8 @@ powerModProperty2 (NonNegative e) (AnySign b1) (AnySign b2) (Positive m)
     pm12 = powerMod (b1 * b2) e m
 
 -- | Check that 'powerMod' is additive by second argument.
-powerModProperty3 :: (Integral a) => NonNegative a -> NonNegative a -> AnySign Integer -> Positive Integer -> Bool
-powerModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
+powerModProperty3 :: (Integral a) => NonNegative a -> NonNegative a -> Identity Integer -> Positive Integer -> Bool
+powerModProperty3 (NonNegative e1) (NonNegative e2) (Identity b) (Positive m)
   =  (e1 < 0 || e2 < 0) && isNothing (invertMod b m)
   || e2 >= 0 && e1 + e2 < e1 -- check overflow
   || e1 >= 0 && e1 + e2 < e2 -- check overflow
@@ -62,11 +63,11 @@ powerModProperty3 (NonNegative e1) (NonNegative e2) (AnySign b) (Positive m)
     pm12 = powerMod b (e1 + e2) m
 
 -- | Specialized to trigger 'powerModInteger'.
-powerModProperty2_Integer :: NonNegative Integer -> AnySign Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty2_Integer :: NonNegative Integer -> Identity Integer -> Identity Integer -> Positive Integer -> Bool
 powerModProperty2_Integer = powerModProperty2
 
 -- | Specialized to trigger 'powerModInteger'.
-powerModProperty3_Integer :: NonNegative Integer -> NonNegative Integer -> AnySign Integer -> Positive Integer -> Bool
+powerModProperty3_Integer :: NonNegative Integer -> NonNegative Integer -> Identity Integer -> Positive Integer -> Bool
 powerModProperty3_Integer = powerModProperty3
 
 someModAddProperty :: Integer -> Positive Natural -> Integer -> Positive Natural -> Bool

@@ -17,6 +17,7 @@ module Math.NumberTheory.Recurrences.PentagonalTests
   ( testSuite
   ) where
 
+import Data.Functor.Identity
 import Data.List.Infinite (Infinite(..), (...))
 import qualified Data.List.Infinite as Inf
 import Data.Proxy                    (Proxy (..))
@@ -38,8 +39,8 @@ partition' = (partition Inf.!!) . fromIntegral
 -- @div (3 * k² - k) 2@, where @k ∈ {0, 1, -1, 2, -2, 3, -3, 4, ...}@.
 -- Notice that @-1@ is the @2 * abs (-1) == 2@-nd index in the zero-based list,
 -- while @2@ is the @2 * 2 - 1 == 3@-rd, and so on.
-pentagonalNumbersProperty1 :: AnySign Int -> Bool
-pentagonalNumbersProperty1 (AnySign n)
+pentagonalNumbersProperty1 :: Identity Int -> Bool
+pentagonalNumbersProperty1 (Identity n)
     | n == 0    = Inf.head pents           == 0
     | n > 0     = pents Inf.!! (2 * fromIntegral n - 1) == pent n
     | otherwise = pents Inf.!! (2 * fromIntegral (- n)) == pent n

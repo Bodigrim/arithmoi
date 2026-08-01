@@ -10,6 +10,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Bits
+import Data.Functor.Identity
 import Data.Maybe
 import Data.Proxy
 import Numeric.Natural
@@ -20,9 +21,9 @@ import Math.NumberTheory.TestUtils
 
 nextPrimeProperty
   :: (Bits a, Integral a, UniqueFactorisation a)
-  => AnySign a
+  => Identity a
   -> Bool
-nextPrimeProperty (AnySign n) = unPrime (nextPrime n) >= n
+nextPrimeProperty (Identity n) = unPrime (nextPrime n) >= n
 
 precPrimeProperty
   :: (Bits a, Integral a, UniqueFactorisation a)

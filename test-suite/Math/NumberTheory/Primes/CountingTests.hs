@@ -16,6 +16,8 @@ module Math.NumberTheory.Primes.CountingTests
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Functor.Identity
+
 import Math.NumberTheory.Primes (unPrime)
 import Math.NumberTheory.Primes.Counting
 import Math.NumberTheory.Primes.Testing
@@ -103,8 +105,8 @@ nthPrimeSpecialCases = map a table
 
 
 -- | Check that values of 'approxPrimeCount' are non-negative.
-approxPrimeCountProperty1 :: Integral a => AnySign a -> Bool
-approxPrimeCountProperty1 (AnySign a) = approxPrimeCount a >= 0
+approxPrimeCountProperty1 :: Integral a => Identity a -> Bool
+approxPrimeCountProperty1 (Identity a) = approxPrimeCount a >= 0
 
 -- | Check that 'approxPrimeCount' is consistent with 'approxPrimeCountOverestimateLimit'.
 approxPrimeCountProperty2 :: Integral a => Positive a -> Bool
@@ -113,8 +115,8 @@ approxPrimeCountProperty2 (Positive a) = a >= approxPrimeCountOverestimateLimit
 
 
 -- | Check that values of 'nthPrimeApprox' are positive.
-nthPrimeApproxProperty1 :: AnySign Integer -> Bool
-nthPrimeApproxProperty1 (AnySign a) = nthPrimeApprox a > 0
+nthPrimeApproxProperty1 :: Identity Integer -> Bool
+nthPrimeApproxProperty1 (Identity a) = nthPrimeApprox a > 0
 
 -- | Check that 'nthPrimeApprox' is consistent with 'nthPrimeApproxUnderestimateLimit'.
 nthPrimeApproxProperty2 :: Positive Integer -> Bool

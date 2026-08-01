@@ -22,6 +22,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Bits
+import Data.Functor.Identity
 import Data.Int
 import Data.Proxy (Proxy(..))
 import Data.Word
@@ -49,8 +50,8 @@ primesProperty2 _ = assertEqual "primes matches isPrime"
   (filter (isPrime . toInteger) [1..maxBound])
 
 -- | Check that 'primeList' from 'primeSieve' matches truncated 'primes'.
-primeSieveProperty1 :: AnySign Integer -> Bool
-primeSieveProperty1 (AnySign highBound')
+primeSieveProperty1 :: Identity Integer -> Bool
+primeSieveProperty1 (Identity highBound')
   =  [nextPrime 2 .. precPrime highBound]
   == takeWhile (\p -> unPrime p <= highBound) primes
   where

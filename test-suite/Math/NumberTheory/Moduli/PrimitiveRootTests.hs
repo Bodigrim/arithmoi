@@ -20,6 +20,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Euclidean
+import Data.Functor.Identity
 import Data.List (genericTake, genericLength)
 import Data.Maybe (isJust, isNothing, mapMaybe)
 import Data.Mod
@@ -63,18 +64,18 @@ allUnique = go S.empty
 
 isPrimitiveRoot'Property1
   :: forall a. (Euclidean a, Integral a, UniqueFactorisation a)
-  => AnySign a
+  => Identity a
   -> Positive Natural
   -> Bool
-isPrimitiveRoot'Property1 (AnySign n) (Positive m) = case someNatVal m of
+isPrimitiveRoot'Property1 (Identity n) (Positive m) = case someNatVal m of
   SomeNat (_ :: Proxy m) -> case cyclicGroup :: Maybe (CyclicGroup a m) of
     Nothing -> True
     Just cg -> case isPrimitiveRoot cg (fromIntegral n) of
       Nothing -> True
       Just rt -> gcd m (unMod (multElement (unPrimitiveRoot rt))) == 1
 
-isPrimitiveRootProperty1 :: AnySign Integer -> Positive Natural -> Bool
-isPrimitiveRootProperty1 (AnySign n) (Positive m) = case someNatVal m of
+isPrimitiveRootProperty1 :: Identity Integer -> Positive Natural -> Bool
+isPrimitiveRootProperty1 (Identity n) (Positive m) = case someNatVal m of
   SomeNat (_ :: Proxy m) -> case cyclicGroup :: Maybe (CyclicGroup Integer m) of
     Nothing -> True
     Just cg -> gcd n (toInteger m) == 1
@@ -86,8 +87,8 @@ isPrimitiveRootProperty2 (Positive m) = case someNatVal m of
     Nothing -> True
     Just cg -> any (isJust . isPrimitiveRoot cg) [minBound..maxBound]
 
-isPrimitiveRootProperty3 :: AnySign Integer -> Positive Natural -> Bool
-isPrimitiveRootProperty3 (AnySign n) (Positive m) = case someNatVal m of
+isPrimitiveRootProperty3 :: Identity Integer -> Positive Natural -> Bool
+isPrimitiveRootProperty3 (Identity n) (Positive m) = case someNatVal m of
   SomeNat (_ :: Proxy m) -> case cyclicGroup :: Maybe (CyclicGroup Integer m) of
     Nothing -> True
     Just cg -> let n' = fromInteger n
@@ -110,10 +111,10 @@ testSuite = testGroup "Primitive root"
     ]
   , testGroup "isPrimitiveRoot'"
     [ testGroup "primitive root is coprime with modulo"
-      [ testSmallAndQuick "Integer" (isPrimitiveRoot'Property1 :: AnySign Integer -> Positive Natural -> Bool)
-      , testSmallAndQuick "Natural" (isPrimitiveRoot'Property1 :: AnySign Natural -> Positive Natural -> Bool)
-      , testSmallAndQuick "Int"     (isPrimitiveRoot'Property1 :: AnySign Int     -> Positive Natural -> Bool)
-      , testSmallAndQuick "Word"    (isPrimitiveRoot'Property1 :: AnySign Word    -> Positive Natural -> Bool)
+      [ testSmallAndQuick "Integer" (isPrimitiveRoot'Property1 :: Identity Integer -> Positive Natural -> Bool)
+      , testSmallAndQuick "Natural" (isPrimitiveRoot'Property1 :: Identity Natural -> Positive Natural -> Bool)
+      , testSmallAndQuick "Int"     (isPrimitiveRoot'Property1 :: Identity Int     -> Positive Natural -> Bool)
+      , testSmallAndQuick "Word"    (isPrimitiveRoot'Property1 :: Identity Word    -> Positive Natural -> Bool)
       ]
     ]
   , testGroup "isPrimitiveRoot"

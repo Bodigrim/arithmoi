@@ -34,24 +34,6 @@ import Test.SmallCheck.Series (Positive(..), NonNegative(..), NonZero(..), Seria
 import Math.NumberTheory.Primes (Prime, UniqueFactorisation(..))
 
 -------------------------------------------------------------------------------
--- AnySign
-
-newtype AnySign a = AnySign { getAnySign :: a }
-  deriving (Eq, Ord, Read, Show, Num, Enum, Bounded, Integral, Real, Functor, Foldable, Traversable, Arbitrary, Semiring, GcdDomain, Euclidean)
-
-instance (Monad m, Serial m a) => Serial m (AnySign a) where
-  series = AnySign <$> series
-
-instance Eq1 AnySign where
-  liftEq eq (AnySign a) (AnySign b) = a `eq` b
-
-instance Ord1 AnySign where
-  liftCompare cmp (AnySign a) (AnySign b) = a `cmp` b
-
-instance Show1 AnySign where
-  liftShowsPrec shw _ p (AnySign a) = shw p a
-
--------------------------------------------------------------------------------
 -- Positive from smallcheck
 
 deriving instance Semiring a => Semiring (Positive a)

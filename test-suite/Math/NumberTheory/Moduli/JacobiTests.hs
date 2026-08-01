@@ -16,19 +16,20 @@ module Math.NumberTheory.Moduli.JacobiTests
 import Test.Tasty
 
 import Data.Bits
+import Data.Functor.Identity
 
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.TestUtils
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 2
-jacobiProperty2 :: (Integral a, Bits a) => AnySign a -> (MyCompose Positive Odd) a -> Bool
-jacobiProperty2 (AnySign a) (MyCompose (Positive (Odd n)))
+jacobiProperty2 :: (Integral a, Bits a) => Identity a -> (MyCompose Positive Odd) a -> Bool
+jacobiProperty2 (Identity a) (MyCompose (Positive (Odd n)))
   =  a + n < a -- check overflow
   || jacobi a n == jacobi (a + n) n
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 3
-jacobiProperty3 :: (Integral a, Bits a) => AnySign a -> (MyCompose Positive Odd) a -> Bool
-jacobiProperty3 (AnySign a) (MyCompose (Positive (Odd n))) = case jacobi a n of
+jacobiProperty3 :: (Integral a, Bits a) => Identity a -> (MyCompose Positive Odd) a -> Bool
+jacobiProperty3 (Identity a) (MyCompose (Positive (Odd n))) = case jacobi a n of
   MinusOne -> a `gcd` n == 1
   Zero     -> a `gcd` n /= 1
   One      -> a `gcd` n == 1
@@ -37,14 +38,14 @@ doesProductOverflow :: Integral a => a -> a -> Bool
 doesProductOverflow x y = abs (toInteger (x * y)) < abs (toInteger x * toInteger y)
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 4
-jacobiProperty4 :: (Integral a, Bits a) => AnySign a -> AnySign a -> (MyCompose Positive Odd) a -> Bool
-jacobiProperty4 (AnySign a) (AnySign b) (MyCompose (Positive (Odd n))) =
+jacobiProperty4 :: (Integral a, Bits a) => Identity a -> Identity a -> (MyCompose Positive Odd) a -> Bool
+jacobiProperty4 (Identity a) (Identity b) (MyCompose (Positive (Odd n))) =
   doesProductOverflow a b ||
   jacobi (a * b) n == jacobi a n <> jacobi b n
 
 -- https://en.wikipedia.org/wiki/Jacobi_symbol#Properties, item 5
-jacobiProperty5 :: (Integral a, Bits a) => AnySign a -> (MyCompose Positive Odd) a -> (MyCompose Positive Odd) a -> Bool
-jacobiProperty5 (AnySign a) (MyCompose (Positive (Odd m))) (MyCompose (Positive (Odd n))) =
+jacobiProperty5 :: (Integral a, Bits a) => Identity a -> (MyCompose Positive Odd) a -> (MyCompose Positive Odd) a -> Bool
+jacobiProperty5 (Identity a) (MyCompose (Positive (Odd m))) (MyCompose (Positive (Odd n))) =
   doesProductOverflow m n ||
   jacobi a (m * n) == jacobi a m <> jacobi a n
 

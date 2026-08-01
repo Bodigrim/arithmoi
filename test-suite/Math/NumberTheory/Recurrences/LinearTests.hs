@@ -17,6 +17,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Control.Arrow
+import Data.Functor.Identity
 import Data.List (sort)
 import qualified Data.List.Infinite as Inf
 
@@ -25,16 +26,16 @@ import Math.NumberTheory.Recurrences.Linear
 import Math.NumberTheory.TestUtils
 
 -- | Check that 'fibonacci' matches the definition of Fibonacci sequence.
-fibonacciProperty1 :: AnySign Int -> Bool
-fibonacciProperty1 (AnySign n) = fibonacci n + fibonacci (n + 1) == fibonacci (n +2)
+fibonacciProperty1 :: Identity Int -> Bool
+fibonacciProperty1 (Identity n) = fibonacci n + fibonacci (n + 1) == fibonacci (n +2)
 
 -- | Check that 'fibonacci' for negative indices is correctly defined.
 fibonacciProperty2 :: Word -> Bool
 fibonacciProperty2 n = fibonacci (fromIntegral n) == (if even n then negate else id) (fibonacci (- fromIntegral n))
 
 -- | Check that 'fibonacciPair' is a pair of consequent 'fibonacci'.
-fibonacciPairProperty :: AnySign Int -> Bool
-fibonacciPairProperty (AnySign n) = fibonacciPair n == (fibonacci n, fibonacci (n + 1))
+fibonacciPairProperty :: Identity Int -> Bool
+fibonacciPairProperty (Identity n) = fibonacciPair n == (fibonacci n, fibonacci (n + 1))
 
 -- | Check that 'fibonacci 0' is 0.
 fibonacciSpecialCase0 :: Assertion
@@ -46,16 +47,16 @@ fibonacciSpecialCase1 = assertEqual "fibonacci" (fibonacci 1) 1
 
 
 -- | Check that 'lucas' matches the definition of Lucas sequence.
-lucasProperty1 :: AnySign Int -> Bool
-lucasProperty1 (AnySign n) = lucas n + lucas (n + 1) == lucas (n +2)
+lucasProperty1 :: Identity Int -> Bool
+lucasProperty1 (Identity n) = lucas n + lucas (n + 1) == lucas (n +2)
 
 -- | Check that 'lucas' for negative indices is correctly defined.
 lucasProperty2 :: Word -> Bool
 lucasProperty2 n = lucas (fromIntegral n) == (if odd n then negate else id) (lucas (- fromIntegral n))
 
 -- | Check that 'lucasPair' is a pair of consequent 'lucas'.
-lucasPairProperty :: AnySign Int -> Bool
-lucasPairProperty (AnySign n) = lucasPair n == (lucas n, lucas (n + 1))
+lucasPairProperty :: Identity Int -> Bool
+lucasPairProperty (Identity n) = lucasPair n == (lucas n, lucas (n + 1))
 
 -- | Check that 'lucas 0' is 2.
 lucasSpecialCase0 :: Assertion
@@ -66,8 +67,8 @@ lucasSpecialCase1 :: Assertion
 lucasSpecialCase1 = assertEqual "lucas" (lucas 1) 1
 
 -- | Check that 'generalLucas' matches its definition.
-generalLucasProperty1 :: AnySign Integer -> AnySign Integer -> Word -> Bool
-generalLucasProperty1 (AnySign p) (AnySign q) n = un1 == un1' && vn1 == vn1' && un2 == p * un1 - q * un && vn2 == p * vn1 - q * vn
+generalLucasProperty1 :: Identity Integer -> Identity Integer -> Word -> Bool
+generalLucasProperty1 (Identity p) (Identity q) n = un1 == un1' && vn1 == vn1' && un2 == p * un1 - q * un && vn2 == p * vn1 - q * vn
   where
     (un, un1, vn, vn1) = generalLucas p q (fromIntegral n)
     (un1', un2, vn1', vn2) = generalLucas p q (fromIntegral n + 1)
@@ -79,8 +80,8 @@ generalLucasProperty2 n = (un, un1) == fibonacciPair (fromIntegral n) && (vn, vn
     (un, un1, vn, vn1) = generalLucas 1 (-1) (fromIntegral n)
 
 -- | Check that 'generalLucas' p _ 0 is (0, 1, 2, p).
-generalLucasProperty3 :: AnySign Integer -> AnySign Integer -> Bool
-generalLucasProperty3 (AnySign p) (AnySign q) = generalLucas p q 0 == (0, 1, 2, p)
+generalLucasProperty3 :: Identity Integer -> Identity Integer -> Bool
+generalLucasProperty3 (Identity p) (Identity q) = generalLucas p q 0 == (0, 1, 2, p)
 
 factorialProperty1 :: Word -> Bool
 factorialProperty1 n = n > 100000 ||

@@ -25,6 +25,7 @@ import Test.Tasty.QuickCheck as QC hiding (Positive(..), NonZero(..))
 import Control.Arrow
 import Data.Bits
 import Data.Euclidean
+import Data.Functor.Identity
 import Data.Maybe
 import Data.Semigroup
 import Data.List (tails, sort)
@@ -35,8 +36,8 @@ import Math.NumberTheory.Quadratic.GaussianIntegers
 import Math.NumberTheory.TestUtils
 
 -- | Check that numbers are coprime iff their gcd equals to 1.
-coprimeProperty :: (Eq a, Num a, GcdDomain a, Euclidean a) => AnySign a -> AnySign a -> Bool
-coprimeProperty (AnySign a) (AnySign b) = coprime a b == (gcd a b == 1)
+coprimeProperty :: (Eq a, Num a, GcdDomain a, Euclidean a) => Identity a -> Identity a -> Bool
+coprimeProperty (Identity a) (Identity b) = coprime a b == (gcd a b == 1)
 
 splitIntoCoprimesProperty1
   :: (Eq a, Num a, GcdDomain a)
