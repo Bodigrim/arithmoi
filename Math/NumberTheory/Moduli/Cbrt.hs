@@ -8,6 +8,7 @@
 -- of two Eisenstein Integers.
 
 {-# LANGUAGE LambdaCase #-}
+{- HLINT ignore "Parenthesize unary negation" -}
 
 module Math.NumberTheory.Moduli.Cbrt
   ( CubicSymbol(..)

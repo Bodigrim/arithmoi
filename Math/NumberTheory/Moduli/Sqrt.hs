@@ -10,7 +10,6 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE TupleSections #-}
