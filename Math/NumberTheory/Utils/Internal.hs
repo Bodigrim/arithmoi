@@ -20,7 +20,7 @@ module Math.NumberTheory.Utils.Internal
     , shiftToOddCount
     , shiftToOdd
     , shiftToOdd#
-    , shiftToOddCount#
+    , shiftToOddCountWord#
     , shiftToOddCountBigNat
     , splitOff
     , splitOff#
@@ -68,22 +68,22 @@ shiftToOddCount n = case shiftOCInteger (toInteger n) of
 -- | Specialised version for @'Word'@.
 --   Precondition: argument strictly positive (not checked).
 shiftOCWord :: Word -> (Word, Word)
-shiftOCWord (W# w#) = case shiftToOddCount# w# of
+shiftOCWord (W# w#) = case shiftToOddCountWord# w# of
                         (# z# , u# #) -> (W# z#, W# u#)
 
 -- | Specialised version for @'Int'@.
 --   Precondition: argument nonzero (not checked).
 shiftOCInt :: Int -> (Word, Int)
-shiftOCInt (I# i#) = case shiftToOddCount# (int2Word# i#) of
-                        (# z#, u# #) -> (W# z#, I# (word2Int# u#))
+shiftOCInt (I# i#) = case shiftToOddCountInt# i# of
+                        (# z#, u# #) -> (W# z#, I# u#)
 
 -- | Specialised version for @'Integer'@.
 --   Precondition: argument nonzero (not checked).
 shiftOCInteger :: Integer -> (Word, Integer)
 shiftOCInteger n@(IS i#) =
-    case shiftToOddCount# (int2Word# i#) of
+    case shiftToOddCountInt# i# of
       (# 0##, _ #) -> (0, n)
-      (# z#, w# #) -> (W# z#, integerFromWord# w#)
+      (# z#, w# #) -> (W# z#, IS w#)
 shiftOCInteger n@(IP bn#) = case bigNatZeroCount bn# of
                                  0## -> (0, n)
                                  z#  -> (W# z#, integerFromBigNat# (bn# `bigNatShiftR#` z#))
@@ -95,7 +95,7 @@ shiftOCInteger n@(IN bn#) = case bigNatZeroCount bn# of
 --   Precondition: argument nonzero (not checked).
 shiftOCNatural :: Natural -> (Word, Natural)
 shiftOCNatural n@(NatS# i#) =
-    case shiftToOddCount# i# of
+    case shiftToOddCountWord# i# of
       (# 0##, _ #) -> (0, n)
       (# z#, w# #) -> (W# z#, NatS# w#)
 shiftOCNatural n@(NatJ# (BN# bn#)) = case bigNatZeroCount bn# of
@@ -156,9 +156,14 @@ shiftToOdd# :: Word# -> Word#
 shiftToOdd# w# = uncheckedShiftRL# w# (word2Int# (ctz# w#))
 
 -- | Like @'shiftToOdd#'@, but count the number of places to shift too.
-shiftToOddCount# :: Word# -> (# Word#, Word# #)
-shiftToOddCount# w# = case ctz# w# of
+shiftToOddCountWord# :: Word# -> (# Word#, Word# #)
+shiftToOddCountWord# w# = case ctz# w# of
                         k# -> (# k#, uncheckedShiftRL# w# (word2Int# k#) #)
+
+-- | Like @'shiftToOdd#'@, but count the number of places to shift too.
+shiftToOddCountInt# :: Int# -> (# Word#, Int# #)
+shiftToOddCountInt# w# = case ctz# (int2Word# w#) of
+                        k# -> (# k#, uncheckedIShiftRA# w# (word2Int# k#) #)
 
 splitOff :: (Eq a, GcdDomain a) => a -> a -> (Word, a)
 splitOff p n

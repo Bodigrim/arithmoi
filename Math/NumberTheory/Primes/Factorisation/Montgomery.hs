@@ -348,7 +348,7 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unBit (U.unsafeIndex bs 
 smallFactors :: Natural -> ([(Natural, Word)], Maybe Natural)
 smallFactors = \case
   NatS# 0## -> error "0 has no prime factorisation"
-  NatS# n#  -> case shiftToOddCount# n# of
+  NatS# n#  -> case shiftToOddCountWord# n# of
     (# 0##, m# #) -> goWord m# 1
     (# k#,  m# #) -> (2, W# k#) <: goWord m# 1
   NatJ# (BN# n) -> case shiftToOddCountBigNat n of
