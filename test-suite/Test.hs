@@ -51,6 +51,8 @@ import qualified Math.NumberTheory.RootsOfUnityTests as RootsOfUnity
 
 import qualified Math.NumberTheory.DiophantineTests as Diophantine
 
+import qualified Math.NumberTheory.UtilsTests as Utils
+
 main :: IO ()
 main = defaultMainWithRerun tests
 
@@ -103,4 +105,5 @@ tests = testGroup "All"
     ]
   , DirichletChar.testSuite
   , RootsOfUnity.testSuite
+  , Utils.testSuite
   ]
