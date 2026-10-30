@@ -71,12 +71,10 @@ newtype Magic n = Magic (KnownNat n => Dict (KnownNat n))
 -- | This singleton data type establishes a correspondence
 -- between a modulo @m@ on type level
 -- and its factorisation on term level.
-newtype SFactors a (m :: Nat) = SFactors [(Prime a, Word)]
-  deriving (Show, Generic)
-
--- | Factors of @m@.
-unSFactors :: SFactors a m -> [(Prime a, Word)]
-unSFactors (SFactors xs) = xs
+newtype SFactors a (m :: Nat) = SFactors
+  { unSFactors :: [(Prime a, Word)]
+  -- ^ Factors of @m@.
+  } deriving (Show, Generic)
 
 instance Eq (SFactors a m) where
   _ == _ = True
@@ -229,7 +227,7 @@ cyclicGroupFromFactors = \case
 
 -- | Similar to 'cyclicGroupFromFactors' . 'factorise',
 -- but much faster, because it
--- but performs only one primality test instead of full
+-- but performes only one primality test instead of full
 -- factorisation.
 cyclicGroupFromModulo
   :: (Integral a, UniqueFactorisation a)

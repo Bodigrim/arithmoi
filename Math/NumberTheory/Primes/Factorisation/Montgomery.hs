@@ -60,7 +60,7 @@ import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
 import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
-import Math.NumberTheory.Utils.Internal hiding (splitOff)
+import Math.NumberTheory.Utils hiding (splitOff)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | @'factorise' n@ produces the prime factorisation of @n@. @'factorise' 0@ is
@@ -348,7 +348,7 @@ list sieves = concat [[off + toPrim i | i <- [0 .. li], unBit (U.unsafeIndex bs 
 smallFactors :: Natural -> ([(Natural, Word)], Maybe Natural)
 smallFactors = \case
   NatS# 0## -> error "0 has no prime factorisation"
-  NatS# n#  -> case shiftToOddCountWord# n# of
+  NatS# n#  -> case shiftToOddCount# n# of
     (# 0##, m# #) -> goWord m# 1
     (# k#,  m# #) -> (2, W# k#) <: goWord m# 1
   NatJ# (BN# n) -> case shiftToOddCountBigNat n of

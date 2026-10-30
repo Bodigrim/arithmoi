@@ -22,7 +22,7 @@ module Math.NumberTheory.Moduli.JacobiSymbol
 import Data.Bits
 import Numeric.Natural
 
-import Math.NumberTheory.Utils.Internal
+import Math.NumberTheory.Utils
 
 -- | Represents three possible values of
 -- <https://en.wikipedia.org/wiki/Jacobi_symbol Jacobi symbol>.
@@ -81,12 +81,7 @@ jacobi' 0 _ = Zero
 jacobi' 1 _ = One
 jacobi' a b
   | a < 0     = let n = if rem4is3 b then MinusOne else One
-                    (z, o)
-                      | negate a < 0
-                      = let (z', o') = shiftToOddCount (negate (toInteger a))
-                        in (z', fromInteger o')
-                      | otherwise
-                      = shiftToOddCount (negate a)
+                    (z, o) = shiftToOddCount (negate a)
                     s = if evenI z || rem8is1or7 b then n else negJS n
                 in s <> jacobi' o b
   | a >= b    = case a `rem` b of

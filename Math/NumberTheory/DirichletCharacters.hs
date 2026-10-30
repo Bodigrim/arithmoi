@@ -85,8 +85,8 @@ import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
 import Math.NumberTheory.RootsOfUnity
+import Math.NumberTheory.Utils
 import Math.NumberTheory.Utils.FromIntegral
-import Math.NumberTheory.Utils.Internal
 
 -- | A Dirichlet character mod \(n\) is a group homomorphism from \((\mathbb{Z}/n\mathbb{Z})^*\)
 -- to \(\mathbb{C}^*\), represented abstractly by `DirichletCharacter`. In particular, they take
@@ -307,7 +307,7 @@ mkTemplate = go . sort . factorise
           where p' = unPrime p
                 m = p'^(k-1)*(p'-1)
 
--- the validity of the produced dirichletfactor list here requires the template to be valid
+-- the validity of the producted dirichletfactor list here requires the template to be valid
 unroll :: [Template] -> Natural -> [DirichletFactor]
 unroll t m = snd (mapAccumL func m t)
   where func :: Natural -> Template -> (Natural, DirichletFactor)
@@ -367,12 +367,10 @@ jacobiCharacter = if odd n
           -- every factor of n should be odd
 
 -- | A Dirichlet character is real if it is real-valued.
-newtype RealCharacter n = RealChar (DirichletCharacter n)
-  deriving Eq
-
--- | Extract the character itself from a `RealCharacter`.
-getRealChar :: RealCharacter n -> DirichletCharacter n
-getRealChar (RealChar a) = a
+newtype RealCharacter n = RealChar { -- | Extract the character itself from a `RealCharacter`.
+                                     getRealChar :: DirichletCharacter n
+                                   }
+                                   deriving Eq
 
 -- | Test if a given `DirichletCharacter` is real, and if so give a `RealCharacter`.
 isRealCharacter :: DirichletCharacter n -> Maybe (RealCharacter n)
@@ -431,12 +429,10 @@ isPrimitive t@(Generated xs) = if all primitive xs then Just (PrimitiveCharacter
 
 -- | A Dirichlet character is primitive if cannot be 'induced' from any character with
 -- strictly smaller modulus.
-newtype PrimitiveCharacter n = PrimitiveCharacter (DirichletCharacter n)
-  deriving Eq
-
--- | Extract the character itself from a `PrimitiveCharacter`.
-getPrimitiveChar :: PrimitiveCharacter n -> DirichletCharacter n
-getPrimitiveChar (PrimitiveCharacter a) = a
+newtype PrimitiveCharacter n = PrimitiveCharacter { -- | Extract the character itself from a `PrimitiveCharacter`.
+                                                    getPrimitiveChar :: DirichletCharacter n
+                                                    }
+                                                    deriving Eq
 
 -- | Wrapper to hide an unknown type-level natural.
 data WithNat (a :: Nat -> Type) where

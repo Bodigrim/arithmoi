@@ -10,6 +10,7 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE TupleSections #-}
@@ -44,7 +45,7 @@ import Math.NumberTheory.Moduli.Chinese
 import Math.NumberTheory.Moduli.JacobiSymbol
 import Math.NumberTheory.Moduli.Singleton
 import Math.NumberTheory.Primes
-import Math.NumberTheory.Utils.Internal (shiftToOddCount, splitOff)
+import Math.NumberTheory.Utils (shiftToOddCount, splitOff)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | List all modular square roots.

@@ -43,7 +43,7 @@ import GHC.Generics                                    (Generic)
 import Math.NumberTheory.Moduli.Sqrt
 import Math.NumberTheory.Primes.Types
 import qualified Math.NumberTheory.Primes as U
-import Math.NumberTheory.Utils.Internal (mergeBy)
+import Math.NumberTheory.Utils                          (mergeBy)
 import Math.NumberTheory.Utils.FromIntegral
 
 infix 6 :+
@@ -228,7 +228,7 @@ primes = coerce $ (2 :+ 1) :< mergeBy (comparing norm) l r
 --        where @a, b, c, a_i@ are nonnegative integers, @N > 1@ is an integer and
 --        @π_i@ are Eisenstein primes.
 --
--- Applying @norm@ to both sides of the equation from Theorem 8.4:
+-- Aplying @norm@ to both sides of the equation from Theorem 8.4:
 --
 -- 1. @norm μ = norm ( (-1)^a * ω^b * (1 - ω)^c * product [ π_i^a_i | i <- [1..N]] ) ==@
 -- 2. @norm μ = norm ((-1)^a) * norm (ω^b) * norm ((1 - ω)^c) * norm (product [ π_i^a_i | i <- [1..N]]) ==@

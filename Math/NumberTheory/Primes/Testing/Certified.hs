@@ -30,7 +30,7 @@ import Math.NumberTheory.Primes.Factorisation.TrialDivision (trialDivisionPrimeT
 import Math.NumberTheory.Primes.Factorisation.Montgomery (montgomeryFactorisation, smallFactors, findParms)
 import Math.NumberTheory.Primes.Testing.Probabilistic (bailliePSW, isPrime, isStrongFermatPP, lucasTest)
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve)
-import Math.NumberTheory.Utils.Internal (splitOff)
+import Math.NumberTheory.Utils (splitOff)
 
 -- | @'isCertifiedPrime' n@ tests primality of @n@, first trial division
 --   by small primes is performed, then a Baillie PSW test and finally a
@@ -206,7 +206,7 @@ bpswMessage n = unlines
                     , "The number in question is:\n"
                     , show n
                     , "\nOther parties like wikipedia might also be interested."
-                    , "\nSorry for aborting your program, but this is a major discovery."
+                    , "\nSorry for aborting your programm, but this is a major discovery."
                     ]
 
 -- | Found a factor

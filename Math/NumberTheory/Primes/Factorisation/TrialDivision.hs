@@ -19,7 +19,7 @@ module Math.NumberTheory.Primes.Factorisation.TrialDivision
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primeList, primeSieve, psieveList)
 import Math.NumberTheory.Roots
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Utils.Internal
+import Math.NumberTheory.Utils
 
 -- | Factorise an 'Integer' using a given list of numbers considered prime.
 --   If the list is not a list of primes containing all relevant primes, the

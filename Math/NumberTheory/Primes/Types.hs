@@ -15,7 +15,6 @@
 
 module Math.NumberTheory.Primes.Types
   ( Prime(..)
-  , unPrime
   , toPrimeIntegral
   ) where
 
@@ -74,12 +73,10 @@ import Math.NumberTheory.Utils.FromIntegral
 --    >>> toEnum 25 :: Prime Int
 --    Prime 97
 --
-newtype Prime a = Prime a
+newtype Prime a = Prime
+  { unPrime :: a -- ^ Unwrap prime element.
+  }
   deriving (Eq, Ord, Generic)
-
--- | Unwrap prime element.
-unPrime :: Prime a -> a
-unPrime (Prime a) = a
 
 instance NFData a => NFData (Prime a)
 

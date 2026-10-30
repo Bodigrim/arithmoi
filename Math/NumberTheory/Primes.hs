@@ -37,7 +37,7 @@ import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
 import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, psieveFrom, primeSieve)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Types
-import Math.NumberTheory.Utils.Internal (toWheel30, fromWheel30)
+import Math.NumberTheory.Utils (toWheel30, fromWheel30)
 import Math.NumberTheory.Utils.FromIntegral
 
 -- | A class for unique factorisation domains.
@@ -224,7 +224,7 @@ enumFromThenGeneric p@(Prime p') (Prime q') = case p' `compare` q' of
     where
       delta = q' - p'
   EQ -> repeat p
-  GT -> reverse $ filter (\(Prime r') -> (p' - r') `rem` delta == 0) $ enumFromToGeneric (Prime 2) p
+  GT -> filter (\(Prime r') -> (p' - r') `rem` delta == 0) $ reverse $ enumFromToGeneric (Prime 2) p
     where
       delta = p' - q'
 
@@ -234,7 +234,7 @@ enumFromThenToGeneric p@(Prime p') (Prime q') r@(Prime r') = case p' `compare` q
     where
       delta = q' - p'
   EQ -> if p' <= r' then repeat p else []
-  GT -> reverse $ filter (\(Prime t') -> (p' - t') `rem` delta == 0) $ enumFromToGeneric r p
+  GT -> filter (\(Prime t') -> (p' - t') `rem` delta == 0) $ reverse $ enumFromToGeneric r p
     where
       delta = p' - q'
 

@@ -8,7 +8,6 @@
 -- of two Eisenstein Integers.
 
 {-# LANGUAGE LambdaCase #-}
-{- HLINT ignore "Parenthesize unary negation" -}
 
 module Math.NumberTheory.Moduli.Cbrt
   ( CubicSymbol(..)
@@ -19,7 +18,7 @@ module Math.NumberTheory.Moduli.Cbrt
 import Math.NumberTheory.Quadratic.EisensteinIntegers
 import Math.NumberTheory.Utils.FromIntegral
 import qualified Data.Euclidean as A
-import Math.NumberTheory.Utils.Internal
+import Math.NumberTheory.Utils
 import Data.Semigroup
 
 -- | Represents the
@@ -122,7 +121,7 @@ cubicReciprocity 1 _ = One
 -- Otherwise, cubic reciprocity is called.
 cubicReciprocity alpha beta = cubicSymbolHelper beta alpha
 
--- | This function takes two Eisenstein integers @alpha@ and @beta@ and returns
+-- | This function takes two Eisenstein intgers @alpha@ and @beta@ and returns
 -- three arguments @(gamma, delta, newSymbol)@. @gamma@ and @delta@ are the
 -- associated primary numbers of alpha and beta respectively. @newSymbol@
 -- is the cubic symbol measuring the discrepancy between the cubic residue
