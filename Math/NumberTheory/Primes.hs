@@ -5,7 +5,7 @@
 -- Maintainer:  Andrew Lelechenko <andrew.lelechenko@gmail.com>
 --
 
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE PostfixOperators  #-}
 
@@ -28,13 +28,14 @@ import Data.Coerce
 import Data.List.Infinite (Infinite(..), (...), (....))
 import qualified Data.List.Infinite as Inf
 import Data.Maybe
+import Data.Ord (Down(..))
 import Data.Word
 import Numeric.Natural
 
 import Math.NumberTheory.Primes.Counting (nthPrime, primeCount)
 import qualified Math.NumberTheory.Primes.Factorisation.Montgomery as F (factorise)
 import qualified Math.NumberTheory.Primes.Testing.Probabilistic as T (isPrime)
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, psieveFrom, primeSieve)
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (primes, sieveRange, primeList, primeListDown, psieveFrom, psieveDownFrom, primeSieve, PrimeSieve(..))
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Types
 import Math.NumberTheory.Utils.Internal (toWheel30, fromWheel30)
@@ -149,7 +150,11 @@ chooseAlgorithm from to
   && to < from + truncate (sqrt (fromIntegral from) :: Double)
   = IsPrime
   | to > fromIntegral sieveRange
-  && to < from + truncate (0.036 * sqrt (fromIntegral from) + 40000 :: Double)
+  && to < from + truncate (0.00005 * sqrt (fromIntegral from) + 30000 :: Double)
+  -- Fitted to timings (CrossoverBench): testing the wheel candidates costs under 22 microseconds
+  -- each, the sieve a fixed cost of up to about 1.6 s at 2^64 (base primes up to sqrt from, built
+  -- on one thread, plus one chunk) that is nearly the same with one or eight cores.  The
+  -- single-core fit was a = 32000, b = 5.1e-5, the eight-core one a = 28700, b = 4.8e-5.
   = IsPrime
   | otherwise
   = Sieve
@@ -218,13 +223,47 @@ enumFromToGeneric' p@(Prime p') q@(Prime q') = takeWhile (<= q) $ dropWhile (< p
       then           primeList $ primeSieve $ toInteger q'
       else concatMap primeList $ psieveFrom $ toInteger p'
 
+-- Primes at most p, in descending order, down to 2.
+enumFromDownGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> [Prime a]
+enumFromDownGeneric p = enumFromToDownGeneric p (Prime 2)
+
+-- Primes r with q <= r <= p, in descending order (empty if p < q).
+enumFromToDownGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> [Prime a]
+enumFromToDownGeneric p@(Prime p') q@(Prime q')
+  | p' < q'
+  = []
+  | p' <= smallPrimesLimit
+  = map (Prime . fromIntegral) $ reverse $ smallPrimesFromTo (fromIntegral q') (fromIntegral p')
+  | q' <= smallPrimesLimit
+  = enumFromToDownGeneric' p (nextPrime smallPrimesLimit)
+  ++ map (Prime . fromIntegral) (reverse (smallPrimesFromTo (fromIntegral q') smallPrimesLimit))
+  | otherwise
+  = enumFromToDownGeneric' p q
+
+-- Both arguments are above smallPrimesLimit.
+enumFromToDownGeneric'
+  :: (Bits a, Integral a, UniqueFactorisation a)
+  => Prime a
+  -> Prime a
+  -> [Prime a]
+enumFromToDownGeneric' p@(Prime p') q@(Prime q') = takeWhile (>= q) $ dropWhile (> p) $
+  case chooseAlgorithm q' p' of
+    Sieve | toInteger p' <= 2 ^ (64 :: Int) - 1 ->
+      if p' < fromIntegral sieveRange
+      then primeListDown (toInteger p') $ primeSieve $ toInteger p'
+      else concatMap (primeListDown (toInteger p')) $
+             takeWhile (\(PS v _) -> v + toInteger sieveRange > toInteger q') $
+             psieveDownFrom $ toInteger p'
+    -- Short ranges, and ranges above 2^64 (beyond the sieve): test the wheel candidates.
+    _ -> mapMaybe (isPrime . fromWheel30) [toWheel30 p', toWheel30 p' - 1 .. toWheel30 q']
+
 enumFromThenGeneric :: (Bits a, Integral a, UniqueFactorisation a) => Prime a -> Prime a -> [Prime a]
 enumFromThenGeneric p@(Prime p') (Prime q') = case p' `compare` q' of
   LT -> filter (\(Prime r') -> (r' - p') `rem` delta == 0) $ enumFromGeneric p
     where
       delta = q' - p'
   EQ -> repeat p
-  GT -> reverse $ filter (\(Prime r') -> (p' - r') `rem` delta == 0) $ enumFromToGeneric (Prime 2) p
+  GT -> filter (\(Prime r') -> (p' - r') `rem` delta == 0) $ enumFromDownGeneric p
     where
       delta = p' - q'
 
@@ -234,9 +273,31 @@ enumFromThenToGeneric p@(Prime p') (Prime q') r@(Prime r') = case p' `compare` q
     where
       delta = q' - p'
   EQ -> if p' <= r' then repeat p else []
-  GT -> reverse $ filter (\(Prime t') -> (p' - t') `rem` delta == 0) $ enumFromToGeneric r p
+  GT -> filter (\(Prime t') -> (p' - t') `rem` delta == 0) $ enumFromToDownGeneric p r
     where
       delta = p' - q'
+
+-- | Primes in descending order: @'Down' p <= 'Down' q@ when @q <= p@, so
+--
+-- > [Down (precPrime 100) .. Down (nextPrime 0)] :: [Down (Prime Word)]
+--
+-- lists the primes from 97 down to 2, and @[Down p ..]@ all primes up to @p@, descending.
+-- The ranges are produced by a downwards sieve, so, unlike the default implementation for
+-- 'Down' (which calls 'primeCount' and 'nthPrime' for every element), there is no per-element
+-- cost beyond the sieving itself.  'succ' goes to the next smaller prime, 'pred' to the next
+-- larger one.  (This instance overlaps the one of "Data.Ord" for @'Enum' a, 'Bounded' a@.)
+instance {-# OVERLAPPING #-} (Bits a, Integral a, UniqueFactorisation a, Enum (Prime a))
+         => Enum (Down (Prime a)) where
+  succ (Down (Prime 2)) = error "Enum.succ{Down Prime}: tried to take `succ' of Down (Prime 2)"
+  succ (Down p)         = Down (pred p)
+  pred (Down p)         = Down (succ p)
+  -- the same convention as the instance for Down in base: complement reverses the order
+  fromEnum (Down p) = complement (fromEnum p)
+  toEnum n          = Down (toEnum (complement n))
+  enumFrom (Down p)                    = coerce (enumFromDownGeneric p)
+  enumFromTo (Down p) (Down q)         = coerce (enumFromToDownGeneric p q)
+  enumFromThen (Down p) (Down q)       = coerce (enumFromThenGeneric p q)
+  enumFromThenTo (Down p) (Down q) (Down r) = coerce (enumFromThenToGeneric p q r)
 
 instance Enum (Prime Integer) where
   toEnum = nthPrime
