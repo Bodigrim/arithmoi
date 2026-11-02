@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.13.5.0
+
+### Huge Performance Improvements and Updates
+
+* Improve the Sieve of Eratosthenes implementation so that it is about 10 to 15 times faster at iterating over a range of primes as a lazy list, which can now be iterated over in decreasing order as well as increasing.
+* Update the `primeCount` implementation from the non-threaded Legendre partial sieving "Lucy" implementation to use the threaded Gourdon algorithm using the above improvements to the sieving so that performance is something like 100 times faster when using an eight core CPU.  This is able to find the number of primes up to the maxBound of Word64 (2^64 - 1) in about a minute on a modern eight core CPU, while at the same time reducing memory use from 32 Gigabytes to less than a Gigabyte.
+* Improve the `nthPrime` implementation using the above two improvements and a better estimate of the prime count to the argument using the inverse Rhiemann integral rather than a version of the inverse Logarithmic integral (Li) for again a greatly improved performance all the way to the 425656284035217743th prime (last prime up to 2^64-1, the maxBound of Word64).
+
+### Non API Breaking New Feature
+
+* Make the `Prime a` type an instance of the `Down` type class so that one can generate lists of decreasing primes by, for example, `[Down (precPrime (10^(9 :: Int)) ) .. Down (nextPrime 0)] :: [Down (Prime Word)]`.
+
+### Changed
+
+* Due to the very large performance boost of the new sieving implementation, the cross-over point between using sieving and "isPrime" primality testing for generating lists of ascending or descending lists is tuned upward towards real practical points where the cross-over should be; this has a huge effect of the benchmarks run measuring these times, so the benchmark ranges have been adjusted upward accordingly.
+
+### Added
+
+* Added `getNumThreads` and `setNumThreads` IO actions so as to be able to specify the number of threads to use, although `primeCount` will always use all available threads if left to the one thread default; in this way one can reserve threads for other parallel tasks without this package using all processing power for the duration of the run time of the functions.
+* Added a `nthPrimeMaxArg` constant so that this limit can be queried before calling the `nthPrime` function to avoid an over range error; this works in the same way as the `primeCountMaxArg` constant works when counting primes.
+
 ## 0.13.4.0
 
 ### Fixed

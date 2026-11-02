@@ -36,7 +36,6 @@ module Math.NumberTheory.Primes.Factorisation.Montgomery
 import Prelude hiding (Foldable(..))
 import Control.Arrow
 import Control.Monad.Trans.State.Lazy
-import Data.Bit
 import Data.Bits
 import Data.Foldable
 import Data.IntMap (IntMap)
@@ -45,7 +44,6 @@ import Data.Maybe
 import Data.Mod
 import Data.Proxy
 import Data.Traversable
-import qualified Data.Vector.Unboxed as U
 import GHC.Exts
 import GHC.Num.BigNat
 import GHC.Natural
@@ -56,8 +54,8 @@ import Math.NumberTheory.Curves.Montgomery
 import Math.NumberTheory.Euclidean.Coprimes (splitIntoCoprimes, unCoprimes)
 import Math.NumberTheory.Logarithms (integerLogBase')
 import Math.NumberTheory.Roots
-import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom)
-import Math.NumberTheory.Primes.Sieve.Indexing (toPrim)
+import Math.NumberTheory.Primes.Types ( Prime(Prime) )
+import Math.NumberTheory.Primes.Sieve.Eratosthenes (PrimeSieve(..), psieveFrom, primeList)
 import Math.NumberTheory.Primes.Small
 import Math.NumberTheory.Primes.Testing.Probabilistic
 import Math.NumberTheory.Utils hiding (splitOff)
@@ -338,10 +336,9 @@ enumAndMultiplyFromThenTo p from thn to = zip [from, thn .. to] progression
 primeStore :: [PrimeSieve]
 primeStore = psieveFrom 7
 
--- generate list of primes from arrays
+-- generate list of primes (> 5, like the old bit scan) from arrays
 list :: [PrimeSieve] -> [Word]
-list sieves = concat [[off + toPrim i | i <- [0 .. li], unBit (U.unsafeIndex bs i)]
-                                | PS vO bs <- sieves, let { li = U.length bs - 1; off = fromInteger vO; }]
+list sieves = [ p | ps <- sieves, Prime p <- primeList ps, p > 5 ]
 
 -- | @'smallFactors' n@ finds all prime divisors of @n > 1@ up to 2^16 by trial division and returns the
 --   list of these together with their multiplicities, and a possible remaining factor which may be composite.
