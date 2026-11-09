@@ -8,7 +8,9 @@
 -- reasonably accurate approximations to these.
 module Math.NumberTheory.Primes.Counting
     ( -- * Exact functions
-      primeCount
+      getNumThreads
+    , setNumThreads
+    , primeCount
     , primeCountMaxArg
     , nthPrime
       -- * Approximations
@@ -18,5 +20,6 @@ module Math.NumberTheory.Primes.Counting
     , nthPrimeApproxUnderestimateLimit
     ) where
 
-import Math.NumberTheory.Primes.Counting.Impl
+import Math.NumberTheory.Primes.Counting.CountingImpl
+import Math.NumberTheory.Primes.Counting.NthPrimeImpl
 import Math.NumberTheory.Primes.Counting.Approximate
