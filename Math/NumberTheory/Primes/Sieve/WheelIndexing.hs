@@ -15,9 +15,79 @@ module Math.NumberTheory.Primes.Sieve.WheelIndexing
 
 import Data.Bits
 import Data.Word ( Word64 )
-import GHC.Exts
 import GHC.Word ( Word64(W64#) )
 import GHC.IO ( IO(..) )
+-- patches to make GHC versions 9.0.2 and 0.2,8 work;
+-- they supportd Word64# differently as to GHC.Exts and GHC.Prims...
+#if __GLASGOW_HASKELL__ >= 902
+#if __GLASGOW_HASKELL__ >= 904
+import GHC.Exts
+    ( Addr#, Int#, Int(I#), Word64#, RealWorld, State#,
+      int2Word#, word2Int#, word8ToWord#, wordToWord64#,
+      (-#), (<#), timesWord2#, isTrue#, indexWord8OffAddr#,
+      plusWord64#, subWord64#, timesWord64#, geWord64#,
+      uncheckedShiftRL#, uncheckedShiftL64#, uncheckedShiftRL64# )
+#else
+#include "MachDeps.h"
+#if WORD_SIZE_IN_BITS == 64
+import GHC.Exts
+    ( Addr#, Int#, Int(I#), Word#, RealWorld, State#
+    , int2Word#, word2Int#, uncheckedShiftRL#, uncheckedShiftL#
+    , plusWord#, minusWord#, timesWord#, geWord#
+    , (-#), (<#), timesWord2#, isTrue#, indexWord8OffAddr# )
+import qualified GHC.Prim as P
+type Word64# = Word#
+word8ToWord# :: P.Word8# -> P.Word#
+word8ToWord# = P.word8ToWord#
+wordToWord64# :: Word# -> Word#
+wordToWord64#       w = w
+plusWord64# :: Word# -> Word# -> Word#
+plusWord64#         = plusWord#
+subWord64# :: Word# -> Word# -> Word#
+subWord64#          = minusWord#
+timesWord64# :: Word# -> Word# -> Word#
+timesWord64#        = timesWord#
+geWord64# :: Word# -> Word# -> Int#
+geWord64#           =geWord#
+uncheckedShiftRL64# :: Word# -> Int# -> Word#
+uncheckedShiftRL64# = uncheckedShiftRL#
+uncheckedShiftL64# :: Word# -> Int# -> Word#
+uncheckedShiftL64#  = uncheckedShiftL#
+#else
+import GHC.Exts
+    ( Addr#, Int#, Int(I#), RealWorld, State#
+    , int2Word#, word2Int#, uncheckedShiftRL#
+    , (-#), (<#), timesWord2#, isTrue#, indexWord8OffAddr# )
+import GHC.Prim
+  ( Word64#, plusWord64#, subWord64#, timesWord64#, geWord64#
+  , word8ToWord#, wordToWord64#, uncheckedShiftL64#, uncheckedShiftRL64# )
+#endif
+#endif
+
+#else
+import GHC.Exts
+    ( Addr#, Int#, Int(I#), Word#, RealWorld, State#
+    , int2Word#, word2Int#, (-#), (<#), isTrue#
+    , plusWord#, minusWord#, timesWord#, timesWord2#, geWord#
+    , indexWord8OffAddr#, uncheckedShiftL#, uncheckedShiftRL# )
+type Word64# = Word#
+word8ToWord# :: Word# -> Word#
+word8ToWord# w# = w#
+wordToWord64# :: Word# -> Word#
+wordToWord64#       w = w
+plusWord64# :: Word# -> Word# -> Word#
+plusWord64#         = plusWord#
+subWord64# :: Word# -> Word# -> Word#
+subWord64#          = minusWord#
+timesWord64# :: Word# -> Word# -> Word#
+timesWord64#        = timesWord#
+geWord64# :: Word# -> Word# -> Int#
+geWord64#           =geWord#
+uncheckedShiftRL64# :: Word# -> Int# -> Word#
+uncheckedShiftRL64# = uncheckedShiftRL#
+uncheckedShiftL64# :: Word# -> Int# -> Word#
+uncheckedShiftL64#  = uncheckedShiftL#
+#endif
 
 fi :: (Integral a, Num b) => a -> b
 fi = fromIntegral
