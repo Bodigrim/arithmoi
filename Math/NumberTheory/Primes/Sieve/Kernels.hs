@@ -21,12 +21,41 @@ module Math.NumberTheory.Primes.Sieve.Kernels () where
 import Math.NumberTheory.Primes.Sieve.WheelIndexing ( blkShift )
 
 import Data.Bits
-import GHC.Exts
 import Data.Array ( Array )
 import Data.Array.Base ( listArray )
 -- Template Haskell (generators only; the generated code needs none of these at run time)
-import Language.Haskell.TH ( ExpQ, DecQ, Exp(VarE), litE, intPrimL, wordPrimL, listE
-                           , mkName, sigD, valD, varP, normalB )
+import Language.Haskell.TH
+  ( ExpQ, DecQ, Exp(VarE), litE, intPrimL, wordPrimL, listE
+  , mkName, sigD, valD, varP, normalB )
+#if __GLASGOW_HASKELL__ >= 902
+import GHC.Exts
+  ( Addr#, Int#, Word#, State#, (+#), (-#), (*#), quotInt#
+  , word2Int#, not#, and#, or#, uncheckedIShiftRL#, uncheckedShiftRL#
+  , readWord8OffAddr#, writeWord8OffAddr#, readWord16OffAddr#, writeWord16OffAddr# )
+import GHC.Prim
+  ( Word8#, Word16#, wordToWord8#, word8ToWord#, wordToWord16#, word16ToWord#
+  , plusAddr#, minusAddr#, ltAddr#, minusWord# )
+#else
+import GHC.Exts
+  ( Addr#, Int#, Word#, State#
+  , (+#), (-#), (*#), quotInt#, not#, and#, or#
+  , word2Int#, uncheckedShiftRL#, uncheckedIShiftRL#
+  , readWord8OffAddr#, writeWord8OffAddr#, readWord16OffAddr#
+  , plusAddr#, minusAddr#, ltAddr#, minusWord#
+  , readWord8OffAddr#, writeWord8OffAddr#, readWord16OffAddr#, writeWord16OffAddr# )
+-- Prior to GHC 9.2, Word8# and Word16# are represented as a standard Word#.
+-- Casting them to Word# is simply the identity function.
+type Word8# = Word#
+type Word16# = Word#
+wordToWord8# :: Word# -> Word#
+wordToWord8# w# = w#
+word8ToWord# :: Word# -> Word#
+word8ToWord# w# = w#
+wordToWord16# :: Word# -> Word#
+wordToWord16# w# = w#
+word16ToWord# :: Word# -> Word#
+word16ToWord# w# = w#
+#endif
 #endif
 
 ------------------------------------------------------------------------

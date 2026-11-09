@@ -82,7 +82,18 @@ import Foreign.Marshal.Alloc ( mallocBytes, callocBytes, free )
 import Foreign.Marshal.Utils ( fillBytes )
 import GHC.IO ( IO(..) )
 import System.IO.Unsafe ( unsafeDupablePerformIO, unsafePerformIO )
+#if __GLASGOW_HASKELL__ >= 902
 import GHC.Exts
+  ( Int#, Int(I#), RealWorld, State#, Ptr(..)
+  , (+#), (-#), (*#), andI#, (>#), (>=#), (<#)
+  , word16ToWord#, word2Int#, isTrue#
+  , readIntOffAddr#, readWord16OffAddr#, writeIntOffAddr# )
+#else
+import GHC.Exts
+  ( Int#, Int(I#), Word#, RealWorld, State#, Ptr(..)
+  , (+#), (-#), (*#), andI#, (>#), (>=#), (<#), word2Int#, isTrue#
+  , readIntOffAddr#, readWord16OffAddr#, writeIntOffAddr# )
+#endif
 import Control.Concurrent
   ( forkIO, getNumCapabilities, setNumCapabilities, rtsSupportsBoundThreads )
 import Control.Concurrent.MVar ( MVar, newEmptyMVar, putMVar, takeMVar )
@@ -92,6 +103,11 @@ import Data.IORef ( newIORef, readIORef, writeIORef, atomicModifyIORef' )
 import GHC.Conc
   ( getNumProcessors, atomically, newTVarIO, readTVarIO
   , readTVar, writeTVar, retry )
+
+#if __GLASGOW_HASKELL__ < 902
+word16ToWord# :: Word# -> Word#
+word16ToWord# w# = w#
+#endif
 
 primeCountMaxArg :: Integer
 primeCountMaxArg = 2^(64 :: Int) - 1
